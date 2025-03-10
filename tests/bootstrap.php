@@ -36,12 +36,7 @@ if (empty($_SERVER['HTTP_HOST']) && !Configure::read('App.fullBaseUrl')) {
     Configure::write('App.fullBaseUrl', 'http://localhost');
 }
 
-if ($dsn = env('DATABASE_TEST_URL')) {
-    // Merge the DSN into the existing 'test' connection configuration
-    ConnectionManager::setConfig('test', array_merge(ConnectionManager::getConfig('test'), [
-        'url' => $dsn,
-    ]));
-}
+ConnectionManager::setConfig('test', ['url' => getenv('DATABASE_TEST_URL')]);
 
 // DebugKit skips settings these connection config if PHP SAPI is CLI / PHPDBG.
 // But since PagesControllerTest is run with debug enabled and DebugKit is loaded
