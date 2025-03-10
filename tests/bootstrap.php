@@ -20,6 +20,7 @@ use Cake\Core\Configure;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\ConnectionHelper;
 use Migrations\TestSuite\Migrator;
+use Cake\TestSuite\Fixture\SchemaLoader;
 
 /**
  * Test runner bootstrap.
@@ -33,6 +34,16 @@ require dirname(__DIR__) . '/config/bootstrap.php';
 
 if (empty($_SERVER['HTTP_HOST']) && !Configure::read('App.fullBaseUrl')) {
     Configure::write('App.fullBaseUrl', 'http://localhost');
+}
+
+if (env('DATABASE_TEST_URL')) {
+    // Drop the existing 'test' connection if it exists
+    if (ConnectionManager::getConfig('test')) {
+        ConnectionManager::drop('test');
+    }
+
+    // Now set the 'test' connection using the DSN from the environment variable
+    ConnectionManager::setConfig('test', ['url' => getenv('DATABASE_TEST_URL')]);
 }
 
 // DebugKit skips settings these connection config if PHP SAPI is CLI / PHPDBG.
@@ -69,7 +80,6 @@ ConnectionHelper::addTestAliases();
 // If you are not using CakePHP's migrations you can
 // hook into your migration tool of choice here or
 // load schema from a SQL dump file with
-// use Cake\TestSuite\Fixture\SchemaLoader;
-// (new SchemaLoader())->loadSqlFiles('./tests/schema.sql', 'test');
+(new SchemaLoader())->loadSqlFiles('./tests/schema.sql', 'test');
 
 (new Migrator())->run();
