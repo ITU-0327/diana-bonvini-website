@@ -6,6 +6,7 @@ namespace App\Test\TestCase\Model\Table;
 use App\Model\Table\UsersTable;
 use Cake\I18n\FrozenTime;
 use Cake\TestSuite\TestCase;
+use Authentication\PasswordHasher\DefaultPasswordHasher;
 
 /**
  * App\Model\Table\UsersTable Test Case
@@ -211,5 +212,53 @@ class UsersTableTest extends TestCase
         $user->last_login = FrozenTime::now();
         $this->Users->save($user);
         $this->assertNotEquals($originalLastLogin, $user->last_login, 'last_login should update on login.');
+    }
+
+    /**
+     * Test Case 3.4: Verify Password Hashing
+     *
+     * @return void
+     */
+    public function testPasswordHashing(): void {
+        $data = [
+            'first_name'   => 'Test',
+            'last_name'    => 'User',
+            'email'        => 'test.user@example.com',
+            'password'     => 'PlainTextPassword',
+            'phone_number' => '555-1111',
+            'address'      => '123 Test Blvd',
+            'user_type'    => 'customer'
+        ];
+        $user = $this->Users->newEntity($data);
+        $result = $this->Users->save($user);
+        $this->assertNotFalse($result, 'User should be saved successfully.');
+        $savedPassword = $result->password;
+        // Assert that the saved password does not match the plaintext
+        $this->assertNotEquals('PlainTextPassword', $savedPassword, 'Password should be hashed and not match plaintext.');
+
+        // Verify that the password hash verifies the original password
+        $hasher = new DefaultPasswordHasher();
+        $this->assertTrue($hasher->check('PlainTextPassword', $savedPassword), 'The password hash should verify the original plaintext password.');
+    }
+
+    /**
+     * Test Case 4.2: Handling Special Characters and Unicode in Registration
+     *
+     * @return void
+     */
+    public function testSpecialCharactersAndUnicode(): void {
+        $data = [
+            'first_name'   => 'Àlïçé-测试測試', // Includes accented letters and Chinese characters
+            'last_name'    => 'O’Conñór',
+            'email'        => 'special.chars@example.com',
+            'password'     => 'SecureP@ssw0rd',
+            'phone_number' => '+123-456-7890',
+            'address'      => '123 Emoji 😀 St',
+            'user_type'    => 'customer'
+        ];
+        $user = $this->Users->newEntity($data);
+        $this->assertEmpty($user->getErrors(), 'Special characters and Unicode should not trigger errors.');
+        $result = $this->Users->save($user);
+        $this->assertNotFalse($result, 'User with special characters should be saved successfully.');
     }
 }

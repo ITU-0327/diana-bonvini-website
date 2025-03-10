@@ -172,4 +172,64 @@ class UsersControllerTest extends TestCase
         $userAfter = $usersTable->find()->where(['email' => 'tony.hsieh@example.com'])->first();
         $this->assertNotSame($oldLastLogin, $userAfter->last_login);
     }
+
+    /**
+     * Test Case 3.1: SQL Injection Attempt in Registration
+     *
+     * @return void
+     */
+    public function testRegistrationSqlInjectionAttempt(): void {
+        $data = [
+            'first_name'   => "Robert'); DROP TABLE users; --",
+            'last_name'    => 'Hacker',
+            'email'        => 'sqlinjection@example.com',
+            'password'     => 'SecureP@ssw0rd',
+            'phone_number' => '1234567890',
+            'address'      => '123 Injection Ln',
+            'user_type'    => 'customer'
+        ];
+        $this->post('/users/register', $data);
+        // Expect normal registration flow: the injection should be treated as a normal string
+        $this->assertResponseSuccess();
+        $this->assertRedirect('/users/login');
+    }
+
+    /**
+     * Test Case 3.2: XSS Attempt in Registration
+     *
+     * @return void
+     */
+    public function testRegistrationXssAttempt(): void {
+        $data = [
+            'first_name'   => '<script>alert("XSS")</script>',
+            'last_name'    => 'Attacker',
+            'email'        => 'xss@example.com',
+            'password'     => 'SecureP@ssw0rd',
+            'phone_number' => '1234567890',
+            'address'      => '123 XSS Blvd',
+            'user_type'    => 'customer'
+        ];
+        $this->post('/users/register', $data);
+        // Expect registration to succeed normally with input sanitized on output
+        $this->assertResponseSuccess();
+        $this->assertRedirect('/users/login');
+    }
+
+    /**
+     * Test Case 4.1: Logout Clears Session
+     *
+     * @return void
+     */
+    public function testLogout(): void {
+        // Set up a dummy session for a logged-in user.
+        $this->session([
+            'Auth.User' => [
+                'user_id' => '17fe31f7-2f61-4176-a036-172eed559e6f',
+                'email' => 'tony.hsieh@example.com'
+            ]
+        ]);
+        $this->get('/users/logout');
+        $this->assertRedirect('/');
+        $this->assertEmpty($this->_session('Auth.User'), 'User session should be cleared after logout.');
+    }
 }
