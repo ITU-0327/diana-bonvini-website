@@ -50,15 +50,4 @@ class ArtworksTableTest extends TestCase
 
         parent::tearDown();
     }
-
-    /**
-     * Test validationDefault method
-     *
-     * @return void
-     * @uses \App\Model\Table\ArtworksTable::validationDefault()
-     */
-    public function testValidationDefault(): void
-    {
-        $this->markTestIncomplete('Not implemented yet.');
-    }
 }
