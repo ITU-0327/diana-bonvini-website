@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<ruleset name="App">
+<ruleset name="Diana Bonvini Website">
     <config name="installed_paths" value="../../cakephp/cakephp-codesniffer"/>
 
     <rule ref="CakePHP"/>
@@ -7,6 +7,7 @@
         <exclude-pattern>*/src/Controller/*</exclude-pattern>
     </rule>
 
+    <file>config/</file>
     <file>src/</file>
     <file>tests/</file>
 </ruleset>
