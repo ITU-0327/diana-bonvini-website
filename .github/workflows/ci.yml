@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - dev
+      - ci
   pull_request:
     branches:
       - '*'
