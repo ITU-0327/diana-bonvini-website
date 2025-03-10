@@ -36,6 +36,12 @@ if (empty($_SERVER['HTTP_HOST']) && !Configure::read('App.fullBaseUrl')) {
     Configure::write('App.fullBaseUrl', 'http://localhost');
 }
 
+// Drop the existing 'test' connection if it exists
+if (ConnectionManager::getConfig('test')) {
+    ConnectionManager::drop('test');
+}
+
+// Now set the 'test' connection using the DSN from the environment variable
 ConnectionManager::setConfig('test', ['url' => getenv('DATABASE_TEST_URL')]);
 
 // DebugKit skips settings these connection config if PHP SAPI is CLI / PHPDBG.
