@@ -62,6 +62,7 @@ jobs:
       - name: Run PHPUnit
         env:
           DATABASE_TEST_URL: mysql://root:root@127.0.0.1/cakephp
+          SECURITY_SALT: ${{ secrets.SECURITY_SALT }}
         run: vendor/bin/phpunit
 
   coding-standard:
