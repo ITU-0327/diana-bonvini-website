@@ -26,57 +26,150 @@ class UsersControllerTest extends TestCase
     ];
 
     /**
-     * Test index method
+     * Test Case 1.1: Successful Registration with Valid Data
      *
      * @return void
-     * @uses \App\Controller\UsersController::index()
      */
-    public function testIndex(): void
+    public function testRegistrationSuccess(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $data = [
+            'first_name' => 'Grace',
+            'last_name' => 'Hopper',
+            'email' => 'grace.hopper@example.com',
+            'password' => 'StrongP@ssw0rd',
+            'phone_number' => '0412345789',
+            'address' => '404 NotFound Blvd',
+            'user_type' => 'customer'
+        ];
+        $this->post('/users/register', $data);
+        $this->assertResponseSuccess();
+        $this->assertResponseContains('User registered successfully');
+        // Check redirection
+        $this->assertRedirect('/users/login');
     }
 
     /**
-     * Test view method
+     * Test Case 1.2: Registration with Missing Required Fields
      *
      * @return void
-     * @uses \App\Controller\UsersController::view()
      */
-    public function testView(): void
+    public function testRegistrationMissingFields(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $data = [
+            // Missing first_name and email.
+            'last_name' => 'Hopper',
+            'password' => 'StrongP@ssw0rd',
+            'phone_number' => '0412345789',
+            'address' => '404 NotFound Blvd',
+            'user_type' => 'customer'
+        ];
+        $this->post('/users/register', $data);
+        $this->assertResponseContains('This field is required');
     }
 
     /**
-     * Test add method
+     * Test Case 2.1: Login with Valid Credentials
      *
      * @return void
-     * @uses \App\Controller\UsersController::add()
      */
-    public function testAdd(): void
+    public function testLoginSuccess(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $data = [
+            'email' => 'tony.hsieh@example.com',
+            'password' => 'password' // Ensure that the fixture’s hashed password verifies against this.
+        ];
+        $this->post('/users/login', $data);
+        $this->assertResponseSuccess();
+        // Verify that the session contains the user email.
+        $this->assertSession('tony.hsieh@example.com', 'Auth.User.email');
     }
 
     /**
-     * Test edit method
+     * Test Case 2.2: Login with Invalid Password
      *
      * @return void
-     * @uses \App\Controller\UsersController::edit()
      */
-    public function testEdit(): void
+    public function testLoginInvalidPassword(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $data = [
+            'email' => 'tony.hsieh@example.com',
+            'password' => 'wrongpassword'
+        ];
+        $this->post('/users/login', $data);
+        $this->assertResponseContains('Invalid credentials');
     }
 
     /**
-     * Test delete method
+     * Test Case 2.3: Login with Non-Existent Email
      *
      * @return void
-     * @uses \App\Controller\UsersController::delete()
      */
-    public function testDelete(): void
+    public function testLoginNonExistentEmail(): void
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $data = [
+            'email' => 'nonexistent@example.com',
+            'password' => 'anyPassword'
+        ];
+        $this->post('/users/login', $data);
+        $this->assertResponseContains('Invalid credentials');
+    }
+
+    /**
+     * Test Case 2.4: Login Attempt for a Soft-Deleted User
+     *
+     * @return void
+     */
+    public function testLoginSoftDeletedUser(): void
+    {
+        $data = [
+            'email' => 'soft.deleted@example.com',
+            'password' => 'SecureP@ssw0rd'
+        ];
+        $this->post('/users/login', $data);
+        $this->assertResponseContains('Account inactive');
+    }
+
+    /**
+     * Test Case 2.5.1: Verify last_login Field Not Updated on Failed Login
+     *
+     * @return void
+     */
+    public function testFailedLoginDoesNotUpdateLastLogin(): void
+    {
+        $usersTable = $this->getTableLocator()->get('Users');
+        $userBefore = $usersTable->find()->where(['email' => 'tony.hsieh@example.com'])->first();
+        $oldLastLogin = $userBefore->last_login;
+
+        $data = [
+            'email' => 'tony.hsieh@example.com',
+            'password' => 'wrongpassword'
+        ];
+        $this->post('/users/login', $data);
+        $this->assertResponseContains('Invalid credentials');
+
+        $userAfter = $usersTable->find()->where(['email' => 'tony.hsieh@example.com'])->first();
+        $this->assertSame($oldLastLogin, $userAfter->last_login);
+    }
+
+    /**
+     * Test Case 2.5.2: Verify last_login Field Updated on Successful Login
+     *
+     * @return void
+     */
+    public function testLastLoginFieldUpdated(): void
+    {
+        $usersTable = $this->getTableLocator()->get('Users');
+        $userBefore = $usersTable->find()->where(['email' => 'tony.hsieh@example.com'])->first();
+        $oldLastLogin = $userBefore->last_login;
+
+        $data = [
+            'email' => 'tony.hsieh@example.com',
+            'password' => 'password'
+        ];
+        $this->post('/users/login', $data);
+        $this->assertResponseSuccess();
+
+        $userAfter = $usersTable->find()->where(['email' => 'tony.hsieh@example.com'])->first();
+        $this->assertNotSame($oldLastLogin, $userAfter->last_login);
     }
 }
