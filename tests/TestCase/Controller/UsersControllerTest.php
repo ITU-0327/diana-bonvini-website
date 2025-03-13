@@ -165,7 +165,11 @@ class UsersControllerTest extends TestCase
         $this->assertResponseContains('Invalid username or password');
 
         $userAfter = $usersTable->find()->where(['email' => 'tony.hsieh@example.com'])->first();
-        $this->assertSame($oldLastLogin, $userAfter->last_login);
+        $this->assertEquals(
+            $oldLastLogin->i18nFormat(),
+            $userAfter->last_login->i18nFormat(),
+            'The last_login value should have been updated.'
+        );
     }
 
     /**

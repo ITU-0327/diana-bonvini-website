@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use Cake\Event\EventInterface;
+use Cake\I18n\FrozenTime;
 
 /**
  * Users Controller
@@ -43,9 +44,15 @@ class UsersController extends AppController
             // Check if the user is soft-deleted
             if (!empty($user->is_deleted) && $user->is_deleted == 1) {
                 $this->Flash->error(__('Account inactive'));
-                // Optionally, log the user out so the identity is not kept in session
+                // Log the user out so the identity is not kept in session
                 $this->Authentication->logout();
             } else {
+                // Retrieve the full user entity from the Users table
+                $usersTable = $this->getTableLocator()->get('Users');
+                $userEntity = $usersTable->get($user->user_id);
+                $userEntity->last_login = FrozenTime::now();
+                $usersTable->save($userEntity);
+
                 $redirect = $this->request->getQuery('redirect', [
                     'controller' => 'Users',
                     'action' => 'index',
