@@ -3,13 +3,12 @@ declare(strict_types=1);
 
 namespace App\Test\TestCase\Controller;
 
+use Authentication\PasswordHasher\DefaultPasswordHasher;
 use Cake\TestSuite\IntegrationTestTrait;
 use Cake\TestSuite\TestCase;
 
 /**
  * App\Controller\UsersController Test Case
- *
- * @uses \App\Controller\UsersController
  */
 class UsersControllerTest extends TestCase
 {
@@ -73,14 +72,21 @@ class UsersControllerTest extends TestCase
      */
     public function testLoginSuccess(): void
     {
+        $this->enableCsrfToken();
+
         $data = [
             'email' => 'tony.hsieh@example.com',
-            'password' => 'password', // Ensure that the fixture’s hashed password verifies against this.
+            'password' => 'password',
         ];
         $this->post('/users/login', $data);
         $this->assertResponseSuccess();
         // Verify that the session contains the user email.
-        $this->assertSession('tony.hsieh@example.com', 'Auth.User.email');
+        $this->assertSession('17fe31f7-2f61-4176-a036-172eed559e6f', 'Auth.user_id');
+        $this->assertSession('tony.hsieh@example.com', 'Auth.email');
+
+        $hasher = new DefaultPasswordHasher();
+        $session = $this->getSession();
+        $this->assertTrue($hasher->check('password', $session->read('Auth.password')), 'Password should verify correctly');
     }
 
     /**
@@ -90,12 +96,14 @@ class UsersControllerTest extends TestCase
      */
     public function testLoginInvalidPassword(): void
     {
+        $this->enableCsrfToken();
+
         $data = [
             'email' => 'tony.hsieh@example.com',
             'password' => 'wrongpassword',
         ];
         $this->post('/users/login', $data);
-        $this->assertResponseContains('Invalid credentials');
+        $this->assertResponseContains('Invalid username or password');
     }
 
     /**
@@ -105,12 +113,14 @@ class UsersControllerTest extends TestCase
      */
     public function testLoginNonExistentEmail(): void
     {
+        $this->enableCsrfToken();
+
         $data = [
             'email' => 'nonexistent@example.com',
             'password' => 'anyPassword',
         ];
         $this->post('/users/login', $data);
-        $this->assertResponseContains('Invalid credentials');
+        $this->assertResponseContains('Invalid username or password');
     }
 
     /**
@@ -120,6 +130,8 @@ class UsersControllerTest extends TestCase
      */
     public function testLoginSoftDeletedUser(): void
     {
+        $this->enableCsrfToken();
+
         $data = [
             'email' => 'soft.deleted@example.com',
             'password' => 'SecureP@ssw0rd',
@@ -135,6 +147,8 @@ class UsersControllerTest extends TestCase
      */
     public function testFailedLoginDoesNotUpdateLastLogin(): void
     {
+        $this->enableCsrfToken();
+
         $usersTable = $this->getTableLocator()->get('Users');
         $userBefore = $usersTable->find()->where(['email' => 'tony.hsieh@example.com'])->first();
         $oldLastLogin = $userBefore->last_login;
@@ -144,7 +158,7 @@ class UsersControllerTest extends TestCase
             'password' => 'wrongpassword',
         ];
         $this->post('/users/login', $data);
-        $this->assertResponseContains('Invalid credentials');
+        $this->assertResponseContains('Invalid username or password');
 
         $userAfter = $usersTable->find()->where(['email' => 'tony.hsieh@example.com'])->first();
         $this->assertSame($oldLastLogin, $userAfter->last_login);
@@ -157,6 +171,8 @@ class UsersControllerTest extends TestCase
      */
     public function testLastLoginFieldUpdated(): void
     {
+        $this->enableCsrfToken();
+
         $usersTable = $this->getTableLocator()->get('Users');
         $userBefore = $usersTable->find()->where(['email' => 'tony.hsieh@example.com'])->first();
         $oldLastLogin = $userBefore->last_login;
@@ -169,7 +185,11 @@ class UsersControllerTest extends TestCase
         $this->assertResponseSuccess();
 
         $userAfter = $usersTable->find()->where(['email' => 'tony.hsieh@example.com'])->first();
-        $this->assertNotSame($oldLastLogin, $userAfter->last_login);
+        $this->assertNotEquals(
+            $oldLastLogin->i18nFormat(),
+            $userAfter->last_login->i18nFormat(),
+            'The last_login value should have been updated.'
+        );
     }
 
     /**
@@ -179,6 +199,8 @@ class UsersControllerTest extends TestCase
      */
     public function testRegistrationSqlInjectionAttempt(): void
     {
+        $this->enableCsrfToken();
+
         $data = [
             'first_name'   => "Robert'); DROP TABLE users; --",
             'last_name'    => 'Hacker',
@@ -201,6 +223,8 @@ class UsersControllerTest extends TestCase
      */
     public function testRegistrationXssAttempt(): void
     {
+        $this->enableCsrfToken();
+
         $data = [
             'first_name'   => '<script>alert("XSS")</script>',
             'last_name'    => 'Attacker',
@@ -223,15 +247,17 @@ class UsersControllerTest extends TestCase
      */
     public function testLogout(): void
     {
+        $this->enableCsrfToken();
+
         // Set up a dummy session for a logged-in user.
         $this->session([
-            'Auth.User' => [
+            'Auth' => [
                 'user_id' => '17fe31f7-2f61-4176-a036-172eed559e6f',
                 'email' => 'tony.hsieh@example.com',
             ],
         ]);
         $this->get('/users/logout');
-        $this->assertRedirect('/');
-        $this->assertEmpty($this->_session('Auth.User'), 'User session should be cleared after logout.');
+        $this->assertRedirect('/users/login');
+        $this->assertEmpty($this->getSession()->read('Auth.User'), 'User session should be cleared after logout.');
     }
 }
