@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace App\Test\TestCase\Model\Table;
 
 use App\Model\Table\UsersTable;
+use Authentication\PasswordHasher\DefaultPasswordHasher;
 use Cake\I18n\FrozenTime;
 use Cake\TestSuite\TestCase;
-use Authentication\PasswordHasher\DefaultPasswordHasher;
 
 /**
  * App\Model\Table\UsersTable Test Case
@@ -58,7 +58,8 @@ class UsersTableTest extends TestCase
      *
      * @return void
      */
-    public function testSuccessfulRegistration(): void{
+    public function testSuccessfulRegistration(): void
+    {
         $data = [
             'first_name'   => 'Alice',
             'last_name'    => 'Smith',
@@ -66,7 +67,7 @@ class UsersTableTest extends TestCase
             'password'     => 'SecureP@ssw0rd',
             'phone_number' => '555-1234',
             'address'      => '456 Another St',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         $user = $this->Users->newEntity($data);
         $this->assertEmpty($user->getErrors(), 'There should be no validation errors.');
@@ -81,14 +82,15 @@ class UsersTableTest extends TestCase
      *
      * @return void
      */
-    public function testRegistrationMissingRequiredFields(): void {
+    public function testRegistrationMissingRequiredFields(): void
+    {
         $data = [
             // missing first_name and email
             'last_name'    => 'Smith',
             'password'     => 'SecureP@ssw0rd',
             'phone_number' => '555-1234',
             'address'      => '456 Another St',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         $user = $this->Users->newEntity($data);
         $errors = $user->getErrors();
@@ -102,7 +104,8 @@ class UsersTableTest extends TestCase
      *
      * @return void
      */
-    public function testRegistrationInvalidEmailFormat(): void {
+    public function testRegistrationInvalidEmailFormat(): void
+    {
         $data = [
             'first_name'   => 'Alice',
             'last_name'    => 'Smith',
@@ -110,7 +113,7 @@ class UsersTableTest extends TestCase
             'password'     => 'SecureP@ssw0rd',
             'phone_number' => '555-1234',
             'address'      => '456 Another St',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         $user = $this->Users->newEntity($data);
         $errors = $user->getErrors();
@@ -123,7 +126,8 @@ class UsersTableTest extends TestCase
      *
      * @return void
      */
-    public function testRegistrationDuplicateEmail(): void {
+    public function testRegistrationDuplicateEmail(): void
+    {
         $data = [
             'first_name'   => 'Alice',
             'last_name'    => 'Smith',
@@ -131,7 +135,7 @@ class UsersTableTest extends TestCase
             'password'     => 'SecureP@ssw0rd',
             'phone_number' => '555-1234',
             'address'      => '456 Another St',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         // First registration should succeed.
         $user1 = $this->Users->newEntity($data);
@@ -149,7 +153,8 @@ class UsersTableTest extends TestCase
      *
      * @return void
      */
-    public function testPasswordComplexity(): void {
+    public function testPasswordComplexity(): void
+    {
         $data = [
             'first_name'   => 'Charlie',
             'last_name'    => 'Brown',
@@ -157,7 +162,7 @@ class UsersTableTest extends TestCase
             'password'     => '12345', // weak password
             'phone_number' => '555-6789',
             'address'      => '789 Some St',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         $user = $this->Users->newEntity($data);
         $errors = $user->getErrors();
@@ -170,7 +175,8 @@ class UsersTableTest extends TestCase
      *
      * @return void
      */
-    public function testLoginSoftDeletedUser(): void {
+    public function testLoginSoftDeletedUser(): void
+    {
         $data = [
             'first_name'   => 'Frank',
             'last_name'    => 'White',
@@ -178,7 +184,7 @@ class UsersTableTest extends TestCase
             'password'     => 'SecureP@ssw0rd',
             'phone_number' => '555-3333',
             'address'      => '3030 Demo Ln',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         $user = $this->Users->newEntity($data);
         $this->Users->save($user);
@@ -188,13 +194,13 @@ class UsersTableTest extends TestCase
         $this->assertEquals(1, $user->is_deleted, 'Soft-deleted user should have is_deleted set to 1.');
     }
 
-
     /**
      * Test Case 2.5: Verify last_login Field Update
      *
      * @return void
      */
-    public function testLastLoginUpdate(): void {
+    public function testLastLoginUpdate(): void
+    {
         $data = [
             'first_name'   => 'David',
             'last_name'    => 'Green',
@@ -202,7 +208,7 @@ class UsersTableTest extends TestCase
             'password'     => 'SecureP@ssw0rd',
             'phone_number' => '555-0000',
             'address'      => '1010 Test Ave',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         $user = $this->Users->newEntity($data);
         $this->Users->save($user);
@@ -219,7 +225,8 @@ class UsersTableTest extends TestCase
      *
      * @return void
      */
-    public function testPasswordHashing(): void {
+    public function testPasswordHashing(): void
+    {
         $data = [
             'first_name'   => 'Test',
             'last_name'    => 'User',
@@ -227,7 +234,7 @@ class UsersTableTest extends TestCase
             'password'     => 'PlainTextPassword',
             'phone_number' => '555-1111',
             'address'      => '123 Test Blvd',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         $user = $this->Users->newEntity($data);
         $result = $this->Users->save($user);
@@ -246,7 +253,8 @@ class UsersTableTest extends TestCase
      *
      * @return void
      */
-    public function testSpecialCharactersAndUnicode(): void {
+    public function testSpecialCharactersAndUnicode(): void
+    {
         $data = [
             'first_name'   => 'Àlïçé-测试測試', // Includes accented letters and Chinese characters
             'last_name'    => 'O’Conñór',
@@ -254,7 +262,7 @@ class UsersTableTest extends TestCase
             'password'     => 'SecureP@ssw0rd',
             'phone_number' => '+123-456-7890',
             'address'      => '123 Emoji 😀 St',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         $user = $this->Users->newEntity($data);
         $this->assertEmpty($user->getErrors(), 'Special characters and Unicode should not trigger errors.');

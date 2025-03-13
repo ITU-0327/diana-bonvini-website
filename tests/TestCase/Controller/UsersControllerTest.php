@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Test\TestCase\Controller;
 
-use App\Controller\UsersController;
 use Cake\TestSuite\IntegrationTestTrait;
 use Cake\TestSuite\TestCase;
 
@@ -39,7 +38,7 @@ class UsersControllerTest extends TestCase
             'password' => 'StrongP@ssw0rd',
             'phone_number' => '0412345789',
             'address' => '404 NotFound Blvd',
-            'user_type' => 'customer'
+            'user_type' => 'customer',
         ];
         $this->post('/users/register', $data);
         $this->assertResponseSuccess();
@@ -61,7 +60,7 @@ class UsersControllerTest extends TestCase
             'password' => 'StrongP@ssw0rd',
             'phone_number' => '0412345789',
             'address' => '404 NotFound Blvd',
-            'user_type' => 'customer'
+            'user_type' => 'customer',
         ];
         $this->post('/users/register', $data);
         $this->assertResponseContains('This field is required');
@@ -76,7 +75,7 @@ class UsersControllerTest extends TestCase
     {
         $data = [
             'email' => 'tony.hsieh@example.com',
-            'password' => 'password' // Ensure that the fixture’s hashed password verifies against this.
+            'password' => 'password', // Ensure that the fixture’s hashed password verifies against this.
         ];
         $this->post('/users/login', $data);
         $this->assertResponseSuccess();
@@ -93,7 +92,7 @@ class UsersControllerTest extends TestCase
     {
         $data = [
             'email' => 'tony.hsieh@example.com',
-            'password' => 'wrongpassword'
+            'password' => 'wrongpassword',
         ];
         $this->post('/users/login', $data);
         $this->assertResponseContains('Invalid credentials');
@@ -108,7 +107,7 @@ class UsersControllerTest extends TestCase
     {
         $data = [
             'email' => 'nonexistent@example.com',
-            'password' => 'anyPassword'
+            'password' => 'anyPassword',
         ];
         $this->post('/users/login', $data);
         $this->assertResponseContains('Invalid credentials');
@@ -123,7 +122,7 @@ class UsersControllerTest extends TestCase
     {
         $data = [
             'email' => 'soft.deleted@example.com',
-            'password' => 'SecureP@ssw0rd'
+            'password' => 'SecureP@ssw0rd',
         ];
         $this->post('/users/login', $data);
         $this->assertResponseContains('Account inactive');
@@ -142,7 +141,7 @@ class UsersControllerTest extends TestCase
 
         $data = [
             'email' => 'tony.hsieh@example.com',
-            'password' => 'wrongpassword'
+            'password' => 'wrongpassword',
         ];
         $this->post('/users/login', $data);
         $this->assertResponseContains('Invalid credentials');
@@ -164,7 +163,7 @@ class UsersControllerTest extends TestCase
 
         $data = [
             'email' => 'tony.hsieh@example.com',
-            'password' => 'password'
+            'password' => 'password',
         ];
         $this->post('/users/login', $data);
         $this->assertResponseSuccess();
@@ -178,7 +177,8 @@ class UsersControllerTest extends TestCase
      *
      * @return void
      */
-    public function testRegistrationSqlInjectionAttempt(): void {
+    public function testRegistrationSqlInjectionAttempt(): void
+    {
         $data = [
             'first_name'   => "Robert'); DROP TABLE users; --",
             'last_name'    => 'Hacker',
@@ -186,7 +186,7 @@ class UsersControllerTest extends TestCase
             'password'     => 'SecureP@ssw0rd',
             'phone_number' => '1234567890',
             'address'      => '123 Injection Ln',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         $this->post('/users/register', $data);
         // Expect normal registration flow: the injection should be treated as a normal string
@@ -199,7 +199,8 @@ class UsersControllerTest extends TestCase
      *
      * @return void
      */
-    public function testRegistrationXssAttempt(): void {
+    public function testRegistrationXssAttempt(): void
+    {
         $data = [
             'first_name'   => '<script>alert("XSS")</script>',
             'last_name'    => 'Attacker',
@@ -207,7 +208,7 @@ class UsersControllerTest extends TestCase
             'password'     => 'SecureP@ssw0rd',
             'phone_number' => '1234567890',
             'address'      => '123 XSS Blvd',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         $this->post('/users/register', $data);
         // Expect registration to succeed normally with input sanitized on output
@@ -220,13 +221,14 @@ class UsersControllerTest extends TestCase
      *
      * @return void
      */
-    public function testLogout(): void {
+    public function testLogout(): void
+    {
         // Set up a dummy session for a logged-in user.
         $this->session([
             'Auth.User' => [
                 'user_id' => '17fe31f7-2f61-4176-a036-172eed559e6f',
-                'email' => 'tony.hsieh@example.com'
-            ]
+                'email' => 'tony.hsieh@example.com',
+            ],
         ]);
         $this->get('/users/logout');
         $this->assertRedirect('/');

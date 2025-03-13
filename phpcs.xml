@@ -7,6 +7,10 @@
         <exclude-pattern>*/src/Controller/*</exclude-pattern>
     </rule>
 
+    <rule ref="CakePHP.WhiteSpace.TabAndSpace.DoubleSpace">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+
     <file>config/</file>
     <file>src/</file>
     <file>tests/</file>
