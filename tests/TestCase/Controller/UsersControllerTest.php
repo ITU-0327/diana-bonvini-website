@@ -30,18 +30,20 @@ class UsersControllerTest extends TestCase
      */
     public function testRegistrationSuccess(): void
     {
+        $this->enableCsrfToken();
+
         $data = [
             'first_name' => 'Grace',
             'last_name' => 'Hopper',
             'email' => 'grace.hopper@example.com',
             'password' => 'StrongP@ssw0rd',
+            'password_confirm' => 'StrongP@ssw0rd',
             'phone_number' => '0412345789',
             'address' => '404 NotFound Blvd',
-            'user_type' => 'customer',
         ];
         $this->post('/users/register', $data);
         $this->assertResponseSuccess();
-        $this->assertResponseContains('User registered successfully');
+        $this->assertFlashMessage('User registered successfully');
         // Check redirection
         $this->assertRedirect('/users/login');
     }
@@ -53,13 +55,15 @@ class UsersControllerTest extends TestCase
      */
     public function testRegistrationMissingFields(): void
     {
+        $this->enableCsrfToken();
+
         $data = [
             // Missing first_name and email.
             'last_name' => 'Hopper',
             'password' => 'StrongP@ssw0rd',
+            'password_confirm' => 'StrongP@ssw0rd',
             'phone_number' => '0412345789',
             'address' => '404 NotFound Blvd',
-            'user_type' => 'customer',
         ];
         $this->post('/users/register', $data);
         $this->assertResponseContains('This field is required');
@@ -206,6 +210,7 @@ class UsersControllerTest extends TestCase
             'last_name'    => 'Hacker',
             'email'        => 'sqlinjection@example.com',
             'password'     => 'SecureP@ssw0rd',
+            'password_confirm' => 'SecureP@ssw0rd',
             'phone_number' => '1234567890',
             'address'      => '123 Injection Ln',
             'user_type'    => 'customer',
@@ -230,6 +235,7 @@ class UsersControllerTest extends TestCase
             'last_name'    => 'Attacker',
             'email'        => 'xss@example.com',
             'password'     => 'SecureP@ssw0rd',
+            'password_confirm' => 'SecureP@ssw0rd',
             'phone_number' => '1234567890',
             'address'      => '123 XSS Blvd',
             'user_type'    => 'customer',

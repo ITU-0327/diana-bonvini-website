@@ -23,7 +23,7 @@ class UsersController extends AppController
     {
         parent::beforeFilter($event);
 
-        $this->Authentication->addUnauthenticatedActions(['login', 'add']);
+        $this->Authentication->addUnauthenticatedActions(['login', 'register']);
     }
 
     /**
@@ -78,6 +78,38 @@ class UsersController extends AppController
     }
 
     /**
+     * Register method
+     *
+     * @return \Cake\Http\Response|null|void Redirects on successful register, renders view otherwise.
+     */
+    public function register()
+    {
+        $user = $this->Users->newEmptyEntity();
+        $data = $this->request->getData();
+        // Set the default user_type to 'customer'
+        $data['user_type'] = 'customer';
+
+        if ($this->request->is('post')) {
+            // Check if password and confirmation match
+            if ($data['password'] !== $data['password_confirm']) {
+                $this->Flash->error('Password and confirm password do not match');
+                $this->set(compact('user'));
+
+                return;
+            }
+
+            $user = $this->Users->patchEntity($user, $data);
+            if ($this->Users->save($user)) {
+                $this->Flash->success(__('User registered successfully'));
+
+                return $this->redirect(['controller' => 'Users', 'action' => 'login']);
+            }
+            $this->Flash->error(__('The user could not be saved. Please, try again.'));
+        }
+        $this->set(compact('user'));
+    }
+
+    /**
      * Index method
      *
      * @return \Cake\Http\Response|null|void Renders view
@@ -100,26 +132,6 @@ class UsersController extends AppController
     public function view(?string $id = null)
     {
         $user = $this->Users->get($id, contain: []);
-        $this->set(compact('user'));
-    }
-
-    /**
-     * Add method
-     *
-     * @return \Cake\Http\Response|null|void Redirects on successful add, renders view otherwise.
-     */
-    public function add()
-    {
-        $user = $this->Users->newEmptyEntity();
-        if ($this->request->is('post')) {
-            $user = $this->Users->patchEntity($user, $this->request->getData());
-            if ($this->Users->save($user)) {
-                $this->Flash->success(__('The user has been saved.'));
-
-                return $this->redirect(['action' => 'index']);
-            }
-            $this->Flash->error(__('The user could not be saved. Please, try again.'));
-        }
         $this->set(compact('user'));
     }
 
