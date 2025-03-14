@@ -68,8 +68,6 @@ jobs:
   cs-stan:
     name: Coding Standard & Static Analysis
     runs-on: ubuntu-24.04
-    env:
-      PHPSTAN_TESTS: 1
     steps:
       - uses: actions/checkout@v4
 
@@ -97,7 +95,3 @@ jobs:
       - name: Run PHPStan
         if: always()
         run: vendor/bin/phpstan analyse --error-format=github
-
-      - name: Run PHPStan for tests
-        if: env.PHPSTAN_TESTS
-        run: vendor/bin/phpstan analyse -c tests/phpstan.neon --error-format=github

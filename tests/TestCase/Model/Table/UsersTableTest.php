@@ -38,7 +38,10 @@ class UsersTableTest extends TestCase
     {
         parent::setUp();
         $config = $this->getTableLocator()->exists('Users') ? [] : ['className' => UsersTable::class];
-        $this->Users = $this->getTableLocator()->get('Users', $config);
+
+        /** @var \App\Model\Table\UsersTable $users */
+        $users = $this->getTableLocator()->get('Users', $config);
+        $this->Users = $users;
     }
 
     /**
@@ -240,7 +243,12 @@ class UsersTableTest extends TestCase
         $user = $this->Users->newEntity($data);
         $result = $this->Users->save($user);
         $this->assertNotFalse($result, 'User should be saved successfully.');
+
         $savedPassword = $result->password;
+
+        // Assert that the saved password is not null
+        $this->assertNotNull($savedPassword, 'Password hash should not be null.');
+
         // Assert that the saved password does not match the plaintext
         $this->assertNotEquals($password, $savedPassword, 'Password should be hashed and not match plaintext.');
 
