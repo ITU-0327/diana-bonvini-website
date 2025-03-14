@@ -39,6 +39,7 @@ class UsersController extends AppController
 
         // If the user is authenticated successfully...
         if ($result && $result->isValid()) {
+            /** @var \App\Model\Entity\User $user */
             $user = $this->Authentication->getIdentity();
 
             // Check if the user is soft-deleted
@@ -49,6 +50,7 @@ class UsersController extends AppController
             } else {
                 // Retrieve the full user entity from the Users table
                 $usersTable = $this->getTableLocator()->get('Users');
+                /** @var \App\Model\Entity\User $userEntity */
                 $userEntity = $usersTable->get($user->user_id);
                 $userEntity->last_login = FrozenTime::now();
                 $usersTable->save($userEntity);
@@ -63,7 +65,7 @@ class UsersController extends AppController
         }
 
         // If it's a POST request and authentication failed, show an error.
-        if ($this->request->is('post') && !$result->isValid()) {
+        if ($this->request->is('post') && (!$result || !$result->isValid())) {
             $this->Flash->error(__('Invalid username or password'));
         }
     }
