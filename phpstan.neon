@@ -6,5 +6,4 @@ parameters:
     paths:
         - src/
     ignoreErrors:
-    	- '#Method App\\Controller\\.*::beforeFilter\(\) has parameter \$event with generic interface Cake\\Event\\EventInterface but does not specify its types: TSubject#'
     	- '#Call to static method now\(\) on an unknown class Cake\\I18n\\FrozenTime#'
