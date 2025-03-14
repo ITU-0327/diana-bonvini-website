@@ -98,6 +98,7 @@ class UsersController extends AppController
         // treat it as an invalid registration.
         if (!empty($data['oauth_provider'])) {
             $this->Flash->error(__('The user could not be saved. Please, try again.'));
+
             return $this->redirect(['action' => 'register']);
         }
 
