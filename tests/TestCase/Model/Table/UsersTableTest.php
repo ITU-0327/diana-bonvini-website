@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace App\Test\TestCase\Model\Table;
 
 use App\Model\Table\UsersTable;
+use Authentication\PasswordHasher\DefaultPasswordHasher;
 use Cake\I18n\FrozenTime;
 use Cake\TestSuite\TestCase;
-use Authentication\PasswordHasher\DefaultPasswordHasher;
 
 /**
  * App\Model\Table\UsersTable Test Case
@@ -38,7 +38,10 @@ class UsersTableTest extends TestCase
     {
         parent::setUp();
         $config = $this->getTableLocator()->exists('Users') ? [] : ['className' => UsersTable::class];
-        $this->Users = $this->getTableLocator()->get('Users', $config);
+
+        /** @var \App\Model\Table\UsersTable $users */
+        $users = $this->getTableLocator()->get('Users', $config);
+        $this->Users = $users;
     }
 
     /**
@@ -58,7 +61,8 @@ class UsersTableTest extends TestCase
      *
      * @return void
      */
-    public function testSuccessfulRegistration(): void{
+    public function testSuccessfulRegistration(): void
+    {
         $data = [
             'first_name'   => 'Alice',
             'last_name'    => 'Smith',
@@ -66,7 +70,7 @@ class UsersTableTest extends TestCase
             'password'     => 'SecureP@ssw0rd',
             'phone_number' => '555-1234',
             'address'      => '456 Another St',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         $user = $this->Users->newEntity($data);
         $this->assertEmpty($user->getErrors(), 'There should be no validation errors.');
@@ -81,14 +85,15 @@ class UsersTableTest extends TestCase
      *
      * @return void
      */
-    public function testRegistrationMissingRequiredFields(): void {
+    public function testRegistrationMissingRequiredFields(): void
+    {
         $data = [
             // missing first_name and email
             'last_name'    => 'Smith',
             'password'     => 'SecureP@ssw0rd',
             'phone_number' => '555-1234',
             'address'      => '456 Another St',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         $user = $this->Users->newEntity($data);
         $errors = $user->getErrors();
@@ -102,7 +107,8 @@ class UsersTableTest extends TestCase
      *
      * @return void
      */
-    public function testRegistrationInvalidEmailFormat(): void {
+    public function testRegistrationInvalidEmailFormat(): void
+    {
         $data = [
             'first_name'   => 'Alice',
             'last_name'    => 'Smith',
@@ -110,7 +116,7 @@ class UsersTableTest extends TestCase
             'password'     => 'SecureP@ssw0rd',
             'phone_number' => '555-1234',
             'address'      => '456 Another St',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         $user = $this->Users->newEntity($data);
         $errors = $user->getErrors();
@@ -123,7 +129,8 @@ class UsersTableTest extends TestCase
      *
      * @return void
      */
-    public function testRegistrationDuplicateEmail(): void {
+    public function testRegistrationDuplicateEmail(): void
+    {
         $data = [
             'first_name'   => 'Alice',
             'last_name'    => 'Smith',
@@ -131,7 +138,7 @@ class UsersTableTest extends TestCase
             'password'     => 'SecureP@ssw0rd',
             'phone_number' => '555-1234',
             'address'      => '456 Another St',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         // First registration should succeed.
         $user1 = $this->Users->newEntity($data);
@@ -149,7 +156,8 @@ class UsersTableTest extends TestCase
      *
      * @return void
      */
-    public function testPasswordComplexity(): void {
+    public function testPasswordComplexity(): void
+    {
         $data = [
             'first_name'   => 'Charlie',
             'last_name'    => 'Brown',
@@ -157,7 +165,7 @@ class UsersTableTest extends TestCase
             'password'     => '12345', // weak password
             'phone_number' => '555-6789',
             'address'      => '789 Some St',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         $user = $this->Users->newEntity($data);
         $errors = $user->getErrors();
@@ -170,7 +178,8 @@ class UsersTableTest extends TestCase
      *
      * @return void
      */
-    public function testLoginSoftDeletedUser(): void {
+    public function testLoginSoftDeletedUser(): void
+    {
         $data = [
             'first_name'   => 'Frank',
             'last_name'    => 'White',
@@ -178,7 +187,7 @@ class UsersTableTest extends TestCase
             'password'     => 'SecureP@ssw0rd',
             'phone_number' => '555-3333',
             'address'      => '3030 Demo Ln',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         $user = $this->Users->newEntity($data);
         $this->Users->save($user);
@@ -188,13 +197,13 @@ class UsersTableTest extends TestCase
         $this->assertEquals(1, $user->is_deleted, 'Soft-deleted user should have is_deleted set to 1.');
     }
 
-
     /**
      * Test Case 2.5: Verify last_login Field Update
      *
      * @return void
      */
-    public function testLastLoginUpdate(): void {
+    public function testLastLoginUpdate(): void
+    {
         $data = [
             'first_name'   => 'David',
             'last_name'    => 'Green',
@@ -202,7 +211,7 @@ class UsersTableTest extends TestCase
             'password'     => 'SecureP@ssw0rd',
             'phone_number' => '555-0000',
             'address'      => '1010 Test Ave',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         $user = $this->Users->newEntity($data);
         $this->Users->save($user);
@@ -219,26 +228,33 @@ class UsersTableTest extends TestCase
      *
      * @return void
      */
-    public function testPasswordHashing(): void {
+    public function testPasswordHashing(): void
+    {
+        $password = 'PlainText@Password1';
         $data = [
             'first_name'   => 'Test',
             'last_name'    => 'User',
             'email'        => 'test.user@example.com',
-            'password'     => 'PlainTextPassword',
+            'password'     => $password,
             'phone_number' => '555-1111',
             'address'      => '123 Test Blvd',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         $user = $this->Users->newEntity($data);
         $result = $this->Users->save($user);
         $this->assertNotFalse($result, 'User should be saved successfully.');
+
         $savedPassword = $result->password;
+
+        // Assert that the saved password is not null
+        $this->assertNotNull($savedPassword, 'Password hash should not be null.');
+
         // Assert that the saved password does not match the plaintext
-        $this->assertNotEquals('PlainTextPassword', $savedPassword, 'Password should be hashed and not match plaintext.');
+        $this->assertNotEquals($password, $savedPassword, 'Password should be hashed and not match plaintext.');
 
         // Verify that the password hash verifies the original password
         $hasher = new DefaultPasswordHasher();
-        $this->assertTrue($hasher->check('PlainTextPassword', $savedPassword), 'The password hash should verify the original plaintext password.');
+        $this->assertTrue($hasher->check($password, $savedPassword), 'The password hash should verify the original plaintext password.');
     }
 
     /**
@@ -246,7 +262,8 @@ class UsersTableTest extends TestCase
      *
      * @return void
      */
-    public function testSpecialCharactersAndUnicode(): void {
+    public function testSpecialCharactersAndUnicode(): void
+    {
         $data = [
             'first_name'   => 'Àlïçé-测试測試', // Includes accented letters and Chinese characters
             'last_name'    => 'O’Conñór',
@@ -254,11 +271,59 @@ class UsersTableTest extends TestCase
             'password'     => 'SecureP@ssw0rd',
             'phone_number' => '+123-456-7890',
             'address'      => '123 Emoji 😀 St',
-            'user_type'    => 'customer'
+            'user_type'    => 'customer',
         ];
         $user = $this->Users->newEntity($data);
         $this->assertEmpty($user->getErrors(), 'Special characters and Unicode should not trigger errors.');
         $result = $this->Users->save($user);
         $this->assertNotFalse($result, 'User with special characters should be saved successfully.');
+    }
+
+    /**
+     * Test Case 5.1: Traditional Registration Requires Password
+     *
+     * @return void
+     */
+    public function testTraditionalRegistrationRequiresPassword(): void
+    {
+        $data = [
+            'first_name'   => 'Test',
+            'last_name'    => 'User',
+            'email'        => 'test.user@example.com',
+            'password'     => '', // empty password
+            'phone_number' => '1234567890',
+            'address'      => 'Test Address',
+            'user_type'    => 'customer',
+        ];
+        $user = $this->Users->newEntity($data);
+        $errors = $user->getErrors();
+        $this->assertArrayHasKey('password', $errors, 'Password is required for traditional registration.');
+        $this->assertFalse($this->Users->save($user), 'Traditional registration without a password should not be saved.');
+    }
+
+    /**
+     * Test Case 5.2: OAuth Registration Allows Empty Password
+     *
+     * @return void
+     */
+    public function testOauthRegistrationAllowsEmptyPassword(): void
+    {
+        // Data for OAuth registration. Here, providing an oauth_provider flag
+        $data = [
+            'first_name'   => 'OAuth',
+            'last_name'    => 'User',
+            'email'        => 'oauth.user@example.com',
+            'password'     => '',  // Password is empty
+            'phone_number' => '1234567890',
+            'address'      => 'OAuth Address',
+            'user_type'    => 'customer',
+            'oauth_provider' => 'google', // Indicates this is an OAuth registration.
+        ];
+        $user = $this->Users->newEntity($data);
+        $errors = $user->getErrors();
+        $this->assertEmpty($errors['password'] ?? [], 'Password should be allowed to be empty for OAuth registration.');
+
+        $result = $this->Users->save($user);
+        $this->assertNotFalse($result, 'User created via OAuth should be saved successfully without a password.');
     }
 }

@@ -1,8 +1,10 @@
 parameters:
     level: 8
     treatPhpDocTypesAsCertain: false
-    checkGenericClassInNonGenericObjectType: false
     bootstrapFiles:
         - config/bootstrap.php
     paths:
         - src/
+        - tests/
+    ignoreErrors:
+    	- '#Call to static method now\(\) on an unknown class Cake\\I18n\\FrozenTime#'

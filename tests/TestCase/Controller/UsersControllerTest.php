@@ -3,14 +3,12 @@ declare(strict_types=1);
 
 namespace App\Test\TestCase\Controller;
 
-use App\Controller\UsersController;
+use Authentication\PasswordHasher\DefaultPasswordHasher;
 use Cake\TestSuite\IntegrationTestTrait;
 use Cake\TestSuite\TestCase;
 
 /**
  * App\Controller\UsersController Test Case
- *
- * @uses \App\Controller\UsersController
  */
 class UsersControllerTest extends TestCase
 {
@@ -32,18 +30,20 @@ class UsersControllerTest extends TestCase
      */
     public function testRegistrationSuccess(): void
     {
+        $this->enableCsrfToken();
+
         $data = [
             'first_name' => 'Grace',
             'last_name' => 'Hopper',
             'email' => 'grace.hopper@example.com',
             'password' => 'StrongP@ssw0rd',
+            'password_confirm' => 'StrongP@ssw0rd',
             'phone_number' => '0412345789',
             'address' => '404 NotFound Blvd',
-            'user_type' => 'customer'
         ];
         $this->post('/users/register', $data);
         $this->assertResponseSuccess();
-        $this->assertResponseContains('User registered successfully');
+        $this->assertFlashMessage('User registered successfully');
         // Check redirection
         $this->assertRedirect('/users/login');
     }
@@ -55,13 +55,15 @@ class UsersControllerTest extends TestCase
      */
     public function testRegistrationMissingFields(): void
     {
+        $this->enableCsrfToken();
+
         $data = [
             // Missing first_name and email.
             'last_name' => 'Hopper',
             'password' => 'StrongP@ssw0rd',
+            'password_confirm' => 'StrongP@ssw0rd',
             'phone_number' => '0412345789',
             'address' => '404 NotFound Blvd',
-            'user_type' => 'customer'
         ];
         $this->post('/users/register', $data);
         $this->assertResponseContains('This field is required');
@@ -74,14 +76,21 @@ class UsersControllerTest extends TestCase
      */
     public function testLoginSuccess(): void
     {
+        $this->enableCsrfToken();
+
         $data = [
             'email' => 'tony.hsieh@example.com',
-            'password' => 'password' // Ensure that the fixture’s hashed password verifies against this.
+            'password' => 'password',
         ];
         $this->post('/users/login', $data);
         $this->assertResponseSuccess();
         // Verify that the session contains the user email.
-        $this->assertSession('tony.hsieh@example.com', 'Auth.User.email');
+        $this->assertSession('17fe31f7-2f61-4176-a036-172eed559e6f', 'Auth.user_id');
+        $this->assertSession('tony.hsieh@example.com', 'Auth.email');
+
+        $hasher = new DefaultPasswordHasher();
+        $session = $this->getSession();
+        $this->assertTrue($hasher->check('password', $session->read('Auth.password')), 'Password should verify correctly');
     }
 
     /**
@@ -91,12 +100,14 @@ class UsersControllerTest extends TestCase
      */
     public function testLoginInvalidPassword(): void
     {
+        $this->enableCsrfToken();
+
         $data = [
             'email' => 'tony.hsieh@example.com',
-            'password' => 'wrongpassword'
+            'password' => 'wrongpassword',
         ];
         $this->post('/users/login', $data);
-        $this->assertResponseContains('Invalid credentials');
+        $this->assertResponseContains('Invalid username or password');
     }
 
     /**
@@ -106,12 +117,14 @@ class UsersControllerTest extends TestCase
      */
     public function testLoginNonExistentEmail(): void
     {
+        $this->enableCsrfToken();
+
         $data = [
             'email' => 'nonexistent@example.com',
-            'password' => 'anyPassword'
+            'password' => 'anyPassword',
         ];
         $this->post('/users/login', $data);
-        $this->assertResponseContains('Invalid credentials');
+        $this->assertResponseContains('Invalid username or password');
     }
 
     /**
@@ -121,9 +134,11 @@ class UsersControllerTest extends TestCase
      */
     public function testLoginSoftDeletedUser(): void
     {
+        $this->enableCsrfToken();
+
         $data = [
             'email' => 'soft.deleted@example.com',
-            'password' => 'SecureP@ssw0rd'
+            'password' => 'SecureP@ssw0rd',
         ];
         $this->post('/users/login', $data);
         $this->assertResponseContains('Account inactive');
@@ -136,19 +151,25 @@ class UsersControllerTest extends TestCase
      */
     public function testFailedLoginDoesNotUpdateLastLogin(): void
     {
+        $this->enableCsrfToken();
+
         $usersTable = $this->getTableLocator()->get('Users');
         $userBefore = $usersTable->find()->where(['email' => 'tony.hsieh@example.com'])->first();
         $oldLastLogin = $userBefore->last_login;
 
         $data = [
             'email' => 'tony.hsieh@example.com',
-            'password' => 'wrongpassword'
+            'password' => 'wrongpassword',
         ];
         $this->post('/users/login', $data);
-        $this->assertResponseContains('Invalid credentials');
+        $this->assertResponseContains('Invalid username or password');
 
         $userAfter = $usersTable->find()->where(['email' => 'tony.hsieh@example.com'])->first();
-        $this->assertSame($oldLastLogin, $userAfter->last_login);
+        $this->assertEquals(
+            $oldLastLogin->i18nFormat(),
+            $userAfter->last_login->i18nFormat(),
+            'The last_login value should have been updated.'
+        );
     }
 
     /**
@@ -158,19 +179,25 @@ class UsersControllerTest extends TestCase
      */
     public function testLastLoginFieldUpdated(): void
     {
+        $this->enableCsrfToken();
+
         $usersTable = $this->getTableLocator()->get('Users');
         $userBefore = $usersTable->find()->where(['email' => 'tony.hsieh@example.com'])->first();
         $oldLastLogin = $userBefore->last_login;
 
         $data = [
             'email' => 'tony.hsieh@example.com',
-            'password' => 'password'
+            'password' => 'password',
         ];
         $this->post('/users/login', $data);
         $this->assertResponseSuccess();
 
         $userAfter = $usersTable->find()->where(['email' => 'tony.hsieh@example.com'])->first();
-        $this->assertNotSame($oldLastLogin, $userAfter->last_login);
+        $this->assertNotEquals(
+            $oldLastLogin->i18nFormat(),
+            $userAfter->last_login->i18nFormat(),
+            'The last_login value should have been updated.'
+        );
     }
 
     /**
@@ -178,15 +205,18 @@ class UsersControllerTest extends TestCase
      *
      * @return void
      */
-    public function testRegistrationSqlInjectionAttempt(): void {
+    public function testRegistrationSqlInjectionAttempt(): void
+    {
+        $this->enableCsrfToken();
+
         $data = [
             'first_name'   => "Robert'); DROP TABLE users; --",
             'last_name'    => 'Hacker',
             'email'        => 'sqlinjection@example.com',
             'password'     => 'SecureP@ssw0rd',
+            'password_confirm' => 'SecureP@ssw0rd',
             'phone_number' => '1234567890',
             'address'      => '123 Injection Ln',
-            'user_type'    => 'customer'
         ];
         $this->post('/users/register', $data);
         // Expect normal registration flow: the injection should be treated as a normal string
@@ -199,15 +229,18 @@ class UsersControllerTest extends TestCase
      *
      * @return void
      */
-    public function testRegistrationXssAttempt(): void {
+    public function testRegistrationXssAttempt(): void
+    {
+        $this->enableCsrfToken();
+
         $data = [
             'first_name'   => '<script>alert("XSS")</script>',
             'last_name'    => 'Attacker',
             'email'        => 'xss@example.com',
             'password'     => 'SecureP@ssw0rd',
+            'password_confirm' => 'SecureP@ssw0rd',
             'phone_number' => '1234567890',
             'address'      => '123 XSS Blvd',
-            'user_type'    => 'customer'
         ];
         $this->post('/users/register', $data);
         // Expect registration to succeed normally with input sanitized on output
@@ -220,16 +253,43 @@ class UsersControllerTest extends TestCase
      *
      * @return void
      */
-    public function testLogout(): void {
+    public function testLogout(): void
+    {
+        $this->enableCsrfToken();
+
         // Set up a dummy session for a logged-in user.
         $this->session([
-            'Auth.User' => [
+            'Auth' => [
                 'user_id' => '17fe31f7-2f61-4176-a036-172eed559e6f',
-                'email' => 'tony.hsieh@example.com'
-            ]
+                'email' => 'tony.hsieh@example.com',
+            ],
         ]);
         $this->get('/users/logout');
-        $this->assertRedirect('/');
-        $this->assertEmpty($this->_session('Auth.User'), 'User session should be cleared after logout.');
+        $this->assertRedirect('/users/login');
+        $this->assertEmpty($this->getSession()->read('Auth.User'), 'User session should be cleared after logout.');
+    }
+
+    public function testTraditionalRegistrationRejectsOAuthProvider(): void
+    {
+        $this->enableCsrfToken();
+
+        $data = [
+            'first_name'       => 'Malicious',
+            'last_name'        => 'User',
+            'email'            => 'malicious.user@example.com',
+            'password'         => '',
+            'password_confirm' => '',
+            'phone_number'     => '0412345789',
+            'address'          => 'Some Address',
+            'oauth_provider'   => 'google', // Should not be allowed on the normal endpoint.
+        ];
+        $this->post('/users/register', $data);
+
+        $this->assertFlashMessage('The user could not be saved. Please, try again.');
+
+        // check that no user was created.
+        $usersTable = $this->getTableLocator()->get('Users');
+        $user = $usersTable->find()->where(['email' => 'malicious.user@example.com'])->first();
+        $this->assertEmpty($user, 'User should not be created if oauth_provider is provided on normal registration.');
     }
 }

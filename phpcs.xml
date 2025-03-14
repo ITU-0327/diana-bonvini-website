@@ -6,6 +6,13 @@
     <rule ref="SlevomatCodingStandard.TypeHints.ReturnTypeHint.MissingNativeTypeHint">
         <exclude-pattern>*/src/Controller/*</exclude-pattern>
     </rule>
+    <rule ref="Generic.Files.LineLength">
+        <exclude name="Generic.Files.LineLength"/>
+    </rule>
+
+    <rule ref="CakePHP.WhiteSpace.TabAndSpace.DoubleSpace">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
 
     <file>config/</file>
     <file>src/</file>

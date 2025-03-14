@@ -24,5 +24,7 @@
         <UnusedClass errorLevel="suppress"/>
         <UndefinedFunction errorLevel="suppress"/>
         <LessSpecificImplementedReturnType errorLevel="suppress"/>
+        <ClassMustBeFinal errorLevel="suppress" />
+        <MissingOverrideAttribute errorLevel="suppress"/>
     </issueHandlers>
 </psalm>
