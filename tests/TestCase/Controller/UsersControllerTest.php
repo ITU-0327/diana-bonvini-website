@@ -217,7 +217,6 @@ class UsersControllerTest extends TestCase
             'password_confirm' => 'SecureP@ssw0rd',
             'phone_number' => '1234567890',
             'address'      => '123 Injection Ln',
-            'user_type'    => 'customer',
         ];
         $this->post('/users/register', $data);
         // Expect normal registration flow: the injection should be treated as a normal string
@@ -242,7 +241,6 @@ class UsersControllerTest extends TestCase
             'password_confirm' => 'SecureP@ssw0rd',
             'phone_number' => '1234567890',
             'address'      => '123 XSS Blvd',
-            'user_type'    => 'customer',
         ];
         $this->post('/users/register', $data);
         // Expect registration to succeed normally with input sanitized on output
@@ -269,5 +267,29 @@ class UsersControllerTest extends TestCase
         $this->get('/users/logout');
         $this->assertRedirect('/users/login');
         $this->assertEmpty($this->getSession()->read('Auth.User'), 'User session should be cleared after logout.');
+    }
+
+    public function testTraditionalRegistrationRejectsOAuthProvider(): void
+    {
+        $this->enableCsrfToken();
+
+        $data = [
+            'first_name'       => 'Malicious',
+            'last_name'        => 'User',
+            'email'            => 'malicious.user@example.com',
+            'password'         => '',
+            'password_confirm' => '',
+            'phone_number'     => '0412345789',
+            'address'          => 'Some Address',
+            'oauth_provider'   => 'google', // Should not be allowed on the normal endpoint.
+        ];
+        $this->post('/users/register', $data);
+
+        $this->assertFlashMessage('The user could not be saved. Please, try again.');
+
+        // check that no user was created.
+        $usersTable = $this->getTableLocator()->get('Users');
+        $user = $usersTable->find()->where(['email' => 'malicious.user@example.com'])->first();
+        $this->assertEmpty($user, 'User should not be created if oauth_provider is provided on normal registration.');
     }
 }

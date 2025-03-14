@@ -93,6 +93,14 @@ class UsersController extends AppController
     {
         $user = $this->Users->newEmptyEntity();
         $data = $this->request->getData();
+
+        // If someone tries to include an oauth_provider in the normal registration,
+        // treat it as an invalid registration.
+        if (!empty($data['oauth_provider'])) {
+            $this->Flash->error(__('The user could not be saved. Please, try again.'));
+            return $this->redirect(['action' => 'register']);
+        }
+
         // Set the default user_type to 'customer'
         $data['user_type'] = 'customer';
 

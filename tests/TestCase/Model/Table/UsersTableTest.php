@@ -270,4 +270,52 @@ class UsersTableTest extends TestCase
         $result = $this->Users->save($user);
         $this->assertNotFalse($result, 'User with special characters should be saved successfully.');
     }
+
+    /**
+     * Test Case 5.1: Traditional Registration Requires Password
+     *
+     * @return void
+     */
+    public function testTraditionalRegistrationRequiresPassword(): void
+    {
+        $data = [
+            'first_name'   => 'Test',
+            'last_name'    => 'User',
+            'email'        => 'test.user@example.com',
+            'password'     => '', // empty password
+            'phone_number' => '1234567890',
+            'address'      => 'Test Address',
+            'user_type'    => 'customer',
+        ];
+        $user = $this->Users->newEntity($data);
+        $errors = $user->getErrors();
+        $this->assertArrayHasKey('password', $errors, 'Password is required for traditional registration.');
+        $this->assertFalse($this->Users->save($user), 'Traditional registration without a password should not be saved.');
+    }
+
+    /**
+     * Test Case 5.2: OAuth Registration Allows Empty Password
+     *
+     * @return void
+     */
+    public function testOauthRegistrationAllowsEmptyPassword(): void
+    {
+        // Data for OAuth registration. Here, providing an oauth_provider flag
+        $data = [
+            'first_name'   => 'OAuth',
+            'last_name'    => 'User',
+            'email'        => 'oauth.user@example.com',
+            'password'     => '',  // Password is empty
+            'phone_number' => '1234567890',
+            'address'      => 'OAuth Address',
+            'user_type'    => 'customer',
+            'oauth_provider' => 'google', // Indicates this is an OAuth registration.
+        ];
+        $user = $this->Users->newEntity($data);
+        $errors = $user->getErrors();
+        $this->assertEmpty($errors['password'] ?? [], 'Password should be allowed to be empty for OAuth registration.');
+
+        $result = $this->Users->save($user);
+        $this->assertNotFalse($result, 'User created via OAuth should be saved successfully without a password.');
+    }
 }
