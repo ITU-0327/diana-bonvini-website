@@ -227,11 +227,12 @@ class UsersTableTest extends TestCase
      */
     public function testPasswordHashing(): void
     {
+        $password = 'PlainText@Password1';
         $data = [
             'first_name'   => 'Test',
             'last_name'    => 'User',
             'email'        => 'test.user@example.com',
-            'password'     => 'PlainTextPassword',
+            'password'     => $password,
             'phone_number' => '555-1111',
             'address'      => '123 Test Blvd',
             'user_type'    => 'customer',
@@ -241,11 +242,11 @@ class UsersTableTest extends TestCase
         $this->assertNotFalse($result, 'User should be saved successfully.');
         $savedPassword = $result->password;
         // Assert that the saved password does not match the plaintext
-        $this->assertNotEquals('PlainTextPassword', $savedPassword, 'Password should be hashed and not match plaintext.');
+        $this->assertNotEquals($password, $savedPassword, 'Password should be hashed and not match plaintext.');
 
         // Verify that the password hash verifies the original password
         $hasher = new DefaultPasswordHasher();
-        $this->assertTrue($hasher->check('PlainTextPassword', $savedPassword), 'The password hash should verify the original plaintext password.');
+        $this->assertTrue($hasher->check($password, $savedPassword), 'The password hash should verify the original plaintext password.');
     }
 
     /**
