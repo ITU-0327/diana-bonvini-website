@@ -19,8 +19,8 @@ use Cake\Chronos\Chronos;
 use Cake\Core\Configure;
 use Cake\Datasource\ConnectionManager;
 use Cake\TestSuite\ConnectionHelper;
-use Migrations\TestSuite\Migrator;
 use Cake\TestSuite\Fixture\SchemaLoader;
+use Migrations\TestSuite\Migrator;
 
 /**
  * Test runner bootstrap.

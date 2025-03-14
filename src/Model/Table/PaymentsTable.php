@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
-use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
@@ -12,7 +11,6 @@ use Cake\Validation\Validator;
  * Payments Model
  *
  * @property \App\Model\Table\OrdersTable&\Cake\ORM\Association\BelongsTo $Orders
- *
  * @method \App\Model\Entity\Payment newEmptyEntity()
  * @method \App\Model\Entity\Payment newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\Payment> newEntities(array $data, array $options = [])
