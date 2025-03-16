@@ -57,8 +57,8 @@ CREATE TABLE orders (
     CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 ) ENGINE=InnoDB;
 
--- Table: order_items
-CREATE TABLE order_items (
+-- Table: artwork_orders
+CREATE TABLE artwork_orders (
     order_item_id CHAR(36) NOT NULL PRIMARY KEY,
     order_id CHAR(36) NOT NULL,
     artwork_id CHAR(36) NOT NULL,
@@ -119,4 +119,26 @@ CREATE TABLE payments (
     status ENUM('pending','confirmed') NOT NULL,
     is_deleted TINYINT NOT NULL DEFAULT 0,
     CONSTRAINT fk_payments_order FOREIGN KEY (order_id) REFERENCES orders(order_id)
+) ENGINE=InnoDB;
+
+-- Table: carts
+CREATE TABLE carts (
+    cart_id CHAR(36) NOT NULL PRIMARY KEY,
+    user_id CHAR(36) NULL,          -- Foreign key if the user is logged in
+    session_id VARCHAR(255) NULL,   -- For guest users
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_carts_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+) ENGINE=InnoDB;
+
+-- Table: artwork_carts
+CREATE TABLE artwork_carts (
+    cart_item_id CHAR(36) NOT NULL PRIMARY KEY,
+    cart_id CHAR(36) NOT NULL,
+    artwork_id CHAR(36) NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    date_added DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_deleted TINYINT NOT NULL DEFAULT 0,
+    CONSTRAINT fk_cart_items_cart FOREIGN KEY (cart_id) REFERENCES carts(cart_id),
+    CONSTRAINT fk_cart_items_artwork FOREIGN KEY (artwork_id) REFERENCES artworks(artwork_id)
 ) ENGINE=InnoDB;
