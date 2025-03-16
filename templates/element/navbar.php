@@ -12,7 +12,7 @@
                     <!-- Buy Art with Dropdown -->
                     <li class="menu-item relative group">
                         <a href="<?= $this->Url->build('/buy-art') ?>" class="block px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded">
-                            Buy Art
+                            Art
                             <svg class="inline ml-1 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
@@ -27,7 +27,7 @@
                     <!-- Writing & Proofreading Services with Dropdown -->
                     <li class="menu-item relative group">
                         <a href="<?= $this->Url->build('/writing-proofreading') ?>" class="block px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded">
-                            Writing &amp; Proofreading Services
+                            Writing Services
                             <svg class="inline ml-1 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
@@ -52,17 +52,12 @@
             <div class="flex items-center space-x-6">
                 <!-- Shopping Cart -->
                 <a href="<?= $this->Url->build('/shopping-cart') ?>" class="relative">
-                    <svg class="h-6 w-6 text-gray-700 hover:text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                         xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.4 5.6a1 1 0 001 1.4h12a1 1 0 001-1.4L17 13M7 13h10"></path>
-                    </svg>
-                    <span class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold text-white bg-red-600 rounded-full">3</span>
+                    <?= $this->Html->image('navbar/shopping-cart.png', ['class' => 'h-6 w-6']) ?>
                 </a>
                 <!-- User Profile with "Card" Style Dropdown -->
                 <div class="relative group">
                     <button type="button" class="flex items-center focus:outline-none">
-                        <img class="h-8 w-8 rounded-full" src="/img/user-placeholder.png" alt="User Profile">
+                        <?= $this->Html->image('user-placeholder.jpg', ['class' => 'h-8 w-8 rounded-full', 'alt' => 'User Profile']) ?>
                         <svg class="ml-1 h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
@@ -71,7 +66,7 @@
                     <div class="absolute right-0 top-full w-72 bg-white border border-gray-200 rounded shadow-lg p-4 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-300 z-10">
                         <!-- User Info -->
                         <div class="flex items-center space-x-3 mb-4">
-                            <img class="h-12 w-12 rounded-full" src="/img/user-placeholder.png" alt="User Avatar">
+                            <?= $this->Html->image('user-placeholder.jpg', ['class' => 'h-12 w-12 rounded-full', 'alt' => 'User Profile']) ?>
                             <div>
                                 <h4 class="text-gray-800 font-semibold text-lg">Diana Bonvini</h4>
                                 <p class="text-sm text-gray-500">Business Owner</p>
