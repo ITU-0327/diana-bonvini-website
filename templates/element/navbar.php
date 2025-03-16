@@ -132,7 +132,7 @@
                         <?= $this->Form->postLink(
                             'Log Out',
                             ['controller' => 'Users', 'action' => 'logout'],
-                            ['class' => 'block w-full text-left px-4 py-2 mt-4 text-sm text-gray-700 hover:bg-gray-100 rounded']
+                            ['class' => 'block w-full text-left px-4 py-2 mt-4 text-sm text-gray-700 hover:bg-gray-100 rounded'],
                         ) ?>
                     </div>
                 </div>

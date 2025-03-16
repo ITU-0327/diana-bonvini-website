@@ -4,16 +4,13 @@
  * @var \App\Model\Entity\Artwork $artwork
  */
 ?>
-<div class="max-w-6xl mx-auto px-4 py-8">
-    <!-- Back Link -->
-    <div class="mb-4">
-        <?= $this->Html->link(
-            '← Back',
-            ['action' => 'index'],
-            ['class' => 'text-gray-600 hover:text-gray-800 text-sm']
-        ) ?>
-    </div>
 
+<?= $this->Html->css(
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css',
+    ['block' => true]
+);?>
+
+<div class="max-w-6xl mx-auto px-4 py-8">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <!-- Left Column: Artwork Images -->
         <div class="space-y-6">
@@ -54,6 +51,15 @@
 
         <!-- Right Column: Artwork Details -->
         <div class="space-y-4">
+            <!-- Back Link -->
+            <div class="mb-4">
+                <?= $this->Html->link(
+                    '← Back',
+                    ['action' => 'index'],
+                    ['class' => 'text-gray-600 hover:text-gray-800 text-sm']
+                ) ?>
+            </div>
+
             <!-- Artwork Title & Artist -->
             <div>
                 <h1 class="text-2xl font-bold text-gray-800"><?= h($artwork->title) ?></h1>
@@ -80,10 +86,14 @@
 
             <!-- Add to Cart Button -->
             <div>
-                <?= $this->Form->create(null, ['url' => ['controller' => 'Cart', 'action' => 'add', $artwork->id]]) ?>
-                <?= $this->Form->button('Add to Cart', [
-                    'class' => 'bg-indigo-600 text-white py-2 px-6 rounded hover:bg-indigo-700',
-                ]) ?>
+                <?= $this->Form->create(null, ['url' => ['controller' => 'Cart', 'action' => 'add', $artwork->artwork_id]]) ?>
+                <?= $this->Form->button(
+                    '<i class="fa fa-shopping-cart mr-2"></i>Add to Cart',
+                    [
+                        'escapeTitle' => false,
+                        'class' => 'inline-flex items-center bg-indigo-600 text-white py-2 px-6 rounded hover:bg-indigo-700',
+                    ]
+                ) ?>
                 <?= $this->Form->end() ?>
             </div>
 
