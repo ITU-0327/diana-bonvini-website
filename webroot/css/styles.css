@@ -1,0 +1,213 @@
+/* diana.css */
+
+/* Color Variables (adjust these to your branding) */
+:root {
+    --color-diana-primary: #008080;       /* Teal */
+    --color-diana-secondary: #7FFFD4;       /* Aquamarine */
+    --color-diana-accent: #8A2BE2;          /* Violet */
+    --color-diana-highlight: #FFD700;       /* Gold */
+    --color-diana-gray: #404041;
+    --color-diana-lightgray: #606c76;
+    --color-white: #fff;
+    --color-main-bg: #f5f7fa;
+    --color-links: var(--color-diana-primary);
+    --color-links-active: var(--color-diana-accent);
+    --color-headings: var(--color-diana-gray);
+
+    /* Flash message colors */
+    --color-message-success-bg: #e3fcec;
+    --color-message-success-text: #1f9d55;
+    --color-message-success-border: #51d88a;
+
+    --color-message-warning-bg: #fffabc;
+    --color-message-warning-text: #8d7b00;
+    --color-message-warning-border: #d3b800;
+
+    --color-message-error-bg: #fcebea;
+    --color-message-error-text: #cc1f1a;
+    --color-message-error-border: #ef5753;
+
+    --color-message-info-bg: #eff8ff;
+    --color-message-info-text: #2779bd;
+    --color-message-info-border: #6cb2eb;
+}
+
+/* Base Styles */
+body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 400;
+    background: var(--color-main-bg);
+    color: var(--color-diana-gray);
+    margin: 0;
+    padding: 0;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    font-family: "Raleway", sans-serif;
+    font-weight: 400;
+    color: var(--color-headings);
+    margin-top: 0;
+}
+
+/* Links */
+a {
+    color: var(--color-links);
+    text-decoration: none;
+    transition: color 0.2s ease-in-out;
+}
+a:hover,
+a:focus,
+a:active {
+    color: var(--color-links-active);
+}
+
+/* Buttons */
+button,
+input[type='button'],
+input[type='reset'],
+input[type='submit'] {
+    background-color: var(--color-diana-primary);
+    border: none;
+    color: var(--color-white);
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+}
+button:hover,
+input[type='button']:hover,
+input[type='reset']:hover,
+input[type='submit']:hover {
+    background-color: var(--color-diana-accent);
+}
+
+/* Forms */
+input,
+textarea,
+select {
+    border: 1px solid var(--color-diana-lightgray);
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 1rem;
+}
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--color-diana-primary);
+    box-shadow: 0 0 5px rgba(0,128,128,0.5);
+}
+
+/* Navigation (Top Nav) */
+.top-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2rem;
+    background: var(--color-white);
+}
+.top-nav-title a {
+    font-size: 2.4rem;
+    color: var(--color-diana-primary);
+    font-weight: bold;
+}
+.top-nav-links a {
+    margin: 0 0.5rem;
+    color: var(--color-diana-lightgray);
+    font-weight: bold;
+}
+.top-nav-links a:hover,
+.top-nav-links a:focus {
+    color: var(--color-links-active);
+}
+
+/* Content Container */
+.content {
+    background: var(--color-white);
+    padding: 2rem;
+    margin: 1rem auto;
+    max-width: 1200px;
+    border-radius: 0.5rem;
+    box-shadow: 0 7px 14px rgba(60,66,87,0.1), 0 3px 6px rgba(0,0,0,0.07);
+}
+
+/* Footer */
+footer {
+    background: var(--color-diana-primary);
+    color: var(--color-white);
+    text-align: center;
+    padding: 1rem 0;
+}
+
+/* Flash Messages */
+.message {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--color-message-info-border);
+    background: var(--color-message-info-bg);
+    color: var(--color-message-info-text);
+    border-radius: 0.25rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+}
+.message.success {
+    background: var(--color-message-success-bg);
+    color: var(--color-message-success-text);
+    border-color: var(--color-message-success-border);
+}
+.message.warning {
+    background: var(--color-message-warning-bg);
+    color: var(--color-message-warning-text);
+    border-color: var(--color-message-warning-border);
+}
+.message.error {
+    background: var(--color-message-error-bg);
+    color: var(--color-message-error-text);
+    border-color: var(--color-message-error-border);
+}
+
+/* Utility Classes */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    justify-content: center;
+}
+.pagination li {
+    margin: 0 0.25rem;
+}
+.pagination a {
+    display: inline-block;
+    padding: 0.5rem 0.75rem;
+    color: var(--color-diana-primary);
+    border: 1px solid var(--color-diana-lightgray);
+    border-radius: 0.25rem;
+    text-decoration: none;
+    transition: background 0.3s, color 0.3s;
+}
+.pagination a:hover,
+.pagination li.active a {
+    background: var(--color-diana-primary);
+    color: var(--color-white);
+}
+
+/* Responsive Adjustments */
+@media screen and (max-width: 640px) {
+    .top-nav {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .top-nav-links {
+        margin-top: 1rem;
+    }
+    .content {
+        padding: 1rem;
+        margin: 1rem;
+    }
+}
