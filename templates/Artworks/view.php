@@ -4,58 +4,92 @@
  * @var \App\Model\Entity\Artwork $artwork
  */
 ?>
-<div class="row">
-    <aside class="column">
-        <div class="side-nav">
-            <h4 class="heading"><?= __('Actions') ?></h4>
-            <?= $this->Html->link(__('Edit Artwork'), ['action' => 'edit', $artwork->artwork_id], ['class' => 'side-nav-item']) ?>
-            <?= $this->Form->postLink(__('Delete Artwork'), ['action' => 'delete', $artwork->artwork_id], ['confirm' => __('Are you sure you want to delete # {0}?', $artwork->artwork_id), 'class' => 'side-nav-item']) ?>
-            <?= $this->Html->link(__('List Artworks'), ['action' => 'index'], ['class' => 'side-nav-item']) ?>
-            <?= $this->Html->link(__('New Artwork'), ['action' => 'add'], ['class' => 'side-nav-item']) ?>
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Back Link -->
+    <div class="mb-4">
+        <?= $this->Html->link(
+            '← Back',
+            ['action' => 'index'],
+            ['class' => 'text-gray-600 hover:text-gray-800 text-sm']
+        ) ?>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Left Column: Artwork Images -->
+        <div class="space-y-6">
+            <!-- Main Artwork Image -->
+            <div class="bg-white shadow rounded p-4 flex items-center justify-center">
+                <?= $this->Html->image($artwork->image_path, [
+                    'alt' => $artwork->title,
+                    'class' => 'object-cover max-h-96',
+                ]) ?>
+            </div>
+
+            <!-- Thumbnails -->
+            <div class="flex space-x-2">
+                <div class="w-20 h-20 bg-white shadow rounded p-1 flex items-center justify-center">
+                    <img
+                        src="/img/artworks/wallowing-breeze-thumb1.jpg"
+                        alt="Wallowing Breeze Thumbnail 1"
+                        class="object-cover h-full"
+                    />
+                </div>
+                <div class="w-20 h-20 bg-white shadow rounded p-1 flex items-center justify-center">
+                    <img
+                        src="/img/artworks/wallowing-breeze-thumb2.jpg"
+                        alt="Wallowing Breeze Thumbnail 2"
+                        class="object-cover h-full"
+                    />
+                </div>
+            </div>
+
+            <!-- "View in a room" Link -->
+            <div>
+                <a href="#"
+                   class="inline-block text-sm text-indigo-600 hover:text-indigo-500 underline">
+                    View in a room
+                </a>
+            </div>
         </div>
-    </aside>
-    <div class="column column-80">
-        <div class="artworks view content">
-            <h3><?= h($artwork->title) ?></h3>
-            <table>
-                <tr>
-                    <th><?= __('Artwork Id') ?></th>
-                    <td><?= h($artwork->artwork_id) ?></td>
-                </tr>
-                <tr>
-                    <th><?= __('Title') ?></th>
-                    <td><?= h($artwork->title) ?></td>
-                </tr>
-                <tr>
-                    <th><?= __('Image Path') ?></th>
-                    <td><?= h($artwork->image_path) ?></td>
-                </tr>
-                <tr>
-                    <th><?= __('Availability Status') ?></th>
-                    <td><?= h($artwork->availability_status) ?></td>
-                </tr>
-                <tr>
-                    <th><?= __('Price') ?></th>
-                    <td><?= $this->Number->format($artwork->price) ?></td>
-                </tr>
-                <tr>
-                    <th><?= __('Is Deleted') ?></th>
-                    <td><?= $this->Number->format($artwork->is_deleted) ?></td>
-                </tr>
-                <tr>
-                    <th><?= __('Created At') ?></th>
-                    <td><?= h($artwork->created_at) ?></td>
-                </tr>
-                <tr>
-                    <th><?= __('Updated At') ?></th>
-                    <td><?= h($artwork->updated_at) ?></td>
-                </tr>
-            </table>
-            <div class="text">
-                <strong><?= __('Description') ?></strong>
-                <blockquote>
-                    <?= $this->Text->autoParagraph(h($artwork->description)); ?>
-                </blockquote>
+
+        <!-- Right Column: Artwork Details -->
+        <div class="space-y-4">
+            <!-- Artwork Title & Artist -->
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800"><?= h($artwork->title) ?></h1>
+            </div>
+
+            <!-- Artwork Meta Info -->
+            <div class="text-sm text-gray-500">
+                <p>Oil on canvas, 2008</p>
+                <p>Gallery wrap canvas</p>
+                <p>26 in × 23 in</p>
+            </div>
+
+            <!-- Artwork Description -->
+            <div class="text-gray-700 text-sm">
+                <p><?= h($artwork->description) ?></p>
+            </div>
+
+            <!-- Price & Shipping Info -->
+            <div class="border-t py-4 text-sm space-y-2">
+                <p class="text-xl font-semibold text-gray-800">$<?= h($artwork->price) ?></p>
+                <p class="text-gray-500">Ships from Adelaide, SA, Australia</p>
+                <p class="text-gray-500">Estimated to ship in 3–7 days within Australia</p>
+            </div>
+
+            <!-- Add to Cart Button -->
+            <div>
+                <?= $this->Form->create(null, ['url' => ['controller' => 'Cart', 'action' => 'add', $artwork->id]]) ?>
+                <?= $this->Form->button('Add to Cart', [
+                    'class' => 'bg-indigo-600 text-white py-2 px-6 rounded hover:bg-indigo-700',
+                ]) ?>
+                <?= $this->Form->end() ?>
+            </div>
+
+            <!-- Tax/Shipping Info -->
+            <div class="text-sm text-gray-500">
+                Taxes and shipping fees will apply upon checkout
             </div>
         </div>
     </div>
