@@ -79,7 +79,7 @@
 
             <!-- Price & Shipping Info -->
             <div class="border-t py-4 text-sm space-y-2">
-                <p class="text-xl font-semibold text-gray-800">$<?= h($artwork->price) ?></p>
+                <p class="text-xl font-semibold text-gray-800">$<?= $this->Number->format($artwork->price) ?></p>
                 <p class="text-gray-500">Ships from Adelaide, SA, Australia</p>
                 <p class="text-gray-500">Estimated to ship in 3–7 days within Australia</p>
             </div>
