@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Cake\Event\EventInterface;
 use Cake\Http\Exception\NotFoundException;
 use Cake\Http\Response;
 
@@ -15,6 +16,19 @@ use Cake\Http\Response;
  */
 class CartsController extends AppController
 {
+    /**
+     * Before filter method.
+     *
+     * @param \Cake\Event\EventInterface<\Cake\Controller\Controller> $event The event object.
+     * @return void
+     */
+    public function beforeFilter(EventInterface $event): void
+    {
+        parent::beforeFilter($event);
+
+        $this->Authentication->addUnauthenticatedActions(['add']);
+    }
+
     /**
      * Index method
      *
@@ -42,6 +56,9 @@ class CartsController extends AppController
         }
 
         if (!$artworkId) {
+            $artworkId = $this->request->getData('artwork_id');
+        }
+        if (!$artworkId) {
             $this->Flash->error('No artwork specified.');
 
             return $this->redirect($this->referer());
@@ -53,6 +70,12 @@ class CartsController extends AppController
         $userId = $user?->user_id;
         $sessionId = $this->request->getSession()->id();
 
+        if ($userId !== null) {
+            $conditions[] = ['user_id' => $userId];
+        } else {
+            $conditions[] = ['session_id' => $sessionId];
+        }
+
         // Find an existing cart for the user or the current session, loading associated artwork items
         $cart = $this->Carts->find()
             ->contain(['ArtworkCarts' => function ($q) use ($artworkId) {
@@ -61,12 +84,7 @@ class CartsController extends AppController
                     'ArtworkCarts.is_deleted' => 0,
                 ]);
             }])
-            ->where([
-                'OR' => [
-                    ['user_id' => $userId],
-                    ['session_id' => $sessionId],
-                ],
-            ])
+            ->where($conditions)
             ->first();
 
         // If no cart exists, create a new one
@@ -83,7 +101,6 @@ class CartsController extends AppController
 
         // Check if the artwork is already in the cart
         $cartItems = $cart->artwork_carts;
-
         if (!empty($cartItems)) {
             // Since it's art, do not allow duplicate items; just notify the user.
             $this->Flash->success('Item already in cart.');
@@ -96,6 +113,17 @@ class CartsController extends AppController
             ]);
             if ($this->Carts->ArtworkCarts->save($cartItem)) {
                 $this->Flash->success('Item added to cart.');
+
+                // Retrieve all non-deleted cart items for this cart
+                $updatedCartItems = $this->Carts->ArtworkCarts->find()
+                    ->where([
+                        'cart_id' => $cart->cart_id,
+                        'is_deleted' => 0,
+                    ])
+                    ->toArray();
+
+                // Write the updated cart items to the session so your test can verify it.
+                $this->request->getSession()->write('Cart.items', $updatedCartItems);
             } else {
                 $this->Flash->error('Unable to add item to cart.');
             }

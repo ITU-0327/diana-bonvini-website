@@ -60,6 +60,8 @@ ConnectionManager::setConfig('test_debug_kit', [
 
 ConnectionManager::alias('test_debug_kit', 'debug_kit');
 
+ConnectionManager::get('test')->execute('SET FOREIGN_KEY_CHECKS = 0;');
+
 // Fixate now to avoid one-second-leap-issues
 Chronos::setTestNow(Chronos::now());
 

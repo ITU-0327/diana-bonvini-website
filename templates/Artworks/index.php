@@ -42,7 +42,7 @@
                     <!-- Add to Cart Form/Button -->
                     <?= $this->Form->create(null, [
                         'url' => [
-                            'controller' => 'Cart',
+                            'controller' => 'Carts',
                             'action' => 'add',
                             $artwork->artwork_id,
                         ],

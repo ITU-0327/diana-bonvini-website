@@ -3,15 +3,30 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Cake\Event\EventInterface;
 use Cake\Http\Response;
 
 /**
  * Artworks Controller
  *
  * @property \App\Model\Table\ArtworksTable $Artworks
+ * @property \Authentication\Controller\Component\AuthenticationComponent $Authentication
  */
 class ArtworksController extends AppController
 {
+    /**
+     * Before filter method.
+     *
+     * @param \Cake\Event\EventInterface<\Cake\Controller\Controller> $event The event object.
+     * @return void
+     */
+    public function beforeFilter(EventInterface $event): void
+    {
+        parent::beforeFilter($event);
+
+        $this->Authentication->addUnauthenticatedActions(['index', 'view']);
+    }
+
     /**
      * Index method
      *
