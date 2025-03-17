@@ -26,7 +26,7 @@ CREATE TABLE user_oauths (
     is_deleted TINYINT NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_user_oauths_user FOREIGN KEY (user_id) REFERENCES users(user_id),
+    CONSTRAINT fk_user_oauths_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     UNIQUE KEY uq_provider_user (provider, provider_user_id)
 ) ENGINE=InnoDB;
 
@@ -66,8 +66,8 @@ CREATE TABLE artwork_orders (
     price DECIMAL(10,2) NOT NULL,
     subtotal DECIMAL(10,2) NOT NULL,
     is_deleted TINYINT NOT NULL DEFAULT 0,
-    CONSTRAINT fk_order_items_order FOREIGN KEY (order_id) REFERENCES orders(order_id),
-    CONSTRAINT fk_order_items_artwork FOREIGN KEY (artwork_id) REFERENCES artworks(artwork_id)
+    CONSTRAINT fk_artwork_orders_order FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    CONSTRAINT fk_artwork_orders_artwork FOREIGN KEY (artwork_id) REFERENCES artworks(artwork_id)
 ) ENGINE=InnoDB;
 
 -- Table: services
@@ -95,7 +95,7 @@ CREATE TABLE appointments (
     is_deleted TINYINT NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_appointments_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+    CONSTRAINT fk_appointments_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Table: contact_messages
@@ -118,7 +118,7 @@ CREATE TABLE payments (
     payment_method ENUM('bank transfer','credit card') NOT NULL,
     status ENUM('pending','confirmed') NOT NULL,
     is_deleted TINYINT NOT NULL DEFAULT 0,
-    CONSTRAINT fk_payments_order FOREIGN KEY (order_id) REFERENCES orders(order_id)
+    CONSTRAINT fk_payments_order FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Table: carts
@@ -128,7 +128,7 @@ CREATE TABLE carts (
     session_id VARCHAR(255) NULL,   -- For guest users
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_carts_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+    CONSTRAINT fk_carts_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Table: artwork_carts
@@ -139,6 +139,6 @@ CREATE TABLE artwork_carts (
     quantity INT NOT NULL DEFAULT 1,
     date_added DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted TINYINT NOT NULL DEFAULT 0,
-    CONSTRAINT fk_cart_items_cart FOREIGN KEY (cart_id) REFERENCES carts(cart_id),
-    CONSTRAINT fk_cart_items_artwork FOREIGN KEY (artwork_id) REFERENCES artworks(artwork_id)
+    CONSTRAINT fk_artwork_carts_cart FOREIGN KEY (cart_id) REFERENCES carts(cart_id) ON DELETE CASCADE,
+    CONSTRAINT fk_artwork_carts_artwork FOREIGN KEY (artwork_id) REFERENCES artworks(artwork_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
