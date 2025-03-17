@@ -19,8 +19,8 @@ class WritingServiceRequestsFixture extends TestFixture
     {
         $this->records = [
             [
-                'request_id' => '16ce70e8-b0dc-401d-9188-6c7734fd032b',
-                'user_id' => 'a9f03146-2801-4c5f-81e0-07d2fcaa0264',
+                'request_id' => 'ea42d088-4396-46d7-92d1-4e60c59b2ef7',
+                'user_id' => 'acaf89c5-f7a8-4ee3-b92e-77cd1462159e',
                 'service_type' => 'Lorem ipsum dolor sit amet',
                 'word_count_range' => 'Lorem ipsum dolor sit amet',
                 'notes' => 'Lorem ipsum dolor sit amet',
@@ -28,8 +28,8 @@ class WritingServiceRequestsFixture extends TestFixture
                 'final_price' => 1.5,
                 'request_status' => 'Lorem ipsum dolor sit amet',
                 'is_deleted' => 1,
-                'created_at' => '2025-03-17 12:49:28',
-                'updated_at' => '2025-03-17 12:49:28',
+                'created_at' => '2025-03-17 12:54:09',
+                'updated_at' => '2025-03-17 12:54:09',
             ],
         ];
         parent::init();

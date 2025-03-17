@@ -1,0 +1,103 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Controller;
+
+/**
+ * WritingServiceRequests Controller
+ *
+ * @property \App\Model\Table\WritingServiceRequestsTable $WritingServiceRequests
+ */
+class WritingServiceRequestsController extends AppController
+{
+    /**
+     * Index method
+     *
+     * @return \Cake\Http\Response|null|void Renders view
+     */
+    public function index()
+    {
+        $query = $this->WritingServiceRequests->find()
+            ->contain(['Users']);
+        $writingServiceRequests = $this->paginate($query);
+
+        $this->set(compact('writingServiceRequests'));
+    }
+
+    /**
+     * View method
+     *
+     * @param string|null $id Writing Service Request id.
+     * @return \Cake\Http\Response|null|void Renders view
+     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
+     */
+    public function view($id = null)
+    {
+        $writingServiceRequest = $this->WritingServiceRequests->get($id, contain: ['Users']);
+        $this->set(compact('writingServiceRequest'));
+    }
+
+    /**
+     * Add method
+     *
+     * @return \Cake\Http\Response|null|void Redirects on successful add, renders view otherwise.
+     */
+    public function add()
+    {
+        $writingServiceRequest = $this->WritingServiceRequests->newEmptyEntity();
+        if ($this->request->is('post')) {
+            $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $this->request->getData());
+            if ($this->WritingServiceRequests->save($writingServiceRequest)) {
+                $this->Flash->success(__('The writing service request has been saved.'));
+
+                return $this->redirect(['action' => 'index']);
+            }
+            $this->Flash->error(__('The writing service request could not be saved. Please, try again.'));
+        }
+        $users = $this->WritingServiceRequests->Users->find('list', limit: 200)->all();
+        $this->set(compact('writingServiceRequest', 'users'));
+    }
+
+    /**
+     * Edit method
+     *
+     * @param string|null $id Writing Service Request id.
+     * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
+     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
+     */
+    public function edit($id = null)
+    {
+        $writingServiceRequest = $this->WritingServiceRequests->get($id, contain: []);
+        if ($this->request->is(['patch', 'post', 'put'])) {
+            $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $this->request->getData());
+            if ($this->WritingServiceRequests->save($writingServiceRequest)) {
+                $this->Flash->success(__('The writing service request has been saved.'));
+
+                return $this->redirect(['action' => 'index']);
+            }
+            $this->Flash->error(__('The writing service request could not be saved. Please, try again.'));
+        }
+        $users = $this->WritingServiceRequests->Users->find('list', limit: 200)->all();
+        $this->set(compact('writingServiceRequest', 'users'));
+    }
+
+    /**
+     * Delete method
+     *
+     * @param string|null $id Writing Service Request id.
+     * @return \Cake\Http\Response|null Redirects to index.
+     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
+     */
+    public function delete($id = null)
+    {
+        $this->request->allowMethod(['post', 'delete']);
+        $writingServiceRequest = $this->WritingServiceRequests->get($id);
+        if ($this->WritingServiceRequests->delete($writingServiceRequest)) {
+            $this->Flash->success(__('The writing service request has been deleted.'));
+        } else {
+            $this->Flash->error(__('The writing service request could not be deleted. Please, try again.'));
+        }
+
+        return $this->redirect(['action' => 'index']);
+    }
+}
