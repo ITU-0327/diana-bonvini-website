@@ -24,14 +24,14 @@ $this->assign('title', 'Landing Page Example');
                       border-radius: 4px;">
                 Shop Art
             </a>
-            <a href="#"
-               style="padding: 0.5rem 1rem;
-                      background-color: #333;
-                      color: #fff;
-                      text-decoration: none;
-                      border-radius: 4px;">
-                Book Writing Appointment
-            </a>
+            <?= $this->Html->link(
+                'Book Writing Appointment',
+                ['controller' => 'WritingServiceRequests', 'action' => 'add'],
+                [
+                    'class' => 'button-style',
+                    'style' => 'padding: 0.5rem 1rem; background-color: #333; color: #fff; text-decoration: none; border-radius: 4px;'
+                ]
+            ) ?>
         </div>
     </div>
 

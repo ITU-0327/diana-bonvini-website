@@ -44,9 +44,16 @@ class WritingServiceRequestsController extends AppController
      */
     public function add()
     {
+        $user = $this->Authentication->getIdentity();
+        $userId = $user ? $user->get('user_id') : null;
+
         $writingServiceRequest = $this->WritingServiceRequests->newEmptyEntity();
+
         if ($this->request->is('post')) {
             $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $this->request->getData());
+
+            $writingServiceRequest->user_id = $userId;
+
             if ($this->WritingServiceRequests->save($writingServiceRequest)) {
                 $this->Flash->success(__('The writing service request has been saved.'));
 
@@ -54,8 +61,8 @@ class WritingServiceRequestsController extends AppController
             }
             $this->Flash->error(__('The writing service request could not be saved. Please, try again.'));
         }
-        $users = $this->WritingServiceRequests->Users->find('list', limit: 200)->all();
-        $this->set(compact('writingServiceRequest', 'users'));
+
+        $this->set(compact('writingServiceRequest', 'userId'));
     }
 
     /**
