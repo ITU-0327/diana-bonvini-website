@@ -72,7 +72,7 @@
             <!-- Right Side: Shopping Cart and User Profile -->
             <div class="flex items-center space-x-6">
                 <!-- Shopping Cart -->
-                <a href="<?= $this->Url->build('/shopping-cart') ?>" class="relative">
+                <a href="<?= $this->Url->build(['controller' => 'Carts', 'action' => 'index']) ?>" class="relative">
                     <?= $this->Html->image('navbar/shopping-cart.png', ['class' => 'h-6 w-6']) ?>
                 </a>
                 <!-- User Profile with "Card" Style Dropdown -->

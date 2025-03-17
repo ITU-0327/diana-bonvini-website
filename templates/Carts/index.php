@@ -1,57 +1,70 @@
 <?php
 /**
  * @var \App\View\AppView $this
- * @var iterable<\App\Model\Entity\Cart> $carts
+ * @var \App\Model\Entity\Cart|null $cart
  */
 ?>
-<div class="carts index content">
-    <?= $this->Html->link(__('New Cart'), ['action' => 'add'], ['class' => 'button float-right']) ?>
-    <h3><?= __('Carts') ?></h3>
-    <div class="table-responsive">
-        <table>
-            <thead>
-                <tr>
-                    <th><?= $this->Paginator->sort('cart_id') ?></th>
-                    <th><?= $this->Paginator->sort('user_id') ?></th>
-                    <th><?= $this->Paginator->sort('session_id') ?></th>
-                    <th><?= $this->Paginator->sort('created_at') ?></th>
-                    <th><?= $this->Paginator->sort('updated_at') ?></th>
-                    <th class="actions"><?= __('Actions') ?></th>
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Your Cart</h1>
+
+    <?php if ($cart && !empty($cart->artwork_carts)) : ?>
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white border">
+                <thead>
+                <tr class="bg-gray-100">
+                    <th class="py-2 px-4 border-b text-left">Artwork</th>
+                    <th class="py-2 px-4 border-b text-left">Product</th>
+                    <th class="py-2 px-4 border-b text-left">Price</th>
+                    <th class="py-2 px-4 border-b text-left">Quantity</th>
+                    <th class="py-2 px-4 border-b text-left">Subtotal</th>
+                    <th class="py-2 px-4 border-b text-left">Actions</th>
                 </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($carts as $cart): ?>
-                <tr>
-                    <td><?= h($cart->cart_id) ?></td>
-                    <td><?= $cart->hasValue('user') ? $this->Html->link($cart->user->first_name, ['controller' => 'Users', 'action' => 'view', $cart->user->user_id]) : '' ?></td>
-                    <td><?= h($cart->session_id) ?></td>
-                    <td><?= h($cart->created_at) ?></td>
-                    <td><?= h($cart->updated_at) ?></td>
-                    <td class="actions">
-                        <?= $this->Html->link(__('View'), ['action' => 'view', $cart->cart_id]) ?>
-                        <?= $this->Html->link(__('Edit'), ['action' => 'edit', $cart->cart_id]) ?>
-                        <?= $this->Form->postLink(
-                            __('Delete'),
-                            ['action' => 'delete', $cart->cart_id],
-                            [
-                                'method' => 'delete',
-                                'confirm' => __('Are you sure you want to delete # {0}?', $cart->cart_id),
-                            ]
-                        ) ?>
-                    </td>
-                </tr>
+                </thead>
+                <tbody>
+                <?php
+                $total = 0.0;
+                foreach ($cart->artwork_carts as $item) :
+                    $artwork = $item->artwork;
+                    $subtotal = $artwork->price * (float)$item->quantity;
+                    $total += $subtotal;
+                    ?>
+                    <tr>
+                        <td class="py-2 px-4 border-b">
+                            <?= $this->Html->image($artwork->image_path, [
+                                'alt' => $artwork->title,
+                                'class' => 'w-16 h-16 object-contain',
+                            ]) ?>
+                        </td>
+                        <td class="py-2 px-4 border-b"><?= h($artwork->title) ?></td>
+                        <td class="py-2 px-4 border-b">$<?= number_format($artwork->price, 2) ?></td>
+                        <td class="py-2 px-4 border-b"><?= h($item->quantity) ?></td>
+                        <td class="py-2 px-4 border-b">$<?= number_format($subtotal, 2) ?></td>
+                        <td class="py-2 px-4 border-b">
+                            <!-- Remove button; you can add update/change quantity actions similarly -->
+                            <?= $this->Form->postLink(
+                                'Remove',
+                                ['action' => 'remove', $artwork->artwork_id],
+                                ['class' => 'text-red-600 hover:text-red-800 text-sm'],
+                            ) ?>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-    <div class="paginator">
-        <ul class="pagination">
-            <?= $this->Paginator->first('<< ' . __('first')) ?>
-            <?= $this->Paginator->prev('< ' . __('previous')) ?>
-            <?= $this->Paginator->numbers() ?>
-            <?= $this->Paginator->next(__('next') . ' >') ?>
-            <?= $this->Paginator->last(__('last') . ' >>') ?>
-        </ul>
-        <p><?= $this->Paginator->counter(__('Page {{page}} of {{pages}}, showing {{current}} record(s) out of {{count}} total')) ?></p>
-    </div>
+                </tbody>
+                <tfoot>
+                <tr class="bg-gray-100">
+                    <td colspan="4" class="py-2 px-4 font-bold text-right">Total:</td>
+                    <td class="py-2 px-4 font-bold">$<?= number_format($total, 2) ?></td>
+                    <td></td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="mt-6 text-right">
+            <?= $this->Html->link('Proceed to Checkout', ['controller' => 'Orders', 'action' => 'checkout'], [
+                'class' => 'bg-indigo-600 text-white px-6 py-3 rounded hover:bg-indigo-700',
+            ]) ?>
+        </div>
+    <?php else : ?>
+        <p class="text-gray-700">Your cart is empty.</p>
+    <?php endif; ?>
 </div>
