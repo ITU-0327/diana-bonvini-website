@@ -50,7 +50,17 @@ class CartsControllerTest extends TestCase
         $this->assertResponseSuccess();
         $this->assertFlashMessage('Item added to cart.');
 
-        $this->assertSession($artworkId, 'Cart.items.0.artwork_id', 'The artwork should be added to the cart in the session.');
+        $cartItems = $this->getSession()->read('Cart.items');
+        $this->assertNotEmpty($cartItems, 'Cart should contain at least one item.');
+
+        $found = false;
+        foreach ($cartItems as $item) {
+            if ($item->artwork_id === $artworkId) {
+                $found = true;
+                break;
+            }
+        }
+        $this->assertTrue($found, 'The artwork should be added to the cart in the session.');
     }
 
     /**
@@ -61,14 +71,24 @@ class CartsControllerTest extends TestCase
         $this->enableCsrfToken();
 
         // No session set, simulate non-logged in user.
-        $artworkId = 'a0f92c2a-2bb2-4d3e-8d33-0c654c9c1a6b';
+        $artworkId = '8424e85e-f1b2-41f5-85cb-bfbe115b45bc';
         $data = ['artwork_id' => $artworkId];
 
         $this->post('/carts/add', $data);
         $this->assertResponseSuccess();
         $this->assertFlashMessage('Item added to cart.');
 
-        $this->assertSession($artworkId, 'Cart.items.0.artwork_id', 'The artwork should be added to the cart in the session.');
+        $cartItems = $this->getSession()->read('Cart.items');
+        $this->assertNotEmpty($cartItems, 'Cart should contain at least one item.');
+
+        $found = false;
+        foreach ($cartItems as $item) {
+            if ($item->artwork_id === $artworkId) {
+                $found = true;
+                break;
+            }
+        }
+        $this->assertTrue($found, 'The artwork should be added to the cart in the session.');
     }
 
     /**

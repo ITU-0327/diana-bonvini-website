@@ -30,6 +30,17 @@ class ArtworksFixture extends TestFixture
                 'updated_at'           => '2025-03-10 09:15:43',
             ],
             [
+                'artwork_id'           => '8424e85e-f1b2-41f5-85cb-bfbe115b45bc',
+                'title'                => 'Sunset Over the Ocean',
+                'description'          => 'A vibrant painting capturing the dynamic colors of a sunset over the vast ocean, evoking a sense of peace and wonder.',
+                'image_path'           => 'uploads/artworks/sunset_over_the_ocean.png',
+                'price'                => 560.00,
+                'availability_status'  => 'available',
+                'is_deleted'           => 0,
+                'created_at'           => '2025-03-10 09:15:43',
+                'updated_at'           => '2025-03-10 09:15:43',
+            ],
+            [
                 'artwork_id'           => 'a0f92c2a-2bb2-4d3e-8d33-0c654c9c1a6b',
                 'title'                => 'Mystical Forest',
                 'description'          => 'An enchanting depiction of a dense forest shrouded in mist and mystery, designed to inspire awe and introspection.',

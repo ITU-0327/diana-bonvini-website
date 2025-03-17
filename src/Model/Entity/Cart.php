@@ -15,6 +15,7 @@ use Cake\ORM\Entity;
  * @property \Cake\I18n\DateTime $updated_at
  *
  * @property \App\Model\Entity\User $user
+ * @property \App\Model\Entity\ArtworkCart[] $artwork_carts
  */
 class Cart extends Entity
 {
