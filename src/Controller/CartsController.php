@@ -27,7 +27,7 @@ class CartsController extends AppController
     {
         parent::beforeFilter($event);
 
-        $this->Authentication->addUnauthenticatedActions(['add']);
+        $this->Authentication->addUnauthenticatedActions(['index', 'add', 'remove']);
     }
 
     /**
@@ -37,11 +37,25 @@ class CartsController extends AppController
      */
     public function index()
     {
-        $query = $this->Carts->find()
-            ->contain(['Users']);
-        $carts = $this->paginate($query);
+        /** @var \App\Model\Entity\User|null $user */
+        $user = $this->Authentication->getIdentity();
+        $userId = $user?->user_id;
+        $sessionId = $this->request->getSession()->id();
 
-        $this->set(compact('carts'));
+        $conditions = [];
+        if ($userId !== null) {
+            $conditions[] = ['user_id' => $userId];
+        } else {
+            $conditions[] = ['session_id' => $sessionId];
+        }
+
+        // Retrieve the cart with associated ArtworkCarts and their Artworks
+        $cart = $this->Carts->find()
+            ->contain(['ArtworkCarts' => ['Artworks']])
+            ->where($conditions)
+            ->first();
+
+        $this->set(compact('cart'));
     }
 
     /**
@@ -140,7 +154,6 @@ class CartsController extends AppController
                     ])
                     ->toArray();
 
-                // Write the updated cart items to the session so your test can verify it.
                 $this->request->getSession()->write('Cart.items', $updatedCartItems);
             } else {
                 $this->Flash->error('Unable to add item to cart.');
@@ -151,22 +164,87 @@ class CartsController extends AppController
     }
 
     /**
-     * Delete method
+     * Remove a cart item from the cart by artwork ID.
      *
-     * @param string|null $id Cart id.
-     * @return \Cake\Http\Response|null Redirects to index.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
+     * @param string|null $artworkId The artwork ID to remove from the cart.
+     * @return \Cake\Http\Response|null Redirects back to the referring page.
      */
-    public function delete(?string $id = null): ?Response
+    public function remove(?string $artworkId = null): ?Response
     {
-        $this->request->allowMethod(['post', 'delete']);
-        $cart = $this->Carts->get($id);
-        if ($this->Carts->delete($cart)) {
-            $this->Flash->success(__('The cart has been deleted.'));
-        } else {
-            $this->Flash->error(__('The cart could not be deleted. Please, try again.'));
+        if (!$this->request->is(['post', 'delete'])) {
+            throw new NotFoundException('Invalid request method.');
         }
 
-        return $this->redirect(['action' => 'index']);
+        if (!$artworkId) {
+            $artworkId = $this->request->getData('artwork_id');
+        }
+        if (!$artworkId) {
+            $this->Flash->error('No artwork specified.');
+
+            return $this->redirect($this->referer());
+        }
+
+        // Retrieve the current user (if logged in) and session ID
+        /** @var \App\Model\Entity\User|null $user */
+        $user = $this->Authentication->getIdentity();
+        $userId = $user?->user_id;
+        $sessionId = $this->request->getSession()->id();
+
+        // Build conditions based on user or session
+        $conditions = [];
+        if ($userId !== null) {
+            $conditions[] = ['user_id' => $userId];
+        } else {
+            $conditions[] = ['session_id' => $sessionId];
+        }
+
+        // Find the current cart for the user or session
+        $cart = $this->Carts->find()
+            ->contain(['ArtworkCarts'])
+            ->where($conditions)
+            ->first();
+
+        if (!$cart) {
+            $this->Flash->error('Cart not found.');
+
+            return $this->redirect($this->referer());
+        }
+
+        // Find the cart item corresponding to the artwork ID in this cart
+        $cartItem = $this->Carts->ArtworkCarts->find()
+            ->where([
+                'cart_id'    => $cart->cart_id,
+                'artwork_id' => $artworkId,
+            ])
+            ->first();
+
+        if (!$cartItem) {
+            $this->Flash->error('Cart item not found.');
+
+            return $this->redirect($this->referer());
+        }
+
+        // Delete the cart item
+        if ($this->Carts->ArtworkCarts->delete($cartItem)) {
+            $this->Flash->success('Item removed from cart.');
+
+            // Check if the cart is now empty
+            $remainingItems = $this->Carts->ArtworkCarts->find()
+                ->where(['cart_id' => $cart->cart_id])
+                ->count();
+
+            if ($remainingItems === 0) {
+                // No remaining items; delete the cart silently.
+                try {
+                    $this->Carts->delete($cart);
+                } catch (RecordNotFoundException $e) {
+                    // Cart might have already been deleted; do nothing.
+                }
+            }
+        } else {
+            $this->Flash->error('Unable to remove item from cart.');
+        }
+
+        return $this->redirect($this->referer());
     }
 }

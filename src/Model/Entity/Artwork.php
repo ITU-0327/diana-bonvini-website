@@ -12,7 +12,7 @@ use Cake\ORM\Entity;
  * @property string $title
  * @property string|null $description
  * @property string $image_path
- * @property string $price
+ * @property double $price
  * @property string $availability_status
  * @property int $is_deleted
  * @property \Cake\I18n\DateTime $created_at

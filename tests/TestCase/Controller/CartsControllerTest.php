@@ -166,7 +166,7 @@ class CartsControllerTest extends TestCase
     {
         $this->enableCsrfToken();
 
-        $artworkId = 'artwork-uuid-4';
+        $artworkId = '5492e85e-f1b2-41f5-85cb-bfbe115b69ea';
         $data = ['artwork_id' => $artworkId];
 
         // Add item to cart.
@@ -178,8 +178,8 @@ class CartsControllerTest extends TestCase
         $this->assertResponseSuccess();
 
         // Verify that the item is no longer in the cart.
-        $this->get('/carts/view');
-        $this->assertResponseNotContains($artworkId);
+        $this->get('/carts');
+        $this->assertResponseNotContains('Sunset Over the Ocean');
     }
 
     /**
@@ -189,7 +189,7 @@ class CartsControllerTest extends TestCase
     {
         $this->enableCsrfToken();
 
-        $artworkId = 'artwork-uuid-5';
+        $artworkId = '5492e85e-f1b2-41f5-85cb-bfbe115b69ea';
         $data = ['artwork_id' => $artworkId];
 
         // Add an item to the cart.
@@ -199,8 +199,8 @@ class CartsControllerTest extends TestCase
         // Simulate navigating to another page.
         $this->get('/some/other/page');
         // Check that the cart still contains the item.
-        $this->get('/carts/view');
-        $this->assertResponseContains($artworkId);
+        $this->get('/carts');
+        $this->assertResponseContains('Sunset Over the Ocean');
     }
 
     /**
@@ -229,8 +229,8 @@ class CartsControllerTest extends TestCase
         $this->assertRedirect();
 
         // After logout, view cart should not contain the item.
-        $this->get('/carts/view');
-        $this->assertResponseNotContains($artworkId);
+        $this->get('/carts');
+        $this->assertResponseNotContains('Sunset Over the Ocean');
     }
 
     /**
@@ -301,7 +301,7 @@ class CartsControllerTest extends TestCase
     {
         $this->enableCsrfToken();
 
-        $artworkId = 'artwork-uuid-9';
+        $artworkId = '5492e85e-f1b2-41f5-85cb-bfbe115b69ea';
         $data = ['artwork_id' => $artworkId];
 
         // Add an item to the cart.
@@ -312,7 +312,7 @@ class CartsControllerTest extends TestCase
         $this->session([]); // Clear session
 
         // Attempt to view the cart; expect that the cart contents are cleared.
-        $this->get('/carts/view');
-        $this->assertResponseNotContains($artworkId);
+        $this->get('/carts');
+        $this->assertResponseNotContains('Sunset Over the Ocean');
     }
 }

@@ -31,7 +31,7 @@ class ArtworksFixture extends TestFixture
             ],
             [
                 'artwork_id'           => '8424e85e-f1b2-41f5-85cb-bfbe115b45bc',
-                'title'                => 'Sunset Over the Ocean',
+                'title'                => 'Moon Over the Ocean',
                 'description'          => 'A vibrant painting capturing the dynamic colors of a sunset over the vast ocean, evoking a sense of peace and wonder.',
                 'image_path'           => 'uploads/artworks/sunset_over_the_ocean.png',
                 'price'                => 560.00,
