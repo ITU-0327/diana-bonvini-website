@@ -144,3 +144,19 @@ CREATE TABLE artwork_carts (
     CONSTRAINT fk_artwork_carts_cart FOREIGN KEY (cart_id) REFERENCES carts(cart_id) ON DELETE CASCADE,
     CONSTRAINT fk_artwork_carts_artwork FOREIGN KEY (artwork_id) REFERENCES artworks(artwork_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- Table: writing_service_requests
+CREATE TABLE writing_service_requests (
+    request_id CHAR(36) NOT NULL PRIMARY KEY,
+    user_id CHAR(36) NOT NULL,
+    service_type ENUM('creative_writing', 'editing', 'proofreading') NOT NULL,
+    word_count_range VARCHAR(50) NOT NULL,
+    notes VARCHAR(100) DEFAULT NULL,
+    estimated_price DECIMAL(10,2) DEFAULT NULL,
+    final_price DECIMAL(10,2) DEFAULT NULL,
+    request_status enum('pending', 'in_progress', 'expired') NOT NULL DEFAULT 'pending',
+    is_deleted TINYINT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users(user_id)
+) ENGINE=InnoDB;
