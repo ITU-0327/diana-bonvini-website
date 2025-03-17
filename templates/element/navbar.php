@@ -5,7 +5,7 @@
             <div class="flex items-center space-x-8">
                 <!-- Logo -->
                 <a href="<?= $this->Url->build('/') ?>" class="flex items-center">
-                    <span class="font-bold text-2xl text-gray-800">Diana Bonvini</span>
+                    <span class="font-bold text-2xl text-gray-800">diana bonvini.</span>
                 </a>
                 <!-- Navigation Menu -->
                 <ul class="flex space-x-4">
