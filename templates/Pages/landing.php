@@ -10,7 +10,7 @@ $this->assign('title', 'Landing Page Example');
 <div style="display: flex; justify-content: center; align-items: center; gap: 2rem; margin: 2rem;">
     <!-- Text block on the left -->
     <div style="flex: 1;">
-        <h1>Wallowing Breeze</h1>
+        <h1>Welcome to Diana Bonvini page</h1>
         <p>testing</p>
 
         <!-- button -->

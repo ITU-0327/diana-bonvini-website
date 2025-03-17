@@ -20,6 +20,7 @@ $siteTitle = 'Diana Bonvini Art & Writing';
         <?= $this->fetch('meta') ?>
         <?= $this->fetch('css') ?>
         <?= $this->fetch('script') ?>
+        <?= $this->Html->css('about') ?>
     </head>
     <!-- Using flex-col and min-h-screen so that the main content grows -->
     <body class="bg-gray-50 min-h-screen flex flex-col">
