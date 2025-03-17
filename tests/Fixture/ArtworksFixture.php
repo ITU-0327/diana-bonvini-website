@@ -40,6 +40,17 @@ class ArtworksFixture extends TestFixture
                 'created_at'           => '2025-03-11 14:22:00',
                 'updated_at'           => '2025-03-11 14:22:00',
             ],
+            [
+                'artwork_id'           => 'b7c65c2a-2bb2-4d3e-8d33-0c845c9c1a5c',
+                'title'                => 'Mystical Forest',
+                'description'          => 'An enchanting depiction of a dense forest shrouded in mist and mystery, designed to inspire awe and introspection.',
+                'image_path'           => 'uploads/artworks/mystical_forest.png',
+                'price'                => 452.50,
+                'availability_status'  => 'available',
+                'is_deleted'           => 1,
+                'created_at'           => '2025-03-11 14:22:00',
+                'updated_at'           => '2025-03-11 14:22:00',
+            ],
         ];
         parent::init();
     }

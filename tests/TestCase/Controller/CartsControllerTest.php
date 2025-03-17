@@ -92,6 +92,54 @@ class CartsControllerTest extends TestCase
     }
 
     /**
+     * Test Case: Do not add a sold item to cart.
+     */
+    public function testAddSoldItemToCart(): void
+    {
+        $this->enableCsrfToken();
+
+        $artworkId = 'a0f92c2a-2bb2-4d3e-8d33-0c654c9c1a6b';
+
+        // Simulate logged-in user.
+        $this->session([
+            'Auth' => [
+                'user_id' => '17fe31f7-2f61-4176-a036-172eed559e6f',
+                'email' => 'tony.hsieh@example.com',
+            ],
+        ]);
+
+        // Try to add a sold artwork.
+        $this->post('/carts/add', ['artwork_id' => $artworkId]);
+        $this->assertResponseSuccess();
+        // Verify that the response contains the error message.
+        $this->assertFlashMessage('Artwork is not available.');
+    }
+
+    /**
+     * Test Case: Do not add a deleted item to cart.
+     */
+    public function testAddDeletedItemToCart(): void
+    {
+        $this->enableCsrfToken();
+
+        $artworkId = 'b7c65c2a-2bb2-4d3e-8d33-0c845c9c1a5c';
+
+        // Simulate logged-in user.
+        $this->session([
+            'Auth' => [
+                'user_id' => '17fe31f7-2f61-4176-a036-172eed559e6f',
+                'email' => 'tony.hsieh@example.com',
+            ],
+        ]);
+
+        // Try to add a deleted artwork.
+        $this->post('/carts/add', ['artwork_id' => $artworkId]);
+        $this->assertResponseSuccess();
+
+        $this->assertFlashMessage('Artwork is not available.');
+    }
+
+    /**
      * Test Case 1.4: Remove Item from Cart
      */
     public function testRemoveItemFromCart(): void

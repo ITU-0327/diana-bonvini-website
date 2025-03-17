@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Cake\Datasource\Exception\RecordNotFoundException;
 use Cake\Event\EventInterface;
 use Cake\Http\Exception\NotFoundException;
 use Cake\Http\Response;
@@ -60,6 +61,23 @@ class CartsController extends AppController
         }
         if (!$artworkId) {
             $this->Flash->error('No artwork specified.');
+
+            return $this->redirect($this->referer());
+        }
+
+        // Retrieve the artwork to check its availability and deletion status.
+        $artworksTable = $this->fetchTable('Artworks');
+        try {
+            /** @var \App\Model\Entity\Artwork $artwork */
+            $artwork = $artworksTable->get($artworkId);
+        } catch (RecordNotFoundException $e) {
+            $this->Flash->error('Artwork not found.');
+
+            return $this->redirect($this->referer());
+        }
+
+        if ($artwork->availability_status !== 'available' || $artwork->is_deleted) {
+            $this->Flash->error('Artwork is not available.');
 
             return $this->redirect($this->referer());
         }
