@@ -86,7 +86,7 @@
 
             <!-- Add to Cart Button -->
             <div>
-                <?= $this->Form->create(null, ['url' => ['controller' => 'Cart', 'action' => 'add', $artwork->artwork_id]]) ?>
+                <?= $this->Form->create(null, ['url' => ['controller' => 'Carts', 'action' => 'add', $artwork->artwork_id]]) ?>
                 <?= $this->Form->button(
                     '<i class="fa fa-shopping-cart mr-2"></i>Add to Cart',
                     [

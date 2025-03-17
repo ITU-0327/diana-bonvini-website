@@ -11,6 +11,7 @@ use Cake\Validation\Validator;
  * Carts Model
  *
  * @property \App\Model\Table\UsersTable&\Cake\ORM\Association\BelongsTo $Users
+ * @property \App\Model\Table\ArtworkCartsTable&\Cake\ORM\Association\HasMany $ArtworkCarts
  * @method \App\Model\Entity\Cart newEmptyEntity()
  * @method \App\Model\Entity\Cart newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\Cart> newEntities(array $data, array $options = [])
@@ -43,6 +44,10 @@ class CartsTable extends Table
 
         $this->belongsTo('Users', [
             'foreignKey' => 'user_id',
+        ]);
+
+        $this->hasMany('ArtworkCarts', [
+            'foreignKey' => 'cart_id',
         ]);
     }
 

@@ -59,7 +59,7 @@ CREATE TABLE orders (
 
 -- Table: artwork_orders
 CREATE TABLE artwork_orders (
-    order_item_id CHAR(36) NOT NULL PRIMARY KEY,
+    artwork_order_id CHAR(36) NOT NULL PRIMARY KEY,
     order_id CHAR(36) NOT NULL,
     artwork_id CHAR(36) NOT NULL,
     quantity INT NOT NULL,
@@ -133,7 +133,7 @@ CREATE TABLE carts (
 
 -- Table: artwork_carts
 CREATE TABLE artwork_carts (
-    cart_item_id CHAR(36) NOT NULL PRIMARY KEY,
+    artwork_cart_id CHAR(36) NOT NULL PRIMARY KEY,
     cart_id CHAR(36) NOT NULL,
     artwork_id CHAR(36) NOT NULL,
     quantity INT NOT NULL DEFAULT 1,

@@ -3,12 +3,15 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Cake\Http\Exception\NotFoundException;
 use Cake\Http\Response;
 
 /**
  * Carts Controller
  *
  * @property \App\Model\Table\CartsTable $Carts
+ * @property \App\Model\Table\ArtworkCartsTable $ArtworkCarts
+ * @property \Authentication\Controller\Component\AuthenticationComponent $Authentication
  */
 class CartsController extends AppController
 {
@@ -27,24 +30,78 @@ class CartsController extends AppController
     }
 
     /**
-     * Add method
+     * Add an artwork to the cart.
      *
-     * @return \Cake\Http\Response|null|void Redirects on successful add, renders view otherwise.
+     * @param string|null $artworkId The artwork ID to add.
+     * @return \Cake\Http\Response|null Redirects back to referring page.
      */
-    public function add()
+    public function add(?string $artworkId = null): ?Response
     {
-        $cart = $this->Carts->newEmptyEntity();
-        if ($this->request->is('post')) {
-            $cart = $this->Carts->patchEntity($cart, $this->request->getData());
-            if ($this->Carts->save($cart)) {
-                $this->Flash->success(__('The cart has been saved.'));
-
-                return $this->redirect(['action' => 'index']);
-            }
-            $this->Flash->error(__('The cart could not be saved. Please, try again.'));
+        if (!$this->request->is(['post', 'put'])) {
+            throw new NotFoundException('Invalid request method.');
         }
-        $users = $this->Carts->Users->find('list', limit: 200)->all();
-        $this->set(compact('cart', 'users'));
+
+        if (!$artworkId) {
+            $this->Flash->error('No artwork specified.');
+
+            return $this->redirect($this->referer());
+        }
+
+        // Retrieve the user ID if logged in; otherwise, use session ID
+        /** @var \App\Model\Entity\User|null $user */
+        $user = $this->Authentication->getIdentity();
+        $userId = $user?->user_id;
+        $sessionId = $this->request->getSession()->id();
+
+        // Find an existing cart for the user or the current session, loading associated artwork items
+        $cart = $this->Carts->find()
+            ->contain(['ArtworkCarts' => function ($q) use ($artworkId) {
+                return $q->where([
+                    'ArtworkCarts.artwork_id' => $artworkId,
+                    'ArtworkCarts.is_deleted' => 0,
+                ]);
+            }])
+            ->where([
+                'OR' => [
+                    ['user_id' => $userId],
+                    ['session_id' => $sessionId],
+                ],
+            ])
+            ->first();
+
+        // If no cart exists, create a new one
+        if (!$cart) {
+            $cart = $this->Carts->newEmptyEntity();
+            $cart->user_id = $userId;
+            $cart->session_id = $sessionId;
+            if (!$this->Carts->save($cart)) {
+                $this->Flash->error('Unable to create cart.');
+
+                return $this->redirect($this->referer());
+            }
+        }
+
+        // Check if the artwork is already in the cart
+        $cartItems = $cart->artwork_carts;
+
+        if (!empty($cartItems)) {
+            // Since it's art, do not allow duplicate items; just notify the user.
+            $this->Flash->success('Item already in cart.');
+        } else {
+            // Create a new cart item
+            $cartItem = $this->Carts->ArtworkCarts->newEntity([
+                'cart_id'    => $cart->cart_id,
+                'artwork_id' => $artworkId,
+                'quantity'   => 1,
+            ]);
+            if ($this->Carts->ArtworkCarts->save($cartItem)) {
+                $this->Flash->success('Item added to cart.');
+            } else {
+                $this->Flash->error('Unable to add item to cart.');
+            }
+        }
+
+        return $this->redirect($this->referer());
     }
 
     /**

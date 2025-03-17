@@ -12,6 +12,7 @@
 
     <rule ref="CakePHP.WhiteSpace.TabAndSpace.DoubleSpace">
         <exclude-pattern>*/tests/*</exclude-pattern>
+        <exclude-pattern>*/src/Controller/*</exclude-pattern>
     </rule>
 
     <file>config/</file>
