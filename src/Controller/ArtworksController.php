@@ -34,7 +34,7 @@ class ArtworksController extends AppController
      */
     public function index()
     {
-        $query = $this->Artworks->find();
+        $query = $this->Artworks->find()->where(['is_deleted' => 0]);
         $artworks = $this->paginate($query);
 
         $this->set(compact('artworks'));
