@@ -132,8 +132,11 @@ class CartsController extends AppController
         // If no cart exists, create a new one
         if (!$cart) {
             $cart = $this->Carts->newEmptyEntity();
-            $cart->user_id = $userId;
-            $cart->session_id = $sessionId;
+            if ($userId !== null) {
+                $cart->user_id = $userId;
+            } else {
+                $cart->session_id = $sessionId;
+            }
             if (!$this->Carts->save($cart)) {
                 $this->Flash->error('Unable to create cart.');
 

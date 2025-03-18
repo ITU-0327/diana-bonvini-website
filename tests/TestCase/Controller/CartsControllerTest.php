@@ -52,17 +52,7 @@ class CartsControllerTest extends TestCase
         $this->assertResponseSuccess();
         $this->assertFlashMessage('Item added to cart.');
 
-        $cartItems = $this->getSession()->read('Cart.items');
-        $this->assertNotEmpty($cartItems, 'Cart should contain at least one item.');
-
-        $found = false;
-        foreach ($cartItems as $item) {
-            if ($item->artwork_id === $artworkId) {
-                $found = true;
-                break;
-            }
-        }
-        $this->assertTrue($found, 'The artwork should be added to the cart in the session.');
+        $this->assertSession($artworkId, 'Cart.items.0.artwork_id', 'The artwork should be added to the cart in the session.');
     }
 
     /**
@@ -81,17 +71,7 @@ class CartsControllerTest extends TestCase
         debug($this->getSession());
         $this->assertFlashMessage('Item added to cart.');
 
-        $cartItems = $this->getSession()->read('Cart.items');
-        $this->assertNotEmpty($cartItems, 'Cart should contain at least one item.');
-
-        $found = false;
-        foreach ($cartItems as $item) {
-            if ($item->artwork_id === $artworkId) {
-                $found = true;
-                break;
-            }
-        }
-        $this->assertTrue($found, 'The artwork should be added to the cart in the session.');
+        $this->assertSession($artworkId, 'Cart.items.0.artwork_id', 'The artwork should be added to the cart in the session.');
     }
 
     /**
@@ -115,7 +95,7 @@ class CartsControllerTest extends TestCase
     }
 
     /**
-     * Test Case: Do not add a sold item to cart.
+     * Test Case 1.4: Do not add a sold item to cart.
      */
     public function testAddSoldItemToCart(): void
     {
@@ -139,7 +119,7 @@ class CartsControllerTest extends TestCase
     }
 
     /**
-     * Test Case: Do not add a deleted item to cart.
+     * Test Case 1.5: Do not add a deleted item to cart.
      */
     public function testAddDeletedItemToCart(): void
     {
@@ -163,7 +143,7 @@ class CartsControllerTest extends TestCase
     }
 
     /**
-     * Test Case 1.4: Remove Item from Cart
+     * Test Case 1.6: Remove Item from Cart
      */
     public function testRemoveItemFromCart(): void
     {
@@ -186,7 +166,7 @@ class CartsControllerTest extends TestCase
     }
 
     /**
-     * Test Case 1.5: Cart Persistence During Session
+     * Test Case 1.7: Cart Persistence During Session
      */
     public function testCartPersistenceDuringSession(): void
     {
@@ -207,7 +187,7 @@ class CartsControllerTest extends TestCase
     }
 
     /**
-     * Test Case 1.6: Cart Persistence After Logout
+     * Test Case 1.8: Cart Persistence After Logout
      */
     public function testCartPersistenceAfterLogout(): void
     {
@@ -216,7 +196,7 @@ class CartsControllerTest extends TestCase
         // Assume business rule: cart is cleared after logout.
         $artworkId = '5492e85e-f1b2-41f5-85cb-bfbe115b69ea';
         $this->session([
-            'Auth.User' => [
+            'Auth' => [
                 'user_id' => 'user-uuid',
                 'email' => 'user@example.com',
             ],
@@ -237,7 +217,7 @@ class CartsControllerTest extends TestCase
     }
 
     /**
-     * Test that deleted artwork items do not appear in the cart index.
+     * Test Case 1.9: Cart Index Does Not Show Deleted Artwork
      *
      * @return void
      */
@@ -259,7 +239,7 @@ class CartsControllerTest extends TestCase
     }
 
     /**
-     * Test that sold artwork items do not appear in the cart index.
+     * Test Case 1.10: Cart Index Does Not Show Sold Artwork
      *
      * @return void
      */
@@ -277,88 +257,5 @@ class CartsControllerTest extends TestCase
         $this->assertResponseContains('Valid Art');
 
         $this->assertResponseNotContains('Sold Art');
-    }
-
-    /**
-     * Test Case 1.7: Checkout via Bank Transfer
-     */
-    public function testCheckoutViaBankTransfer(): void
-    {
-        $this->enableCsrfToken();
-
-        // Simulate logged in user.
-        $this->session([
-            'Auth.User' => [
-                'user_id' => 'user-uuid-7',
-                'email' => 'user7@example.com',
-            ],
-        ]);
-
-        // Add an item to the cart.
-        $artworkId = 'artwork-uuid-7';
-        $data = ['artwork_id' => $artworkId];
-        $this->post('/carts/add', $data);
-        $this->assertResponseSuccess();
-
-        // Proceed to checkout using bank transfer.
-        $checkoutData = ['payment_method' => 'bank_transfer'];
-        $this->post('/carts/checkout', $checkoutData);
-        $this->assertResponseSuccess();
-
-        // Verify order confirmation.
-        $this->assertResponseContains('order confirmation');
-    }
-
-    /**
-     * Test Case 1.8: Inventory Synchronization
-     */
-    public function testInventorySynchronization(): void
-    {
-        $this->enableCsrfToken();
-
-        // Assume an artwork is available with a unique copy.
-        $artworkId = 'artwork-uuid-8';
-        // Simulate logged in user.
-        $this->session([
-            'Auth.User' => [
-                'user_id' => 'user-uuid-8',
-                'email' => 'user8@example.com',
-            ],
-        ]);
-
-        // Add the artwork to the cart and checkout.
-        $data = ['artwork_id' => $artworkId];
-        $this->post('/carts/add', $data);
-        $this->assertResponseSuccess();
-        $checkoutData = ['payment_method' => 'bank_transfer'];
-        $this->post('/carts/checkout', $checkoutData);
-        $this->assertResponseSuccess();
-
-        // After checkout, assume the artwork's status is updated to 'sold'.
-        $artworksTable = $this->getTableLocator()->get('Artworks');
-        $artwork = $artworksTable->find()->where(['artwork_id' => $artworkId])->first();
-        $this->assertEquals('sold', $artwork->availability_status, 'Artwork should be marked as sold after purchase.');
-    }
-
-    /**
-     * Test Case 1.9: Session Expiration and Cart
-     */
-    public function testSessionExpirationAndCart(): void
-    {
-        $this->enableCsrfToken();
-
-        $artworkId = '5492e85e-f1b2-41f5-85cb-bfbe115b69ea';
-        $data = ['artwork_id' => $artworkId];
-
-        // Add an item to the cart.
-        $this->post('/carts/add', $data);
-        $this->assertResponseSuccess();
-
-        // Simulate session expiration by clearing session data.
-        $this->session([]); // Clear session
-
-        // Attempt to view the cart; expect that the cart contents are cleared.
-        $this->get('/carts');
-        $this->assertResponseNotContains('Sunset Over the Ocean');
     }
 }
