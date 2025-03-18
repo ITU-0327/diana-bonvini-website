@@ -211,8 +211,9 @@ class UsersController extends AppController
      */
     public function forgotPassword()
     {
-        // Render the form view if GET request
+        // Render the forgot password view for GET requests
         if ($this->request->is('get')) {
+            // No extra data needed; the view will render the form.
             return;
         }
 
@@ -223,19 +224,18 @@ class UsersController extends AppController
 
             if (!$user) {
                 $this->Flash->error('No user found with that email address.');
-
                 return;
             }
 
             // Generate a secure token
             $token = Security::hash(Text::uuid(), 'sha256', true);
 
-            // Set token and expiration (e.g., 1 hour from now)
+            // Set token and expiration (1 hour from now)
             $user->password_reset_token = $token;
             $user->token_expiration = new FrozenTime('+1 hour');
 
             if ($this->Users->save($user)) {
-                // Build a reset link
+                // Build a reset link with an absolute URL
                 $resetLink = Router::url([
                     'controller' => 'Users',
                     'action' => 'resetPassword',
@@ -249,7 +249,6 @@ class UsersController extends AppController
                     ->deliver("Hello {$user->first_name},\n\nPlease click the following link to reset your password:\n\n{$resetLink}\n\nThis link will expire in 1 hour.");
 
                 $this->Flash->success('A password reset link has been sent to your email address.');
-
                 return $this->redirect(['action' => 'login']);
             } else {
                 $this->Flash->error('Unable to save reset token. Please try again.');
@@ -268,11 +267,10 @@ class UsersController extends AppController
     {
         if (!$token) {
             $this->Flash->error('Invalid password reset token.');
-
             return $this->redirect(['action' => 'login']);
         }
 
-        // Find user by token and check if not expired
+        // Find user by token and ensure token has not expired
         $user = $this->Users->find()
             ->where([
                 'password_reset_token' => $token,
@@ -282,36 +280,35 @@ class UsersController extends AppController
 
         if (!$user) {
             $this->Flash->error('Invalid or expired token. Please request a new one.');
-
             return $this->redirect(['action' => 'forgotPassword']);
         }
 
-        // Process the reset form submission
+        // Process the form submission for resetting the password
         if ($this->request->is(['post', 'put'])) {
             $newPassword = $this->request->getData('password');
             $confirmPassword = $this->request->getData('password_confirm');
 
             if ($newPassword !== $confirmPassword) {
                 $this->Flash->error('Passwords do not match. Please try again.');
-
+                // Do not proceed; the view will be re-rendered with the error
                 return;
             }
 
-            // Update the user's password and clear the token fields
+            // Update the password and clear the reset token fields
             $user = $this->Users->patchEntity($user, $this->request->getData());
             $user->password_reset_token = null;
             $user->token_expiration = null;
 
             if ($this->Users->save($user)) {
                 $this->Flash->success('Your password has been updated. You may now log in.');
-
                 return $this->redirect(['action' => 'login']);
             } else {
                 $this->Flash->error('Unable to reset your password. Please try again.');
             }
         }
 
-        // Pass the user entity to the view for form creation
+        // Provide the user entity to the view so the form can be built
         $this->set(compact('user'));
     }
 }
+
