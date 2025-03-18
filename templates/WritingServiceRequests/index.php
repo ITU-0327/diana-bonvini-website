@@ -4,6 +4,16 @@
  * @var iterable<\App\Model\Entity\WritingServiceRequest> $writingServiceRequests
  */
 ?>
+
+<!-- Ask for Another Requests Button -->
+<div class="container mt-4 text-center">
+    <?= $this->Html->link(
+        'Submit another writing service request',
+        ['controller' => 'WritingServiceRequests', 'action' => 'add'],
+        ['class' => 'btn btn-outline-secondary px-4']
+    ) ?>
+</div>
+
 <div class="writingServiceRequests index content">
     <?= $this->Html->link(__('New Writing Service Request'), ['action' => 'add'], ['class' => 'button float-right']) ?>
     <h3><?= __('Writing Service Requests') ?></h3>
@@ -56,6 +66,7 @@
             </tbody>
         </table>
     </div>
+
     <div class="paginator">
         <ul class="pagination">
             <?= $this->Paginator->first('<< ' . __('first')) ?>
