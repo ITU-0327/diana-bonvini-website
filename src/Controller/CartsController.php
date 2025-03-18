@@ -112,6 +112,7 @@ class CartsController extends AppController
         $userId = $user?->user_id;
         $sessionId = $this->request->getSession()->id();
 
+        $conditions = [];
         if ($userId !== null) {
             $conditions[] = ['user_id' => $userId];
         } else {

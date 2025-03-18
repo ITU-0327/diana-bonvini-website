@@ -36,7 +36,9 @@ class CartsTableTest extends TestCase
     {
         parent::setUp();
         $config = $this->getTableLocator()->exists('Carts') ? [] : ['className' => CartsTable::class];
-        $this->Carts = $this->getTableLocator()->get('Carts', $config);
+        /** @var \App\Model\Table\CartsTable $carts */
+        $carts = $this->getTableLocator()->get('Carts', $config);
+        $this->Carts = $carts;
     }
 
     /**
