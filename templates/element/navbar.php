@@ -1,3 +1,8 @@
+<?php
+/**
+ * @var \App\View\AppView $this
+ */
+?>
 <nav class="bg-white shadow">
     <div class="container mx-auto px-4">
         <div class="flex justify-between items-center h-16">
@@ -11,7 +16,8 @@
                 <ul class="flex space-x-4">
                     <!-- Buy Art with Dropdown -->
                     <li class="menu-item relative group">
-                        <a href="<?= $this->Url->build('/buy-art') ?>" class="block px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded">
+                        <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index']) ?>"
+                            class="block px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded">
                             Art
                             <svg class="inline ml-1 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -19,9 +25,24 @@
                         </a>
                         <!-- Dropdown -->
                         <ul class="absolute left-0 top-full w-48 bg-white border border-gray-200 rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-300 z-10">
-                            <li class="menu-item"><a href="<?= $this->Url->build('/buy-art/all') ?>" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">All Art</a></li>
-                            <li class="menu-item"><a href="<?= $this->Url->build('/buy-art/new') ?>" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">New Arrivals</a></li>
-                            <li class="menu-item"><a href="<?= $this->Url->build('/buy-art/collections') ?>" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Collections</a></li>
+                            <li class="menu-item">
+                                <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index']) ?>"
+                                   class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    All Art
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index']) ?>"
+                                   class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    New Arrivals
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index']) ?>"
+                                   class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    Collections
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     <!-- Writing & Proofreading Services with Dropdown -->
@@ -51,7 +72,7 @@
             <!-- Right Side: Shopping Cart and User Profile -->
             <div class="flex items-center space-x-6">
                 <!-- Shopping Cart -->
-                <a href="<?= $this->Url->build('/shopping-cart') ?>" class="relative">
+                <a href="<?= $this->Url->build(['controller' => 'Carts', 'action' => 'index']) ?>" class="relative">
                     <?= $this->Html->image('navbar/shopping-cart.png', ['class' => 'h-6 w-6']) ?>
                 </a>
                 <!-- User Profile with "Card" Style Dropdown -->
@@ -111,7 +132,7 @@
                         <?= $this->Form->postLink(
                             'Log Out',
                             ['controller' => 'Users', 'action' => 'logout'],
-                            ['class' => 'block w-full text-left px-4 py-2 mt-4 text-sm text-gray-700 hover:bg-gray-100 rounded']
+                            ['class' => 'block w-full text-left px-4 py-2 mt-4 text-sm text-gray-700 hover:bg-gray-100 rounded'],
                         ) ?>
                     </div>
                 </div>
