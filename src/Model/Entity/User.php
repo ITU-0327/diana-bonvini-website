@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Model\Entity;
 
-use Authentication\PasswordHasher\DefaultPasswordHasher;
 use Cake\ORM\Entity;
 
 /**
@@ -21,6 +20,8 @@ use Cake\ORM\Entity;
  * @property int $is_deleted
  * @property \Cake\I18n\DateTime $created_at
  * @property \Cake\I18n\DateTime $updated_at
+ * @property string|null $password_reset_token
+ * @property \Cake\I18n\DateTime|null $token_expiration
  */
 class User extends Entity
 {
@@ -45,8 +46,8 @@ class User extends Entity
         'is_deleted' => true,
         'created_at' => true,
         'updated_at' => true,
-        // Allow oauth_provider for validation purposes only.
-        'oauth_provider' => true,
+        'password_reset_token' => true,
+        'token_expiration' => true,
     ];
 
     /**
@@ -57,19 +58,4 @@ class User extends Entity
     protected array $_hidden = [
         'password',
     ];
-
-    /**
-     * _setPassword method
-     *
-     * @param string $password Password
-     * @return string|null
-     */
-    protected function _setPassword(string $password): ?string
-    {
-        if (strlen($password) > 0) {
-            return (new DefaultPasswordHasher())->hash($password);
-        }
-
-        return null;
-    }
 }
