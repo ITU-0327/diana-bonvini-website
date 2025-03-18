@@ -51,7 +51,17 @@ class CartsController extends AppController
 
         // Retrieve the cart with associated ArtworkCarts and their Artworks
         $cart = $this->Carts->find()
-            ->contain(['ArtworkCarts' => ['Artworks']])
+            ->contain([
+                'ArtworkCarts' => function ($q) {
+                    return $q->where(['ArtworkCarts.is_deleted' => 0]);
+                },
+                'ArtworkCarts.Artworks' => function ($q) {
+                    return $q->where([
+                        'Artworks.is_deleted' => 0,
+                        'Artworks.availability_status' => 'available',
+                    ]);
+                },
+            ])
             ->where($conditions)
             ->first();
 
@@ -156,6 +166,7 @@ class CartsController extends AppController
 
                 $this->request->getSession()->write('Cart.items', $updatedCartItems);
             } else {
+                debug($cartItem->getErrors());
                 $this->Flash->error('Unable to add item to cart.');
             }
         }

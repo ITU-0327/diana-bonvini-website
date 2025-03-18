@@ -23,6 +23,8 @@ class CartsControllerTest extends TestCase
     protected array $fixtures = [
         'app.Users',
         'app.Artworks',
+        'app.ArtworkCarts',
+        'app.Carts',
     ];
 
     /**
@@ -76,6 +78,7 @@ class CartsControllerTest extends TestCase
 
         $this->post('/carts/add', $data);
         $this->assertResponseSuccess();
+        debug($this->getSession());
         $this->assertFlashMessage('Item added to cart.');
 
         $cartItems = $this->getSession()->read('Cart.items');
@@ -118,7 +121,7 @@ class CartsControllerTest extends TestCase
     {
         $this->enableCsrfToken();
 
-        $artworkId = 'a0f92c2a-2bb2-4d3e-8d33-0c654c9c1a6b';
+        $artworkId = 'artwork-sold';
 
         // Simulate logged-in user.
         $this->session([
@@ -142,7 +145,7 @@ class CartsControllerTest extends TestCase
     {
         $this->enableCsrfToken();
 
-        $artworkId = 'b7c65c2a-2bb2-4d3e-8d33-0c845c9c1a5c';
+        $artworkId = 'artwork-deleted';
 
         // Simulate logged-in user.
         $this->session([
@@ -231,6 +234,49 @@ class CartsControllerTest extends TestCase
         // After logout, view cart should not contain the item.
         $this->get('/carts');
         $this->assertResponseNotContains('Sunset Over the Ocean');
+    }
+
+    /**
+     * Test that deleted artwork items do not appear in the cart index.
+     *
+     * @return void
+     */
+    public function testIndexDoesNotShowDeletedArt(): void
+    {
+        // Simulate a logged-in user with user_id "user-1234" and a fixed session id.
+        $this->session([
+            'Auth' => [
+                'user_id' => 'user-1234',
+            ],
+        ]);
+
+        $this->get('/carts');
+        $this->assertResponseOk();
+
+        $this->assertResponseContains('Valid Art');
+
+        $this->assertResponseNotContains('Deleted Art');
+    }
+
+    /**
+     * Test that sold artwork items do not appear in the cart index.
+     *
+     * @return void
+     */
+    public function testIndexDoesNotShowSoldArt(): void
+    {
+        $this->session([
+            'Auth' => [
+                'user_id' => 'user-1234',
+            ],
+        ]);
+
+        $this->get('/carts');
+        $this->assertResponseOk();
+
+        $this->assertResponseContains('Valid Art');
+
+        $this->assertResponseNotContains('Sold Art');
     }
 
     /**

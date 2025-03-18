@@ -48,6 +48,20 @@ class UsersFixture extends TestFixture
                 'created_at' => '2025-03-10 09:12:26',
                 'updated_at' => '2025-03-10 09:12:26',
             ],
+            [
+                'user_id'    => 'user-1234',
+                'first_name' => 'John',
+                'last_name'  => 'Doe',
+                'email'      => 'john@example.com',
+                'password'   => 'password',
+                'phone_number' => '1234567890',
+                'address'    => '123 Main St',
+                'user_type'  => 'customer',
+                'last_login' => null,
+                'is_deleted' => 0,
+                'created_at' => '2025-03-07 10:00:00',
+                'updated_at' => '2025-03-07 10:00:00',
+            ],
         ];
         parent::init();
     }
