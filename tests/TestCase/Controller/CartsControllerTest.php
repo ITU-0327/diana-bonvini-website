@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Test\TestCase\Controller;
 
+use Cake\Http\Exception\NotFoundException;
 use Cake\TestSuite\IntegrationTestTrait;
 use Cake\TestSuite\TestCase;
 
@@ -29,6 +30,8 @@ class CartsControllerTest extends TestCase
 
     /**
      * Test Case 1.1: Add Item to Cart (Logged-in User)
+     *
+     * @return void
      */
     public function testAddItemToCartLoggedInWithoutView(): void
     {
@@ -57,6 +60,8 @@ class CartsControllerTest extends TestCase
 
     /**
      * Test Case 1.2: Add Item to Cart (Non-logged-in User)
+     *
+     * @return void
      */
     public function testAddItemToCartNonLoggedIn(): void
     {
@@ -76,6 +81,8 @@ class CartsControllerTest extends TestCase
 
     /**
      * Test Case 1.3: Preventing Duplicate Items in Cart
+     *
+     * @return void
      */
     public function testPreventDuplicateItems(): void
     {
@@ -96,6 +103,8 @@ class CartsControllerTest extends TestCase
 
     /**
      * Test Case 1.4: Do not add a sold item to cart.
+     *
+     * @return void
      */
     public function testAddSoldItemToCart(): void
     {
@@ -120,6 +129,8 @@ class CartsControllerTest extends TestCase
 
     /**
      * Test Case 1.5: Do not add a deleted item to cart.
+     *
+     * @return void
      */
     public function testAddDeletedItemToCart(): void
     {
@@ -143,7 +154,35 @@ class CartsControllerTest extends TestCase
     }
 
     /**
-     * Test Case 1.6: Remove Item from Cart
+     * Test Case: 1.6 Test Missing Artwork ID on Add.
+     *
+     * @return void
+     */
+    public function testAddItemWithoutArtworkId(): void
+    {
+        $this->enableCsrfToken();
+
+        // Post with no artwork_id in data.
+        $this->post('/carts/add', []);
+        $this->assertResponseSuccess();
+        $this->assertFlashMessage('No artwork specified.');
+    }
+
+    /**
+     * Test Case: 1.7 Invalid Request Method for Add.
+     *
+     * @return void
+     */
+    public function testAddItemInvalidMethod(): void
+    {
+        $this->get('/carts/add?artwork_id=some-artwork-id');
+        $this->assertResponseCode(404);
+    }
+
+    /**
+     * Test Case 2.1: Remove Item from Cart
+     *
+     * @return void
      */
     public function testRemoveItemFromCart(): void
     {
@@ -166,7 +205,49 @@ class CartsControllerTest extends TestCase
     }
 
     /**
-     * Test Case 1.7: Cart Persistence During Session
+     * Test Case 2.2: Invalid Request Method for Remove.
+     *
+     * @return void
+     */
+    public function testRemoveItemInvalidMethod(): void
+    {
+        $this->get('/carts/remove?artwork_id=some-artwork-id');
+        $this->assertResponseCode(404);
+    }
+
+    /**
+     * Test Case 2.3: Remove Non-Existent Cart Item.
+     *
+     * @return void
+     */
+    public function testRemoveNonExistentCartItem(): void
+    {
+        $this->enableCsrfToken();
+
+        // Simulate a logged-in user.
+        $this->session([
+            'Auth' => [
+                'user_id' => '17fe31f7-2f61-4176-a036-172eed559e6f',
+                'email' => 'tony.hsieh@example.com',
+            ],
+        ]);
+
+        // Ensure the cart exists but has no items.
+        // This can be simulated by manually writing an empty cart to the session,
+        // or relying on fixture data where no cart item exists for this user.
+        // For this example, we'll assume the user already has an empty cart.
+        // Now attempt to remove an artwork not present.
+        $data = ['artwork_id' => 'non-existent-artwork-id'];
+        $this->post('/carts/remove', $data);
+        $this->assertResponseSuccess();
+
+        $this->assertFlashMessage('Cart item not found.');
+    }
+
+    /**
+     * Test Case 3.1: Cart Persistence During Session
+     *
+     * @return void
      */
     public function testCartPersistenceDuringSession(): void
     {
@@ -187,7 +268,9 @@ class CartsControllerTest extends TestCase
     }
 
     /**
-     * Test Case 1.8: Cart Persistence After Logout
+     * Test Case 3.2: Cart Persistence After Logout
+     *
+     * @return void
      */
     public function testCartPersistenceAfterLogout(): void
     {
@@ -217,7 +300,7 @@ class CartsControllerTest extends TestCase
     }
 
     /**
-     * Test Case 1.9: Cart Index Does Not Show Deleted Artwork
+     * Test Case 3.3: Cart Index Does Not Show Deleted Artwork
      *
      * @return void
      */
@@ -239,7 +322,7 @@ class CartsControllerTest extends TestCase
     }
 
     /**
-     * Test Case 1.10: Cart Index Does Not Show Sold Artwork
+     * Test Case 3.4: Cart Index Does Not Show Sold Artwork
      *
      * @return void
      */
@@ -257,5 +340,26 @@ class CartsControllerTest extends TestCase
         $this->assertResponseContains('Valid Art');
 
         $this->assertResponseNotContains('Sold Art');
+    }
+
+    /**
+     * Test Case 3.5: Empty Cart Index.
+     *
+     * @return void
+     */
+    public function testEmptyCartIndex(): void
+    {
+        // Simulate a logged-in user with no cart.
+        $this->session([
+            'Auth' => [
+                'user_id' => 'no-cart-user',
+                'email' => 'nocart@example.com',
+            ],
+        ]);
+
+        $this->get('/carts');
+        $this->assertResponseOk();
+
+        $this->assertResponseContains('Your cart is empty');
     }
 }

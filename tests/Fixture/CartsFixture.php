@@ -25,6 +25,13 @@ class CartsFixture extends TestFixture
                 'created_at' => '2025-03-07 10:00:00',
                 'updated_at' => '2025-03-07 10:00:00',
             ],
+            [
+                'cart_id'    => '75ce31f7-2f61-1584-a036-172eed157b8c',
+                'user_id'    => '17fe31f7-2f61-4176-a036-172eed559e6f',
+                'session_id' => 'session',
+                'created_at' => '2025-03-07 10:00:00',
+                'updated_at' => '2025-03-07 10:00:00',
+            ],
         ];
         parent::init();
     }
