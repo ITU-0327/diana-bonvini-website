@@ -49,9 +49,9 @@
             <!-- Back Link -->
             <div class="mb-4">
                 <?= $this->Html->link(
-                    '← Back',
+                    '<i class="fa-solid fa-arrow-left"></i> Back',
                     ['action' => 'index'],
-                    ['class' => 'text-gray-600 hover:text-gray-800 text-sm']
+                    ['class' => 'text-gray-600 hover:text-gray-800 text-sm', 'escape' => false]
                 ) ?>
             </div>
 
