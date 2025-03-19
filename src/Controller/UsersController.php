@@ -56,7 +56,7 @@ class UsersController extends AppController
                 $usersTable->save($userEntity);
 
                 $redirect = $this->request->getQuery('redirect', [
-                    'controller' => 'Users',
+                    'controller' => 'Artworks',
                     'action' => 'index',
                 ]);
 
@@ -82,7 +82,7 @@ class UsersController extends AppController
         if ($result && $result->isValid()) {
             $this->Authentication->logout();
 
-            return $this->redirect(['controller' => 'Users', 'action' => 'login']);
+            return $this->redirect(['controller' => 'Pages', 'action' => 'display', 'landing']);
         }
     }
 
