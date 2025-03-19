@@ -5,11 +5,6 @@
  */
 ?>
 
-<?= $this->Html->css(
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css',
-    ['block' => true]
-);?>
-
 <div class="max-w-6xl mx-auto px-4 py-8">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         <!-- Left Column: Artwork Images -->

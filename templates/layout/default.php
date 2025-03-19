@@ -14,9 +14,12 @@ $siteTitle = 'Diana Bonvini Art & Writing';
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title><?= $siteTitle ?>: <?= $this->fetch('title') ?></title>
         <?= $this->Html->meta('icon') ?>
+
         <!-- Tailwind CSS CDN for rapid development -->
         <script src="https://cdn.tailwindcss.com"></script>
+        <?= $this->Html->css('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css');?>
         <?= $this->Html->css('styles.css') ?>
+
         <?= $this->fetch('meta') ?>
         <?= $this->fetch('css') ?>
         <?= $this->fetch('script') ?>
