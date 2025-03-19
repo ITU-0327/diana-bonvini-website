@@ -10,6 +10,12 @@ use Cake\Routing\Router;
 use Cake\Utility\Security;
 use Cake\Utility\Text;
 
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
+
+
 /**
  * Users Controller
  *
@@ -211,13 +217,10 @@ class UsersController extends AppController
      */
     public function forgotPassword()
     {
-        // Render the forgot password view for GET requests
         if ($this->request->is('get')) {
-            // No extra data needed; the view will render the form.
             return;
         }
 
-        // Handle POST request
         if ($this->request->is('post')) {
             $email = $this->request->getData('email');
             $user = $this->Users->findByEmail($email)->first();
@@ -227,28 +230,50 @@ class UsersController extends AppController
                 return;
             }
 
-            // Generate a secure token
+            // Generate a secure token & save to DB
             $token = Security::hash(Text::uuid(), 'sha256', true);
-
-            // Set token and expiration (1 hour from now)
             $user->password_reset_token = $token;
             $user->token_expiration = new FrozenTime('+1 hour');
 
             if ($this->Users->save($user)) {
-                // Build a reset link with an absolute URL
+                // Build a reset link
                 $resetLink = Router::url([
                     'controller' => 'Users',
                     'action' => 'resetPassword',
                     $token,
                 ], true);
 
-                // Send an email with the reset link
-                $mailer = new Mailer('default');
-                $mailer->setTo($user->email)
-                    ->setSubject('Your Password Reset Request')
-                    ->deliver("Hello {$user->first_name},\n\nPlease click the following link to reset your password:\n\n{$resetLink}\n\nThis link will expire in 1 hour.");
+                // PHPMailer integration
+                $mail = new PHPMailer(true);
+                try {
+                    // SMTP config (Mailtrap example)
+                    $mail->isSMTP();
+                    $mail->Host       = 'smtp.gmail.com';   // or your SMTP server
+                    $mail->SMTPAuth   = true;
+                    $mail->Username   = 'dqii0004@student.monash.edu';
+                    $mail->Password   = 'lnoq baxv kunn klif';
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port       = 587;
 
-                $this->Flash->success('A password reset link has been sent to your email address.');
+                    // Sender & recipient
+                    $mail->setFrom('noreply@example.com', 'DianaBonvini.com');
+                    $mail->addAddress($user->email, $user->first_name);
+
+                    // Email content
+                    $mail->isHTML(true);
+                    $mail->Subject = 'Your Password Reset Request';
+                    $mail->Body    = "Hello {$user->first_name},<br><br>"
+                        . "Please click the following link to reset your password:<br>"
+                        . "<a href=\"{$resetLink}\">{$resetLink}</a><br><br>"
+                        . "This link will expire in 1 hour.";
+
+                    // Send email
+                    $mail->send();
+                    $this->Flash->success('A password reset link has been sent to your email address.');
+                } catch (Exception $e) {
+                    $this->Flash->error("Email could not be sent. Error: {$mail->ErrorInfo}");
+                }
+
                 return $this->redirect(['action' => 'login']);
             } else {
                 $this->Flash->error('Unable to save reset token. Please try again.');
