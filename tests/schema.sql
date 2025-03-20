@@ -8,6 +8,8 @@ CREATE TABLE users (
     phone_number VARCHAR(50),
     address TEXT,
     user_type ENUM('customer','admin') NOT NULL,
+    password_reset_token VARCHAR(255) DEFAULT NULL,
+    token_expiration DATETIME DEFAULT NULL,
     last_login DATETIME NULL,
     is_deleted TINYINT NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

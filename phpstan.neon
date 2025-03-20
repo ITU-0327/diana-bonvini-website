@@ -8,3 +8,4 @@ parameters:
         - tests/
     ignoreErrors:
     	- '#Call to static method now\(\) on an unknown class Cake\\I18n\\FrozenTime#'
+    	- '#Instantiated class Cake\\I18n\\FrozenTime not found#'

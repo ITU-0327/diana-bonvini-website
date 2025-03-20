@@ -21,6 +21,8 @@ use Cake\ORM\Entity;
  * @property int $is_deleted
  * @property \Cake\I18n\DateTime $created_at
  * @property \Cake\I18n\DateTime $updated_at
+ * @property string|null $password_reset_token
+ * @property \Cake\I18n\DateTime|null $token_expiration
  */
 class User extends Entity
 {
@@ -47,6 +49,8 @@ class User extends Entity
         'updated_at' => true,
         // Allow oauth_provider for validation purposes only.
         'oauth_provider' => true,
+        'password_reset_token' => true,
+        'token_expiration' => true,
     ];
 
     /**

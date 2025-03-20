@@ -35,7 +35,11 @@
                 <input type="checkbox" class="form-checkbox h-4 w-4 text-indigo-500" name="remember" />
                 <span class="ml-2">Remember me</span>
             </label>
-            <a href="#" class="text-sm text-indigo-600 hover:text-indigo-500">Forgot password?</a>
+            <?= $this->Html->link(
+                'Forgot password?',
+                ['controller' => 'Users', 'action' => 'forgotPassword'],
+                ['class' => 'text-sm text-indigo-600 hover:text-indigo-500']
+            ) ?>
         </div>
         <!-- Submit Button -->
         <div>

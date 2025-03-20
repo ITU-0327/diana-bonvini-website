@@ -120,6 +120,15 @@ class UsersTable extends Table
             ->dateTime('updated_at')
             ->notEmptyDateTime('updated_at');
 
+        $validator
+            ->scalar('password_reset_token')
+            ->maxLength('password_reset_token', 255)
+            ->allowEmptyString('password_reset_token');
+
+        $validator
+            ->dateTime('token_expiration')
+            ->allowEmptyDateTime('token_expiration');
+
         return $validator;
     }
 
