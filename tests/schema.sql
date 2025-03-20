@@ -146,17 +146,18 @@ CREATE TABLE artwork_carts (
 ) ENGINE=InnoDB;
 
 -- Table: writing_service_requests
-CREATE TABLE writing_service_requests (
-    request_id CHAR(36) NOT NULL PRIMARY KEY,
-    user_id CHAR(36) NOT NULL,
-    service_type ENUM('creative_writing', 'editing', 'proofreading') NOT NULL,
-    word_count_range VARCHAR(50) NOT NULL,
-    notes VARCHAR(100) DEFAULT NULL,
-    estimated_price DECIMAL(10,2) DEFAULT NULL,
-    final_price DECIMAL(10,2) DEFAULT NULL,
-    request_status enum('pending', 'in_progress', 'expired') NOT NULL DEFAULT 'pending',
-    is_deleted TINYINT NOT NULL DEFAULT 0,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users(user_id)
-) ENGINE=InnoDB;
+CREATE TABLE `writing_service_requests` (
+    `request_id` char(36) NOT NULL,
+    `user_id` char(36) NOT NULL,
+    `service_type` enum('creative_writing','editing','proofreading') NOT NULL,
+    `word_count_range` varchar(50) NOT NULL,
+    `notes` varchar(100) DEFAULT NULL,
+    `estimated_price` decimal(10,2) DEFAULT NULL,
+    `final_price` decimal(10,2) DEFAULT NULL,
+    `request_status` enum('pending','in_progress','expired') NOT NULL DEFAULT 'pending',
+    `is_deleted` tinyint NOT NULL DEFAULT '0',
+    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `document` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
