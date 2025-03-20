@@ -246,7 +246,7 @@ class UsersController extends AppController
                 // PHPMailer integration
                 $mail = new PHPMailer(true);
                 try {
-                    // SMTP config (Mailtrap example)
+                        // SMTP config
                     $mail->isSMTP();
                     $mail->Host       = 'smtp.gmail.com';   // or your SMTP server
                     $mail->SMTPAuth   = true;

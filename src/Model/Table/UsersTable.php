@@ -71,7 +71,26 @@ class UsersTable extends Table
         $validator
             ->scalar('password')
             ->maxLength('password', 255)
-            ->allowEmptyString('password');
+            ->requirePresence('password', function ($context) {
+                return empty($context['data']['oauth_provider']);
+            })
+            ->notEmptyString('password', 'Password is required', function ($context) {
+                return empty($context['data']['oauth_provider']);
+            })
+            ->add('password', 'complexity', [
+                'rule' => function ($value, $context) {
+                    // Skip complexity check if using OAuth.
+                    if (!empty($context['data']['oauth_provider'])) {
+                        return true;
+                    }
+                    // Enforce complexity for traditional accounts.
+                    return strlen($value) >= 8 &&
+                        preg_match('/[A-Z]/', $value) &&
+                        preg_match('/[a-z]/', $value) &&
+                        preg_match('/\d/', $value);
+                },
+                'message' => 'Password must be at least 8 characters long and include uppercase, lowercase letters, and a number.',
+            ]);
 
         $validator
             ->scalar('phone_number')
