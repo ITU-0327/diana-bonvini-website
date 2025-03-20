@@ -32,36 +32,48 @@
                     <th><?= $this->Paginator->sort('is_deleted') ?></th>
                     <th><?= $this->Paginator->sort('created_at') ?></th>
                     <th><?= $this->Paginator->sort('updated_at') ?></th>
+
+                    <th><?= __('Document') ?></th>
+
                     <th class="actions"><?= __('Actions') ?></th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($writingServiceRequests as $writingServiceRequest): ?>
-                <tr>
-                    <td><?= h($writingServiceRequest->request_id) ?></td>
-                    <td><?= $writingServiceRequest->hasValue('user') ? $this->Html->link($writingServiceRequest->user->first_name, ['controller' => 'Users', 'action' => 'view', $writingServiceRequest->user->user_id]) : '' ?></td>
-                    <td><?= h($writingServiceRequest->service_type) ?></td>
-                    <td><?= h($writingServiceRequest->word_count_range) ?></td>
-                    <td><?= h($writingServiceRequest->notes) ?></td>
-                    <td><?= $writingServiceRequest->estimated_price === null ? '' : $this->Number->format($writingServiceRequest->estimated_price) ?></td>
-                    <td><?= $writingServiceRequest->final_price === null ? '' : $this->Number->format($writingServiceRequest->final_price) ?></td>
-                    <td><?= h($writingServiceRequest->request_status) ?></td>
-                    <td><?= $this->Number->format($writingServiceRequest->is_deleted) ?></td>
-                    <td><?= h($writingServiceRequest->created_at) ?></td>
-                    <td><?= h($writingServiceRequest->updated_at) ?></td>
-                    <td class="actions">
-                        <?= $this->Html->link(__('View'), ['action' => 'view', $writingServiceRequest->request_id]) ?>
-                        <?= $this->Html->link(__('Edit'), ['action' => 'edit', $writingServiceRequest->request_id]) ?>
-                        <?= $this->Form->postLink(
-                            __('Delete'),
-                            ['action' => 'delete', $writingServiceRequest->request_id],
-                            [
-                                'method' => 'delete',
-                                'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->request_id),
-                            ]
-                        ) ?>
-                    </td>
-                </tr>
+                    <tr>
+                        <td><?= h($writingServiceRequest->request_id) ?></td>
+                        <td><?= $writingServiceRequest->hasValue('user') ? $this->Html->link($writingServiceRequest->user->first_name, ['controller' => 'Users', 'action' => 'view', $writingServiceRequest->user->user_id]) : '' ?></td>
+                        <td><?= h($writingServiceRequest->service_type) ?></td>
+                        <td><?= h($writingServiceRequest->word_count_range) ?></td>
+                        <td><?= h($writingServiceRequest->notes) ?></td>
+                        <td><?= $writingServiceRequest->estimated_price === null ? '' : $this->Number->format($writingServiceRequest->estimated_price) ?></td>
+                        <td><?= $writingServiceRequest->final_price === null ? '' : $this->Number->format($writingServiceRequest->final_price) ?></td>
+                        <td><?= h($writingServiceRequest->request_status) ?></td>
+                        <td><?= $this->Number->format($writingServiceRequest->is_deleted) ?></td>
+                        <td><?= h($writingServiceRequest->created_at) ?></td>
+                        <td><?= h($writingServiceRequest->updated_at) ?></td>
+
+                        <td>
+                            <?php if (!empty($writingServiceRequest->document)): ?>
+                                <?= $this->Html->link('View Document', '/' . $writingServiceRequest->document, ['target' => '_blank']) ?>
+                            <?php else: ?>
+                                <span>No Document</span>
+                            <?php endif; ?>
+                        </td>
+
+                        <td class="actions">
+                            <?= $this->Html->link(__('View'), ['action' => 'view', $writingServiceRequest->request_id]) ?>
+                            <?= $this->Html->link(__('Edit'), ['action' => 'edit', $writingServiceRequest->request_id]) ?>
+                            <?= $this->Form->postLink(
+                                __('Delete'),
+                                ['action' => 'delete', $writingServiceRequest->request_id],
+                                [
+                                    'method' => 'delete',
+                                    'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->request_id),
+                                ]
+                            ) ?>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>

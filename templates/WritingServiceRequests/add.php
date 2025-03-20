@@ -15,7 +15,7 @@
 
             <div class="writingServiceRequests form content">
 
-                <?= $this->Form->create($writingServiceRequest, ['id' => 'serviceRequestForm']) ?>
+                <?= $this->Form->create($writingServiceRequest, ['id' => 'serviceRequestForm', 'type' => 'file']) ?>
 
                 <!-- Hidden user ID -->
                 <?= $this->Form->hidden('user_id', ['value' => $userId]) ?>
@@ -71,7 +71,7 @@
                     </div>
                 </fieldset>
 
-                <!-- Notes Field (Initially hidden) -->
+                <!-- Notes and Document Upload Field (Initially hidden) -->
                 <div id="notesSection" class="mb-4" style="display: none;">
                     <?= $this->Form->label('notes', 'Notes (maximum 100 characters)', ['class' => 'form-label fw-bold']) ?>
                     <?= $this->Form->textarea('notes', [
@@ -80,6 +80,12 @@
                         'class' => 'form-control',
                         'rows' => 3
                     ]) ?>
+
+                    <!-- Document Upload -->
+                    <div class=\"mt-3\">
+                        <?= $this->Form->label('document', 'Upload Document (TXT, PDF, Word)', ['class' => 'form-label fw-bold']) ?>
+                        <?= $this->Form->file('document', ['class' => 'form-control']) ?>
+                    </div>
                 </div>
 
                 <!-- Confirmation Section with Submit Button (Initially hidden) -->
