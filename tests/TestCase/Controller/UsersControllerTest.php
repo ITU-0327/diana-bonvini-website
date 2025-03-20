@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Test\TestCase\Controller;
 
 use Authentication\PasswordHasher\DefaultPasswordHasher;
+use Cake\ORM\TableRegistry;
 use Cake\TestSuite\IntegrationTestTrait;
 use Cake\TestSuite\TestCase;
 
@@ -249,26 +250,10 @@ class UsersControllerTest extends TestCase
     }
 
     /**
-     * Test Case 4.1: Logout Clears Session
+     * Test Case 3.3: Traditional Registration Rejects OAuth Provider
      *
      * @return void
      */
-    public function testLogout(): void
-    {
-        $this->enableCsrfToken();
-
-        // Set up a dummy session for a logged-in user.
-        $this->session([
-            'Auth' => [
-                'user_id' => '17fe31f7-2f61-4176-a036-172eed559e6f',
-                'email' => 'tony.hsieh@example.com',
-            ],
-        ]);
-        $this->get('/users/logout');
-        $this->assertRedirect('/users/login');
-        $this->assertEmpty($this->getSession()->read('Auth.User'), 'User session should be cleared after logout.');
-    }
-
     public function testTraditionalRegistrationRejectsOAuthProvider(): void
     {
         $this->enableCsrfToken();
@@ -291,5 +276,208 @@ class UsersControllerTest extends TestCase
         $usersTable = $this->getTableLocator()->get('Users');
         $user = $usersTable->find()->where(['email' => 'malicious.user@example.com'])->first();
         $this->assertEmpty($user, 'User should not be created if oauth_provider is provided on normal registration.');
+    }
+
+    /**
+     * Test Case 4.1: Logout Clears Session
+     *
+     * @return void
+     */
+    public function testLogout(): void
+    {
+        $this->enableCsrfToken();
+
+        // Set up a dummy session for a logged-in user.
+        $this->session([
+            'Auth' => [
+                'user_id' => '17fe31f7-2f61-4176-a036-172eed559e6f',
+                'email' => 'tony.hsieh@example.com',
+            ],
+        ]);
+        $this->get('/users/logout');
+        $this->assertRedirect('/users/login');
+        $this->assertEmpty($this->getSession()->read('Auth.User'), 'User session should be cleared after logout.');
+    }
+
+    /**
+     * Test Case 5.1: Forgot Password GET Request
+     *
+     * @return void
+     */
+    public function testForgotPasswordGetRequest(): void
+    {
+        $this->get('/users/forgot-password');
+        $this->assertResponseOk();
+    }
+
+    /**
+     * Test Case 5.2: Forgot Password with Valid Email
+     *
+     * @return void
+     */
+    public function testForgotPasswordValidEmail(): void
+    {
+        $this->enableCsrfToken();
+
+        $data = ['email' => 'tony.hsieh@example.com'];
+        $this->post('/users/forgot-password', $data);
+
+        $this->assertResponseSuccess();
+        $this->assertFlashMessage('A password reset link has been sent to your email address.');
+
+        // Check if the reset token was generated
+        $usersTable = TableRegistry::getTableLocator()->get('Users');
+        $user = $usersTable->find()->where(['email' => 'tony.hsieh@example.com'])->first();
+        $this->assertNotEmpty($user->password_reset_token, 'Reset token should be generated.');
+    }
+
+    /**
+     * Test Case 5.3: Forgot Password with Invalid Email
+     *
+     * @return void
+     */
+    public function testForgotPasswordInvalidEmail(): void
+    {
+        $this->enableCsrfToken();
+
+        $data = ['email' => 'invalid.user@example.com'];
+        $this->post('/users/forgot-password', $data);
+
+        $this->assertResponseSuccess();
+        $this->assertResponseContains('No user found with that email address.');
+    }
+
+    /**
+     * Test Case 5.4: Forgot Password with Empty Email
+     *
+     * @return void
+     */
+    public function testForgotPasswordEmptyEmail(): void
+    {
+        $this->enableCsrfToken();
+
+        $data = ['email' => ''];
+        $this->post('/users/forgot-password', $data);
+
+        $this->assertResponseSuccess();
+        $this->assertResponseContains('No user found with that email address.');
+    }
+
+    /**
+     * Test Case 6.1: Reset Password GET Request with Valid Token
+     *
+     * @return void
+     */
+    public function testResetPasswordValidToken(): void
+    {
+        $this->get('/users/reset-password/valid-reset-token');
+        $this->assertResponseOk();
+    }
+
+    /**
+     * Test Case 6.2: Reset Password GET Request with Invalid/Expired Token
+     *
+     * @return void
+     */
+    public function testResetPasswordInvalidToken(): void
+    {
+        $this->get('/users/reset-password/invalid-token');
+        $this->assertRedirect(['action' => 'forgotPassword']);
+        $this->assertFlashMessage('Invalid or expired token. Please request a new one.');
+    }
+
+    /**
+     * Test Case 6.3: Reset Password with Matching Passwords
+     *
+     * @return void
+     */
+    public function testResetPasswordValidMatch(): void
+    {
+        $this->enableCsrfToken();
+
+        $usersTable = TableRegistry::getTableLocator()->get('Users');
+        $user = $usersTable->find()->where(['email' => 'valid.user@example.com'])->first();
+        $token = $user->password_reset_token;
+
+        $data = [
+            'password' => 'NewSecurePassword123',
+            'password_confirm' => 'NewSecurePassword123',
+        ];
+
+        $this->post("/users/reset-password/{$token}", $data);
+
+        $this->assertRedirect(['action' => 'login']);
+        $this->assertFlashMessage('Your password has been updated. You may now log in.');
+
+        // Ensure password reset fields are cleared
+        $updatedUser = $usersTable->find()->where(['email' => 'valid.user@example.com'])->first();
+        $this->assertNull($updatedUser->password_reset_token, 'Reset token should be null after password reset.');
+    }
+
+    /**
+     * Test Case 6.4: Reset Password with Mismatched Passwords
+     *
+     * @return void
+     */
+    public function testResetPasswordMismatch(): void
+    {
+        $this->enableCsrfToken();
+
+        $data = [
+            'password' => 'NewSecurePassword123',
+            'password_confirm' => 'MismatchPassword',
+        ];
+
+        $this->post('/users/reset-password/valid-reset-token', $data);
+        $this->assertResponseSuccess();
+
+        $this->assertResponseContains('Passwords do not match. Please try again.');
+    }
+
+    /**
+     * Test Case 6.5: Reset Password with Empty Password
+     *
+     * @return void
+     */
+    public function testResetPasswordEmptyPassword(): void
+    {
+        $this->enableCsrfToken();
+
+        $data = [
+            'password' => '',
+            'password_confirm' => '',
+        ];
+
+        $this->post('/users/reset-password/valid-reset-token', $data);
+        $this->assertResponseSuccess();
+
+        $this->assertResponseContains('Unable to reset your password. Please try again.');
+    }
+
+    /**
+     * Test Case 6.6: Reset Password with OAuth Provider
+     *
+     * @return void
+     */
+    public function testResetPasswordOauthProvider(): void
+    {
+        $this->enableCsrfToken();
+
+        $usersTable = TableRegistry::getTableLocator()->get('Users');
+        $user = $usersTable->find()->where(['email' => 'valid.user@example.com'])->first();
+        $token = $user->password_reset_token;
+
+        $data = [
+            'password' => '',
+            'password_confirm' => '',
+            'oauth_provider' => 'google',
+        ];
+
+        $this->post("/users/reset-password/{$token}", $data);
+
+        $this->assertRedirect(['action' => 'login']);
+        $this->assertResponseSuccess();
+
+        $this->assertFlashMessage('Invalid password reset request.');
     }
 }

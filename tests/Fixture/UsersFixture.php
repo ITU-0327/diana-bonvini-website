@@ -48,6 +48,22 @@ class UsersFixture extends TestFixture
                 'created_at' => '2025-03-10 09:12:26',
                 'updated_at' => '2025-03-10 09:12:26',
             ],
+            [
+                'user_id' => '84ab31f7-8g55-4584-a036-158eed555b6a',
+                'first_name' => 'Valid',
+                'last_name' => 'User',
+                'email' => 'valid.user@example.com',
+                'password' => $hasher->hash('SecureP@ssw0rd'),
+                'phone_number' => '1234567890',
+                'address' => '123 Main St',
+                'user_type' => 'customer',
+                'last_login' => '2025-03-10 09:12:26',
+                'password_reset_token' => 'valid-reset-token',
+                'token_expiration' => '2026-1-1 09:12:26',
+                'is_deleted' => 0,
+                'created_at' => '2025-03-10 09:12:26',
+                'updated_at' => '2025-03-10 09:12:26',
+            ],
         ];
         parent::init();
     }

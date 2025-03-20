@@ -242,7 +242,6 @@ class UsersController extends AppController
                 // PHPMailer integration
                 $mail = new PHPMailer(true);
                 try {
-                        // SMTP config
                     $mail->isSMTP();
                     $mail->Host = 'smtp.gmail.com';
                     $mail->SMTPAuth = true;
@@ -267,7 +266,7 @@ class UsersController extends AppController
                     $mail->send();
                     $this->Flash->success('A password reset link has been sent to your email address.');
                 } catch (Exception $e) {
-                    $this->Flash->error("Email could not be sent. Error: {$mail->ErrorInfo}");
+                    $this->Flash->error('Something went wrong. Please try again.');
                 }
 
                 return $this->redirect(['action' => 'login']);
@@ -311,24 +310,27 @@ class UsersController extends AppController
         if ($this->request->is(['post', 'put'])) {
             $newPassword = $this->request->getData('password');
             $confirmPassword = $this->request->getData('password_confirm');
+            if ($this->request->getData('oauth_provider')) {
+                $this->Flash->error('Invalid password reset request.');
+
+                return $this->redirect(['action' => 'login']);
+            }
 
             if ($newPassword !== $confirmPassword) {
                 $this->Flash->error('Passwords do not match. Please try again.');
-                // Do not proceed; the view will be re-rendered with the error
-                return;
-            }
-
-            // Update the password and clear the reset token fields
-            $user = $this->Users->patchEntity($user, $this->request->getData());
-            $user->password_reset_token = null;
-            $user->token_expiration = null;
-
-            if ($this->Users->save($user)) {
-                $this->Flash->success('Your password has been updated. You may now log in.');
-
-                return $this->redirect(['action' => 'login']);
             } else {
-                $this->Flash->error('Unable to reset your password. Please try again.');
+                // Update the password and clear the reset token fields
+                $user = $this->Users->patchEntity($user, $this->request->getData());
+                $user->password_reset_token = null;
+                $user->token_expiration = null;
+
+                if ($this->Users->save($user)) {
+                    $this->Flash->success('Your password has been updated. You may now log in.');
+
+                    return $this->redirect(['action' => 'login']);
+                } else {
+                    $this->Flash->error('Unable to reset your password. Please try again.');
+                }
             }
         }
 
