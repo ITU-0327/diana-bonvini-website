@@ -37,7 +37,6 @@
         ]) ?>
         <?= $this->Form->end() ?>
 
-        <!-- Optional: Link back to login -->
         <div class="mt-4 text-center">
             <span class="text-sm text-gray-600">Go back to</span>
             <?= $this->Html->link('Login', ['action' => 'login'], [

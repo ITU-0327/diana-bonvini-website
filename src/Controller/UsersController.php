@@ -5,16 +5,11 @@ namespace App\Controller;
 
 use Cake\Event\EventInterface;
 use Cake\I18n\FrozenTime;
-use Cake\Mailer\Mailer;
 use Cake\Routing\Router;
 use Cake\Utility\Security;
 use Cake\Utility\Text;
-
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
-
+use PHPMailer\PHPMailer\PHPMailer;
 
 /**
  * Users Controller
@@ -213,7 +208,7 @@ class UsersController extends AppController
     /**
      * Forgot Password method
      *
-     * Renders a form on GET and processes the reset request on POST.
+     * @return \Cake\Http\Response|null|void
      */
     public function forgotPassword()
     {
@@ -227,6 +222,7 @@ class UsersController extends AppController
 
             if (!$user) {
                 $this->Flash->error('No user found with that email address.');
+
                 return;
             }
 
@@ -248,12 +244,12 @@ class UsersController extends AppController
                 try {
                         // SMTP config
                     $mail->isSMTP();
-                    $mail->Host       = 'smtp.gmail.com';   // or your SMTP server
-                    $mail->SMTPAuth   = true;
-                    $mail->Username   = 'dqii0004@student.monash.edu';
-                    $mail->Password   = 'lnoq baxv kunn klif';
+                    $mail->Host = 'smtp.gmail.com';
+                    $mail->SMTPAuth = true;
+                    $mail->Username = 'dqii0004@student.monash.edu';
+                    $mail->Password = 'lnoq baxv kunn klif';
                     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                    $mail->Port       = 587;
+                    $mail->Port = 587;
 
                     // Sender & recipient
                     $mail->setFrom('noreply@example.com', 'DianaBonvini.com');
@@ -262,10 +258,10 @@ class UsersController extends AppController
                     // Email content
                     $mail->isHTML(true);
                     $mail->Subject = 'Your Password Reset Request';
-                    $mail->Body    = "Hello {$user->first_name},<br><br>"
-                        . "Please click the following link to reset your password:<br>"
+                    $mail->Body = "Hello {$user->first_name},<br><br>"
+                        . 'Please click the following link to reset your password:<br>'
                         . "<a href=\"{$resetLink}\">{$resetLink}</a><br><br>"
-                        . "This link will expire in 1 hour.";
+                        . 'This link will expire in 1 hour.';
 
                     // Send email
                     $mail->send();
@@ -287,11 +283,13 @@ class UsersController extends AppController
      * Validates the token, renders a reset form, and processes the new password.
      *
      * @param string|null $token
+     * @return \Cake\Http\Response|null|void
      */
     public function resetPassword(?string $token = null)
     {
         if (!$token) {
             $this->Flash->error('Invalid password reset token.');
+
             return $this->redirect(['action' => 'login']);
         }
 
@@ -305,6 +303,7 @@ class UsersController extends AppController
 
         if (!$user) {
             $this->Flash->error('Invalid or expired token. Please request a new one.');
+
             return $this->redirect(['action' => 'forgotPassword']);
         }
 
@@ -326,14 +325,15 @@ class UsersController extends AppController
 
             if ($this->Users->save($user)) {
                 $this->Flash->success('Your password has been updated. You may now log in.');
+
                 return $this->redirect(['action' => 'login']);
             } else {
                 $this->Flash->error('Unable to reset your password. Please try again.');
             }
         }
 
-        // Provide the user entity to the view so the form can be built
+        // Clear the password field for security
+        $user->password = '';
         $this->set(compact('user'));
     }
 }
-

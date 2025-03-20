@@ -47,6 +47,8 @@ class User extends Entity
         'is_deleted' => true,
         'created_at' => true,
         'updated_at' => true,
+        // Allow oauth_provider for validation purposes only.
+        'oauth_provider' => true,
         'password_reset_token' => true,
         'token_expiration' => true,
     ];
