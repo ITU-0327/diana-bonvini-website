@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Mailer\UserMailer;
 use Cake\Event\EventInterface;
 use Cake\I18n\FrozenTime;
 use Cake\Routing\Router;
@@ -239,35 +240,11 @@ class UsersController extends AppController
                     $token,
                 ], true);
 
-                // PHPMailer integration
-                $mail = new PHPMailer(true);
-                try {
-                    $mail->isSMTP();
-                    $mail->Host = 'smtp.gmail.com';
-                    $mail->SMTPAuth = true;
-                    $mail->Username = 'dqii0004@student.monash.edu';
-                    $mail->Password = 'lnoq baxv kunn klif';
-                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-                    $mail->Port = 587;
+                $mailer = new UserMailer('default');
+                $mailer->resetPassword($user, $resetLink);
+                $mailer->deliver();
 
-                    // Sender & recipient
-                    $mail->setFrom('noreply@example.com', 'DianaBonvini.com');
-                    $mail->addAddress($user->email, $user->first_name);
-
-                    // Email content
-                    $mail->isHTML(true);
-                    $mail->Subject = 'Your Password Reset Request';
-                    $mail->Body = "Hello {$user->first_name},<br><br>"
-                        . 'Please click the following link to reset your password:<br>'
-                        . "<a href=\"{$resetLink}\">{$resetLink}</a><br><br>"
-                        . 'This link will expire in 1 hour.';
-
-                    // Send email
-                    $mail->send();
-                    $this->Flash->success('A password reset link has been sent to your email address.');
-                } catch (Exception $e) {
-                    $this->Flash->error('Something went wrong. Please try again.');
-                }
+                $this->Flash->success('A password reset link has been sent to your email address.');
 
                 return $this->redirect(['action' => 'login']);
             } else {
