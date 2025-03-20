@@ -9,8 +9,6 @@ use Cake\I18n\FrozenTime;
 use Cake\Routing\Router;
 use Cake\Utility\Security;
 use Cake\Utility\Text;
-use PHPMailer\PHPMailer\Exception;
-use PHPMailer\PHPMailer\PHPMailer;
 
 /**
  * Users Controller
