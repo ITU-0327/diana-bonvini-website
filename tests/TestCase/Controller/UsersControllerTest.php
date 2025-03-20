@@ -295,7 +295,7 @@ class UsersControllerTest extends TestCase
             ],
         ]);
         $this->get('/users/logout');
-        $this->assertRedirect('/users/login');
+        $this->assertRedirect('/');
         $this->assertEmpty($this->getSession()->read('Auth.User'), 'User session should be cleared after logout.');
     }
 

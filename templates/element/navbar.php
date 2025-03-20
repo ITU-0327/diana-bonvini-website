@@ -1,3 +1,11 @@
+<?php
+/**
+ * @var \App\View\AppView $this
+ * @var \App\Model\Entity\User|null $user
+ */
+
+$user = $this->getRequest()->getAttribute('identity');
+?>
 <nav class="bg-white shadow">
     <div class="container mx-auto px-4">
         <div class="flex justify-between items-center h-16">
@@ -5,13 +13,14 @@
             <div class="flex items-center space-x-8">
                 <!-- Logo -->
                 <a href="<?= $this->Url->build('/') ?>" class="flex items-center">
-                    <span class="font-bold text-2xl text-gray-800">Diana Bonvini</span>
+                    <span class="font-bold text-2xl text-gray-800">diana bonvini.</span>
                 </a>
                 <!-- Navigation Menu -->
                 <ul class="flex space-x-4">
                     <!-- Buy Art with Dropdown -->
                     <li class="menu-item relative group">
-                        <a href="<?= $this->Url->build('/buy-art') ?>" class="block px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded">
+                        <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index']) ?>"
+                            class="block px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded">
                             Art
                             <svg class="inline ml-1 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -19,9 +28,24 @@
                         </a>
                         <!-- Dropdown -->
                         <ul class="absolute left-0 top-full w-48 bg-white border border-gray-200 rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-300 z-10">
-                            <li class="menu-item"><a href="<?= $this->Url->build('/buy-art/all') ?>" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">All Art</a></li>
-                            <li class="menu-item"><a href="<?= $this->Url->build('/buy-art/new') ?>" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">New Arrivals</a></li>
-                            <li class="menu-item"><a href="<?= $this->Url->build('/buy-art/collections') ?>" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Collections</a></li>
+                            <li class="menu-item">
+                                <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index']) ?>"
+                                   class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    All Art
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index']) ?>"
+                                   class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    New Arrivals
+                                </a>
+                            </li>
+                            <li class="menu-item">
+                                <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index']) ?>"
+                                   class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                    Collections
+                                </a>
+                            </li>
                         </ul>
                     </li>
                     <!-- Writing & Proofreading Services with Dropdown -->
@@ -51,70 +75,101 @@
             <!-- Right Side: Shopping Cart and User Profile -->
             <div class="flex items-center space-x-6">
                 <!-- Shopping Cart -->
-                <a href="<?= $this->Url->build('/shopping-cart') ?>" class="relative">
+                <a href="<?= $this->Url->build(['controller' => 'Carts', 'action' => 'index']) ?>" class="relative">
                     <?= $this->Html->image('navbar/shopping-cart.png', ['class' => 'h-6 w-6']) ?>
                 </a>
                 <!-- User Profile with "Card" Style Dropdown -->
-                <div class="relative group">
-                    <button type="button" class="flex items-center focus:outline-none">
-                        <?= $this->Html->image('user-placeholder.jpg', ['class' => 'h-8 w-8 rounded-full', 'alt' => 'User Profile']) ?>
-                        <svg class="ml-1 h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </button>
-                    <!-- Dropdown Menu styled like your screenshot -->
-                    <div class="absolute right-0 top-full w-72 bg-white border border-gray-200 rounded shadow-lg p-4 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-300 z-10">
-                        <!-- User Info -->
-                        <div class="flex items-center space-x-3 mb-4">
-                            <?= $this->Html->image('user-placeholder.jpg', ['class' => 'h-12 w-12 rounded-full', 'alt' => 'User Profile']) ?>
-                            <div>
-                                <h4 class="text-gray-800 font-semibold text-lg">Diana Bonvini</h4>
-                                <p class="text-sm text-gray-500">Business Owner</p>
-                                <p class="text-sm text-gray-500">dbdesignsaustralia@gmail.com</p>
+                <?php if ($user) : ?>
+                    <!-- Profile Dropdown for logged-in users -->
+                    <div class="relative group">
+                        <button type="button" class="flex items-center focus:outline-none hover:bg-transparent">
+                            <?= $this->Html->image('user-placeholder.jpg', [
+                                'class' => 'h-9 w-9 rounded-full',
+                                'alt' => 'User Profile',
+                            ]) ?>
+                        </button>
+                        <!-- Dropdown Menu -->
+                        <div class="absolute right-0 top-full w-96 bg-white border border-gray-200 rounded shadow-lg p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-300 z-10">
+                            <!-- Heading -->
+                            <h5 class="text-gray-900 font-bold mb-4 text-2xl">User Profile</h5>
+
+                            <!-- User Info -->
+                            <div class="flex items-center space-x-4">
+                                <?= $this->Html->image('user-placeholder.jpg', [
+                                    'class' => 'h-20 w-20 rounded-full',
+                                    'alt' => 'User Profile',
+                                ]) ?>
+                                <div>
+                                    <h4 class="text-gray-800 font-semibold text-xl">
+                                        <?= h($user->first_name . ' ' . $user->last_name) ?>
+                                    </h4>
+                                    <p class="text-sm text-gray-500 flex items-center space-x-2 mt-1">
+                                        <i class="fa-solid fa-envelope"></i>
+                                        <span><?= h($user->email) ?></span>
+                                    </p>
+                                </div>
                             </div>
+
+                            <!-- Divider -->
+                            <div class="border-b border-gray-200 my-3"></div>
+
+                            <!-- Menu Items (Icons and Text Unchanged) -->
+                            <ul class="space-y-2">
+                                <li class="menu-item">
+                                    <a href="#" class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
+                                        <i class="fa-solid fa-box h-6 w-6 text-indigo-500"></i>
+                                        <div>
+                                            <p class="text-gray-700 font-medium text-base">My Orders</p>
+                                            <p class="text-xs text-gray-500">View Purchased Art</p>
+                                        </div>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="#" class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
+                                        <i class="fa-solid fa-pen-nib h-6 w-6 text-indigo-500"></i>
+                                        <div>
+                                            <p class="text-gray-700 font-medium text-base">My Services</p>
+                                            <p class="text-xs text-gray-500">Writing &amp; Proofreading</p>
+                                        </div>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="#" class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
+                                        <i class="fa-solid fa-calendar-check h-6 w-6 text-indigo-500"></i>
+                                        <div>
+                                            <p class="text-gray-700 font-medium text-base">My Bookings</p>
+                                            <p class="text-xs text-gray-500">Scheduled Sessions</p>
+                                        </div>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="#" class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
+                                        <i class="fa-solid fa-user-cog h-6 w-6 text-indigo-500"></i>
+                                        <div>
+                                            <p class="text-gray-700 font-medium text-base">Account Settings</p>
+                                            <p class="text-xs text-gray-500">Profile &amp; Password</p>
+                                        </div>
+                                    </a>
+                                </li>
+                            </ul>
+
+                            <!-- Log Out Button -->
+                            <?= $this->Form->postLink(
+                                'Log Out',
+                                ['controller' => 'Users', 'action' => 'logout'],
+                                [
+                                    'class' => 'block w-full text-left px-4 py-2 mt-4 text-base text-gray-700 hover:bg-gray-100 rounded'
+                                ]
+                            ) ?>
                         </div>
-                        <ul class="space-y-3">
-                            <li class="menu-item flex items-center space-x-3">
-                                <!-- Icon Placeholder -->
-                                <div class="h-6 w-6 bg-gray-300 rounded"></div>
-                                <div>
-                                    <p class="text-gray-700 font-medium">My Orders</p>
-                                    <p class="text-xs text-gray-500">View Purchased Art</p>
-                                </div>
-                            </li>
-                            <li class="menu-item flex items-center space-x-3">
-                                <!-- Icon Placeholder -->
-                                <div class="h-6 w-6 bg-gray-300 rounded"></div>
-                                <div>
-                                    <p class="text-gray-700 font-medium">My Services</p>
-                                    <p class="text-xs text-gray-500">Writing & Proofreading</p>
-                                </div>
-                            </li>
-                            <li class="menu-item flex items-center space-x-3">
-                                <!-- Icon Placeholder -->
-                                <div class="h-6 w-6 bg-gray-300 rounded"></div>
-                                <div>
-                                    <p class="text-gray-700 font-medium">My Bookings</p>
-                                    <p class="text-xs text-gray-500">Scheduled Sessions</p>
-                                </div>
-                            </li>
-                            <li class="menu-item flex items-center space-x-3">
-                                <!-- Icon Placeholder -->
-                                <div class="h-6 w-6 bg-gray-300 rounded"></div>
-                                <div>
-                                    <p class="text-gray-700 font-medium">Account Settings</p>
-                                    <p class="text-xs text-gray-500">Profile &amp; Password</p>
-                                </div>
-                            </li>
-                        </ul>
-                        <!-- Log Out Button -->
-                        <?= $this->Form->postLink(
-                            'Log Out',
-                            ['controller' => 'Users', 'action' => 'logout'],
-                            ['class' => 'block w-full text-left px-4 py-2 mt-4 text-sm text-gray-700 hover:bg-gray-100 rounded']
-                        ) ?>
                     </div>
-                </div>
+                <?php else : ?>
+                    <div>
+                        <?= $this->Html->link('Login', ['controller' => 'Users', 'action' => 'login'], [
+                            'class' => 'text-indigo-600 hover:text-indigo-500 font-semibold',
+                        ]) ?>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>
