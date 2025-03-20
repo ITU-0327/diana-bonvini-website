@@ -45,5 +45,7 @@ class WritingServiceRequest extends Entity
         'created_at' => true,
         'updated_at' => true,
         'user' => true,
+        'document' => true,
+        '*' => true
     ];
 }
