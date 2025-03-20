@@ -218,7 +218,7 @@ class UsersController extends AppController
 
         if ($this->request->is('post')) {
             $email = $this->request->getData('email');
-            $user = $this->Users->findByEmail($email)->first();
+            $user = $this->Users->find()->where(['email' => $email])->first();
 
             if (!$user) {
                 $this->Flash->error('No user found with that email address.');
