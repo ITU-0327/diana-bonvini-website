@@ -7,6 +7,7 @@ namespace App\Controller;
  * WritingServiceRequests Controller
  *
  * @property \App\Model\Table\WritingServiceRequestsTable $WritingServiceRequests
+ * @property \Authentication\Controller\Component\AuthenticationComponent $Authentication
  */
 class WritingServiceRequestsController extends AppController
 {
@@ -18,10 +19,11 @@ class WritingServiceRequestsController extends AppController
     public function index()
     {
         // Get the currently logged-in user identity
+        /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
 
         // Extract the user_id from the user object
-        $userId = $user ? $user->get('user_id') : null;
+        $userId = $user?->get('user_id');
 
         // Optional: Redirect to login if no user is found (user not authenticated)
         if (!$userId) {
@@ -60,8 +62,9 @@ class WritingServiceRequestsController extends AppController
      */
     public function add()
     {
+        /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
-        $userId = $user ? $user->get('user_id') : null;
+        $userId = $user?->get('user_id');
 
         $writingServiceRequest = $this->WritingServiceRequests->newEmptyEntity();
 
