@@ -158,6 +158,6 @@ CREATE TABLE writing_service_requests (
     is_deleted TINYINT NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    `document` varchar(255) DEFAULT NULL
+    `document` varchar(255) DEFAULT NULL,
     CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES users(user_id)
 ) ENGINE=InnoDB;
