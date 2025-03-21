@@ -26,6 +26,7 @@ class WritingServiceRequestsController extends AppController
         // Optional: Redirect to login if no user is found (user not authenticated)
         if (!$userId) {
             $this->Flash->error(__('You need to be logged in to view your writing service requests.'));
+
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
 
@@ -46,7 +47,7 @@ class WritingServiceRequestsController extends AppController
      * @return \Cake\Http\Response|null|void Renders view
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function view($id = null)
+    public function view(?string $id = null)
     {
         $writingServiceRequest = $this->WritingServiceRequests->get($id, contain: ['Users']);
         $this->set(compact('writingServiceRequest'));
@@ -72,11 +73,12 @@ class WritingServiceRequestsController extends AppController
                     'text/plain',
                     'application/pdf',
                     'application/msword',
-                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                 ];
 
                 if (!in_array($file->getClientMediaType(), $allowedMimeTypes)) {
                     $this->Flash->error(__('Invalid file type. Please upload txt, pdf, or Word documents only.'));
+
                     return $this->redirect(['action' => 'add']);
                 }
 
@@ -99,6 +101,7 @@ class WritingServiceRequestsController extends AppController
 
                 if ($this->WritingServiceRequests->save($writingServiceRequest)) {
                     $this->Flash->success(__('The writing service request has been saved.'));
+
                     return $this->redirect(['action' => 'index']);
                 }
 
@@ -111,7 +114,6 @@ class WritingServiceRequestsController extends AppController
         $this->set(compact('writingServiceRequest', 'userId'));
     }
 
-
     /**
      * Edit method
      *
@@ -119,7 +121,7 @@ class WritingServiceRequestsController extends AppController
      * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function edit($id = null)
+    public function edit(?string $id = null)
     {
         $writingServiceRequest = $this->WritingServiceRequests->get($id, contain: []);
         if ($this->request->is(['patch', 'post', 'put'])) {
@@ -142,7 +144,7 @@ class WritingServiceRequestsController extends AppController
      * @return \Cake\Http\Response|null Redirects to index.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function delete($id = null)
+    public function delete(?string $id = null)
     {
         $this->request->allowMethod(['post', 'delete']);
         $writingServiceRequest = $this->WritingServiceRequests->get($id);
@@ -155,7 +157,12 @@ class WritingServiceRequestsController extends AppController
         return $this->redirect(['action' => 'index']);
     }
 
-    public function info()
+    /**
+     * Info method
+     *
+     * @return void
+     */
+    public function info(): void
     {
         $this->viewBuilder()->setLayout('default');
     }
