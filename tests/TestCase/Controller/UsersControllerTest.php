@@ -168,7 +168,7 @@ class UsersControllerTest extends TestCase
         $this->assertEquals(
             $oldLastLogin->i18nFormat(),
             $userAfter->last_login->i18nFormat(),
-            'The last_login value should have been updated.'
+            'The last_login value should have been updated.',
         );
     }
 
@@ -196,7 +196,7 @@ class UsersControllerTest extends TestCase
         $this->assertNotEquals(
             $oldLastLogin->i18nFormat(),
             $userAfter->last_login->i18nFormat(),
-            'The last_login value should have been updated.'
+            'The last_login value should have been updated.',
         );
     }
 
