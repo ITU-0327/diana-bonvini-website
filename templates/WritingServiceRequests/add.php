@@ -2,6 +2,7 @@
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\WritingServiceRequest $writingServiceRequest
+ * @var string $userId
  */
 ?>
 
@@ -34,9 +35,9 @@
                             '' => 'Please select a service',
                             'creative_writing' => 'Creative Writing',
                             'editing' => 'Editing',
-                            'proofreading' => 'Proofreading'
+                            'proofreading' => 'Proofreading',
                         ],
-                        ['id' => 'serviceType', 'class' => 'form-select']
+                        ['id' => 'serviceType', 'class' => 'form-select'],
                     ) ?>
                 </div>
 
@@ -50,9 +51,9 @@
                             'under_5000' => 'Under 5000',
                             '5000_20000' => '5000 - 20000',
                             '20000_50000' => '20000 - 50000',
-                            '50000_plus' => '50000+'
+                            '50000_plus' => '50000+',
                         ],
-                        ['id' => 'wordCountRange', 'class' => 'form-select']
+                        ['id' => 'wordCountRange', 'class' => 'form-select'],
                     ) ?>
                 </div>
 
@@ -78,7 +79,7 @@
                         'maxlength' => 100,
                         'id' => 'notes',
                         'class' => 'form-control',
-                        'rows' => 3
+                        'rows' => 3,
                     ]) ?>
 
                     <!-- Document Upload -->
@@ -103,7 +104,7 @@
                 <?= $this->Html->link(
                     'View My Requests',
                     ['controller' => 'WritingServiceRequests', 'action' => 'index'],
-                    ['class' => 'btn btn-outline-secondary px-4']
+                    ['class' => 'btn btn-outline-secondary px-4'],
                 ) ?>
             </div>
         </div>
