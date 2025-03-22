@@ -52,4 +52,4 @@ nbproject/*
 yarn-debug.log
 yarn-error.log
 
-/uploads/*
+webroot/uploads/*
