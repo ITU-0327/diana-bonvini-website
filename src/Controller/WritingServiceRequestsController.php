@@ -126,18 +126,43 @@ class WritingServiceRequestsController extends AppController
      */
     public function edit(?string $id = null)
     {
-        $writingServiceRequest = $this->WritingServiceRequests->get($id, contain: []);
+        $user = $this->Authentication->getIdentity();
+        $userId = $user?->get('user_id');
+        $writingServiceRequest = $this->WritingServiceRequests->get($id);
         if ($this->request->is(['patch', 'post', 'put'])) {
-            $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $this->request->getData());
+            $data = $this->request->getData();
+            $file = $data['document'] ?? null;
+            if ($file && $file->getError() === UPLOAD_ERR_OK) {
+                $allowedMimeTypes = [
+                    'text/plain',
+                    'application/pdf',
+                    'application/msword',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                ];
+                if (!in_array($file->getClientMediaType(), $allowedMimeTypes)) {
+                    $this->Flash->error(__('Invalid file type. Please upload txt, pdf, or Word documents only.'));
+                    return $this->redirect(['action' => 'edit', $id]);
+                }
+                $uploadPath = WWW_ROOT . 'uploads' . DS . 'documents';
+                if (!is_dir($uploadPath)) {
+                    mkdir($uploadPath, 0755, true);
+                }
+                $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9_.]/', '_', $file->getClientFilename());
+                $filePath = $uploadPath . DS . $filename;
+                $file->moveTo($filePath);
+                $data['document'] = 'uploads/documents/' . $filename;
+            } else {
+                unset($data['document']);
+            }
+            $data['user_id'] = $userId;
+            $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $data);
             if ($this->WritingServiceRequests->save($writingServiceRequest)) {
                 $this->Flash->success(__('The writing service request has been saved.'));
-
                 return $this->redirect(['action' => 'index']);
             }
             $this->Flash->error(__('The writing service request could not be saved. Please, try again.'));
         }
-        $users = $this->WritingServiceRequests->Users->find('list', limit: 200)->all();
-        $this->set(compact('writingServiceRequest', 'users'));
+        $this->set(compact('writingServiceRequest', 'userId'));
     }
 
     /**
