@@ -72,7 +72,7 @@ class CartsControllerTest extends TestCase
 
         $this->post('/carts/add', $data);
         $this->assertResponseSuccess();
-        debug($this->getSession());
+
         $this->assertFlashMessage('Item added to cart.');
 
         $this->assertSession($artworkId, 'Cart.items.0.artwork_id', 'The artwork should be added to the cart in the session.');
