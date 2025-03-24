@@ -62,6 +62,16 @@
                     <th><?= __('Updated At') ?></th>
                     <td><?= h($writingServiceRequest->updated_at) ?></td>
                 </tr>
+                <tr>
+                    <th><?= __('Document') ?></th>
+                    <td>
+                        <?php if (!empty($writingServiceRequest->document)): ?>
+                            <?= $this->Html->link('View Document', '/' . $writingServiceRequest->document, ['target' => '_blank']) ?>
+                        <?php else: ?>
+                            <span>No Document</span>
+                        <?php endif; ?>
+                    </td>
+                </tr>
             </table>
         </div>
     </div>
