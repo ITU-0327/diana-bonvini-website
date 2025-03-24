@@ -9,9 +9,62 @@ use Cake\Http\Response;
  * Orders Controller
  *
  * @property \App\Model\Table\OrdersTable $Orders
+ * @property \Authentication\Controller\Component\AuthenticationComponent $Authentication
  */
 class OrdersController extends AppController
 {
+    /**
+     * Checkout method
+     *
+     * Displays the checkout page with cart details and order summary.
+     *
+     * @return \Cake\Http\Response|null Renders view.
+     */
+    public function checkout(): ?Response
+    {
+        /** @var \App\Model\Entity\User|null $user */
+        $user = $this->Authentication->getIdentity();
+        $userId = $user?->user_id;
+        $sessionId = $this->request->getSession()->id();
+
+        // Build conditions based on whether the user is logged in or using a session.
+        if ($userId !== null) {
+            $conditions = ['user_id' => $userId];
+        } else {
+            $conditions = ['session_id' => $sessionId];
+        }
+
+        // Retrieve the cart with its artwork items.
+        /** @var \App\Model\Table\CartsTable $cartsTable */
+        $cartsTable = $this->fetchTable('Carts');
+        $cart = $cartsTable->find()
+            ->contain(['ArtworkCarts' => ['Artworks']])
+            ->where($conditions)
+            ->first();
+
+        if (!$cart) {
+            $this->Flash->error('No items in your cart.');
+
+            return $this->redirect(['controller' => 'Carts', 'action' => 'index']);
+        }
+
+        // Calculate the total amount.
+        $total = 0;
+        foreach ($cart->artwork_carts as $item) {
+            if (isset($item->artwork)) {
+                $total += $item->artwork->price * $item->quantity;
+            }
+        }
+
+        // Create a new Order entity (you could also pre-fill some order data here).
+        $order = $this->Orders->newEmptyEntity();
+
+        // Pass the cart, total, and order entity to the view.
+        $this->set(compact('cart', 'total', 'order', 'user'));
+
+        return null;
+    }
+
     /**
      * Index method
      *

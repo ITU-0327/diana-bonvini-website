@@ -5,6 +5,7 @@ namespace App\Controller;
 
 use App\Mailer\UserMailer;
 use Cake\Event\EventInterface;
+use Cake\Http\Response;
 use Cake\I18n\FrozenTime;
 use Cake\Routing\Router;
 use Cake\Utility\Security;
@@ -191,7 +192,7 @@ class UsersController extends AppController
      * @return \Cake\Http\Response|null Redirects to index.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function delete(?string $id = null)
+    public function delete(?string $id = null): ?Response
     {
         $this->request->allowMethod(['post', 'delete']);
         $user = $this->Users->get($id);
