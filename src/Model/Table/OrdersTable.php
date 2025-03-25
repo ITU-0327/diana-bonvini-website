@@ -72,11 +72,6 @@ class OrdersTable extends Table
             ->notEmptyString('total_amount');
 
         $validator
-            ->scalar('payment_method')
-            ->requirePresence('payment_method', 'create')
-            ->notEmptyString('payment_method');
-
-        $validator
             ->scalar('order_status')
             ->requirePresence('order_status', 'create')
             ->notEmptyString('order_status');

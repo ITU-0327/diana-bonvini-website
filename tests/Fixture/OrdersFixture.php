@@ -22,7 +22,6 @@ class OrdersFixture extends TestFixture
                 'order_id' => 'f0c33e96-1d01-472d-b1e1-b00951b56ee9',
                 'user_id' => '245d52dd-1f57-4bdb-9cc2-003e4f69b840',
                 'total_amount' => 1.5,
-                'payment_method' => 'Lorem ipsum dolor sit amet',
                 'order_status' => 'Lorem ipsum dolor sit amet',
                 'order_date' => '2025-03-25 05:01:14',
                 'billing_first_name' => 'Lorem ipsum dolor sit amet',

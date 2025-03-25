@@ -11,7 +11,6 @@ use Cake\ORM\Entity;
  * @property string $order_id
  * @property string $user_id
  * @property float $total_amount
- * @property string $payment_method
  * @property string $order_status
  * @property \Cake\I18n\DateTime $order_date
  * @property string $billing_first_name
@@ -47,7 +46,6 @@ class Order extends Entity
     protected array $_accessible = [
         'user_id' => true,
         'total_amount' => true,
-        'payment_method' => true,
         'order_status' => true,
         'order_date' => true,
         'billing_first_name' => true,
