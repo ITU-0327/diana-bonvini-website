@@ -14,6 +14,18 @@ use Cake\ORM\Entity;
  * @property string $payment_method
  * @property string $order_status
  * @property \Cake\I18n\DateTime $order_date
+ * @property string $billing_first_name
+ * @property string $billing_last_name
+ * @property string|null $billing_company
+ * @property string $billing_email
+ * @property string $shipping_country
+ * @property string $shipping_address1
+ * @property string|null $shipping_address2
+ * @property string $shipping_suburb
+ * @property string $shipping_state
+ * @property string $shipping_postcode
+ * @property string $shipping_phone
+ * @property string|null $order_notes
  * @property int $is_deleted
  * @property \Cake\I18n\DateTime $created_at
  * @property \Cake\I18n\DateTime $updated_at
@@ -38,6 +50,18 @@ class Order extends Entity
         'payment_method' => true,
         'order_status' => true,
         'order_date' => true,
+        'billing_first_name' => true,
+        'billing_last_name' => true,
+        'billing_company' => true,
+        'billing_email' => true,
+        'shipping_country' => true,
+        'shipping_address1' => true,
+        'shipping_address2' => true,
+        'shipping_suburb' => true,
+        'shipping_state' => true,
+        'shipping_postcode' => true,
+        'shipping_phone' => true,
+        'order_notes' => true,
         'is_deleted' => true,
         'created_at' => true,
         'updated_at' => true,

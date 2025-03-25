@@ -87,6 +87,74 @@ class OrdersTable extends Table
             ->notEmptyDateTime('order_date');
 
         $validator
+            ->scalar('billing_first_name')
+            ->maxLength('billing_first_name', 255)
+            ->requirePresence('billing_first_name', 'create')
+            ->notEmptyString('billing_first_name');
+
+        $validator
+            ->scalar('billing_last_name')
+            ->maxLength('billing_last_name', 255)
+            ->requirePresence('billing_last_name', 'create')
+            ->notEmptyString('billing_last_name');
+
+        $validator
+            ->scalar('billing_company')
+            ->maxLength('billing_company', 255)
+            ->allowEmptyString('billing_company');
+
+        $validator
+            ->scalar('billing_email')
+            ->maxLength('billing_email', 255)
+            ->requirePresence('billing_email', 'create')
+            ->notEmptyString('billing_email');
+
+        $validator
+            ->scalar('shipping_country')
+            ->maxLength('shipping_country', 2)
+            ->requirePresence('shipping_country', 'create')
+            ->notEmptyString('shipping_country');
+
+        $validator
+            ->scalar('shipping_address1')
+            ->maxLength('shipping_address1', 255)
+            ->requirePresence('shipping_address1', 'create')
+            ->notEmptyString('shipping_address1');
+
+        $validator
+            ->scalar('shipping_address2')
+            ->maxLength('shipping_address2', 255)
+            ->allowEmptyString('shipping_address2');
+
+        $validator
+            ->scalar('shipping_suburb')
+            ->maxLength('shipping_suburb', 255)
+            ->requirePresence('shipping_suburb', 'create')
+            ->notEmptyString('shipping_suburb');
+
+        $validator
+            ->scalar('shipping_state')
+            ->maxLength('shipping_state', 50)
+            ->requirePresence('shipping_state', 'create')
+            ->notEmptyString('shipping_state');
+
+        $validator
+            ->scalar('shipping_postcode')
+            ->maxLength('shipping_postcode', 20)
+            ->requirePresence('shipping_postcode', 'create')
+            ->notEmptyString('shipping_postcode');
+
+        $validator
+            ->scalar('shipping_phone')
+            ->maxLength('shipping_phone', 50)
+            ->requirePresence('shipping_phone', 'create')
+            ->notEmptyString('shipping_phone');
+
+        $validator
+            ->scalar('order_notes')
+            ->allowEmptyString('order_notes');
+
+        $validator
             ->notEmptyString('is_deleted');
 
         $validator
