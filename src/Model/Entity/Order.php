@@ -10,7 +10,7 @@ use Cake\ORM\Entity;
  *
  * @property string $order_id
  * @property string $user_id
- * @property string $total_amount
+ * @property float $total_amount
  * @property string $payment_method
  * @property string $order_status
  * @property \Cake\I18n\DateTime $order_date

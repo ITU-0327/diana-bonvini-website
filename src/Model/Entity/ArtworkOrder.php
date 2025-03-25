@@ -12,8 +12,8 @@ use Cake\ORM\Entity;
  * @property string $order_id
  * @property string $artwork_id
  * @property int $quantity
- * @property string $price
- * @property string $subtotal
+ * @property float $price
+ * @property float $subtotal
  * @property int $is_deleted
  *
  * @property \App\Model\Entity\Order $order

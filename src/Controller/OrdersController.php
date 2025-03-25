@@ -46,7 +46,7 @@ class OrdersController extends AppController
         }
 
         // Calculate the total amount.
-        $total = 0;
+        $total = 0.0;
         foreach ($cart->artwork_carts as $item) {
             if (isset($item->artwork)) {
                 $total += $item->artwork->price * (float)$item->quantity;
@@ -145,11 +145,36 @@ class OrdersController extends AppController
     }
 
     /**
+     * Confirmation method
+     *
+     * Displays the order confirmation page.
+     *
+     * @param string|null $orderId Order id.
+     * @return \Cake\Http\Response|null Renders view.
+     */
+    public function confirmation(?string $orderId = null): ?Response
+    {
+        if (!$orderId) {
+            $this->Flash->error(__('Invalid order.'));
+
+            return $this->redirect(['action' => 'index']);
+        }
+
+        $order = $this->Orders->get($orderId, [
+            'contain' => ['ArtworkOrders' => ['Artworks']],
+        ]);
+
+        $this->set(compact('order'));
+
+        return null;
+    }
+
+    /**
      * Index method
      *
-     * @return \Cake\Http\Response|null|void Renders view
+     * @return void Renders view
      */
-    public function index()
+    public function index(): void
     {
         $query = $this->Orders->find()
             ->contain(['Users']);
@@ -162,10 +187,10 @@ class OrdersController extends AppController
      * View method
      *
      * @param string|null $id Order id.
-     * @return \Cake\Http\Response|null|void Renders view
+     * @return void Renders view
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function view(?string $id = null)
+    public function view(?string $id = null): void
     {
         $order = $this->Orders->get($id, contain: ['Users']);
         $this->set(compact('order'));
