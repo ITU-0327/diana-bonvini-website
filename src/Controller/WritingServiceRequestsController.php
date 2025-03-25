@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Cake\Http\Response;
+use Psr\Http\Message\UploadedFileInterface;
+
 /**
  * WritingServiceRequests Controller
  *
@@ -18,11 +21,13 @@ class WritingServiceRequestsController extends AppController
      */
     public function index()
     {
+        /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
         $userId = $user?->get('user_id');
 
         if (!$userId) {
             $this->Flash->error(__('You need to be logged in to view your writing service requests.'));
+
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
 
@@ -31,7 +36,7 @@ class WritingServiceRequestsController extends AppController
             ->where(['WritingServiceRequests.user_id' => $userId]);
 
         $this->paginate = [
-            'order' => ['WritingServiceRequests.created_at' => 'DESC']
+            'order' => ['WritingServiceRequests.created_at' => 'DESC'],
         ];
 
         $writingServiceRequests = $this->paginate($query);
@@ -59,6 +64,7 @@ class WritingServiceRequestsController extends AppController
      */
     public function add()
     {
+        /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
         $userId = $user?->get('user_id');
         $writingServiceRequest = $this->WritingServiceRequests->newEmptyEntity();
@@ -86,6 +92,7 @@ class WritingServiceRequestsController extends AppController
 
             if ($this->WritingServiceRequests->save($writingServiceRequest)) {
                 $this->Flash->success(__('The writing service request has been saved.'));
+
                 return $this->redirect(['action' => 'index']);
             }
 
@@ -104,6 +111,7 @@ class WritingServiceRequestsController extends AppController
      */
     public function edit(?string $id = null)
     {
+        /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
         $userId = $user?->get('user_id');
         $writingServiceRequest = $this->WritingServiceRequests->get($id);
@@ -123,7 +131,7 @@ class WritingServiceRequestsController extends AppController
 
             $data['estimated_price'] = $this->calculateEstimatedPrice(
                 $data['service_type'] ?? null,
-                $data['word_count_range'] ?? null
+                $data['word_count_range'] ?? null,
             );
             $data['user_id'] = $userId;
 
@@ -131,6 +139,7 @@ class WritingServiceRequestsController extends AppController
 
             if ($this->WritingServiceRequests->save($writingServiceRequest)) {
                 $this->Flash->success(__('The writing service request has been saved.'));
+
                 return $this->redirect(['action' => 'index']);
             }
 
@@ -147,7 +156,7 @@ class WritingServiceRequestsController extends AppController
      * @return \Cake\Http\Response|null Redirects to index.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function delete(?string $id = null)
+    public function delete(?string $id = null): ?Response
     {
         $this->request->allowMethod(['post', 'delete']);
         $writingServiceRequest = $this->WritingServiceRequests->get($id);
@@ -161,16 +170,13 @@ class WritingServiceRequestsController extends AppController
     }
 
     /**
-     * Info method
+     * Handles document upload
      *
-     * @return void
+     * @param \Psr\Http\Message\UploadedFileInterface|null $file
+     * @param string $redirectAction
+     * @return \Cake\Http\Response|string|null
      */
-    public function info(): void
-    {
-        $this->viewBuilder()->setLayout('default');
-    }
-
-    private function handleDocumentUpload($file, string $redirectAction)
+    private function handleDocumentUpload(?UploadedFileInterface $file, string $redirectAction): string|Response|null
     {
         if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
             return null;
@@ -185,6 +191,7 @@ class WritingServiceRequestsController extends AppController
 
         if (!in_array($file->getClientMediaType(), $allowedMimeTypes)) {
             $this->Flash->error(__('Invalid file type. Please upload txt, pdf, or Word documents only.'));
+
             return $this->redirect(['action' => $redirectAction]);
         }
 
@@ -193,33 +200,39 @@ class WritingServiceRequestsController extends AppController
             mkdir($uploadPath, 0755, true);
         }
 
-        $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9_.]/', '_', $file->getClientFilename());
+        $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9_.]/', '_', $file->getClientFilename() ?? '');
         $filePath = $uploadPath . DS . $filename;
         $file->moveTo($filePath);
 
         return 'uploads/documents/' . $filename;
     }
 
+    /**
+     * Calculates estimated price
+     *
+     * @param string|null $type
+     * @param string|null $range
+     * @return float
+     */
     private function calculateEstimatedPrice(?string $type, ?string $range): float
     {
         $priceMap = [
-            'creative_writing' => 2,
+            'creative_writing' => 2.0,
             'editing' => 1.5,
             'proofreading' => 1.2,
         ];
 
         if (!isset($priceMap[$type])) {
-            return 0;
+            return 0.0;
         }
 
         $multiplier = $priceMap[$type];
 
         return match ($range) {
-            'under_5000' => $multiplier * 5000,
-            '5000_20000' => $multiplier * 20000,
-            '20000_50000' => $multiplier * 50000,
-            '50000_plus' => $multiplier * 50000,
-            default => 0,
+            'under_5000' => $multiplier * 5000.0,
+            '5000_20000' => $multiplier * 20000.0,
+            '20000_50000', '50000_plus' => $multiplier * 50000.0,
+            default => 0.0,
         };
     }
 }
