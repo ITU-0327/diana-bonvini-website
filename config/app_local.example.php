@@ -91,4 +91,13 @@ return [
             'url' => env('EMAIL_TRANSPORT_DEFAULT_URL', null),
         ],
     ],
+
+    /*
+     * Google Maps configuration.
+     *
+     * To use the Google Maps API, you need to enable the API in the Google Cloud Platform Console.
+     */
+    'GoogleMaps' => [
+        'key' => env('GOOGLE_MAPS_API_KEY', null),
+    ],
 ];

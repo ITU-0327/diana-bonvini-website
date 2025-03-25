@@ -6,6 +6,10 @@
  * @var \App\Model\Entity\User|null $user
  * @var float $total
  */
+
+use Cake\Core\Configure;
+
+$googleMapsApiKey = Configure::read('GoogleMaps.key');
 ?>
 <div class="container mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold mb-8">Checkout</h1>
@@ -50,16 +54,23 @@
                     'label' => 'Country/Region *',
                     'class' => 'border rounded w-full px-4 py-3 focus:ring-2 focus:ring-indigo-500',
                     'required' => true,
+                    'id' => 'shipping-country',
+                    'options' => [
+                        '' => 'Select Country',
+                        'AU' => 'Australia',
+                    ],
                 ]) ?>
                 <?= $this->Form->control('shipping_address1', [
-                    'label' => 'Street address * (House number and street name)',
+                    'label' => 'Street address *',
                     'class' => 'border rounded w-full px-4 py-3 focus:ring-2 focus:ring-indigo-500',
                     'required' => true,
+                    'placeholder' => 'House number and street name',
                 ]) ?>
                 <?= $this->Form->control('shipping_address2', [
-                    'label' => 'Apartment, suite, unit, etc. (optional)',
-                    'class' => 'border rounded w-full px-4 py-3 focus:ring-2 focus:ring-indigo-500',
+                    'label' => '',
+                    'class' => 'border rounded w-full px-4 py-3 mt-4 focus:ring-2 focus:ring-indigo-500',
                     'required' => false,
+                    'placeholder' => 'Apartment, suite, unit, etc. (optional)',
                 ]) ?>
                 <?= $this->Form->control('shipping_suburb', [
                     'label' => 'Suburb *',
@@ -72,7 +83,10 @@
                         'label' => 'State *',
                         'class' => 'border rounded w-full px-4 py-3 focus:ring-2 focus:ring-indigo-500',
                         'required' => true,
-                        'id' => 'stateField',
+                        'type' => 'select', // Change the type to 'select'
+                        'id' => 'stateField', // Keep the ID for JavaScript targeting
+                        'empty' => 'Select Country First', // Initial empty value
+                        'disabled' => true, // Initially disabled until a country is selected
                     ]) ?>
                     <?= $this->Form->control('shipping_postcode', [
                         'label' => 'Postcode *',
@@ -180,16 +194,97 @@
 
 <!-- JavaScript for Auto-fill Postcode/State (Placeholder) -->
 <script>
-    document.getElementById('suburbField').addEventListener('blur', function() {
-        const suburb = this.value.trim();
-        if (!suburb) return;
-        // Placeholder: Replace with an actual API call
-        // Example:
-        // fetch('/api/lookup?suburb=' + encodeURIComponent(suburb))
-        //   .then(response => response.json())
-        //   .then(data => {
-        //       document.getElementById('postcodeField').value = data.postcode;
-        //       document.getElementById('stateField').value = data.state;
-        //   });
+    let countryField;
+    let suburbField;
+    let stateField;
+    let postcodeField;
+
+    function initAutocomplete() {
+        countryField = document.getElementById('shipping-country');
+        suburbField = document.getElementById('suburbField');
+        stateField = document.getElementById('stateField');
+        postcodeField = document.getElementById('postcodeField');
+
+        // --- Functionality for Country-Specific States (Initial Dropdown) ---
+        const statesByCountry = {
+            'AU': [
+                { value: '', text: 'Select State' },
+                { value: 'ACT', text: 'Australian Capital Territory' },
+                { value: 'NSW', text: 'New South Wales' },
+                { value: 'NT', text: 'Northern Territory' },
+                { value: 'QLD', text: 'Queensland' },
+                { value: 'SA', text: 'South Australia' },
+                { value: 'TAS', text: 'Tasmania' },
+                { value: 'VIC', text: 'Victoria' },
+                { value: 'WA', text: 'Western Australia' },
+            ],
+        };
+
+        if (countryField) {
+            countryField.addEventListener('change', function() {
+                const selectedCountry = this.value;
+                const stateDropdown = document.getElementById('stateField');
+
+                if (stateDropdown) {
+                    stateDropdown.innerHTML = '';
+
+                    if (statesByCountry[selectedCountry]) {
+                        statesByCountry[selectedCountry].forEach(state => {
+                            const option = document.createElement('option');
+                            option.value = state.value;
+                            option.textContent = state.text;
+                            stateDropdown.appendChild(option);
+                        });
+                        stateDropdown.disabled = false;
+                    } else {
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'Select Country First';
+                        stateDropdown.appendChild(option);
+                        stateDropdown.disabled = true;
+                    }
+                } else {
+                    console.error('State dropdown element not found.');
+                }
+            });
+        }
+
+        // --- Functionality for Postcode Autofill after Suburb Input ---
+        suburbField.addEventListener('blur', function() {
+            const suburb = this.value;
+            const state = document.getElementById('stateField').value;
+            const country = document.getElementById('shipping-country').value;
+
+            if (suburb && state && country) {
+                const geocoder = new google.maps.Geocoder();
+                const address = `${suburb}, ${state}, ${country}`;
+
+                geocoder.geocode({ 'address': address }, function(results, status) {
+                    if (status === 'OK') {
+                        if (results[0]) {
+                            let postcode = null;
+                            for (const component of results[0].address_components) {
+                                if (component.types.includes('postal_code')) {
+                                    postcode = component.long_name;
+                                    break;
+                                }
+                            }
+                            if (postcode) {
+                                postcodeField.value = postcode;
+                            }
+                        }
+                    } else {
+                        console.error('Geocode was not successful for the following reason: ' + status);
+                    }
+                });
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=<?= h($googleMapsApiKey) ?>&libraries=geocoding&callback=initAutocomplete`;
+        script.async = true;
+        document.head.appendChild(script);
     });
 </script>
