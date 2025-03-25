@@ -28,16 +28,13 @@ class OrdersController extends AppController
         $sessionId = $this->request->getSession()->id();
 
         // Build conditions based on whether the user is logged in or using a session.
-        if ($userId !== null) {
-            $conditions = ['user_id' => $userId];
-        } else {
-            $conditions = ['session_id' => $sessionId];
-        }
+        $conditions = $userId !== null
+            ? ['user_id' => $userId]
+            : ['session_id' => $sessionId];
 
         // Retrieve the cart with its artwork items.
-        /** @var \App\Model\Table\CartsTable $cartsTable */
-        $cartsTable = $this->fetchTable('Carts');
-        $cart = $cartsTable->find()
+        /** @var \App\Model\Entity\Cart $cart */
+        $cart = $this->fetchTable('Carts')->find()
             ->contain(['ArtworkCarts' => ['Artworks']])
             ->where($conditions)
             ->first();
@@ -52,7 +49,7 @@ class OrdersController extends AppController
         $total = 0;
         foreach ($cart->artwork_carts as $item) {
             if (isset($item->artwork)) {
-                $total += $item->artwork->price * $item->quantity;
+                $total += $item->artwork->price * (float)$item->quantity;
             }
         }
 
