@@ -51,9 +51,9 @@ class PaymentsTable extends Table
     }
 
     /**
-     * @param \Cake\Event\EventInterface $event
+     * @param \Cake\Event\EventInterface<\App\Model\Entity\Payment> $event
      * @param \App\Model\Entity\Payment $entity
-     * @param \ArrayObject $options
+     * @param \ArrayObject<string, mixed> $options
      * @return void
      * @throws \Random\RandomException
      */
