@@ -116,7 +116,6 @@ class OrdersController extends AppController
         $data['total_amount']   = (string)$total;
         $data['artwork_orders'] = $orderItems;
         $data['order_status']   = 'pending';
-        $data['payment_method'] = 'bank transfer';
         $data['order_date']     = date('Y-m-d H:i:s');
 
         // Patch the entity including associated data.
@@ -130,14 +129,30 @@ class OrdersController extends AppController
         if ($this->Orders->save($order, ['associated' => ['ArtworkOrders']])) {
             // Optionally clear the cart.
             $this->fetchTable('Carts')->delete($cart);
+
+            // Create a payment record.
+            $paymentsTable = $this->fetchTable('Payments');
+            $paymentData = [
+                'order_id'       => $order->order_id,
+                'amount'         => $order->total_amount,
+                'payment_date'   => date('Y-m-d H:i:s'),
+                'payment_method' => 'bank transfer',
+                'status'         => 'pending',
+            ];
+            $payment = $paymentsTable->newEntity($paymentData);
+            if (!$paymentsTable->save($payment)) {
+                $connection->rollback();
+                $this->Flash->error(__('There was an error placing your order. Please try again. (Payment)'));
+
+                return $this->redirect(['action' => 'checkout']);
+            }
+
             $connection->commit();
             $this->Flash->success(__('Your order has been placed successfully.'));
 
             return $this->redirect(['action' => 'confirmation', $order->order_id]);
         } else {
             $connection->rollback();
-            // Debug errors if needed:
-             debug($order->getErrors());
             $this->Flash->error(__('There was an error placing your order. Please try again.'));
 
             return $this->redirect(['action' => 'checkout']);
@@ -161,7 +176,10 @@ class OrdersController extends AppController
         }
 
         $order = $this->Orders->get($orderId, [
-            'contain' => ['ArtworkOrders' => ['Artworks']],
+            'contain' => [
+                'ArtworkOrders' => ['Artworks'],
+                'Payments',
+            ],
         ]);
 
         $this->set(compact('order'));

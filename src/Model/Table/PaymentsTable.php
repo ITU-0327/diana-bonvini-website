@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use App\Model\Entity\Payment;
+use ArrayObject;
+use Cake\Event\EventInterface;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
@@ -45,6 +48,40 @@ class PaymentsTable extends Table
             'foreignKey' => 'order_id',
             'joinType' => 'INNER',
         ]);
+    }
+
+    /**
+     * @param \Cake\Event\EventInterface $event
+     * @param \App\Model\Entity\Payment $entity
+     * @param \ArrayObject $options
+     * @return void
+     * @throws \Random\RandomException
+     */
+    public function beforeSave(EventInterface $event, Payment $entity, ArrayObject $options): void
+    {
+        if ($entity->isNew() && empty($entity->payment_id)) {
+            $entity->payment_id = $this->generatePaymentId();
+        }
+    }
+
+    /**
+     * Generates a Payment ID in the format "O-AB12345".
+     *
+     * @return string
+     * @throws \Random\RandomException
+     */
+    private function generatePaymentId(): string
+    {
+        do {
+            $letters = '';
+            for ($i = 0; $i < 2; $i++) {
+                $letters .= chr(random_int(65, 90));
+            }
+            $digits = str_pad((string)random_int(0, 99999), 5, '0', STR_PAD_LEFT);
+            $paymentId = 'O-' . $letters . $digits;
+        } while ($this->exists(['payment_id' => $paymentId]));
+
+        return $paymentId;
     }
 
     /**

@@ -31,6 +31,7 @@ use Cake\ORM\Entity;
  *
  * @property \App\Model\Entity\User $user
  * @property \App\Model\Entity\ArtworkOrder[] $artwork_orders
+ * @property \App\Model\Entity\Payment $payment
  */
 class Order extends Entity
 {
@@ -65,5 +66,6 @@ class Order extends Entity
         'updated_at' => true,
         'user' => true,
         'artwork_orders' => true,
+        'payment' => true,
     ];
 }
