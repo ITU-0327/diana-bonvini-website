@@ -18,27 +18,24 @@ class WritingServiceRequestsController extends AppController
      */
     public function index()
     {
-        // Get the currently logged-in user identity
-        /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
-
-        // Extract the user_id from the user object
         $userId = $user?->get('user_id');
 
-        // Optional: Redirect to login if no user is found (user not authenticated)
         if (!$userId) {
             $this->Flash->error(__('You need to be logged in to view your writing service requests.'));
-
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
 
         $query = $this->WritingServiceRequests->find()
-            ->contain(['Users']) // Eager load related user data if needed in the view
-            ->where(['WritingServiceRequests.user_id' => $userId]); // Filter requests by user_id
+            ->contain(['Users'])
+            ->where(['WritingServiceRequests.user_id' => $userId]);
+
+        $this->paginate = [
+            'order' => ['WritingServiceRequests.created_at' => 'DESC']
+        ];
 
         $writingServiceRequests = $this->paginate($query);
 
-        // Pass the variable to the view template
         $this->set(compact('writingServiceRequests'));
     }
 
