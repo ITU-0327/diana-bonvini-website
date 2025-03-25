@@ -1,0 +1,95 @@
+<div class="flex flex-col lg:flex-row gap-6 p-6 max-w-5xl mx-auto">
+    <aside class="w-full lg:w-1/4">
+        <div class="bg-white p-4 shadow rounded">
+            <h4 class="text-lg font-semibold text-gray-700 mb-4"><?= __('Actions') ?></h4>
+            <div class="flex flex-col space-y-2">
+                <?= $this->Form->postLink(__('Delete'), ['action' => 'delete', $writingServiceRequest->request_id], [
+                    'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->request_id),
+                    'class' => 'text-red-600 hover:underline'
+                ]) ?>
+                <?= $this->Html->link(__('List Writing Service Requests'), ['action' => 'index'], [
+                    'class' => 'text-blue-600 hover:underline'
+                ]) ?>
+            </div>
+        </div>
+    </aside>
+
+    <div class="w-full lg:w-3/4">
+        <div class="bg-white p-6 shadow rounded">
+            <?= $this->Form->create($writingServiceRequest, ['type' => 'file']) ?>
+            <fieldset class="space-y-6">
+                <legend class="text-2xl font-bold text-gray-800 mb-4"><?= __('Edit Writing Service Request') ?></legend>
+
+                <?= $this->Form->hidden('user_id', ['value' => $userId]) ?>
+
+                <div>
+                    <?= $this->Form->label('service_type', 'Service Type', ['class' => 'block font-medium text-gray-700']) ?>
+                    <?= $this->Form->select('service_type', [
+                        '' => 'Please select a service',
+                        'creative_writing' => 'Creative Writing',
+                        'editing' => 'Editing',
+                        'proofreading' => 'Proofreading',
+                    ], ['class' => 'w-full mt-1 border-gray-300 rounded shadow-sm']) ?>
+                </div>
+
+                <div>
+                    <?= $this->Form->label('word_count_range', 'Word Count Range', ['class' => 'block font-medium text-gray-700']) ?>
+                    <?= $this->Form->select('word_count_range', [
+                        '' => 'Please select a word count range',
+                        'under_5000' => 'Under 5000',
+                        '5000_20000' => '5000 - 20000',
+                        '20000_50000' => '20000 - 50000',
+                        '50000_plus' => '50000+',
+                    ], ['class' => 'w-full mt-1 border-gray-300 rounded shadow-sm']) ?>
+                </div>
+
+                <div>
+                    <?= $this->Form->control('notes', ['label' => 'Notes', 'class' => 'w-full border-gray-300 rounded shadow-sm']) ?>
+                </div>
+
+                <div>
+                    <?= $this->Form->control('final_price', ['label' => 'Final Price', 'class' => 'w-full border-gray-300 rounded shadow-sm']) ?>
+                </div>
+
+                <div>
+                    <?= $this->Form->control('request_status', ['label' => 'Request Status', 'class' => 'w-full border-gray-300 rounded shadow-sm']) ?>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-gray-700"><?= __('Estimated Price') ?></label>
+                    <input type="text" class="w-full mt-1 bg-gray-100 border border-gray-300 rounded shadow-sm" value="$<?= h(number_format($writingServiceRequest->estimated_price, 2)) ?>" readonly>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-gray-700"><?= __('Created At') ?></label>
+                    <p class="text-gray-600"><?= h($writingServiceRequest->created_at) ?></p>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-gray-700"><?= __('Updated At') ?></label>
+                    <p class="text-gray-600"><?= h($writingServiceRequest->updated_at) ?></p>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-gray-700"><?= __('Existing Document') ?></label>
+                    <?php if (!empty($writingServiceRequest->document)): ?>
+                        <?= $this->Html->link('View Document', '/' . $writingServiceRequest->document, ['target' => '_blank', 'class' => 'text-blue-600 hover:underline']) ?>
+                    <?php else: ?>
+                        <span class="text-gray-500 italic"><?= __('No Document Uploaded') ?></span>
+                    <?php endif; ?>
+                </div>
+
+                <div>
+                    <?= $this->Form->label('document', __('Upload New Document (TXT, PDF, Word)'), ['class' => 'block font-semibold text-gray-700']) ?>
+                    <?= $this->Form->file('document', ['class' => 'w-full mt-1 border-gray-300 rounded shadow-sm']) ?>
+                </div>
+            </fieldset>
+
+            <div class="mt-6">
+                <?= $this->Form->button(__('Submit'), ['class' => 'bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition']) ?>
+            </div>
+
+            <?= $this->Form->end() ?>
+        </div>
+    </div>
+</div>
