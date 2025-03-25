@@ -9,8 +9,7 @@
     <div class="text-center mb-8">
         <h1 class="text-4xl font-extrabold text-gray-900">Order Confirmation</h1>
         <p class="mt-3 text-lg text-gray-700">
-            Thank you for your order! Your Order ID is
-            <span class="font-semibold text-indigo-600"><?= h($order->order_id) ?></span>
+            Your order has been placed successfully. Thank you for your order!
         </p>
     </div>
 
