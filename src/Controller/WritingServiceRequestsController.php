@@ -129,8 +129,11 @@ class WritingServiceRequestsController extends AppController
         $user = $this->Authentication->getIdentity();
         $userId = $user?->get('user_id');
         $writingServiceRequest = $this->WritingServiceRequests->get($id);
+
         if ($this->request->is(['patch', 'post', 'put'])) {
             $data = $this->request->getData();
+
+            // upload doc
             $file = $data['document'] ?? null;
             if ($file && $file->getError() === UPLOAD_ERR_OK) {
                 $allowedMimeTypes = [
@@ -154,7 +157,32 @@ class WritingServiceRequestsController extends AppController
             } else {
                 unset($data['document']);
             }
+
+            // get estimate price
+            $priceMap = [
+                'creative_writing' => 2,
+                'editing' => 1.5,
+                'proofreading' => 1.2,
+            ];
+
+            $serviceType = $data['service_type'] ?? null;
+            $wordCountRange = $data['word_count_range'] ?? null;
+
+            $calculatePrice = function ($type, $range) use ($priceMap) {
+                if (!isset($priceMap[$type])) return 0;
+                $multiplier = $priceMap[$type];
+                switch ($range) {
+                    case 'under_5000': return $multiplier * 5000;
+                    case '5000_20000': return $multiplier * 20000;
+                    case '20000_50000': return $multiplier * 50000;
+                    case '50000_plus': return $multiplier * 50000;
+                    default: return 0;
+                }
+            };
+
+            $data['estimated_price'] = $calculatePrice($serviceType, $wordCountRange);
             $data['user_id'] = $userId;
+
             $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $data);
             if ($this->WritingServiceRequests->save($writingServiceRequest)) {
                 $this->Flash->success(__('The writing service request has been saved.'));
@@ -162,6 +190,7 @@ class WritingServiceRequestsController extends AppController
             }
             $this->Flash->error(__('The writing service request could not be saved. Please, try again.'));
         }
+
         $this->set(compact('writingServiceRequest', 'userId'));
     }
 
