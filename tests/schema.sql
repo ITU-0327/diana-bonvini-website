@@ -50,9 +50,20 @@ CREATE TABLE orders (
     order_id CHAR(36) NOT NULL PRIMARY KEY,
     user_id CHAR(36) NOT NULL,
     total_amount DECIMAL(10,2) NOT NULL,
-    payment_method ENUM('bank transfer','credit card') NOT NULL,
     order_status ENUM('pending','confirmed','completed','cancelled') NOT NULL,
     order_date DATETIME NOT NULL,
+    billing_first_name VARCHAR(255) NOT NULL,
+    billing_last_name VARCHAR(255) NOT NULL,
+    billing_company VARCHAR(255) DEFAULT '',
+    billing_email VARCHAR(255) NOT NULL,
+    shipping_country CHAR(2) NOT NULL,
+    shipping_address1 VARCHAR(255) NOT NULL,
+    shipping_address2 VARCHAR(255) DEFAULT '',
+    shipping_suburb VARCHAR(255) NOT NULL,
+    shipping_state VARCHAR(50) NOT NULL,
+    shipping_postcode VARCHAR(20) NOT NULL,
+    shipping_phone VARCHAR(50) NOT NULL,
+    order_notes TEXT,
     is_deleted TINYINT NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -113,14 +124,15 @@ CREATE TABLE contact_messages (
 
 -- Table: payments
 CREATE TABLE payments (
-    payment_id CHAR(36) NOT NULL PRIMARY KEY,
+    payment_id CHAR(9) NOT NULL PRIMARY KEY,
     order_id CHAR(36) NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     payment_date DATETIME NOT NULL,
     payment_method ENUM('bank transfer','credit card') NOT NULL,
     status ENUM('pending','confirmed') NOT NULL,
     is_deleted TINYINT NOT NULL DEFAULT 0,
-    CONSTRAINT fk_payments_order FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE
+    CONSTRAINT fk_payments_order FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
+    UNIQUE KEY unique_order (order_id)
 ) ENGINE=InnoDB;
 
 -- Table: carts
