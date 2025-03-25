@@ -5,88 +5,88 @@
  */
 ?>
 
-<!-- Ask for Another Requests Button -->
-<div class="container mt-4 text-center">
-    <?= $this->Html->link(
-        'Submit another writing service request',
-        ['controller' => 'WritingServiceRequests', 'action' => 'add'],
-        ['class' => 'btn btn-outline-secondary px-4']
-    ) ?>
-</div>
+<div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
-<div class="writingServiceRequests index content">
-    <?= $this->Html->link(__('New Writing Service Request'), ['action' => 'add'], ['class' => 'button float-right']) ?>
-    <h3><?= __('Writing Service Requests') ?></h3>
-    <div class="table-responsive">
-        <table>
-            <thead>
-                <tr>
-                    <th><?= $this->Paginator->sort('request_id') ?></th>
-                    <th><?= $this->Paginator->sort('user_id') ?></th>
-                    <th><?= $this->Paginator->sort('service_type') ?></th>
-                    <th><?= $this->Paginator->sort('word_count_range') ?></th>
-                    <th><?= $this->Paginator->sort('notes') ?></th>
-                    <th><?= $this->Paginator->sort('estimated_price') ?></th>
-                    <th><?= $this->Paginator->sort('final_price') ?></th>
-                    <th><?= $this->Paginator->sort('request_status') ?></th>
-                    <th><?= $this->Paginator->sort('is_deleted') ?></th>
-                    <th><?= $this->Paginator->sort('created_at') ?></th>
-                    <th><?= $this->Paginator->sort('updated_at') ?></th>
+    <div class="flex justify-between items-center">
+        <h3 class="text-2xl font-semibold text-gray-800">Writing Service Requests</h3>
+        <?= $this->Html->link(
+            __('New Writing Service Request'),
+            ['action' => 'add'],
+            ['class' => 'inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition']
+        ) ?>
+    </div>
 
-                    <th><?= __('Document') ?></th>
-
-                    <th class="actions"><?= __('Actions') ?></th>
-                </tr>
+    <div class="overflow-auto border rounded">
+        <table class="min-w-full text-sm text-left text-gray-800">
+            <thead class="bg-gray-100 text-xs uppercase text-gray-600">
+            <tr>
+                <th class="px-4 py-3"><?= $this->Paginator->sort('request_id') ?></th>
+                <th class="px-4 py-3"><?= $this->Paginator->sort('user_id') ?></th>
+                <th class="px-4 py-3"><?= $this->Paginator->sort('service_type') ?></th>
+                <th class="px-4 py-3"><?= $this->Paginator->sort('word_count_range') ?></th>
+                <th class="px-4 py-3"><?= $this->Paginator->sort('notes') ?></th>
+                <th class="px-4 py-3"><?= $this->Paginator->sort('estimated_price') ?></th>
+                <th class="px-4 py-3"><?= $this->Paginator->sort('final_price') ?></th>
+                <th class="px-4 py-3"><?= $this->Paginator->sort('request_status') ?></th>
+                <th class="px-4 py-3"><?= $this->Paginator->sort('is_deleted') ?></th>
+                <th class="px-4 py-3"><?= $this->Paginator->sort('created_at') ?></th>
+                <th class="px-4 py-3"><?= $this->Paginator->sort('updated_at') ?></th>
+                <th class="px-4 py-3"><?= __('Document') ?></th>
+                <th class="px-4 py-3"><?= __('Actions') ?></th>
+            </tr>
             </thead>
-            <tbody>
-                <?php foreach ($writingServiceRequests as $writingServiceRequest): ?>
-                    <tr>
-                        <td><?= h($writingServiceRequest->request_id) ?></td>
-                        <td><?= $writingServiceRequest->hasValue('user') ? $this->Html->link($writingServiceRequest->user->first_name, ['controller' => 'Users', 'action' => 'view', $writingServiceRequest->user->user_id]) : '' ?></td>
-                        <td><?= h($writingServiceRequest->service_type) ?></td>
-                        <td><?= h($writingServiceRequest->word_count_range) ?></td>
-                        <td><?= h($writingServiceRequest->notes) ?></td>
-                        <td><?= $writingServiceRequest->estimated_price === null ? '' : $this->Number->format($writingServiceRequest->estimated_price) ?></td>
-                        <td><?= $writingServiceRequest->final_price === null ? '' : $this->Number->format($writingServiceRequest->final_price) ?></td>
-                        <td><?= h($writingServiceRequest->request_status) ?></td>
-                        <td><?= $this->Number->format($writingServiceRequest->is_deleted) ?></td>
-                        <td><?= h($writingServiceRequest->created_at) ?></td>
-                        <td><?= h($writingServiceRequest->updated_at) ?></td>
-
-                        <td>
-                            <?php if (!empty($writingServiceRequest->document)): ?>
-                                <?= $this->Html->link('View Document', '/' . $writingServiceRequest->document, ['target' => '_blank']) ?>
-                            <?php else: ?>
-                                <span>No Document</span>
-                            <?php endif; ?>
-                        </td>
-
-                        <td class="actions">
-                            <?= $this->Html->link(__('View'), ['action' => 'view', $writingServiceRequest->request_id]) ?>
-                            <?= $this->Html->link(__('Edit'), ['action' => 'edit', $writingServiceRequest->request_id]) ?>
-                            <?= $this->Form->postLink(
-                                __('Delete'),
-                                ['action' => 'delete', $writingServiceRequest->request_id],
-                                [
-                                    'method' => 'delete',
-                                    'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->request_id),
-                                ]
-                            ) ?>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
+            <tbody class="divide-y divide-gray-200">
+            <?php foreach ($writingServiceRequests as $writingServiceRequest): ?>
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-2"><?= h($writingServiceRequest->request_id) ?></td>
+                    <td class="px-4 py-2">
+                        <?= $writingServiceRequest->hasValue('user') ? $this->Html->link(
+                            $writingServiceRequest->user->first_name,
+                            ['controller' => 'Users', 'action' => 'view', $writingServiceRequest->user->user_id],
+                            ['class' => 'text-blue-600 hover:underline']
+                        ) : '' ?>
+                    </td>
+                    <td class="px-4 py-2"><?= h($writingServiceRequest->service_type) ?></td>
+                    <td class="px-4 py-2"><?= h($writingServiceRequest->word_count_range) ?></td>
+                    <td class="px-4 py-2"><?= h($writingServiceRequest->notes) ?></td>
+                    <td class="px-4 py-2"><?= $writingServiceRequest->estimated_price === null ? '' : $this->Number->format($writingServiceRequest->estimated_price) ?></td>
+                    <td class="px-4 py-2"><?= $writingServiceRequest->final_price === null ? '' : $this->Number->format($writingServiceRequest->final_price) ?></td>
+                    <td class="px-4 py-2"><?= h($writingServiceRequest->request_status) ?></td>
+                    <td class="px-4 py-2"><?= $this->Number->format($writingServiceRequest->is_deleted) ?></td>
+                    <td class="px-4 py-2"><?= h($writingServiceRequest->created_at) ?></td>
+                    <td class="px-4 py-2"><?= h($writingServiceRequest->updated_at) ?></td>
+                    <td class="px-4 py-2">
+                        <?php if (!empty($writingServiceRequest->document)): ?>
+                            <?= $this->Html->link('View Document', '/' . $writingServiceRequest->document, ['target' => '_blank', 'class' => 'text-blue-500 hover:underline']) ?>
+                        <?php else: ?>
+                            <span class="text-gray-400 italic">No Document</span>
+                        <?php endif; ?>
+                    </td>
+                    <td class="px-4 py-2 space-x-2 whitespace-nowrap">
+                        <?= $this->Html->link('View', ['action' => 'view', $writingServiceRequest->request_id], ['class' => 'text-blue-600 hover:underline']) ?>
+                        <?= $this->Html->link('Edit', ['action' => 'edit', $writingServiceRequest->request_id], ['class' => 'text-yellow-600 hover:underline']) ?>
+                        <?= $this->Form->postLink('Delete', ['action' => 'delete', $writingServiceRequest->request_id], [
+                            'method' => 'post',
+                            'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->request_id),
+                            'class' => 'text-red-600 hover:underline'
+                        ]) ?>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
             </tbody>
         </table>
     </div>
 
-    <div class="paginator">
-        <ul class="pagination">
-            <?= $this->Paginator->first('<< ' . __('first')) ?>
-            <?= $this->Paginator->prev('< ' . __('previous')) ?>
-            <?= $this->Paginator->numbers() ?>
-            <?= $this->Paginator->next(__('next') . ' >') ?>
-            <?= $this->Paginator->last(__('last') . ' >>') ?>
+    <div class="flex justify-between items-center mt-6 flex-wrap gap-2">
+        <div class="text-sm text-gray-600">
+            <?= $this->Paginator->counter(__('Page {{page}} of {{pages}}, showing {{current}} record(s) out of {{count}} total')) ?>
+        </div>
+        <ul class="inline-flex items-center space-x-1 text-sm">
+            <?= $this->Paginator->first('<<', ['class' => 'px-2 py-1 border rounded hover:bg-gray-100']) ?>
+            <?= $this->Paginator->prev('<', ['class' => 'px-2 py-1 border rounded hover:bg-gray-100']) ?>
+            <?= $this->Paginator->numbers(['before' => '', 'after' => '', 'modulus' => 2, 'separator' => '', 'class' => 'px-2 py-1 border rounded hover:bg-gray-100']) ?>
+            <?= $this->Paginator->next('>', ['class' => 'px-2 py-1 border rounded hover:bg-gray-100']) ?>
+            <?= $this->Paginator->last('>>', ['class' => 'px-2 py-1 border rounded hover:bg-gray-100']) ?>
         </ul>
-        <p><?= $this->Paginator->counter(__('Page {{page}} of {{pages}}, showing {{current}} record(s) out of {{count}} total')) ?></p>
     </div>
 </div>
