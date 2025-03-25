@@ -11,6 +11,7 @@ use Cake\Validation\Validator;
  * Orders Model
  *
  * @property \App\Model\Table\UsersTable&\Cake\ORM\Association\BelongsTo $Users
+ * @property \App\Model\Table\ArtworkOrdersTable&\Cake\ORM\Association\HasMany $ArtworkOrders
  * @method \App\Model\Entity\Order newEmptyEntity()
  * @method \App\Model\Entity\Order newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\Order> newEntities(array $data, array $options = [])
@@ -44,6 +45,12 @@ class OrdersTable extends Table
         $this->belongsTo('Users', [
             'foreignKey' => 'user_id',
             'joinType' => 'INNER',
+        ]);
+
+        $this->hasMany('ArtworkOrders', [
+            'foreignKey' => 'order_id',
+            'dependent' => true,
+            'cascadeCallbacks' => true,
         ]);
     }
 

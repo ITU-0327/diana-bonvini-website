@@ -53,13 +53,95 @@ class OrdersController extends AppController
             }
         }
 
-        // Create a new Order entity (you could also pre-fill some order data here).
+        // Create a new Order entity.
         $order = $this->Orders->newEmptyEntity();
 
         // Pass the cart, total, and order entity to the view.
         $this->set(compact('cart', 'total', 'order', 'user'));
 
         return null;
+    }
+
+    /**
+     * Place Order method
+     *
+     * Processes the order and saves it to the database.
+     *
+     * @return \Cake\Http\Response|null Redirects to the confirmation page.
+     */
+    public function placeOrder(): ?Response
+    {
+        $this->request->allowMethod(['post']);
+
+        // Build the base order data from the request.
+        $data = $this->request->getData();
+        if ($this->Authentication->getIdentity()) {
+            /** @var \App\Model\Entity\User $user */
+            $user = $this->Authentication->getIdentity();
+            $data['user_id'] = $user->user_id;
+        }
+
+        // Get the current user's cart.
+        /** @var \App\Model\Entity\Cart $cart */
+        $cart = $this->fetchTable('Carts')->find()
+            ->contain(['ArtworkCarts' => ['Artworks']])
+            ->where(['user_id' => $data['user_id']])
+            ->first();
+
+        if (!$cart || empty($cart->artwork_carts)) {
+            $this->Flash->error(__('Your cart is empty.'));
+
+            return $this->redirect(['controller' => 'Carts', 'action' => 'index']);
+        }
+
+        // Build artwork orders from cart items.
+        $total = 0.0;
+        $orderItems = [];
+        foreach ($cart->artwork_carts as $cartItem) {
+            if (isset($cartItem->artwork)) {
+                $quantity   = $cartItem->quantity;
+                $price      = $cartItem->artwork->price;
+                $lineTotal  = (float)$quantity * $price;
+                $total     += $lineTotal;
+                $orderItems[] = [
+                    'artwork_id' => $cartItem->artwork->artwork_id,
+                    'quantity'   => $quantity,
+                    'price'      => $price,
+                    'subtotal'   => $lineTotal,
+                ];
+            }
+        }
+
+        // Complete the order data.
+        $data['total_amount']   = (string)$total;
+        $data['artwork_orders'] = $orderItems;
+        $data['order_status']   = 'pending';
+        $data['payment_method'] = 'bank transfer';
+        $data['order_date']     = date('Y-m-d H:i:s');
+
+        // Patch the entity including associated data.
+        $order = $this->Orders->newEntity($data, [
+            'associated' => ['ArtworkOrders'],
+        ]);
+
+        // Begin transaction and save.
+        $connection = $this->Orders->getConnection();
+        $connection->begin();
+        if ($this->Orders->save($order, ['associated' => ['ArtworkOrders']])) {
+            // Optionally clear the cart.
+            $this->fetchTable('Carts')->delete($cart);
+            $connection->commit();
+            $this->Flash->success(__('Your order has been placed successfully.'));
+
+            return $this->redirect(['action' => 'confirmation', $order->order_id]);
+        } else {
+            $connection->rollback();
+            // Debug errors if needed:
+             debug($order->getErrors());
+            $this->Flash->error(__('There was an error placing your order. Please try again.'));
+
+            return $this->redirect(['action' => 'checkout']);
+        }
     }
 
     /**
