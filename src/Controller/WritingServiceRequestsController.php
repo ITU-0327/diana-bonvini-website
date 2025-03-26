@@ -183,10 +183,9 @@ class WritingServiceRequestsController extends AppController
         }
 
         $allowedMimeTypes = [
-            'text/plain',
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/pdf',  // PDF
+            'image/jpeg',       // JPG/JPEG
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
         ];
 
         if (!in_array($file->getClientMediaType(), $allowedMimeTypes)) {

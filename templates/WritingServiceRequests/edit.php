@@ -79,10 +79,10 @@
                     <?php endif; ?>
                 </div>
 
-                <div>
-                    <?= $this->Form->label('document', __('Upload New Document (TXT, PDF, Word)'), ['class' => 'block font-semibold text-gray-700']) ?>
-                    <?= $this->Form->file('document', ['class' => 'w-full mt-1 border-gray-300 rounded shadow-sm']) ?>
-                </div>
+                <?= $this->Form->file('document', [
+                    'class' => 'w-full border-gray-300 rounded shadow-sm',
+                    'accept' => '.pdf,.jpg,.jpeg,.docx'
+                ]) ?>
             </fieldset>
 
             <div class="mt-6">
