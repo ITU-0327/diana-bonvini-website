@@ -7,7 +7,7 @@
                     'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->request_id),
                     'class' => 'text-red-600 hover:underline'
                 ]) ?>
-                <?= $this->Html->link(__('List Writing Service Requests'), ['action' => 'index'], [
+                <?= $this->Html->link(__('Back To My Request List'), ['action' => 'index'], [
                     'class' => 'text-blue-600 hover:underline'
                 ]) ?>
             </div>

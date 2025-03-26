@@ -10,10 +10,10 @@
         <div class="bg-white shadow rounded-lg p-4">
             <h4 class="text-lg font-semibold text-gray-700 mb-4"><?= __('Actions') ?></h4>
             <div class="flex flex-col space-y-2">
-                <?= $this->Html->link(__('Edit Writing Service Request'), ['action' => 'edit', $writingServiceRequest->request_id], ['class' => 'text-blue-600 hover:underline']) ?>
-                <?= $this->Form->postLink(__('Delete Writing Service Request'), ['action' => 'delete', $writingServiceRequest->request_id], ['confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->request_id), 'class' => 'text-red-600 hover:underline']) ?>
-                <?= $this->Html->link(__('List Writing Service Requests'), ['action' => 'index'], ['class' => 'text-blue-600 hover:underline']) ?>
-                <?= $this->Html->link(__('New Writing Service Request'), ['action' => 'add'], ['class' => 'text-blue-600 hover:underline']) ?>
+                <?= $this->Html->link(__('Edit This Request'), ['action' => 'edit', $writingServiceRequest->request_id], ['class' => 'text-blue-600 hover:underline']) ?>
+                <?= $this->Form->postLink(__('Delete This Request'), ['action' => 'delete', $writingServiceRequest->request_id], ['confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->request_id), 'class' => 'text-red-600 hover:underline']) ?>
+                <?= $this->Html->link(__('View My Requests'), ['action' => 'index'], ['class' => 'text-blue-600 hover:underline']) ?>
+                <?= $this->Html->link(__('Make A New Request'), ['action' => 'add'], ['class' => 'text-blue-600 hover:underline']) ?>
             </div>
         </div>
     </aside>
