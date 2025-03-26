@@ -42,7 +42,7 @@
                         <div class="flex space-x-2">
                             <?= $this->Form->create(null, [
                                 'url' => [
-                                    'controller' => 'Checkout',
+                                    'controller' => 'Carts',
                                     'action' => 'buyNow',
                                     $artwork->artwork_id,
                                 ],
@@ -99,4 +99,3 @@
         });
     });
 </script>
-
