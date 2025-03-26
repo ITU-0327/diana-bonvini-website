@@ -175,12 +175,10 @@ class OrdersController extends AppController
             return $this->redirect(['action' => 'index']);
         }
 
-        $order = $this->Orders->get($orderId, [
-            'contain' => [
-                'ArtworkOrders' => ['Artworks'],
-                'Payments',
-            ],
-        ]);
+        $order = $this->Orders->find()
+            ->contain(['ArtworkOrders' => ['Artworks'], 'Payments'])
+            ->where(['order_id' => $orderId])
+            ->first();
 
         $this->set(compact('order'));
 
