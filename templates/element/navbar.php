@@ -51,7 +51,7 @@ $user = $this->getRequest()->getAttribute('identity');
                     <!-- Writing & Proofreading Services with Dropdown -->
                     <li class="menu-item relative group">
                         <!-- Main link: Goes to WritingServiceRequests/index -->
-                        <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'index']) ?>"
+                        <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'info']) ?>"
                            class="block px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded">
                             Writing Services
                             <svg class="inline ml-1 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -62,21 +62,15 @@ $user = $this->getRequest()->getAttribute('identity');
                         <!-- Dropdown -->
                         <ul class="absolute left-0 top-full w-64 bg-white border border-gray-200 rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-300 z-10">
                             <li class="menu-item">
-                                <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'info', '?' => ['service' => 'creative']]) ?>"
+                                <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'add', '?' => ['service' => 'creative']]) ?>"
                                    class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                    Creative Writing
+                                    Make a Request
                                 </a>
                             </li>
                             <li class="menu-item">
-                                <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'info', '?' => ['service' => 'proofreading']]) ?>"
+                                <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'index', '?' => ['service' => 'proofreading']]) ?>"
                                    class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                    Proofreading
-                                </a>
-                            </li>
-                            <li class="menu-item">
-                                <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'info', '?' => ['service' => 'editing']]) ?>"
-                                   class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                    Editing Services
+                                    View My Request
                                 </a>
                             </li>
                         </ul>
