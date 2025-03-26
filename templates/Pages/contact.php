@@ -1,6 +1,6 @@
 <?php
 /**
- * Contact Page - Uses Tailwind CSS + Lucide icons
+ * @var \App\View\AppView $this
  */
 ?>
 
@@ -39,9 +39,3 @@
         </div>
     </div>
 </div>
-
-<!-- Lucide Icon CDN + Init -->
-<script src="https://unpkg.com/lucide@latest"></script>
-<script>
-    lucide.createIcons();
-</script>

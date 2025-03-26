@@ -44,5 +44,9 @@ $siteTitle = 'Diana Bonvini Art & Writing';
         </footer>
 
         <?= $this->fetch('scriptBottom') ?>
+        <?= $this->Html->script('https://unpkg.com/lucide@latest') ?>
+        <script>
+            lucide.createIcons();
+        </script>
     </body>
 </html>
