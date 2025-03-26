@@ -15,15 +15,14 @@ $this->assign('title', 'Landing Page Example');
 
         <!-- button -->
         <div style="margin-top: 1rem;">
-            <a href="#"
-               style="margin-right: 1rem;
-                      padding: 0.5rem 1rem;
-                      background-color: #333;
-                      color: #fff;
-                      text-decoration: none;
-                      border-radius: 4px;">
-                Shop Art
-            </a>
+            <?= $this->Html->link(
+                'Shop Art',
+                ['controller' => 'Artworks', 'action' => 'index'],
+                [
+                    'class' => 'button-style',
+                    'style' => 'margin-right: 1rem; padding: 0.5rem 1rem; background-color: #333; color: #fff; text-decoration: none; border-radius: 4px;'
+                ]
+            ) ?>
             <?= $this->Html->link(
                 'Book Writing Appointment',
                 ['controller' => 'WritingServiceRequests', 'action' => 'add'],
