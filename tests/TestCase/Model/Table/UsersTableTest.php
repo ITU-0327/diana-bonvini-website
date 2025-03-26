@@ -5,7 +5,7 @@ namespace App\Test\TestCase\Model\Table;
 
 use App\Model\Table\UsersTable;
 use Authentication\PasswordHasher\DefaultPasswordHasher;
-use Cake\I18n\FrozenTime;
+use Cake\I18n\DateTime;
 use Cake\TestSuite\TestCase;
 
 /**
@@ -218,7 +218,7 @@ class UsersTableTest extends TestCase
 
         $originalLastLogin = $user->last_login;
         // Simulate successful login by updating last_login.
-        $user->last_login = FrozenTime::now();
+        $user->last_login = DateTime::now();
         $this->Users->save($user);
         $this->assertNotEquals($originalLastLogin, $user->last_login, 'last_login should update on login.');
     }

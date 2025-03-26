@@ -6,7 +6,7 @@ namespace App\Controller;
 use App\Mailer\UserMailer;
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
-use Cake\I18n\FrozenTime;
+use Cake\I18n\DateTime;
 use Cake\Routing\Router;
 use Cake\Utility\Security;
 use Cake\Utility\Text;
@@ -63,7 +63,7 @@ class UsersController extends AppController
                 $usersTable = $this->getTableLocator()->get('Users');
                 /** @var \App\Model\Entity\User $userEntity */
                 $userEntity = $usersTable->get($user->user_id);
-                $userEntity->last_login = FrozenTime::now();
+                $userEntity->last_login = DateTime::now();
                 $usersTable->save($userEntity);
 
                 $redirect = $this->request->getQuery('redirect', [
@@ -229,7 +229,7 @@ class UsersController extends AppController
             // Generate a secure token & save to DB
             $token = Security::hash(Text::uuid(), 'sha256', true);
             $user->password_reset_token = $token;
-            $user->token_expiration = new FrozenTime('+1 hour');
+            $user->token_expiration = new DateTime('+1 hour');
 
             if ($this->Users->save($user)) {
                 // Build a reset link
@@ -272,7 +272,7 @@ class UsersController extends AppController
         $user = $this->Users->find()
             ->where([
                 'password_reset_token' => $token,
-                'token_expiration >' => FrozenTime::now(),
+                'token_expiration >' => DateTime::now(),
             ])
             ->first();
 

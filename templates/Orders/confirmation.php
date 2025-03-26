@@ -62,7 +62,7 @@
                             <div class="flex items-center">
                                 <?= $this->Html->image(
                                     $item->artwork->image_path,
-                                    ['alt' => $item->artwork->title, 'class' => 'w-16 h-16 object-cover rounded-lg mr-4']
+                                    ['alt' => $item->artwork->title, 'class' => 'w-16 h-16 object-cover rounded-lg mr-4'],
                                 ) ?>
                                 <div>
                                     <p class="font-bold text-gray-900 text-lg"><?= h($item->artwork->title) ?></p>
