@@ -50,6 +50,7 @@ return function (RouteBuilder $routes): void {
     $routes->setRouteClass(DashedRoute::class);
 
     $routes->connect('/about', ['controller' => 'Pages', 'action' => 'display', 'about']);
+    $routes->connect('/contact', ['controller' => 'Pages', 'action' => 'display', 'contact']);
     $routes->connect('/writing-service-requests/info', ['controller' => 'Pages', 'action' => 'display', 'info']);
 
     $routes->scope('/', function (RouteBuilder $builder): void {

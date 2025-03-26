@@ -48,10 +48,10 @@
             </div>
 
             <!-- Upload Document -->
-            <div>
-                <?= $this->Form->label('document', 'Upload Document (TXT, PDF, Word)', ['class' => 'block font-semibold text-gray-700 mb-1']) ?>
-                <?= $this->Form->file('document', ['class' => 'w-full border-gray-300 rounded shadow-sm']) ?>
-            </div>
+            <?= $this->Form->file('document', [
+                'class' => 'w-full border-gray-300 rounded shadow-sm',
+                'accept' => '.pdf,.jpg,.jpeg,.docx'
+            ]) ?>
 
             <!-- Estimated Price -->
             <?php if ($writingServiceRequest->estimated_price !== null): ?>

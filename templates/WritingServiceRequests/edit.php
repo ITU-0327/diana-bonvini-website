@@ -7,7 +7,7 @@
                     'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->request_id),
                     'class' => 'text-red-600 hover:underline'
                 ]) ?>
-                <?= $this->Html->link(__('List Writing Service Requests'), ['action' => 'index'], [
+                <?= $this->Html->link(__('Back To My Request List'), ['action' => 'index'], [
                     'class' => 'text-blue-600 hover:underline'
                 ]) ?>
             </div>
@@ -79,10 +79,10 @@
                     <?php endif; ?>
                 </div>
 
-                <div>
-                    <?= $this->Form->label('document', __('Upload New Document (TXT, PDF, Word)'), ['class' => 'block font-semibold text-gray-700']) ?>
-                    <?= $this->Form->file('document', ['class' => 'w-full mt-1 border-gray-300 rounded shadow-sm']) ?>
-                </div>
+                <?= $this->Form->file('document', [
+                    'class' => 'w-full border-gray-300 rounded shadow-sm',
+                    'accept' => '.pdf,.jpg,.jpeg,.docx'
+                ]) ?>
             </fieldset>
 
             <div class="mt-6">
