@@ -64,39 +64,49 @@ class WritingServiceRequestsController extends AppController
      */
     public function add()
     {
-        /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
         $userId = $user?->get('user_id');
+
         $writingServiceRequest = $this->WritingServiceRequests->newEmptyEntity();
 
         if ($this->request->is('post')) {
-            $data = $this->request->getData();
+            $action = $this->request->getData('action');
 
-            $documentPath = $this->handleDocumentUpload($data['document'] ?? null, 'add');
-            if ($this->response->getStatusCode() === 302) {
-                return $this->response;
-            }
-            if ($documentPath) {
-                $data['document'] = $documentPath;
-            } else {
-                unset($data['document']);
+            $serviceType = $this->request->getData('service_type_display') ?? null;
+            $wordCountRange = $this->request->getData('word_count_range_display') ?? null;
+
+            if ($action === 'get_estimate') {
+                $estimatedPrice = $this->calculateEstimatedPrice($serviceType, $wordCountRange);
+                $this->set(compact('estimatedPrice'));
             }
 
-            $data['service_type'] = $data['service_type_display'] ?? null;
-            $data['word_count_range'] = $data['word_count_range_display'] ?? null;
+            if ($action === 'submit_request') {
+                $data = $this->request->getData();
 
-            $data['estimated_price'] = $this->calculateEstimatedPrice($data['service_type'], $data['word_count_range']);
-            $data['user_id'] = $userId;
+                $documentPath = $this->handleDocumentUpload($data['document'] ?? null, 'add');
+                if ($this->response->getStatusCode() === 302) {
+                    return $this->response;
+                }
+                if ($documentPath) {
+                    $data['document'] = $documentPath;
+                } else {
+                    unset($data['document']);
+                }
 
-            $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $data);
+                $data['service_type'] = $serviceType;
+                $data['word_count_range'] = $wordCountRange;
 
-            if ($this->WritingServiceRequests->save($writingServiceRequest)) {
-                $this->Flash->success(__('The writing service request has been saved.'));
+                $data['estimated_price'] = $this->calculateEstimatedPrice($serviceType, $wordCountRange);
+                $data['user_id'] = $userId;
 
-                return $this->redirect(['action' => 'index']);
+                $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $data);
+
+                if ($this->WritingServiceRequests->save($writingServiceRequest)) {
+                    $this->Flash->success(__('The writing service request has been saved.'));
+                    return $this->redirect(['action' => 'index']);
+                }
+                $this->Flash->error(__('The writing service request could not be saved. Please, try again.'));
             }
-
-            $this->Flash->error(__('The writing service request could not be saved. Please, try again.'));
         }
 
         $this->set(compact('writingServiceRequest', 'userId'));
