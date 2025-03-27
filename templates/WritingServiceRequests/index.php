@@ -3,6 +3,8 @@
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\WritingServiceRequest> $writingServiceRequests
  */
+$user = $this->request->getAttribute('identity');
+$firstName = $user->get('first_name');
 ?>
 
 <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
@@ -16,19 +18,34 @@
         ) ?>
     </div>
 
+    <!-- Greeting with animation -->
+    <div class="mt-2 flex items-center space-x-2 animate-fade-in">
+        <span class="text-2xl">👋</span>
+        <p class="text-gray-700 text-lg font-medium">Hi, <?= h($firstName) ?>!</p>
+    </div>
+
+    <!-- Animation styles -->
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.8s ease-in-out;
+        }
+    </style>
+
     <div class="overflow-auto border rounded">
         <table class="min-w-full text-sm text-left text-gray-800">
             <thead class="bg-gray-100 text-xs uppercase text-gray-600">
             <tr>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('request_id') ?></th>
-                <th class="px-4 py-3"><?= $this->Paginator->sort('user_id') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('service_type') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('word_count_range') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('notes') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('estimated_price') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('final_price') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('request_status') ?></th>
-                <th class="px-4 py-3"><?= $this->Paginator->sort('is_deleted') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('created_at') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('updated_at') ?></th>
                 <th class="px-4 py-3"><?= __('Document') ?></th>
@@ -39,20 +56,12 @@
             <?php foreach ($writingServiceRequests as $writingServiceRequest): ?>
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2"><?= h($writingServiceRequest->request_id) ?></td>
-                    <td class="px-4 py-2">
-                        <?= $writingServiceRequest->hasValue('user') ? $this->Html->link(
-                            $writingServiceRequest->user->first_name,
-                            ['controller' => 'Users', 'action' => 'view', $writingServiceRequest->user->user_id],
-                            ['class' => 'text-blue-600 hover:underline']
-                        ) : '' ?>
-                    </td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->service_type) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->word_count_range) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->notes) ?></td>
                     <td class="px-4 py-2"><?= $writingServiceRequest->estimated_price === null ? '' : $this->Number->format($writingServiceRequest->estimated_price) ?></td>
                     <td class="px-4 py-2"><?= $writingServiceRequest->final_price === null ? '' : $this->Number->format($writingServiceRequest->final_price) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->request_status) ?></td>
-                    <td class="px-4 py-2"><?= $this->Number->format($writingServiceRequest->is_deleted) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->created_at) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->updated_at) ?></td>
                     <td class="px-4 py-2">

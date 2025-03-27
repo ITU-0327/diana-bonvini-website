@@ -79,10 +79,12 @@
                     <?php endif; ?>
                 </div>
 
+                <p class="text-sm text-gray-500 mb-1">Want change document?</p>
                 <?= $this->Form->file('document', [
                     'class' => 'w-full border-gray-300 rounded shadow-sm',
                     'accept' => '.pdf,.jpg,.jpeg,.docx'
                 ]) ?>
+                <p class="text-sm text-gray-500 mb-1">Only PDF, JPG, and DOCX files can be uploaded.</p>
             </fieldset>
 
             <div class="mt-6">
