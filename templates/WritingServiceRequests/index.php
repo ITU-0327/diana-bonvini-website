@@ -43,7 +43,7 @@ $firstName = $user->get('first_name');
                 <th class="px-4 py-3"><?= $this->Paginator->sort('service_type') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('word_count_range') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('notes') ?></th>
-                <th class="px-4 py-3"><?= $this->Paginator->sort('estimated_price') ?></th>
+                <!-- 移除了 Estimated Price 列 -->
                 <th class="px-4 py-3"><?= $this->Paginator->sort('final_price') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('request_status') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('created_at') ?></th>
@@ -59,7 +59,7 @@ $firstName = $user->get('first_name');
                     <td class="px-4 py-2"><?= h($writingServiceRequest->service_type) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->word_count_range) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->notes) ?></td>
-                    <td class="px-4 py-2"><?= $writingServiceRequest->estimated_price === null ? '' : $this->Number->format($writingServiceRequest->estimated_price) ?></td>
+                    <!-- 移除了 Estimated Price 列 -->
                     <td class="px-4 py-2"><?= $writingServiceRequest->final_price === null ? '' : $this->Number->format($writingServiceRequest->final_price) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->request_status) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->created_at) ?></td>

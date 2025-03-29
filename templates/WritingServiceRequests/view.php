@@ -50,10 +50,6 @@
                     <th class="p-3 font-semibold text-gray-700"><?= __('Request Status') ?></th>
                     <td class="p-3"><?= h($writingServiceRequest->request_status) ?></td>
                 </tr>
-                <tr class="bg-gray-50">
-                    <th class="p-3 font-semibold text-gray-700"><?= __('Estimated Price') ?></th>
-                    <td class="p-3"><?= $writingServiceRequest->estimated_price === null ? '' : $this->Number->format($writingServiceRequest->estimated_price) ?></td>
-                </tr>
                 <tr>
                     <th class="p-3 font-semibold text-gray-700"><?= __('Final Price') ?></th>
                     <td class="p-3"><?= $writingServiceRequest->final_price === null ? '' : $this->Number->format($writingServiceRequest->final_price) ?></td>

@@ -84,10 +84,6 @@ class WritingServiceRequestsTable extends Table
             ->allowEmptyString('notes');
 
         $validator
-            ->decimal('estimated_price')
-            ->allowEmptyString('estimated_price');
-
-        $validator
             ->decimal('final_price')
             ->allowEmptyString('final_price');
 

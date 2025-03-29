@@ -38,7 +38,6 @@ class WritingServiceRequest extends Entity
         'service_type' => true,
         'word_count_range' => true,
         'notes' => true,
-        'estimated_price' => true,
         'final_price' => true,
         'request_status' => true,
         'is_deleted' => true,
