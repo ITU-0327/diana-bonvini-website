@@ -40,7 +40,6 @@ class WritingServiceRequestsController extends AppController
         ];
 
         $writingServiceRequests = $this->paginate($query);
-
         $this->set(compact('writingServiceRequests'));
     }
 
@@ -71,42 +70,34 @@ class WritingServiceRequestsController extends AppController
 
         if ($this->request->is('post')) {
             $action = $this->request->getData('action');
+            $data   = $this->request->getData();
 
-            $serviceType = $this->request->getData('service_type_display') ?? null;
-            $wordCountRange = $this->request->getData('word_count_range_display') ?? null;
-
-            if ($action === 'get_estimate') {
-                $estimatedPrice = $this->calculateEstimatedPrice($serviceType, $wordCountRange);
-                $this->set(compact('estimatedPrice'));
+            // Handle file upload
+            $documentPath = $this->handleDocumentUpload($data['document'] ?? null, 'add');
+            if ($this->response->getStatusCode() === 302) {
+                return $this->response;
+            }
+            if ($documentPath) {
+                $data['document'] = $documentPath;
+            } else {
+                unset($data['document']);
             }
 
-            if ($action === 'submit_request') {
-                $data = $this->request->getData();
+            // (Optional) parse these if you still need them for something else
+            $serviceType     = $data['service_type_display'] ?? null;
+            $wordCountRange  = $data['word_count_range_display'] ?? null;
 
-                $documentPath = $this->handleDocumentUpload($data['document'] ?? null, 'add');
-                if ($this->response->getStatusCode() === 302) {
-                    return $this->response;
-                }
-                if ($documentPath) {
-                    $data['document'] = $documentPath;
-                } else {
-                    unset($data['document']);
-                }
+            $data['service_type']      = $serviceType;
+            $data['word_count_range']  = $wordCountRange;
+            $data['user_id']           = $userId;
 
-                $data['service_type'] = $serviceType;
-                $data['word_count_range'] = $wordCountRange;
+            $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $data);
 
-                $data['estimated_price'] = $this->calculateEstimatedPrice($serviceType, $wordCountRange);
-                $data['user_id'] = $userId;
-
-                $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $data);
-
-                if ($this->WritingServiceRequests->save($writingServiceRequest)) {
-                    $this->Flash->success(__('The writing service request has been saved.'));
-                    return $this->redirect(['action' => 'index']);
-                }
-                $this->Flash->error(__('The writing service request could not be saved. Please, try again.'));
+            if ($this->WritingServiceRequests->save($writingServiceRequest)) {
+                $this->Flash->success(__('The writing service request has been saved.'));
+                return $this->redirect(['action' => 'index']);
             }
+            $this->Flash->error(__('The writing service request could not be saved. Please, try again.'));
         }
 
         $this->set(compact('writingServiceRequest', 'userId'));
@@ -129,6 +120,7 @@ class WritingServiceRequestsController extends AppController
         if ($this->request->is(['patch', 'post', 'put'])) {
             $data = $this->request->getData();
 
+            // Handle file upload
             $documentPath = $this->handleDocumentUpload($data['document'] ?? null, 'edit');
             if ($this->response->getStatusCode() === 302) {
                 return $this->response;
@@ -139,10 +131,10 @@ class WritingServiceRequestsController extends AppController
                 unset($data['document']);
             }
 
-            $data['estimated_price'] = $this->calculateEstimatedPrice(
-                $data['service_type'] ?? null,
-                $data['word_count_range'] ?? null,
-            );
+            // (Optional) parse these if you still need them for something else
+            // $data['service_type'] = ...
+            // $data['word_count_range'] = ...
+
             $data['user_id'] = $userId;
 
             $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $data);
@@ -214,34 +206,5 @@ class WritingServiceRequestsController extends AppController
         $file->moveTo($filePath);
 
         return 'uploads/documents/' . $filename;
-    }
-
-    /**
-     * Calculates estimated price
-     *
-     * @param string|null $type
-     * @param string|null $range
-     * @return float
-     */
-    private function calculateEstimatedPrice(?string $type, ?string $range): float
-    {
-        $priceMap = [
-            'creative_writing' => 2.0,
-            'editing' => 1.5,
-            'proofreading' => 1.2,
-        ];
-
-        if (!isset($priceMap[$type])) {
-            return 0.0;
-        }
-
-        $multiplier = $priceMap[$type];
-
-        return match ($range) {
-            'under_5000' => $multiplier * 5000.0,
-            '5000_20000' => $multiplier * 20000.0,
-            '20000_50000', '50000_plus' => $multiplier * 50000.0,
-            default => 0.0,
-        };
     }
 }
