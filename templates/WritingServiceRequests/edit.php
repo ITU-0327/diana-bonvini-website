@@ -44,21 +44,28 @@
                 </div>
 
                 <div>
-                    <?= $this->Form->control('notes', ['label' => 'Notes', 'class' => 'w-full border-gray-300 rounded shadow-sm']) ?>
+                    <?= $this->Form->control('notes', [
+                        'label' => 'Notes',
+                        'class' => 'w-full border-gray-300 rounded shadow-sm'
+                    ]) ?>
+                </div>
+
+                <!-- Final Price (if still needed) -->
+                <div>
+                    <?= $this->Form->control('final_price', [
+                        'label' => 'Final Price',
+                        'class' => 'w-full border-gray-300 rounded shadow-sm'
+                    ]) ?>
                 </div>
 
                 <div>
-                    <?= $this->Form->control('final_price', ['label' => 'Final Price', 'class' => 'w-full border-gray-300 rounded shadow-sm']) ?>
+                    <?= $this->Form->control('request_status', [
+                        'label' => 'Request Status',
+                        'class' => 'w-full border-gray-300 rounded shadow-sm'
+                    ]) ?>
                 </div>
 
-                <div>
-                    <?= $this->Form->control('request_status', ['label' => 'Request Status', 'class' => 'w-full border-gray-300 rounded shadow-sm']) ?>
-                </div>
-
-                <div>
-                    <label class="block font-semibold text-gray-700"><?= __('Estimated Price') ?></label>
-                    <input type="text" class="w-full mt-1 bg-gray-100 border border-gray-300 rounded shadow-sm" value="$<?= h(number_format($writingServiceRequest->estimated_price, 2)) ?>" readonly>
-                </div>
+                <!-- Removed the Estimated Price block -->
 
                 <div>
                     <label class="block font-semibold text-gray-700"><?= __('Created At') ?></label>
@@ -73,7 +80,10 @@
                 <div>
                     <label class="block font-semibold text-gray-700"><?= __('Existing Document') ?></label>
                     <?php if (!empty($writingServiceRequest->document)): ?>
-                        <?= $this->Html->link('View Document', '/' . $writingServiceRequest->document, ['target' => '_blank', 'class' => 'text-blue-600 hover:underline']) ?>
+                        <?= $this->Html->link('View Document', '/' . $writingServiceRequest->document, [
+                            'target' => '_blank',
+                            'class' => 'text-blue-600 hover:underline'
+                        ]) ?>
                     <?php else: ?>
                         <span class="text-gray-500 italic"><?= __('No Document Uploaded') ?></span>
                     <?php endif; ?>
@@ -88,7 +98,9 @@
             </fieldset>
 
             <div class="mt-6">
-                <?= $this->Form->button(__('Submit'), ['class' => 'bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition']) ?>
+                <?= $this->Form->button(__('Submit'), [
+                    'class' => 'bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition'
+                ]) ?>
             </div>
 
             <?= $this->Form->end() ?>

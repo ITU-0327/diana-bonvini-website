@@ -81,41 +81,11 @@
                 Only PDF, JPG, and DOCX files can be uploaded.
             </p>
 
-            <!-- Estimated Price display (hidden if no price) -->
-            <div id="estimated-price-wrapper"
-                 style="<?= empty($estimatedPrice) ? 'display:none;' : '' ?>">
-                <label class="block font-semibold text-gray-700 mb-1">
-                    Estimated Price
-                </label>
-                <input
-                    type="text"
-                    id="estimated-price"
-                    class="w-full bg-gray-100 border-gray-300 rounded shadow-sm"
-                    value="<?= !empty($estimatedPrice) ? ('$' . number_format($estimatedPrice, 2)) : '' ?>"
-                    readonly
-                >
-            </div>
-
-            <!-- Buttons -->
+            <!-- Submit button -->
             <div class="text-center">
-                <!-- Get Estimate Price button (hidden if price exists) -->
-                <?= $this->Form->button('Get Estimate Price', [
-                    'type'  => 'submit',
-                    'name'  => 'action',
-                    'value' => 'get_estimate',
-                    'id'    => 'btn-get-estimate',
-                    'class' => 'bg-green-600 text-white px-6 py-2 rounded',
-                    'style' => !empty($estimatedPrice) ? 'display:none;' : ''
-                ]) ?>
-
-                <!-- Submit Request button (hidden if no price) -->
                 <?= $this->Form->button('Submit Request', [
                     'type'  => 'submit',
-                    'name'  => 'action',
-                    'value' => 'submit_request',
-                    'id'    => 'btn-submit-request',
-                    'class' => 'bg-blue-600 text-white px-6 py-2 rounded',
-                    'style' => empty($estimatedPrice) ? 'display:none;' : ''
+                    'class' => 'bg-blue-600 text-white px-6 py-2 rounded'
                 ]) ?>
             </div>
 
@@ -134,48 +104,6 @@
         </div>
     </div>
 </div>
-
-<!-- JS: Listen for dropdown changes -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const serviceTypeSelect = document.getElementById('service-type');
-        const wordCountSelect   = document.getElementById('word-count');
-
-        const estimateBtn = document.getElementById('btn-get-estimate');
-        const submitBtn   = document.getElementById('btn-submit-request');
-
-        const estimatedPriceWrapper = document.getElementById('estimated-price-wrapper');
-        const estimatedPriceInput   = document.getElementById('estimated-price');
-
-        function revertToGetEstimate() {
-            // Show "Get Estimate Price" button
-            if (estimateBtn) {
-                estimateBtn.style.display = 'inline-block';
-            }
-
-            // Hide "Submit Request" button
-            if (submitBtn) {
-                submitBtn.style.display = 'none';
-            }
-
-            // Hide and clear the price display
-            if (estimatedPriceWrapper) {
-                estimatedPriceWrapper.style.display = 'none';
-            }
-            if (estimatedPriceInput) {
-                estimatedPriceInput.value = '';
-            }
-        }
-
-        // Dropdown change listener
-        if (serviceTypeSelect) {
-            serviceTypeSelect.addEventListener('change', revertToGetEstimate);
-        }
-        if (wordCountSelect) {
-            wordCountSelect.addEventListener('change', revertToGetEstimate);
-        }
-    });
-</script>
 
 </body>
 </html>
