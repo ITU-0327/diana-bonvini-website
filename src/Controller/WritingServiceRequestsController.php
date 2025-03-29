@@ -207,4 +207,52 @@ class WritingServiceRequestsController extends AppController
 
         return 'uploads/documents/' . $filename;
     }
+
+    // src/Controller/WritingServiceRequestsController.php
+
+    public function adminIndex()
+    {
+        $user = $this->Authentication->getIdentity();
+        if (!$user || $user->user_type !== 'admin') {
+            $this->Flash->error(__('You are not authorized to access admin area.'));
+            return $this->redirect(['controller' => 'Users', 'action' => 'login']);
+        }
+
+        $query = $this->WritingServiceRequests->find()
+            ->contain(['Users']);
+
+        $this->paginate = [
+            'order' => ['WritingServiceRequests.created_at' => 'DESC'],
+        ];
+
+        $writingServiceRequests = $this->paginate($query);
+        $this->set(compact('writingServiceRequests'));
+    }
+
+    public function adminView(?string $id = null)
+    {
+        $user = $this->Authentication->getIdentity();
+        if (!$user || $user->user_type !== 'admin') {
+            $this->Flash->error(__('You are not authorized to access admin area.'));
+            return $this->redirect(['controller' => 'Users', 'action' => 'login']);
+        }
+
+        $writingServiceRequest = $this->WritingServiceRequests->get($id, [
+            'contain' => ['Users']
+        ]);
+
+        if ($this->request->is(['post', 'put', 'patch'])) {
+            $data = $this->request->getData();
+
+            $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $data);
+
+            if ($this->WritingServiceRequests->save($writingServiceRequest)) {
+                $this->Flash->success(__('Request updated successfully.'));
+                return $this->redirect(['action' => 'adminView', $id]);
+            }
+            $this->Flash->error(__('Failed to update. Please try again.'));
+        }
+
+        $this->set(compact('writingServiceRequest'));
+    }
 }

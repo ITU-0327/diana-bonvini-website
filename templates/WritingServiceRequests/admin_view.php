@@ -1,0 +1,116 @@
+<?php
+/**
+ * @var \App\View\AppView $this
+ * @var \App\Model\Entity\WritingServiceRequest $writingServiceRequest
+ */
+?>
+<div class="flex flex-col lg:flex-row gap-6 p-6">
+    <!-- Sidebar or actions -->
+    <aside class="w-full lg:w-1/4">
+        <div class="bg-white shadow rounded-lg p-4">
+            <h4 class="text-lg font-semibold text-gray-700 mb-4">Admin Actions</h4>
+            <div class="flex flex-col space-y-2">
+                <?= $this->Form->postLink('Delete This Request',
+                    ['action' => 'delete', $writingServiceRequest->request_id],
+                    [
+                        'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->request_id),
+                        'class' => 'text-red-600 hover:underline'
+                    ]
+                ) ?>
+                <?= $this->Html->link('Back to All Requests',
+                    ['action' => 'adminIndex'],
+                    ['class' => 'text-blue-600 hover:underline']
+                ) ?>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="w-full lg:w-3/4">
+        <div class="bg-white shadow rounded-lg p-6 space-y-4">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">
+                Request #<?= h($writingServiceRequest->request_id) ?> (Admin View)
+            </h3>
+
+            <table class="w-full text-left border border-gray-200 rounded overflow-hidden">
+                <tbody class="divide-y divide-gray-200">
+                <tr class="bg-gray-50">
+                    <th class="p-3 font-semibold text-gray-700">User</th>
+                    <td class="p-3">
+                        <?php if (!empty($writingServiceRequest->user)): ?>
+                            <?= h($writingServiceRequest->user->first_name . ' ' . $writingServiceRequest->user->last_name) ?>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <tr>
+                    <th class="p-3 font-semibold text-gray-700">Service Type</th>
+                    <td class="p-3"><?= h($writingServiceRequest->service_type) ?></td>
+                </tr>
+                <tr class="bg-gray-50">
+                    <th class="p-3 font-semibold text-gray-700">Word Count Range</th>
+                    <td class="p-3"><?= h($writingServiceRequest->word_count_range) ?></td>
+                </tr>
+                <tr>
+                    <th class="p-3 font-semibold text-gray-700">Notes</th>
+                    <td class="p-3"><?= nl2br(h($writingServiceRequest->notes)) ?></td>
+                </tr>
+                <tr class="bg-gray-50">
+                    <th class="p-3 font-semibold text-gray-700">Status</th>
+                    <td class="p-3"><?= h($writingServiceRequest->request_status) ?></td>
+                </tr>
+                <tr>
+                    <th class="p-3 font-semibold text-gray-700">Final Price</th>
+                    <td class="p-3">
+                        <?= $writingServiceRequest->final_price === null
+                            ? ''
+                            : $this->Number->format($writingServiceRequest->final_price) ?>
+                    </td>
+                </tr>
+                <tr class="bg-gray-50">
+                    <th class="p-3 font-semibold text-gray-700">Created At</th>
+                    <td class="p-3"><?= h($writingServiceRequest->created_at) ?></td>
+                </tr>
+                <tr>
+                    <th class="p-3 font-semibold text-gray-700">Updated At</th>
+                    <td class="p-3"><?= h($writingServiceRequest->updated_at) ?></td>
+                </tr>
+                <tr class="bg-gray-50">
+                    <th class="p-3 font-semibold text-gray-700">Document</th>
+                    <td class="p-3">
+                        <?php if (!empty($writingServiceRequest->document)): ?>
+                            <?= $this->Html->link('View Document', '/' . $writingServiceRequest->document, [
+                                'target' => '_blank', 'class' => 'text-blue-500 hover:underline'
+                            ]) ?>
+                        <?php else: ?>
+                            <span class="text-gray-500 italic">No Document</span>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+            <h4 class="text-xl font-semibold mt-6">Admin Update</h4>
+            <?= $this->Form->create($writingServiceRequest, ['url' => ['action' => 'adminView', $writingServiceRequest->request_id]]) ?>
+            <div class="space-y-4">
+                <?= $this->Form->control('final_price', [
+                    'label' => 'Final Price',
+                    'class' => 'w-full border-gray-300 rounded'
+                ]) ?>
+                <?= $this->Form->control('request_status', [
+                    'label' => 'Request Status',
+                    'class' => 'w-full border-gray-300 rounded'
+                ]) ?>
+
+                <?= $this->Form->label('admin_reply', 'Admin Reply') ?>
+                <?= $this->Form->textarea('admin_reply', ['class' => 'w-full border-gray-300 rounded']) ?>
+                -->
+            </div>
+            <div class="mt-4">
+                <?= $this->Form->button('Update', [
+                    'class' => 'bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700'
+                ]) ?>
+            </div>
+            <?= $this->Form->end() ?>
+        </div>
+    </div>
+</div>
