@@ -29,7 +29,7 @@ $this->assign('title', 'Landing Page Example');
 
             <?php if ($userType === 'admin'): ?>
                 <?= $this->Html->link(
-                    'Check All Requests',
+                    'Check All Writing Service Requests',
                     ['controller' => 'WritingServiceRequests', 'action' => 'adminIndex'],
                     [
                         'class' => 'button-style',
