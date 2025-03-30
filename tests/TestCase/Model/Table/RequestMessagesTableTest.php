@@ -25,7 +25,8 @@ class RequestMessagesTableTest extends TestCase
      */
     protected array $fixtures = [
         'app.RequestMessages',
-        'app.Requests',
+        'app.WritingServiceRequests',
+        'app.Senders',
     ];
 
     /**
