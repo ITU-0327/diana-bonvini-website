@@ -10,12 +10,13 @@ use Cake\ORM\Entity;
  *
  * @property string $message_id
  * @property string $request_id
- * @property string $sender_type
  * @property string $message
  * @property \Cake\I18n\DateTime $created_at
  * @property \Cake\I18n\DateTime $updated_at
+ * @property string $sender_id
  *
- * @property \App\Model\Entity\WritingServiceRequest $request
+ * @property \App\Model\Entity\WritingServiceRequest $writing_service_request
+ * @property \App\Model\Entity\User $sender
  */
 class RequestMessage extends Entity
 {
@@ -29,11 +30,13 @@ class RequestMessage extends Entity
      * @var array<string, bool>
      */
     protected array $_accessible = [
+        'message_id' => true,
         'request_id' => true,
-        'sender_type' => true,
         'message' => true,
         'created_at' => true,
         'updated_at' => true,
-        'request' => true,
+        'sender_id' => true,
+        'writing_service_request' => true,
+        'sender' => true,
     ];
 }

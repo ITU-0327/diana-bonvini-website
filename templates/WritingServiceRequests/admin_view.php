@@ -2,11 +2,12 @@
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\WritingServiceRequest $writingServiceRequest
- * @var \Cake\Datasource\ResultSetInterface $messages
+ * @var \Cake\Collection\CollectionInterface $messages
+ * @var string $adminId
  */
 ?>
 <div class="flex flex-col lg:flex-row gap-6 p-6">
-    <!-- Sidebar or actions -->
+    <!-- Sidebar -->
     <aside class="w-full lg:w-1/4">
         <div class="bg-white shadow rounded-lg p-4">
             <h4 class="text-lg font-semibold text-gray-700 mb-4">Admin Actions</h4>
@@ -26,7 +27,7 @@
         </div>
     </aside>
 
-    <!-- Main content -->
+    <!-- Main Content -->
     <div class="w-full lg:w-3/4">
         <div class="bg-white shadow rounded-lg p-6 space-y-4">
             <h3 class="text-2xl font-bold text-gray-800 mb-4">
@@ -37,11 +38,7 @@
                 <tbody class="divide-y divide-gray-200">
                 <tr class="bg-gray-50">
                     <th class="p-3 font-semibold text-gray-700">User</th>
-                    <td class="p-3">
-                        <?php if (!empty($writingServiceRequest->user)): ?>
-                            <?= h($writingServiceRequest->user->first_name . ' ' . $writingServiceRequest->user->last_name) ?>
-                        <?php endif; ?>
-                    </td>
+                    <td class="p-3"><?= h($writingServiceRequest->user->first_name . ' ' . $writingServiceRequest->user->last_name) ?></td>
                 </tr>
                 <tr>
                     <th class="p-3 font-semibold text-gray-700">Service Type</th>
@@ -61,11 +58,7 @@
                 </tr>
                 <tr>
                     <th class="p-3 font-semibold text-gray-700">Final Price</th>
-                    <td class="p-3">
-                        <?= $writingServiceRequest->final_price === null
-                            ? ''
-                            : $this->Number->format($writingServiceRequest->final_price) ?>
-                    </td>
+                    <td class="p-3"><?= $writingServiceRequest->final_price === null ? '' : $this->Number->format($writingServiceRequest->final_price) ?></td>
                 </tr>
                 <tr class="bg-gray-50">
                     <th class="p-3 font-semibold text-gray-700">Created At</th>
@@ -90,14 +83,19 @@
                 </tbody>
             </table>
 
+            <!-- Conversation -->
             <h4 class="text-xl font-semibold mt-6">Conversation</h4>
             <?php if (!empty($messages) && $messages->count() > 0): ?>
                 <div class="space-y-4">
                     <?php foreach ($messages as $msg): ?>
-                        <div class="p-3 border rounded <?= $msg->sender_type === 'admin' ? 'bg-blue-50' : 'bg-gray-50' ?>">
-                            <strong><?= $msg->sender_type === 'admin' ? 'Admin' : 'User' ?>:</strong>
+                        <div class="p-3 border rounded <?= $msg->sender_id === $adminId ? 'bg-green-50' : 'bg-blue-50' ?>">
+                            <strong>
+                                <?= $msg->sender_id === $adminId
+                                    ? 'You'
+                                    : h($msg->sender->first_name . ' ' . $msg->sender->last_name) ?>
+                            </strong>
                             <p><?= nl2br(h($msg->message)) ?></p>
-                            <small class="text-gray-500"><?= h($msg->created_at) ?></small>
+                            <small class="text-gray-500"><?= $msg->created_at->format('Y-m-d H:i') ?></small>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -105,7 +103,8 @@
                 <p class="text-gray-500">No conversation yet.</p>
             <?php endif; ?>
 
-            <h4 class="text-xl font-semibold mt-6">Admin Update</h4>
+            <!-- Admin reply -->
+            <h4 class="text-xl font-semibold mt-6">Admin Reply</h4>
             <?= $this->Form->create($writingServiceRequest, ['url' => ['action' => 'adminView', $writingServiceRequest->request_id]]) ?>
             <div class="space-y-4">
                 <?= $this->Form->control('final_price', [
@@ -117,7 +116,7 @@
                     'class' => 'w-full border-gray-300 rounded'
                 ]) ?>
 
-                <?= $this->Form->label('reply_message', 'Admin Reply') ?>
+                <?= $this->Form->label('reply_message', 'Your Message') ?>
                 <?= $this->Form->textarea('reply_message', ['class' => 'w-full border-gray-300 rounded']) ?>
             </div>
             <div class="mt-4">

@@ -53,22 +53,28 @@ class WritingServiceRequestsController extends AppController
     public function view(?string $id = null)
     {
         $user = $this->Authentication->getIdentity();
+        $userId = $user?->get('user_id');
+
         if (!$user) {
             $this->Flash->error(__('You need to be logged in.'));
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
 
+        // 获取 request 数据
         $writingServiceRequest = $this->WritingServiceRequests->get($id, [
             'contain' => ['Users'],
         ]);
 
+        // 获取消息
         $requestMessagesTable = $this->getTableLocator()->get('RequestMessages');
 
         $messages = $requestMessagesTable->find()
+            ->contain(['Senders']) // Senders 是 Users
             ->where(['request_id' => $id])
-            ->orderAsc('created_at')
+            ->orderAsc('RequestMessages.created_at')
             ->all();
 
+        // 用户提交回复
         if ($this->request->is(['post', 'put', 'patch'])) {
             $data = $this->request->getData();
 
@@ -76,8 +82,8 @@ class WritingServiceRequestsController extends AppController
                 $newMessage = $requestMessagesTable->newEntity([
                     'message_id' => \Cake\Utility\Text::uuid(),
                     'request_id' => $id,
-                    'sender_type' => 'user',
-                    'message' => $data['reply_message'],
+                    'sender_id'  => $userId,
+                    'message'    => $data['reply_message'],
                 ]);
 
                 if ($requestMessagesTable->save($newMessage)) {
@@ -89,7 +95,7 @@ class WritingServiceRequestsController extends AppController
             }
         }
 
-        $this->set(compact('writingServiceRequest', 'messages'));
+        $this->set(compact('writingServiceRequest', 'messages', 'userId'));
     }
 
     /**
@@ -268,6 +274,9 @@ class WritingServiceRequestsController extends AppController
     public function adminView(?string $id = null)
     {
         $user = $this->Authentication->getIdentity();
+
+        $adminId = $user?->get('user_id');
+
         if (!$user || $user->user_type !== 'admin') {
             $this->Flash->error(__('You are not authorized to access admin area.'));
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
@@ -280,9 +289,9 @@ class WritingServiceRequestsController extends AppController
         $requestMessagesTable = $this->getTableLocator()->get('RequestMessages');
 
         $messages = $requestMessagesTable->find()
-            ->contain(['WritingServiceRequests'])
-            ->where(['RequestMessages.request_id' => $id])
-            ->orderAsc('WritingServiceRequests.created_at')
+            ->contain(['Senders'])
+            ->where(['request_id' => $id])
+            ->orderAsc('RequestMessages.created_at')
             ->all();
 
         if ($this->request->is(['post', 'put', 'patch'])) {
@@ -294,8 +303,8 @@ class WritingServiceRequestsController extends AppController
                 $newMessage = $requestMessagesTable->newEntity([
                     'message_id' => \Cake\Utility\Text::uuid(),
                     'request_id' => $id,
-                    'sender_type' => 'admin',
-                    'message'     => $data['reply_message'],
+                    'sender_id'  => $adminId,
+                    'message'    => $data['reply_message'],
                 ]);
 
                 if (!$requestMessagesTable->save($newMessage)) {
@@ -311,6 +320,6 @@ class WritingServiceRequestsController extends AppController
             }
         }
 
-        $this->set(compact('writingServiceRequest', 'messages'));
+        $this->set(compact('writingServiceRequest', 'messages', 'adminId'));
     }
 }

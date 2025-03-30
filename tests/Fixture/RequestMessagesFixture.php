@@ -19,12 +19,12 @@ class RequestMessagesFixture extends TestFixture
     {
         $this->records = [
             [
-                'message_id' => '47f93547-27dc-499e-9d52-64fc94ef0d45',
-                'request_id' => '9eae3d25-2970-408c-9197-6eece616d97b',
-                'sender_type' => 'Lorem ipsum dolor sit amet',
+                'message_id' => '2230894e-b1a2-42c4-9b18-8830297b38eb',
+                'request_id' => 'c32eef78-e6b8-4914-beca-8dc8d61a428d',
                 'message' => 'Lorem ipsum dolor sit amet, aliquet feugiat. Convallis morbi fringilla gravida, phasellus feugiat dapibus velit nunc, pulvinar eget sollicitudin venenatis cum nullam, vivamus ut a sed, mollitia lectus. Nulla vestibulum massa neque ut et, id hendrerit sit, feugiat in taciti enim proin nibh, tempor dignissim, rhoncus duis vestibulum nunc mattis convallis.',
-                'created_at' => '2025-03-29 22:20:51',
-                'updated_at' => '2025-03-29 22:20:51',
+                'created_at' => '2025-03-30 23:27:12',
+                'updated_at' => '2025-03-30 23:27:12',
+                'sender_id' => 'e4e1e7fa-5df3-4838-8f2c-db373ca4ae90',
             ],
         ];
         parent::init();

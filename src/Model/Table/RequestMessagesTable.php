@@ -40,7 +40,7 @@ class RequestMessagesTable extends Table
         parent::initialize($config);
 
         $this->setTable('request_messages');
-        $this->setDisplayField('sender_type');
+        $this->setDisplayField('message_id');
         $this->setPrimaryKey('message_id');
 
         $this->addBehavior('Timestamp');
@@ -49,7 +49,14 @@ class RequestMessagesTable extends Table
             'foreignKey' => 'request_id',
             'joinType' => 'INNER',
         ]);
+
+        $this->belongsTo('Senders', [
+            'className' => 'Users',
+            'foreignKey' => 'sender_id',
+            'joinType' => 'INNER',
+        ]);
     }
+
 
     /**
      * Default validation rules.
@@ -64,22 +71,13 @@ class RequestMessagesTable extends Table
             ->notEmptyString('request_id');
 
         $validator
-            ->scalar('sender_type')
-            ->requirePresence('sender_type', 'create')
-            ->notEmptyString('sender_type');
+            ->uuid('sender_id')
+            ->notEmptyString('sender_id');
 
         $validator
             ->scalar('message')
             ->requirePresence('message', 'create')
             ->notEmptyString('message');
-
-        $validator
-            ->dateTime('created_at')
-            ->notEmptyDateTime('created_at');
-
-        $validator
-            ->dateTime('updated_at')
-            ->notEmptyDateTime('updated_at');
 
         return $validator;
     }
@@ -94,6 +92,7 @@ class RequestMessagesTable extends Table
     public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->existsIn(['request_id'], 'WritingServiceRequests'), ['errorField' => 'request_id']);
+        $rules->add($rules->existsIn(['sender_id'], 'Senders'), ['errorField' => 'sender_id']);
         return $rules;
     }
 }

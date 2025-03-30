@@ -3,6 +3,7 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\WritingServiceRequest $writingServiceRequest
  * @var \Cake\Collection\CollectionInterface $messages
+ * @var string $userId
  */
 ?>
 
@@ -33,34 +34,30 @@
                     <td class="p-3"><?= h($writingServiceRequest->request_id) ?></td>
                 </tr>
                 <tr>
-                    <th class="p-3 font-semibold text-gray-700"><?= __('Service Type') ?></th>
-                    <td class="p-3"><?= h($writingServiceRequest->service_type) ?></td>
-                </tr>
-                <tr class="bg-gray-50">
                     <th class="p-3 font-semibold text-gray-700"><?= __('Word Count Range') ?></th>
                     <td class="p-3"><?= h($writingServiceRequest->word_count_range) ?></td>
                 </tr>
-                <tr>
+                <tr class="bg-gray-50">
                     <th class="p-3 font-semibold text-gray-700"><?= __('Notes') ?></th>
                     <td class="p-3"><?= nl2br(h($writingServiceRequest->notes)) ?></td>
                 </tr>
-                <tr class="bg-gray-50">
+                <tr>
                     <th class="p-3 font-semibold text-gray-700"><?= __('Status') ?></th>
                     <td class="p-3"><?= h($writingServiceRequest->request_status) ?></td>
                 </tr>
-                <tr>
+                <tr class="bg-gray-50">
                     <th class="p-3 font-semibold text-gray-700"><?= __('Final Price') ?></th>
                     <td class="p-3"><?= $writingServiceRequest->final_price === null ? 'N/A' : $this->Number->format($writingServiceRequest->final_price) ?></td>
                 </tr>
-                <tr class="bg-gray-50">
+                <tr>
                     <th class="p-3 font-semibold text-gray-700"><?= __('Created At') ?></th>
                     <td class="p-3"><?= h($writingServiceRequest->created_at) ?></td>
                 </tr>
-                <tr>
+                <tr class="bg-gray-50">
                     <th class="p-3 font-semibold text-gray-700"><?= __('Updated At') ?></th>
                     <td class="p-3"><?= h($writingServiceRequest->updated_at) ?></td>
                 </tr>
-                <tr class="bg-gray-50">
+                <tr>
                     <th class="p-3 font-semibold text-gray-700"><?= __('Document') ?></th>
                     <td class="p-3">
                         <?php if (!empty($writingServiceRequest->document)): ?>
@@ -73,15 +70,19 @@
                 </tbody>
             </table>
 
-            <!-- Message thread -->
+            <!-- Messages -->
             <h4 class="text-xl font-semibold mb-4">Conversation</h4>
             <?php if (!empty($messages) && $messages->count() > 0): ?>
                 <div class="space-y-4 mb-6">
                     <?php foreach ($messages as $msg): ?>
-                        <div class="p-3 border rounded <?= $msg->sender_type === 'admin' ? 'bg-blue-50' : 'bg-green-50' ?>">
-                            <strong><?= $msg->sender_type === 'admin' ? 'Admin' : 'You' ?>:</strong>
+                        <div class="p-3 border rounded <?= $msg->sender_id === $userId ? 'bg-green-50' : 'bg-blue-50' ?>">
+                            <strong>
+                                <?= $msg->sender_id === $userId
+                                    ? 'You'
+                                    : h($msg->sender->first_name . ' ' . $msg->sender->last_name) ?>
+                            </strong>
                             <p><?= nl2br(h($msg->message)) ?></p>
-                            <small class="text-gray-500"><?= h($msg->created_at) ?></small>
+                            <small class="text-gray-500"><?= $msg->created_at->format('Y-m-d H:i') ?></small>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -89,7 +90,7 @@
                 <p class="text-gray-500 mb-6">No messages yet.</p>
             <?php endif; ?>
 
-            <!-- User reply -->
+            <!-- Reply form -->
             <h4 class="text-xl font-semibold mb-2">Reply to Admin</h4>
             <?= $this->Form->create(null, ['url' => ['action' => 'view', $writingServiceRequest->request_id]]) ?>
             <div class="space-y-4">
