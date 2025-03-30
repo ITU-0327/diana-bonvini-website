@@ -69,12 +69,16 @@
 
                 <div>
                     <label class="block font-semibold text-gray-700"><?= __('Created At') ?></label>
-                    <p class="text-gray-600"><?= h($writingServiceRequest->created_at) ?></p>
+                    <p class="text-gray-600">
+                        <span class="local-time" data-datetime="<?= h($writingServiceRequest->created_at->format('c')) ?>"></span>
+                    </p>
                 </div>
 
                 <div>
                     <label class="block font-semibold text-gray-700"><?= __('Updated At') ?></label>
-                    <p class="text-gray-600"><?= h($writingServiceRequest->updated_at) ?></p>
+                    <p class="text-gray-600">
+                        <span class="local-time" data-datetime="<?= h($writingServiceRequest->updated_at->format('c')) ?>"></span>
+                    </p>
                 </div>
 
                 <div>
@@ -107,3 +111,25 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const timeElements = document.querySelectorAll('.local-time');
+
+        timeElements.forEach(el => {
+            const isoTime = el.dataset.datetime;
+            const date = new Date(isoTime);
+
+            const formatted = date.toLocaleString(undefined, {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+            });
+
+            el.textContent = formatted;
+        });
+    });
+</script>

@@ -60,8 +60,12 @@ $firstName = $user->get('first_name');
                     <td class="px-4 py-2"><?= h($writingServiceRequest->notes) ?></td>
                     <td class="px-4 py-2"><?= $writingServiceRequest->final_price === null ? '' : $this->Number->format($writingServiceRequest->final_price) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->request_status) ?></td>
-                    <td class="px-4 py-2"><?= h($writingServiceRequest->created_at) ?></td>
-                    <td class="px-4 py-2"><?= h($writingServiceRequest->updated_at) ?></td>
+                    <td class="px-4 py-2">
+                        <span class="text-gray-500 local-time" data-datetime="<?= h($writingServiceRequest->created_at->format('c')) ?>"></span>
+                    </td>
+                    <td class="px-4 py-2">
+                        <span class="text-gray-500 local-time" data-datetime="<?= h($writingServiceRequest->updated_at->format('c')) ?>"></span>
+                    </td>
                     <td class="px-4 py-2">
                         <?php if (!empty($writingServiceRequest->document)): ?>
                             <?= $this->Html->link('View Document', '/' . $writingServiceRequest->document, ['target' => '_blank', 'class' => 'text-blue-500 hover:underline']) ?>
@@ -97,3 +101,25 @@ $firstName = $user->get('first_name');
         </ul>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const timeElements = document.querySelectorAll('.local-time');
+
+        timeElements.forEach(el => {
+            const isoTime = el.dataset.datetime;
+            const date = new Date(isoTime);
+
+            const formatted = date.toLocaleString(undefined, {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+            });
+
+            el.textContent = formatted;
+        });
+    });
+</script>
