@@ -60,19 +60,33 @@ $user = $this->getRequest()->getAttribute('identity');
                         </a>
 
                         <!-- Dropdown -->
+                        <?php
+                        $user = $this->request->getAttribute('identity');
+                        $userType = $user?->get('user_type');
+                        ?>
+
                         <ul class="absolute left-0 top-full w-64 bg-white border border-gray-200 rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-300 z-10">
-                            <li class="menu-item">
-                                <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'add', '?' => ['service' => 'creative']]) ?>"
-                                   class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                    Make a Request
-                                </a>
-                            </li>
-                            <li class="menu-item">
-                                <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'index', '?' => ['service' => 'proofreading']]) ?>"
-                                   class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                    View My Request
-                                </a>
-                            </li>
+                            <?php if ($userType === 'admin'): ?>
+                                <li class="menu-item">
+                                    <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'adminIndex']) ?>"
+                                       class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                        Check All Requests
+                                    </a>
+                                </li>
+                            <?php elseif ($userType === 'customer'): ?>
+                                <li class="menu-item">
+                                    <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'add']) ?>"
+                                       class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                        Make a Request
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'index']) ?>"
+                                       class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                        View My Requests
+                                    </a>
+                                </li>
+                            <?php endif; ?>
                         </ul>
                     </li>
                     <!-- Simple Menu Items -->
