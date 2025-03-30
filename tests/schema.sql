@@ -172,3 +172,13 @@ CREATE TABLE writing_service_requests (
     document varchar(255) DEFAULT NULL,
     CONSTRAINT fk_writing_service_requests_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 ) ENGINE=InnoDB;
+
+--Table: request_messages
+CREATE TABLE `request_messages` (
+    `message_id` char(36) NOT NULL,
+    `request_id` char(36) NOT NULL,
+    `message` text NOT NULL,
+    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `sender_id` char(36) NOT NULL
+) ENGINE=InnoDB
