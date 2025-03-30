@@ -52,8 +52,44 @@ class WritingServiceRequestsController extends AppController
      */
     public function view(?string $id = null)
     {
-        $writingServiceRequest = $this->WritingServiceRequests->get($id, contain: ['Users']);
-        $this->set(compact('writingServiceRequest'));
+        $user = $this->Authentication->getIdentity();
+        if (!$user) {
+            $this->Flash->error(__('You need to be logged in.'));
+            return $this->redirect(['controller' => 'Users', 'action' => 'login']);
+        }
+
+        $writingServiceRequest = $this->WritingServiceRequests->get($id, [
+            'contain' => ['Users'],
+        ]);
+
+        $requestMessagesTable = $this->getTableLocator()->get('RequestMessages');
+
+        $messages = $requestMessagesTable->find()
+            ->where(['request_id' => $id])
+            ->orderAsc('created_at')
+            ->all();
+
+        if ($this->request->is(['post', 'put', 'patch'])) {
+            $data = $this->request->getData();
+
+            if (!empty($data['reply_message'])) {
+                $newMessage = $requestMessagesTable->newEntity([
+                    'message_id' => \Cake\Utility\Text::uuid(),
+                    'request_id' => $id,
+                    'sender_type' => 'user',
+                    'message' => $data['reply_message'],
+                ]);
+
+                if ($requestMessagesTable->save($newMessage)) {
+                    $this->Flash->success(__('Your reply has been sent.'));
+                    return $this->redirect(['action' => 'view', $id]);
+                } else {
+                    $this->Flash->error(__('Failed to send message.'));
+                }
+            }
+        }
+
+        $this->set(compact('writingServiceRequest', 'messages'));
     }
 
     /**
@@ -238,21 +274,43 @@ class WritingServiceRequestsController extends AppController
         }
 
         $writingServiceRequest = $this->WritingServiceRequests->get($id, [
-            'contain' => ['Users']
+            'contain' => ['Users'],
         ]);
+
+        $requestMessagesTable = $this->getTableLocator()->get('RequestMessages');
+
+        $messages = $requestMessagesTable->find()
+            ->contain(['WritingServiceRequests'])
+            ->where(['RequestMessages.request_id' => $id])
+            ->orderAsc('WritingServiceRequests.created_at')
+            ->all();
 
         if ($this->request->is(['post', 'put', 'patch'])) {
             $data = $this->request->getData();
 
             $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $data);
 
-            if ($this->WritingServiceRequests->save($writingServiceRequest)) {
-                $this->Flash->success(__('Request updated successfully.'));
-                return $this->redirect(['action' => 'adminView', $id]);
+            if (!empty($data['reply_message'])) {
+                $newMessage = $requestMessagesTable->newEntity([
+                    'message_id' => \Cake\Utility\Text::uuid(),
+                    'request_id' => $id,
+                    'sender_type' => 'admin',
+                    'message'     => $data['reply_message'],
+                ]);
+
+                if (!$requestMessagesTable->save($newMessage)) {
+                    $this->Flash->error(__('Failed to send admin message.'));
+                }
             }
-            $this->Flash->error(__('Failed to update. Please try again.'));
+
+            if ($this->WritingServiceRequests->save($writingServiceRequest)) {
+                $this->Flash->success(__('Request updated successfully (admin).'));
+                return $this->redirect(['action' => 'adminView', $id]);
+            } else {
+                $this->Flash->error(__('Failed to update. Please try again.'));
+            }
         }
 
-        $this->set(compact('writingServiceRequest'));
+        $this->set(compact('writingServiceRequest', 'messages'));
     }
 }

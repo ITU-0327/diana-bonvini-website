@@ -2,6 +2,7 @@
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\WritingServiceRequest $writingServiceRequest
+ * @var \Cake\Datasource\ResultSetInterface $messages
  */
 ?>
 <div class="flex flex-col lg:flex-row gap-6 p-6">
@@ -89,6 +90,21 @@
                 </tbody>
             </table>
 
+            <h4 class="text-xl font-semibold mt-6">Conversation</h4>
+            <?php if (!empty($messages) && $messages->count() > 0): ?>
+                <div class="space-y-4">
+                    <?php foreach ($messages as $msg): ?>
+                        <div class="p-3 border rounded <?= $msg->sender_type === 'admin' ? 'bg-blue-50' : 'bg-gray-50' ?>">
+                            <strong><?= $msg->sender_type === 'admin' ? 'Admin' : 'User' ?>:</strong>
+                            <p><?= nl2br(h($msg->message)) ?></p>
+                            <small class="text-gray-500"><?= h($msg->created_at) ?></small>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <p class="text-gray-500">No conversation yet.</p>
+            <?php endif; ?>
+
             <h4 class="text-xl font-semibold mt-6">Admin Update</h4>
             <?= $this->Form->create($writingServiceRequest, ['url' => ['action' => 'adminView', $writingServiceRequest->request_id]]) ?>
             <div class="space-y-4">
@@ -101,9 +117,8 @@
                     'class' => 'w-full border-gray-300 rounded'
                 ]) ?>
 
-                <?= $this->Form->label('admin_reply', 'Admin Reply') ?>
-                <?= $this->Form->textarea('admin_reply', ['class' => 'w-full border-gray-300 rounded']) ?>
-                -->
+                <?= $this->Form->label('reply_message', 'Admin Reply') ?>
+                <?= $this->Form->textarea('reply_message', ['class' => 'w-full border-gray-300 rounded']) ?>
             </div>
             <div class="mt-4">
                 <?= $this->Form->button('Update', [
