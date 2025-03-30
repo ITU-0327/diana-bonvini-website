@@ -83,18 +83,6 @@ CREATE TABLE artwork_orders (
     CONSTRAINT fk_artwork_orders_artwork FOREIGN KEY (artwork_id) REFERENCES artworks(artwork_id)
 ) ENGINE=InnoDB;
 
--- Table: services
-CREATE TABLE services (
-    service_id CHAR(36) NOT NULL PRIMARY KEY,
-    service_name VARCHAR(255) NOT NULL,
-    description TEXT,
-    pricing_type ENUM('hourly','per-word') NOT NULL,
-    base_rate DECIMAL(10,2),
-    is_deleted TINYINT NOT NULL DEFAULT 0,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
-
 -- Table: appointments
 CREATE TABLE appointments (
     appointment_id CHAR(36) NOT NULL PRIMARY KEY,
