@@ -82,7 +82,7 @@
                                     : h($msg->sender->first_name . ' ' . $msg->sender->last_name) ?>
                             </strong>
                             <p><?= nl2br(h($msg->message)) ?></p>
-                            <small class="text-gray-500"><?= $msg->created_at->format('Y-m-d H:i') ?></small>
+                            <small class="text-gray-500 local-time" data-datetime="<?= h($msg->created_at->format('c')) ?>"></small>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -108,3 +108,25 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const timeElements = document.querySelectorAll('.local-time');
+
+        timeElements.forEach(el => {
+            const isoTime = el.dataset.datetime;
+            const date = new Date(isoTime);
+
+            const formatted = date.toLocaleString(undefined, {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false, // 24-hour format
+            });
+
+            el.textContent = formatted;
+        });
+    });
+</script>
