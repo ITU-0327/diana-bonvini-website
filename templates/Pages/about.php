@@ -31,11 +31,4 @@ $this->assign('title', 'About Me');
             to add value and contribute positively to the culture in any organisation.
         </p>
     </div>
-
-    <div class="about-content">
-        <h2>test</h2>
-        <p>
-            this is test part will introduce the business
-        </p>
-    </div>
 </div>

@@ -53,7 +53,43 @@ class WritingServiceRequestsController extends AppController
      */
     public function view(?string $id = null)
     {
-        $writingServiceRequest = $this->WritingServiceRequests->get($id, contain: ['Users']);
+        /** @var \App\Model\Entity\User|null $user */
+        $user = $this->Authentication->getIdentity();
+
+        if (!$user) {
+            $this->Flash->error(__('You need to be logged in.'));
+
+            return $this->redirect(['controller' => 'Users', 'action' => 'login']);
+        }
+
+        $writingServiceRequest = $this->WritingServiceRequests->get($id, [
+            'contain' => ['Users', 'RequestMessages.Users'],
+        ]);
+
+        if ($this->request->is(['post', 'put', 'patch'])) {
+            $data = $this->request->getData();
+
+            if (!empty($data['reply_message'])) {
+                $data['request_messages'][] = [
+                    'user_id' => $user->user_id,
+                    'message'   => $data['reply_message'],
+                ];
+
+                $writingServiceRequest = $this->WritingServiceRequests->patchEntity(
+                    $writingServiceRequest,
+                    $data,
+                );
+
+                if ($this->WritingServiceRequests->save($writingServiceRequest)) {
+                    $this->Flash->success(__('Message sent successfully.'));
+
+                    return $this->redirect(['action' => 'view', $id]);
+                } else {
+                    $this->Flash->error(__('Failed to send message. Please try again.'));
+                }
+            }
+        }
+
         $this->set(compact('writingServiceRequest'));
     }
 
@@ -64,15 +100,16 @@ class WritingServiceRequestsController extends AppController
      */
     public function add()
     {
-        /** @var \App\Model\Entity\User|null $user */
+        /** @var \App\Model\Entity\User $user */
         $user = $this->Authentication->getIdentity();
-        $userId = $user?->get('user_id');
+
         $writingServiceRequest = $this->WritingServiceRequests->newEmptyEntity();
 
         if ($this->request->is('post')) {
-            $data = $this->request->getData();
+            $data   = $this->request->getData();
 
-            $documentPath = $this->handleDocumentUpload($data['document'] ?? null, 'add');
+            // Handle file upload
+            $documentPath = $this->_handleDocumentUpload($data['document'] ?? null, 'add');
             if ($this->response->getStatusCode() === 302) {
                 return $this->response;
             }
@@ -82,11 +119,7 @@ class WritingServiceRequestsController extends AppController
                 unset($data['document']);
             }
 
-            $data['service_type'] = $data['service_type_display'] ?? null;
-            $data['word_count_range'] = $data['word_count_range_display'] ?? null;
-
-            $data['estimated_price'] = $this->calculateEstimatedPrice($data['service_type'], $data['word_count_range']);
-            $data['user_id'] = $userId;
+            $data['user_id'] = $user->user_id;
 
             $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $data);
 
@@ -95,11 +128,10 @@ class WritingServiceRequestsController extends AppController
 
                 return $this->redirect(['action' => 'index']);
             }
-
             $this->Flash->error(__('The writing service request could not be saved. Please, try again.'));
         }
 
-        $this->set(compact('writingServiceRequest', 'userId'));
+        $this->set(compact('writingServiceRequest'));
     }
 
     /**
@@ -111,15 +143,15 @@ class WritingServiceRequestsController extends AppController
      */
     public function edit(?string $id = null)
     {
-        /** @var \App\Model\Entity\User|null $user */
+        /** @var \App\Model\Entity\User $user */
         $user = $this->Authentication->getIdentity();
-        $userId = $user?->get('user_id');
         $writingServiceRequest = $this->WritingServiceRequests->get($id);
 
         if ($this->request->is(['patch', 'post', 'put'])) {
             $data = $this->request->getData();
 
-            $documentPath = $this->handleDocumentUpload($data['document'] ?? null, 'edit');
+            // Handle file upload
+            $documentPath = $this->_handleDocumentUpload($data['document'] ?? null, 'edit');
             if ($this->response->getStatusCode() === 302) {
                 return $this->response;
             }
@@ -129,11 +161,7 @@ class WritingServiceRequestsController extends AppController
                 unset($data['document']);
             }
 
-            $data['estimated_price'] = $this->calculateEstimatedPrice(
-                $data['service_type'] ?? null,
-                $data['word_count_range'] ?? null,
-            );
-            $data['user_id'] = $userId;
+            $data['user_id'] = $user->user_id;
 
             $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $data);
 
@@ -146,7 +174,7 @@ class WritingServiceRequestsController extends AppController
             $this->Flash->error(__('The writing service request could not be saved. Please, try again.'));
         }
 
-        $this->set(compact('writingServiceRequest', 'userId'));
+        $this->set(compact('writingServiceRequest'));
     }
 
     /**
@@ -170,13 +198,89 @@ class WritingServiceRequestsController extends AppController
     }
 
     /**
+     * Admin index method
+     *
+     * @return \Cake\Http\Response|null|void Renders view
+     */
+    public function adminIndex()
+    {
+        /** @var \App\Model\Entity\User|null $user */
+        $user = $this->Authentication->getIdentity();
+
+        if (!$user || $user->user_type !== 'admin') {
+            $this->Flash->error(__('You are not authorized to access admin area.'));
+
+            return $this->redirect(['controller' => 'Users', 'action' => 'login']);
+        }
+
+        $query = $this->WritingServiceRequests->find()
+            ->contain(['Users']);
+
+        $this->paginate = [
+            'order' => ['WritingServiceRequests.created_at' => 'DESC'],
+        ];
+
+        $writingServiceRequests = $this->paginate($query);
+        $this->set(compact('writingServiceRequests'));
+    }
+
+    /**
+     * Admin view method
+     *
+     * @param string|null $id Writing Service Request id.
+     * @return \Cake\Http\Response|null|void Renders view
+     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
+     */
+    public function adminView(?string $id = null)
+    {
+        /** @var \App\Model\Entity\User|null $user */
+        $user = $this->Authentication->getIdentity();
+
+        if (!$user || $user->user_type !== 'admin') {
+            $this->Flash->error(__('You are not authorized to access admin area.'));
+
+            return $this->redirect(['controller' => 'Users', 'action' => 'login']);
+        }
+
+        $writingServiceRequest = $this->WritingServiceRequests->get($id, [
+            'contain' => ['Users', 'RequestMessages.Users'],
+        ]);
+
+        if ($this->request->is(['post', 'put', 'patch'])) {
+            $data = $this->request->getData();
+
+            if (!empty($data['reply_message'])) {
+                $data['request_messages'][] = [
+                    'user_id' => $user->user_id,
+                    'message' => $data['reply_message'],
+                ];
+            }
+
+            $writingServiceRequest = $this->WritingServiceRequests->patchEntity(
+                $writingServiceRequest,
+                $data,
+            );
+
+            if ($this->WritingServiceRequests->save($writingServiceRequest)) {
+                $this->Flash->success(__('Request updated successfully (admin).'));
+
+                return $this->redirect(['action' => 'adminView', $id]);
+            } else {
+                $this->Flash->error(__('Failed to update. Please try again.'));
+            }
+        }
+
+        $this->set(compact('writingServiceRequest'));
+    }
+
+    /**
      * Handles document upload
      *
      * @param \Psr\Http\Message\UploadedFileInterface|null $file
      * @param string $redirectAction
      * @return \Cake\Http\Response|string|null
      */
-    private function handleDocumentUpload(?UploadedFileInterface $file, string $redirectAction): string|Response|null
+    protected function _handleDocumentUpload(?UploadedFileInterface $file, string $redirectAction): string|Response|null
     {
         if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
             return null;
@@ -204,34 +308,5 @@ class WritingServiceRequestsController extends AppController
         $file->moveTo($filePath);
 
         return 'uploads/documents/' . $filename;
-    }
-
-    /**
-     * Calculates estimated price
-     *
-     * @param string|null $type
-     * @param string|null $range
-     * @return float
-     */
-    private function calculateEstimatedPrice(?string $type, ?string $range): float
-    {
-        $priceMap = [
-            'creative_writing' => 2.0,
-            'editing' => 1.5,
-            'proofreading' => 1.2,
-        ];
-
-        if (!isset($priceMap[$type])) {
-            return 0.0;
-        }
-
-        $multiplier = $priceMap[$type];
-
-        return match ($range) {
-            'under_5000' => $multiplier * 5000.0,
-            '5000_20000' => $multiplier * 20000.0,
-            '20000_50000', '50000_plus' => $multiplier * 50000.0,
-            default => 0.0,
-        };
     }
 }

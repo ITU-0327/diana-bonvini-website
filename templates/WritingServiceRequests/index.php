@@ -3,6 +3,8 @@
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\WritingServiceRequest> $writingServiceRequests
  */
+/** @var \App\Model\Entity\User $user */
+$user = $this->request->getAttribute('identity');
 ?>
 
 <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
@@ -12,63 +14,64 @@
         <?= $this->Html->link(
             __('New Writing Service Request'),
             ['action' => 'add'],
-            ['class' => 'inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition']
+            ['class' => 'inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition'],
         ) ?>
     </div>
+
+    <!-- Greeting with animation -->
+    <div class="mt-2 flex items-center space-x-2 animate-fade-in">
+        <span class="text-2xl">👋</span>
+        <p class="text-gray-700 text-lg font-medium">Hi, <?= h($user->first_name) ?>!</p>
+    </div>
+
+    <!-- Animation styles -->
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.8s ease-in-out;
+        }
+    </style>
 
     <div class="overflow-auto border rounded">
         <table class="min-w-full text-sm text-left text-gray-800">
             <thead class="bg-gray-100 text-xs uppercase text-gray-600">
             <tr>
-                <th class="px-4 py-3"><?= $this->Paginator->sort('request_id') ?></th>
-                <th class="px-4 py-3"><?= $this->Paginator->sort('user_id') ?></th>
+                <th class="px-4 py-3"><?= $this->Paginator->sort('writing_service_request_id') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('service_type') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('word_count_range') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('notes') ?></th>
-                <th class="px-4 py-3"><?= $this->Paginator->sort('estimated_price') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('final_price') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('request_status') ?></th>
-                <th class="px-4 py-3"><?= $this->Paginator->sort('is_deleted') ?></th>
-                <th class="px-4 py-3"><?= $this->Paginator->sort('created_at') ?></th>
-                <th class="px-4 py-3"><?= $this->Paginator->sort('updated_at') ?></th>
                 <th class="px-4 py-3"><?= __('Document') ?></th>
                 <th class="px-4 py-3"><?= __('Actions') ?></th>
             </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
-            <?php foreach ($writingServiceRequests as $writingServiceRequest): ?>
+            <?php foreach ($writingServiceRequests as $writingServiceRequest) : ?>
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2"><?= h($writingServiceRequest->request_id) ?></td>
-                    <td class="px-4 py-2">
-                        <?= $writingServiceRequest->hasValue('user') ? $this->Html->link(
-                            $writingServiceRequest->user->first_name,
-                            ['controller' => 'Users', 'action' => 'view', $writingServiceRequest->user->user_id],
-                            ['class' => 'text-blue-600 hover:underline']
-                        ) : '' ?>
-                    </td>
+                    <td class="px-4 py-2"><?= h($writingServiceRequest->writing_service_request_id) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->service_type) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->word_count_range) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->notes) ?></td>
-                    <td class="px-4 py-2"><?= $writingServiceRequest->estimated_price === null ? '' : $this->Number->format($writingServiceRequest->estimated_price) ?></td>
                     <td class="px-4 py-2"><?= $writingServiceRequest->final_price === null ? '' : $this->Number->format($writingServiceRequest->final_price) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->request_status) ?></td>
-                    <td class="px-4 py-2"><?= $this->Number->format($writingServiceRequest->is_deleted) ?></td>
-                    <td class="px-4 py-2"><?= h($writingServiceRequest->created_at) ?></td>
-                    <td class="px-4 py-2"><?= h($writingServiceRequest->updated_at) ?></td>
                     <td class="px-4 py-2">
-                        <?php if (!empty($writingServiceRequest->document)): ?>
+                        <?php if (!empty($writingServiceRequest->document)) : ?>
                             <?= $this->Html->link('View Document', '/' . $writingServiceRequest->document, ['target' => '_blank', 'class' => 'text-blue-500 hover:underline']) ?>
-                        <?php else: ?>
+                        <?php else : ?>
                             <span class="text-gray-400 italic">No Document</span>
                         <?php endif; ?>
                     </td>
                     <td class="px-4 py-2 space-x-2 whitespace-nowrap">
-                        <?= $this->Html->link('View', ['action' => 'view', $writingServiceRequest->request_id], ['class' => 'text-blue-600 hover:underline']) ?>
-                        <?= $this->Html->link('Edit', ['action' => 'edit', $writingServiceRequest->request_id], ['class' => 'text-yellow-600 hover:underline']) ?>
-                        <?= $this->Form->postLink('Delete', ['action' => 'delete', $writingServiceRequest->request_id], [
+                        <?= $this->Html->link('View', ['action' => 'view', $writingServiceRequest->writing_service_request_id], ['class' => 'text-blue-600 hover:underline']) ?>
+                        <?= $this->Html->link('Edit', ['action' => 'edit', $writingServiceRequest->writing_service_request_id], ['class' => 'text-yellow-600 hover:underline']) ?>
+                        <?= $this->Form->postLink('Delete', ['action' => 'delete', $writingServiceRequest->writing_service_request_id], [
                             'method' => 'post',
-                            'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->request_id),
-                            'class' => 'text-red-600 hover:underline'
+                            'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->writing_service_request_id),
+                            'class' => 'text-red-600 hover:underline',
                         ]) ?>
                     </td>
                 </tr>
@@ -90,3 +93,23 @@
         </ul>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const timeElements = document.querySelectorAll('.local-time');
+
+        timeElements.forEach(el => {
+            const isoTime = el.dataset.datetime;
+            const date = new Date(isoTime);
+
+            el.textContent = date.toLocaleString(undefined, {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+            });
+        });
+    });
+</script>

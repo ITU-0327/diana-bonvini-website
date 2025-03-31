@@ -6,24 +6,19 @@ namespace App\Model\Entity;
 use Cake\ORM\Entity;
 
 /**
- * WritingServiceRequest Entity
+ * RequestMessage Entity
  *
+ * @property string $request_message_id
  * @property string $writing_service_request_id
  * @property string $user_id
- * @property string $service_type
- * @property string $word_count_range
- * @property string|null $notes
- * @property string|null $final_price
- * @property string $request_status
- * @property int $is_deleted
+ * @property string $message
  * @property \Cake\I18n\DateTime $created_at
  * @property \Cake\I18n\DateTime $updated_at
- * @property string|null $document
  *
+ * @property \App\Model\Entity\WritingServiceRequest $writing_service_request
  * @property \App\Model\Entity\User $user
- * @property \App\Model\Entity\RequestMessage[] $request_messages
  */
-class WritingServiceRequest extends Entity
+class RequestMessage extends Entity
 {
     /**
      * Fields that can be mass assigned using newEntity() or patchEntity().
@@ -35,17 +30,12 @@ class WritingServiceRequest extends Entity
      * @var array<string, bool>
      */
     protected array $_accessible = [
+        'writing_service_request_id' => true,
         'user_id' => true,
-        'service_type' => true,
-        'word_count_range' => true,
-        'notes' => true,
-        'final_price' => true,
-        'request_status' => true,
-        'is_deleted' => true,
+        'message' => true,
         'created_at' => true,
         'updated_at' => true,
-        'document' => true,
+        'writing_service_request' => true,
         'user' => true,
-        'request_messages' => true,
     ];
 }

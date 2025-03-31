@@ -5,6 +5,7 @@
  */
 
 $user = $this->getRequest()->getAttribute('identity');
+$userType = $user?->get('user_type');
 ?>
 <nav class="bg-white shadow">
     <div class="container mx-auto px-4">
@@ -51,7 +52,7 @@ $user = $this->getRequest()->getAttribute('identity');
                     <!-- Writing & Proofreading Services with Dropdown -->
                     <li class="menu-item relative group">
                         <!-- Main link: Goes to WritingServiceRequests/index -->
-                        <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'index']) ?>"
+                        <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'info']) ?>"
                            class="block px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded">
                             Writing Services
                             <svg class="inline ml-1 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -61,24 +62,27 @@ $user = $this->getRequest()->getAttribute('identity');
 
                         <!-- Dropdown -->
                         <ul class="absolute left-0 top-full w-64 bg-white border border-gray-200 rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-300 z-10">
-                            <li class="menu-item">
-                                <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'info', '?' => ['service' => 'creative']]) ?>"
-                                   class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                    Creative Writing
-                                </a>
-                            </li>
-                            <li class="menu-item">
-                                <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'info', '?' => ['service' => 'proofreading']]) ?>"
-                                   class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                    Proofreading
-                                </a>
-                            </li>
-                            <li class="menu-item">
-                                <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'info', '?' => ['service' => 'editing']]) ?>"
-                                   class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                    Editing Services
-                                </a>
-                            </li>
+                            <?php if ($userType === 'admin') : ?>
+                                <li class="menu-item">
+                                    <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'adminIndex']) ?>"
+                                       class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                        Check All Requests
+                                    </a>
+                                </li>
+                            <?php else : ?>
+                                <li class="menu-item">
+                                    <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'add']) ?>"
+                                       class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                        Make a Request
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'index']) ?>"
+                                       class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                        View My Requests
+                                    </a>
+                                </li>
+                            <?php endif; ?>
                         </ul>
                     </li>
                     <!-- Simple Menu Items -->
@@ -130,7 +134,8 @@ $user = $this->getRequest()->getAttribute('identity');
                             <!-- Menu Items (Icons and Text Unchanged) -->
                             <ul class="space-y-2">
                                 <li class="menu-item">
-                                    <a href="#" class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
+                                    <a href="<?= $this->Url->build(['controller' => 'Orders', 'action' => 'index']) ?>"
+                                       class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
                                         <i class="fa-solid fa-box h-6 w-6 text-indigo-500"></i>
                                         <div>
                                             <p class="text-gray-700 font-medium text-base">My Orders</p>
@@ -139,20 +144,12 @@ $user = $this->getRequest()->getAttribute('identity');
                                     </a>
                                 </li>
                                 <li class="menu-item">
-                                    <a href="#" class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
+                                    <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'index']) ?>"
+                                       class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
                                         <i class="fa-solid fa-pen-nib h-6 w-6 text-indigo-500"></i>
                                         <div>
                                             <p class="text-gray-700 font-medium text-base">My Services</p>
                                             <p class="text-xs text-gray-500">Writing &amp; Proofreading</p>
-                                        </div>
-                                    </a>
-                                </li>
-                                <li class="menu-item">
-                                    <a href="#" class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
-                                        <i class="fa-solid fa-calendar-check h-6 w-6 text-indigo-500"></i>
-                                        <div>
-                                            <p class="text-gray-700 font-medium text-base">My Bookings</p>
-                                            <p class="text-xs text-gray-500">Scheduled Sessions</p>
                                         </div>
                                     </a>
                                 </li>
@@ -172,8 +169,8 @@ $user = $this->getRequest()->getAttribute('identity');
                                 'Log Out',
                                 ['controller' => 'Users', 'action' => 'logout'],
                                 [
-                                    'class' => 'block w-full text-left px-4 py-2 mt-4 text-base text-gray-700 hover:bg-gray-100 rounded'
-                                ]
+                                    'class' => 'block w-full text-left px-4 py-2 mt-4 text-base text-gray-700 hover:bg-gray-100 rounded',
+                                ],
                             ) ?>
                         </div>
                     </div>
