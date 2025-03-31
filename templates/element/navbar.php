@@ -100,12 +100,9 @@ $user = $this->getRequest()->getAttribute('identity');
                 <?php if ($user) : ?>
                     <!-- Profile Dropdown for logged-in users -->
                     <div class="relative group">
-                        <button type="button" class="flex items-center focus:outline-none hover:bg-transparent">
-                            <?= $this->Html->image('user-placeholder.jpg', [
-                                'class' => 'h-9 w-9 rounded-full',
-                                'alt' => 'User Profile',
-                            ]) ?>
-                        </button>
+                        <span class="flex items-center justify-center h-9 w-9 rounded-full border border-gray-300 overflow-hidden">
+                            <i data-lucide="user"></i>
+                        </span>
                         <!-- Dropdown Menu -->
                         <div class="absolute right-0 top-full w-96 bg-white border border-gray-200 rounded shadow-lg p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-300 z-10">
                             <!-- Heading -->
@@ -113,10 +110,9 @@ $user = $this->getRequest()->getAttribute('identity');
 
                             <!-- User Info -->
                             <div class="flex items-center space-x-4">
-                                <?= $this->Html->image('user-placeholder.jpg', [
-                                    'class' => 'h-20 w-20 rounded-full',
-                                    'alt' => 'User Profile',
-                                ]) ?>
+                                <span class="flex items-center justify-center h-20 w-20 rounded-full border border-gray-300 overflow-hidden">
+                                    <i data-lucide="user" class="w-16 h-16"></i>
+                                </span>
                                 <div>
                                     <h4 class="text-gray-800 font-semibold text-xl">
                                         <?= h($user->first_name . ' ' . $user->last_name) ?>
