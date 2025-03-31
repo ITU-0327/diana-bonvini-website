@@ -50,7 +50,7 @@ $firstName = $user->get('first_name');
             </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
-            <?php foreach ($writingServiceRequests as $writingServiceRequest): ?>
+            <?php foreach ($writingServiceRequests as $writingServiceRequest) : ?>
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2"><?= h($writingServiceRequest->request_id) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->service_type) ?></td>
@@ -59,9 +59,9 @@ $firstName = $user->get('first_name');
                     <td class="px-4 py-2"><?= $writingServiceRequest->final_price === null ? '' : $this->Number->format($writingServiceRequest->final_price) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->request_status) ?></td>
                     <td class="px-4 py-2">
-                        <?php if (!empty($writingServiceRequest->document)): ?>
+                        <?php if (!empty($writingServiceRequest->document)) : ?>
                             <?= $this->Html->link('View Document', '/' . $writingServiceRequest->document, ['target' => '_blank', 'class' => 'text-blue-500 hover:underline']) ?>
-                        <?php else: ?>
+                        <?php else : ?>
                             <span class="text-gray-400 italic">No Document</span>
                         <?php endif; ?>
                     </td>
@@ -71,7 +71,7 @@ $firstName = $user->get('first_name');
                         <?= $this->Form->postLink('Delete', ['action' => 'delete', $writingServiceRequest->request_id], [
                             'method' => 'post',
                             'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->request_id),
-                            'class' => 'text-red-600 hover:underline'
+                            'class' => 'text-red-600 hover:underline',
                         ]) ?>
                     </td>
                 </tr>
@@ -102,7 +102,7 @@ $firstName = $user->get('first_name');
             const isoTime = el.dataset.datetime;
             const date = new Date(isoTime);
 
-            const formatted = date.toLocaleString(undefined, {
+            el.textContent = date.toLocaleString(undefined, {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
@@ -110,8 +110,6 @@ $firstName = $user->get('first_name');
                 minute: '2-digit',
                 hour12: false,
             });
-
-            el.textContent = formatted;
         });
     });
 </script>
