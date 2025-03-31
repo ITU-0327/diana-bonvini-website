@@ -41,6 +41,7 @@ class WritingServiceRequestsController extends AppController
         ];
 
         $writingServiceRequests = $this->paginate($query);
+
         $this->set(compact('writingServiceRequests'));
     }
 
@@ -53,6 +54,7 @@ class WritingServiceRequestsController extends AppController
      */
     public function view(?string $id = null)
     {
+        /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
         $userId = $user?->get('user_id');
 
@@ -62,43 +64,35 @@ class WritingServiceRequestsController extends AppController
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
 
-        // 获取 request 数据
         $writingServiceRequest = $this->WritingServiceRequests->get($id, [
-            'contain' => ['Users'],
+            'contain' => ['Users', 'RequestMessages.Users'],
         ]);
 
-        // 获取消息
-        $requestMessagesTable = $this->getTableLocator()->get('RequestMessages');
-
-        $messages = $requestMessagesTable->find()
-            ->contain(['Senders']) // Senders 是 Users
-            ->where(['request_id' => $id])
-            ->orderAsc('RequestMessages.created_at')
-            ->all();
-
-        // 用户提交回复
         if ($this->request->is(['post', 'put', 'patch'])) {
             $data = $this->request->getData();
 
             if (!empty($data['reply_message'])) {
-                $newMessage = $requestMessagesTable->newEntity([
-                    'message_id' => Text::uuid(),
-                    'request_id' => $id,
-                    'sender_id'  => $userId,
-                    'message'    => $data['reply_message'],
-                ]);
+                $data['request_messages'][] = [
+                    'user_id' => $userId,
+                    'message'   => $data['reply_message'],
+                ];
 
-                if ($requestMessagesTable->save($newMessage)) {
-                    $this->Flash->success(__('Your reply has been sent.'));
+                $writingServiceRequest = $this->WritingServiceRequests->patchEntity(
+                    $writingServiceRequest,
+                    $data,
+                );
+
+                if ($this->WritingServiceRequests->save($writingServiceRequest)) {
+                    $this->Flash->success(__('Message sent successfully.'));
 
                     return $this->redirect(['action' => 'view', $id]);
                 } else {
-                    $this->Flash->error(__('Failed to send message.'));
+                    $this->Flash->error(__('Failed to send message. Please try again.'));
                 }
             }
         }
 
-        $this->set(compact('writingServiceRequest', 'messages', 'userId'));
+        $this->set(compact('writingServiceRequest'));
     }
 
     /**
@@ -114,7 +108,6 @@ class WritingServiceRequestsController extends AppController
         $writingServiceRequest = $this->WritingServiceRequests->newEmptyEntity();
 
         if ($this->request->is('post')) {
-            $action = $this->request->getData('action');
             $data   = $this->request->getData();
 
             // Handle file upload

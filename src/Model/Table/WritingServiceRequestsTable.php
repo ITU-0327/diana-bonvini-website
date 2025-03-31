@@ -11,6 +11,7 @@ use Cake\Validation\Validator;
  * WritingServiceRequests Model
  *
  * @property \App\Model\Table\UsersTable&\Cake\ORM\Association\BelongsTo $Users
+ * @property \App\Model\Table\RequestMessagesTable&\Cake\ORM\Association\HasMany $RequestMessages
  * @method \App\Model\Entity\WritingServiceRequest newEmptyEntity()
  * @method \App\Model\Entity\WritingServiceRequest newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\WritingServiceRequest> newEntities(array $data, array $options = [])
@@ -39,11 +40,17 @@ class WritingServiceRequestsTable extends Table
 
         $this->setTable('writing_service_requests');
         $this->setDisplayField('service_type');
-        $this->setPrimaryKey('request_id');
+        $this->setPrimaryKey('writing_service_request_id');
 
         $this->belongsTo('Users', [
             'foreignKey' => 'user_id',
             'joinType' => 'INNER',
+        ]);
+
+        $this->hasMany('RequestMessages', [
+            'foreignKey' => 'writing_service_request_id',
+            'joinType' => 'INNER',
+            'order' => ['RequestMessages.created_at' => 'DESC'],
         ]);
     }
 

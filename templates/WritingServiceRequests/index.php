@@ -14,7 +14,7 @@ $firstName = $user->get('first_name');
         <?= $this->Html->link(
             __('New Writing Service Request'),
             ['action' => 'add'],
-            ['class' => 'inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition']
+            ['class' => 'inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition'],
         ) ?>
     </div>
 
@@ -39,7 +39,7 @@ $firstName = $user->get('first_name');
         <table class="min-w-full text-sm text-left text-gray-800">
             <thead class="bg-gray-100 text-xs uppercase text-gray-600">
             <tr>
-                <th class="px-4 py-3"><?= $this->Paginator->sort('request_id') ?></th>
+                <th class="px-4 py-3"><?= $this->Paginator->sort('writing_service_request_id') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('service_type') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('word_count_range') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('notes') ?></th>
@@ -52,7 +52,7 @@ $firstName = $user->get('first_name');
             <tbody class="divide-y divide-gray-200">
             <?php foreach ($writingServiceRequests as $writingServiceRequest) : ?>
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2"><?= h($writingServiceRequest->request_id) ?></td>
+                    <td class="px-4 py-2"><?= h($writingServiceRequest->writing_service_request_id) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->service_type) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->word_count_range) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->notes) ?></td>
@@ -66,11 +66,11 @@ $firstName = $user->get('first_name');
                         <?php endif; ?>
                     </td>
                     <td class="px-4 py-2 space-x-2 whitespace-nowrap">
-                        <?= $this->Html->link('View', ['action' => 'view', $writingServiceRequest->request_id], ['class' => 'text-blue-600 hover:underline']) ?>
-                        <?= $this->Html->link('Edit', ['action' => 'edit', $writingServiceRequest->request_id], ['class' => 'text-yellow-600 hover:underline']) ?>
-                        <?= $this->Form->postLink('Delete', ['action' => 'delete', $writingServiceRequest->request_id], [
+                        <?= $this->Html->link('View', ['action' => 'view', $writingServiceRequest->writing_service_request_id], ['class' => 'text-blue-600 hover:underline']) ?>
+                        <?= $this->Html->link('Edit', ['action' => 'edit', $writingServiceRequest->writing_service_request_id], ['class' => 'text-yellow-600 hover:underline']) ?>
+                        <?= $this->Form->postLink('Delete', ['action' => 'delete', $writingServiceRequest->writing_service_request_id], [
                             'method' => 'post',
-                            'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->request_id),
+                            'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->writing_service_request_id),
                             'class' => 'text-red-600 hover:underline',
                         ]) ?>
                     </td>

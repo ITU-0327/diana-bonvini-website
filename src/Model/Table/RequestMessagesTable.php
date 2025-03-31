@@ -12,7 +12,6 @@ use Cake\Validation\Validator;
  *
  * @property \App\Model\Table\WritingServiceRequestsTable&\Cake\ORM\Association\BelongsTo $WritingServiceRequests
  * @property \App\Model\Table\UsersTable&\Cake\ORM\Association\BelongsTo $Users
- *
  * @method \App\Model\Entity\RequestMessage newEmptyEntity()
  * @method \App\Model\Entity\RequestMessage newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\RequestMessage> newEntities(array $data, array $options = [])
@@ -40,8 +39,8 @@ class RequestMessagesTable extends Table
         parent::initialize($config);
 
         $this->setTable('request_messages');
-        $this->setDisplayField('message_id');
-        $this->setPrimaryKey('message_id');
+        $this->setDisplayField('request_message_id');
+        $this->setPrimaryKey('request_message_id');
 
         $this->belongsTo('WritingServiceRequests', [
             'foreignKey' => 'writing_service_request_id',

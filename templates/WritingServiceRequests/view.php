@@ -2,19 +2,20 @@
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\WritingServiceRequest $writingServiceRequest
- * @var \Cake\Collection\CollectionInterface $messages
- * @var string $userId
  */
 ?>
-
 <div class="flex flex-col lg:flex-row gap-6 p-6">
     <!-- Sidebar -->
     <aside class="w-full lg:w-1/4">
         <div class="bg-white shadow rounded-lg p-4">
             <h4 class="text-lg font-semibold text-gray-700 mb-4"><?= __('Actions') ?></h4>
             <div class="flex flex-col space-y-2">
-                <?= $this->Html->link(__('Edit This Request'), ['action' => 'edit', $writingServiceRequest->request_id], ['class' => 'text-blue-600 hover:underline']) ?>
-                <?= $this->Form->postLink(__('Delete This Request'), ['action' => 'delete', $writingServiceRequest->request_id], ['confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->request_id), 'class' => 'text-red-600 hover:underline']) ?>
+                <?= $this->Html->link(__('Edit This Request'), ['action' => 'edit', $writingServiceRequest->writing_service_request_id], ['class' => 'text-blue-600 hover:underline']) ?>
+                <?= $this->Form->postLink(
+                    __('Delete This Request'),
+                    ['action' => 'delete', $writingServiceRequest->writing_service_request_id],
+                    ['confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->writing_service_request_id), 'class' => 'text-red-600 hover:underline'],
+                ) ?>
                 <?= $this->Html->link(__('View My Requests'), ['action' => 'index'], ['class' => 'text-blue-600 hover:underline']) ?>
                 <?= $this->Html->link(__('Make A New Request'), ['action' => 'add'], ['class' => 'text-blue-600 hover:underline']) ?>
             </div>
@@ -24,14 +25,16 @@
     <!-- Main content -->
     <div class="w-full lg:w-3/4">
         <div class="bg-white shadow rounded-lg p-6">
-            <h3 class="text-2xl font-bold text-gray-800 mb-6"><?= h($writingServiceRequest->service_type) ?> Request Details</h3>
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <?= h($writingServiceRequest->service_type) ?> Request Details
+            </h3>
 
             <!-- Request info -->
             <table class="w-full text-left border border-gray-200 rounded overflow-hidden mb-8">
                 <tbody class="divide-y divide-gray-200">
                 <tr class="bg-gray-50">
                     <th class="p-3 font-semibold text-gray-700"><?= __('Request ID') ?></th>
-                    <td class="p-3"><?= h($writingServiceRequest->request_id) ?></td>
+                    <td class="p-3"><?= h($writingServiceRequest->writing_service_request_id) ?></td>
                 </tr>
                 <tr>
                     <th class="p-3 font-semibold text-gray-700"><?= __('Word Count Range') ?></th>
@@ -47,13 +50,21 @@
                 </tr>
                 <tr class="bg-gray-50">
                     <th class="p-3 font-semibold text-gray-700"><?= __('Final Price') ?></th>
-                    <td class="p-3"><?= $writingServiceRequest->final_price === null ? 'N/A' : $this->Number->format($writingServiceRequest->final_price) ?></td>
+                    <td class="p-3">
+                        <?= $writingServiceRequest->final_price === null
+                            ? 'N/A'
+                            : $this->Number->format($writingServiceRequest->final_price) ?>
+                    </td>
                 </tr>
                 <tr>
                     <th class="p-3 font-semibold text-gray-700"><?= __('Document') ?></th>
                     <td class="p-3">
                         <?php if (!empty($writingServiceRequest->document)) : ?>
-                            <?= $this->Html->link('View Document', '/' . $writingServiceRequest->document, ['target' => '_blank', 'class' => 'text-blue-500 hover:underline']) ?>
+                            <?= $this->Html->link(
+                                'View Document',
+                                '/' . $writingServiceRequest->document,
+                                ['target' => '_blank', 'class' => 'text-blue-500 hover:underline'],
+                            ) ?>
                         <?php else : ?>
                             <span class="text-gray-500 italic">No Document</span>
                         <?php endif; ?>
@@ -64,17 +75,21 @@
 
             <!-- Messages -->
             <h4 class="text-xl font-semibold mb-4">Conversation</h4>
-            <?php if (!empty($messages) && $messages->count() > 0) : ?>
+            <?php if (!empty($writingServiceRequest->request_messages)) : ?>
                 <div class="space-y-4 mb-6">
-                    <?php foreach ($messages as $msg) : ?>
-                        <div class="p-3 border rounded <?= $msg->sender_id === $userId ? 'bg-green-50' : 'bg-blue-50' ?>">
-                            <strong>
-                                <?= $msg->sender_id === $userId
-                                    ? 'You'
-                                    : h($msg->sender->first_name . ' ' . $msg->sender->last_name) ?>
-                            </strong>
-                            <p><?= nl2br(h($msg->message)) ?></p>
-                            <small class="text-gray-500 local-time" data-datetime="<?= h($msg->created_at->format('c')) ?>"></small>
+                    <?php foreach ($writingServiceRequest->request_messages as $msg) : ?>
+                        <div class="p-4 border-l-4 rounded bg-gray-50">
+                            <div class="mb-2 font-bold text-gray-700">
+                                <?= h($msg->user->first_name . ' ' . $msg->user->last_name) ?>
+                            </div>
+                            <div class="text-gray-800">
+                                <?= nl2br(h($msg->message)) ?>
+                            </div>
+                            <?php if (!empty($msg->created_at)) : ?>
+                                <div class="mt-1 text-sm text-gray-500">
+                                    <?= $msg->created_at->i18nFormat('yyyy-MM-dd HH:mm') ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -84,7 +99,7 @@
 
             <!-- Reply form -->
             <h4 class="text-xl font-semibold mb-2">Reply to Admin</h4>
-            <?= $this->Form->create(null, ['url' => ['action' => 'view', $writingServiceRequest->request_id]]) ?>
+            <?= $this->Form->create(null, ['url' => ['action' => 'view', $writingServiceRequest->writing_service_request_id]]) ?>
             <div class="space-y-4">
                 <?= $this->Form->textarea('reply_message', [
                     'label' => false,
@@ -104,21 +119,17 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const timeElements = document.querySelectorAll('.local-time');
-
         timeElements.forEach(el => {
             const isoTime = el.dataset.datetime;
             const date = new Date(isoTime);
-
-            const formatted = date.toLocaleString(undefined, {
+            el.textContent = date.toLocaleString(undefined, {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
                 hour: '2-digit',
                 minute: '2-digit',
-                hour12: false, // 24-hour format
+                hour12: true,
             });
-
-            el.textContent = formatted;
         });
     });
 </script>
