@@ -11,8 +11,6 @@ use Cake\Validation\Validator;
 /**
  * RequestMessages Model
  *
- * @property \App\Model\Table\WritingServiceRequestsTable&\Cake\ORM\Association\BelongsTo $Requests
- *
  * @method \App\Model\Entity\RequestMessage newEmptyEntity()
  * @method \App\Model\Entity\RequestMessage newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\RequestMessage> newEntities(array $data, array $options = [])
@@ -43,20 +41,15 @@ class RequestMessagesTable extends Table
         $this->setDisplayField('message_id');
         $this->setPrimaryKey('message_id');
 
-        $this->addBehavior('Timestamp');
-
         $this->belongsTo('WritingServiceRequests', [
             'foreignKey' => 'request_id',
             'joinType' => 'INNER',
         ]);
-
-        $this->belongsTo('Senders', [
-            'className' => 'Users',
-            'foreignKey' => 'sender_id',
+        $this->belongsTo('Users', [
+            'foreignKey' => 'user_id',
             'joinType' => 'INNER',
         ]);
     }
-
 
     /**
      * Default validation rules.
@@ -67,17 +60,30 @@ class RequestMessagesTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
+            ->uuid('message_id')
+            ->requirePresence('message_id', 'create')
+            ->notEmptyString('message_id');
+
+        $validator
             ->uuid('request_id')
             ->notEmptyString('request_id');
 
         $validator
-            ->uuid('sender_id')
-            ->notEmptyString('sender_id');
+            ->uuid('user_id')
+            ->notEmptyString('user_id');
 
         $validator
             ->scalar('message')
             ->requirePresence('message', 'create')
             ->notEmptyString('message');
+
+        $validator
+            ->dateTime('created_at')
+            ->notEmptyDateTime('created_at');
+
+        $validator
+            ->dateTime('updated_at')
+            ->notEmptyDateTime('updated_at');
 
         return $validator;
     }
@@ -92,7 +98,8 @@ class RequestMessagesTable extends Table
     public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->existsIn(['request_id'], 'WritingServiceRequests'), ['errorField' => 'request_id']);
-        $rules->add($rules->existsIn(['sender_id'], 'Senders'), ['errorField' => 'sender_id']);
+        $rules->add($rules->existsIn(['user_id'], 'Users'), ['errorField' => 'user_id']);
+
         return $rules;
     }
 }

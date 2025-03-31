@@ -166,10 +166,10 @@ CREATE TABLE writing_service_requests (
     notes VARCHAR(100) DEFAULT NULL,
     final_price DECIMAL(10,2) DEFAULT NULL,
     request_status ENUM('pending', 'in_progress', 'expired') NOT NULL DEFAULT 'pending',
+    document VARCHAR(255) DEFAULT NULL,
     is_deleted TINYINT NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    document VARCHAR(255) DEFAULT NULL,
     CONSTRAINT fk_writing_service_requests_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 ) ENGINE=InnoDB;
 
@@ -177,10 +177,10 @@ CREATE TABLE writing_service_requests (
 CREATE TABLE request_messages (
     message_id CHAR(36) NOT NULL,
     request_id CHAR(36) NOT NULL,
+    user_id CHAR(36) NOT NULL,
     message TEXT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    user_id CHAR(36) NOT NULL,
     CONSTRAINT fk_request_messages_request FOREIGN KEY (request_id) REFERENCES writing_service_requests(request_id) ON DELETE CASCADE,
     CONSTRAINT fk_request_messages_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 ) ENGINE=InnoDB
