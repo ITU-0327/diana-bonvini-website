@@ -20,11 +20,11 @@
             </tr>
             </thead>
             <tbody class="text-gray-700 text-sm font-light">
-            <?php foreach ($orders as $order): ?>
+            <?php foreach ($orders as $order) : ?>
                 <tr class="border-b border-gray-200 hover:bg-gray-50">
-                    <td class="py-3 px-6 text-left"><?= h($order->order_id) ?></td>
+                    <td class="py-3 px-6 text-left"><?= h($order->payment->payment_id) ?></td>
                     <td class="py-3 px-6 text-left"><?= $this->Number->format($order->total_amount) ?></td>
-                    <td class="py-3 px-6 text-left"><?= h($order->payment_method) ?></td>
+                    <td class="py-3 px-6 text-left"><?= h($order->payment->payment_method) ?></td>
                     <td class="py-3 px-6 text-left"><?= h($order->order_status) ?></td>
                     <td class="py-3 px-6 text-left"><?= h($order->order_date) ?></td>
                     <td class="py-3 px-6 text-center">
@@ -48,5 +48,3 @@
         </p>
     </div>
 </div>
-
-

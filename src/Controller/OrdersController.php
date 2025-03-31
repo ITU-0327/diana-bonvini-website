@@ -193,7 +193,7 @@ class OrdersController extends AppController
     public function index(): void
     {
         $query = $this->Orders->find()
-            ->contain(['Users']);
+            ->contain(['Users', 'Payments']);
         $orders = $this->paginate($query);
 
         $this->set(compact('orders'));
