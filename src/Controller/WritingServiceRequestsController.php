@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use Cake\Http\Response;
+use Cake\Utility\Text;
 use Psr\Http\Message\UploadedFileInterface;
 
 /**
@@ -57,6 +58,7 @@ class WritingServiceRequestsController extends AppController
 
         if (!$user) {
             $this->Flash->error(__('You need to be logged in.'));
+
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
 
@@ -80,7 +82,7 @@ class WritingServiceRequestsController extends AppController
 
             if (!empty($data['reply_message'])) {
                 $newMessage = $requestMessagesTable->newEntity([
-                    'message_id' => \Cake\Utility\Text::uuid(),
+                    'message_id' => Text::uuid(),
                     'request_id' => $id,
                     'sender_id'  => $userId,
                     'message'    => $data['reply_message'],
@@ -88,6 +90,7 @@ class WritingServiceRequestsController extends AppController
 
                 if ($requestMessagesTable->save($newMessage)) {
                     $this->Flash->success(__('Your reply has been sent.'));
+
                     return $this->redirect(['action' => 'view', $id]);
                 } else {
                     $this->Flash->error(__('Failed to send message.'));
@@ -137,6 +140,7 @@ class WritingServiceRequestsController extends AppController
 
             if ($this->WritingServiceRequests->save($writingServiceRequest)) {
                 $this->Flash->success(__('The writing service request has been saved.'));
+
                 return $this->redirect(['action' => 'index']);
             }
             $this->Flash->error(__('The writing service request could not be saved. Please, try again.'));
@@ -257,6 +261,7 @@ class WritingServiceRequestsController extends AppController
         $user = $this->Authentication->getIdentity();
         if (!$user || $user->user_type !== 'admin') {
             $this->Flash->error(__('You are not authorized to access admin area.'));
+
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
 
@@ -274,11 +279,11 @@ class WritingServiceRequestsController extends AppController
     public function adminView(?string $id = null)
     {
         $user = $this->Authentication->getIdentity();
-
-        $adminId = $user?->get('user_id');
+        $userId = $user->get('user_id');
 
         if (!$user || $user->user_type !== 'admin') {
             $this->Flash->error(__('You are not authorized to access admin area.'));
+
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
 
@@ -301,9 +306,9 @@ class WritingServiceRequestsController extends AppController
 
             if (!empty($data['reply_message'])) {
                 $newMessage = $requestMessagesTable->newEntity([
-                    'message_id' => \Cake\Utility\Text::uuid(),
+                    'message_id' => Text::uuid(),
                     'request_id' => $id,
-                    'sender_id'  => $adminId,
+                    'sender_id'  => $userId,
                     'message'    => $data['reply_message'],
                 ]);
 
@@ -314,12 +319,13 @@ class WritingServiceRequestsController extends AppController
 
             if ($this->WritingServiceRequests->save($writingServiceRequest)) {
                 $this->Flash->success(__('Request updated successfully (admin).'));
+
                 return $this->redirect(['action' => 'adminView', $id]);
             } else {
                 $this->Flash->error(__('Failed to update. Please try again.'));
             }
         }
 
-        $this->set(compact('writingServiceRequest', 'messages', 'adminId'));
+        $this->set(compact('writingServiceRequest', 'messages', 'userId'));
     }
 }

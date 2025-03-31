@@ -69,9 +69,7 @@
                     <?php foreach ($messages as $msg) : ?>
                         <div class="p-3 border rounded <?= $msg->sender_id === $userId ? 'bg-green-50' : 'bg-blue-50' ?>">
                             <strong>
-                                <?= $msg->sender_id === $userId
-                                    ? 'You'
-                                    : h($msg->sender->first_name . ' ' . $msg->sender->last_name) ?>
+                                <?= h($msg->sender->first_name . ' ' . $msg->sender->last_name) ?>
                             </strong>
                             <p><?= nl2br(h($msg->message)) ?></p>
                             <small class="text-gray-500 local-time" data-datetime="<?= h($msg->created_at->format('c')) ?>"></small>

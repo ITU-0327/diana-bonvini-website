@@ -3,7 +3,7 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\WritingServiceRequest $writingServiceRequest
  * @var \Cake\Collection\CollectionInterface $messages
- * @var string $adminId
+ * @var string $userId
  */
 ?>
 <div class="flex flex-col lg:flex-row gap-6 p-6">
@@ -36,6 +36,7 @@
                 Request #<?= h($writingServiceRequest->request_id) ?> (Admin View)
             </h3>
 
+            <!-- Request Details -->
             <table class="w-full text-left border border-gray-200 rounded overflow-hidden">
                 <tbody class="divide-y divide-gray-200">
                 <tr class="bg-gray-50">
@@ -64,18 +65,19 @@
                 </tr>
                 <tr class="bg-gray-50">
                     <th class="p-3 font-semibold text-gray-700">Created At</th>
-                    <td class="p-3"><?= h($writingServiceRequest->created_at) ?></td>
+                    <td class="p-3"><span class="local-time" data-datetime="<?= h($writingServiceRequest->created_at->format('c')) ?>"></span></td>
                 </tr>
                 <tr>
                     <th class="p-3 font-semibold text-gray-700">Updated At</th>
-                    <td class="p-3"><?= h($writingServiceRequest->updated_at) ?></td>
+                    <td class="p-3"><span class="local-time" data-datetime="<?= h($writingServiceRequest->updated_at->format('c')) ?>"></span></td>
                 </tr>
                 <tr class="bg-gray-50">
                     <th class="p-3 font-semibold text-gray-700">Document</th>
                     <td class="p-3">
                         <?php if (!empty($writingServiceRequest->document)) : ?>
                             <?= $this->Html->link('View Document', '/' . $writingServiceRequest->document, [
-                                'target' => '_blank', 'class' => 'text-blue-500 hover:underline',
+                                'target' => '_blank',
+                                'class' => 'text-blue-500 hover:underline',
                             ]) ?>
                         <?php else : ?>
                             <span class="text-gray-500 italic">No Document</span>
@@ -90,12 +92,8 @@
             <?php if (!empty($messages) && $messages->count() > 0) : ?>
                 <div class="space-y-4">
                     <?php foreach ($messages as $msg) : ?>
-                        <div class="p-3 border rounded <?= $msg->sender_id === $adminId ? 'bg-green-50' : $adminId === 'bg-blue-50' ?>">
-                            <strong>
-                                <?= $msg->sender_id
-                                    ? 'You'
-                                    : h($msg->sender->first_name . ' ' . $msg->sender->last_name) ?>
-                            </strong>
+                        <div class="p-3 border rounded <?= $msg->sender_id === $userId ? 'bg-blue-50' : 'bg-green-50' ?>">
+                            <strong><?= h($msg->sender->first_name . ' ' . $msg->sender->last_name) ?></strong>
                             <p><?= nl2br(h($msg->message)) ?></p>
                             <small class="text-gray-500 local-time" data-datetime="<?= h($msg->created_at->format('c')) ?>"></small>
                         </div>
@@ -117,7 +115,6 @@
                     'label' => 'Request Status',
                     'class' => 'w-full border-gray-300 rounded',
                 ]) ?>
-
                 <?= $this->Form->label('reply_message', 'Your Message') ?>
                 <?= $this->Form->textarea('reply_message', ['class' => 'w-full border-gray-300 rounded']) ?>
             </div>
@@ -131,21 +128,20 @@
     </div>
 </div>
 
+<!-- JavaScript for time localization -->
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const timeElements = document.querySelectorAll('.local-time');
-
         timeElements.forEach(el => {
             const isoTime = el.dataset.datetime;
             const date = new Date(isoTime);
-
             el.textContent = date.toLocaleString(undefined, {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
                 hour: '2-digit',
                 minute: '2-digit',
-                hour12: false, // 24-hour format
+                hour12: false,
             });
         });
     });
