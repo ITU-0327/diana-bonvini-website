@@ -143,7 +143,7 @@ class WritingServiceRequestsController extends AppController
      */
     public function edit(?string $id = null)
     {
-        /** @var \App\Model\Entity\User|null $user */
+        /** @var \App\Model\Entity\User $user */
         $user = $this->Authentication->getIdentity();
         $writingServiceRequest = $this->WritingServiceRequests->get($id);
 
