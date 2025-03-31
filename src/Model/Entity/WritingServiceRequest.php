@@ -13,12 +13,12 @@ use Cake\ORM\Entity;
  * @property string $service_type
  * @property string $word_count_range
  * @property string|null $notes
- * @property string|null $estimated_price
  * @property string|null $final_price
  * @property string $request_status
  * @property int $is_deleted
  * @property \Cake\I18n\DateTime $created_at
  * @property \Cake\I18n\DateTime $updated_at
+ * @property string|null $document
  *
  * @property \App\Model\Entity\User $user
  */
@@ -43,8 +43,7 @@ class WritingServiceRequest extends Entity
         'is_deleted' => true,
         'created_at' => true,
         'updated_at' => true,
-        'user' => true,
         'document' => true,
-        '*' => true,
+        'user' => true,
     ];
 }

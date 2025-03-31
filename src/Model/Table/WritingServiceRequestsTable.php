@@ -45,14 +45,6 @@ class WritingServiceRequestsTable extends Table
             'foreignKey' => 'user_id',
             'joinType' => 'INNER',
         ]);
-
-        $this->addBehavior('Timestamp', [
-            'events' => [
-                'Model.beforeSave' => [
-                    'created_at' => 'new',
-                    'updated_at' => 'always',
-                ],
-            ]]);
     }
 
     /**
@@ -101,6 +93,11 @@ class WritingServiceRequestsTable extends Table
         $validator
             ->dateTime('updated_at')
             ->notEmptyDateTime('updated_at');
+
+        $validator
+            ->scalar('document')
+            ->maxLength('document', 255)
+            ->allowEmptyString('document');
 
         return $validator;
     }
