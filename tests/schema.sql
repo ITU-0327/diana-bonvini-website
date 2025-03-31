@@ -173,7 +173,7 @@ CREATE TABLE writing_service_requests (
     CONSTRAINT fk_writing_service_requests_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 ) ENGINE=InnoDB;
 
---Table: request_messages
+-- Table: request_messages
 CREATE TABLE request_messages (
     request_message_id CHAR(36) NOT NULL PRIMARY KEY,
     writing_service_request_id CHAR(36) NOT NULL,
