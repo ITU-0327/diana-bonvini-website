@@ -159,7 +159,7 @@ CREATE TABLE artwork_carts (
 
 -- Table: writing_service_requests
 CREATE TABLE writing_service_requests (
-    request_id CHAR(36) NOT NULL PRIMARY KEY,
+    writing_service_request_id CHAR(36) NOT NULL PRIMARY KEY,
     user_id CHAR(36) NOT NULL,
     service_type ENUM('creative_writing', 'editing', 'proofreading') NOT NULL,
     word_count_range VARCHAR(50) NOT NULL,
@@ -175,12 +175,12 @@ CREATE TABLE writing_service_requests (
 
 --Table: request_messages
 CREATE TABLE request_messages (
-    message_id CHAR(36) NOT NULL,
-    request_id CHAR(36) NOT NULL,
+    request_message_id CHAR(36) NOT NULL PRIMARY KEY,
+    writing_service_request_id CHAR(36) NOT NULL,
     user_id CHAR(36) NOT NULL,
     message TEXT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_request_messages_request FOREIGN KEY (request_id) REFERENCES writing_service_requests(request_id) ON DELETE CASCADE,
+    CONSTRAINT fk_request_messages_request FOREIGN KEY (writing_service_request_id) REFERENCES writing_service_requests(writing_service_request_id) ON DELETE CASCADE,
     CONSTRAINT fk_request_messages_user FOREIGN KEY (user_id) REFERENCES users(user_id)
-) ENGINE=InnoDB
+) ENGINE=InnoDB;

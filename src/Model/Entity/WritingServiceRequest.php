@@ -8,7 +8,7 @@ use Cake\ORM\Entity;
 /**
  * WritingServiceRequest Entity
  *
- * @property string $request_id
+ * @property string $writing_service_request_id
  * @property string $user_id
  * @property string $service_type
  * @property string $word_count_range
@@ -21,6 +21,7 @@ use Cake\ORM\Entity;
  * @property string|null $document
  *
  * @property \App\Model\Entity\User $user
+ * @property \App\Model\Entity\RequestMessage[] $request_messages
  */
 class WritingServiceRequest extends Entity
 {
@@ -45,5 +46,6 @@ class WritingServiceRequest extends Entity
         'updated_at' => true,
         'document' => true,
         'user' => true,
+        'request_messages' => true,
     ];
 }

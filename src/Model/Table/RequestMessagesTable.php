@@ -3,13 +3,15 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
-use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
 /**
  * RequestMessages Model
+ *
+ * @property \App\Model\Table\WritingServiceRequestsTable&\Cake\ORM\Association\BelongsTo $WritingServiceRequests
+ * @property \App\Model\Table\UsersTable&\Cake\ORM\Association\BelongsTo $Users
  *
  * @method \App\Model\Entity\RequestMessage newEmptyEntity()
  * @method \App\Model\Entity\RequestMessage newEntity(array $data, array $options = [])
@@ -42,7 +44,7 @@ class RequestMessagesTable extends Table
         $this->setPrimaryKey('message_id');
 
         $this->belongsTo('WritingServiceRequests', [
-            'foreignKey' => 'request_id',
+            'foreignKey' => 'writing_service_request_id',
             'joinType' => 'INNER',
         ]);
         $this->belongsTo('Users', [
@@ -60,13 +62,8 @@ class RequestMessagesTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
-            ->uuid('message_id')
-            ->requirePresence('message_id', 'create')
-            ->notEmptyString('message_id');
-
-        $validator
-            ->uuid('request_id')
-            ->notEmptyString('request_id');
+            ->uuid('writing_service_request_id')
+            ->notEmptyString('writing_service_request_id');
 
         $validator
             ->uuid('user_id')
@@ -97,7 +94,7 @@ class RequestMessagesTable extends Table
      */
     public function buildRules(RulesChecker $rules): RulesChecker
     {
-        $rules->add($rules->existsIn(['request_id'], 'WritingServiceRequests'), ['errorField' => 'request_id']);
+        $rules->add($rules->existsIn(['writing_service_request_id'], 'WritingServiceRequests'), ['errorField' => 'writing_service_request_id']);
         $rules->add($rules->existsIn(['user_id'], 'Users'), ['errorField' => 'user_id']);
 
         return $rules;

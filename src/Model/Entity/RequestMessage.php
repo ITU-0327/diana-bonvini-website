@@ -8,15 +8,15 @@ use Cake\ORM\Entity;
 /**
  * RequestMessage Entity
  *
- * @property string $message_id
- * @property string $request_id
+ * @property string $request_message_id
+ * @property string $writing_service_request_id
  * @property string $user_id
  * @property string $message
  * @property \Cake\I18n\DateTime $created_at
  * @property \Cake\I18n\DateTime $updated_at
  *
  * @property \App\Model\Entity\WritingServiceRequest $writing_service_request
- * @property \App\Model\Entity\User $sender
+ * @property \App\Model\Entity\User $user
  */
 class RequestMessage extends Entity
 {
@@ -30,13 +30,12 @@ class RequestMessage extends Entity
      * @var array<string, bool>
      */
     protected array $_accessible = [
-        'message_id' => true,
-        'request_id' => true,
+        'writing_service_request_id' => true,
         'user_id' => true,
         'message' => true,
         'created_at' => true,
         'updated_at' => true,
         'writing_service_request' => true,
-        'sender' => true,
+        'user' => true,
     ];
 }
