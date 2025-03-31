@@ -142,7 +142,8 @@ $user = $this->getRequest()->getAttribute('identity');
                             <!-- Menu Items (Icons and Text Unchanged) -->
                             <ul class="space-y-2">
                                 <li class="menu-item">
-                                    <a href="#" class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
+                                    <a href="<?= $this->Url->build(['controller' => 'Orders', 'action' => 'index']) ?>"
+                                       class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
                                         <i class="fa-solid fa-box h-6 w-6 text-indigo-500"></i>
                                         <div>
                                             <p class="text-gray-700 font-medium text-base">My Orders</p>
@@ -151,7 +152,8 @@ $user = $this->getRequest()->getAttribute('identity');
                                     </a>
                                 </li>
                                 <li class="menu-item">
-                                    <a href="#" class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
+                                    <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'index']) ?>"
+                                       class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
                                         <i class="fa-solid fa-pen-nib h-6 w-6 text-indigo-500"></i>
                                         <div>
                                             <p class="text-gray-700 font-medium text-base">My Services</p>
@@ -159,15 +161,16 @@ $user = $this->getRequest()->getAttribute('identity');
                                         </div>
                                     </a>
                                 </li>
-                                <li class="menu-item">
-                                    <a href="#" class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
-                                        <i class="fa-solid fa-calendar-check h-6 w-6 text-indigo-500"></i>
-                                        <div>
-                                            <p class="text-gray-700 font-medium text-base">My Bookings</p>
-                                            <p class="text-xs text-gray-500">Scheduled Sessions</p>
-                                        </div>
-                                    </a>
-                                </li>
+
+                                <!--  <li class="menu-item">
+                                      <a href="#" class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
+                                          <i class="fa-solid fa-calendar-check h-6 w-6 text-indigo-500"></i>
+                                          <div>
+                                              <p class="text-gray-700 font-medium text-base">My Bookings</p>
+                                              <p class="text-xs text-gray-500">Scheduled Sessions</p>
+                                          </div>
+                                      </a>
+                                  </li> -->
                                 <li class="menu-item">
                                     <a href="#" class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
                                         <i class="fa-solid fa-user-cog h-6 w-6 text-indigo-500"></i>
@@ -184,7 +187,7 @@ $user = $this->getRequest()->getAttribute('identity');
                                 'Log Out',
                                 ['controller' => 'Users', 'action' => 'logout'],
                                 [
-                                    'class' => 'block w-full text-left px-4 py-2 mt-4 text-base text-gray-700 hover:bg-gray-100 rounded',
+                                    'class' => 'block w-full text-left px-4 py-2 mt-4 text-base text-gray-700 hover:bg-gray-100 rounded'
                                 ]
                             ) ?>
                         </div>

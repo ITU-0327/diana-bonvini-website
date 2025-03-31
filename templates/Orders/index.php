@@ -1,58 +1,52 @@
+
 <?php
 /**
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\Order> $orders
  */
 ?>
-<div class="orders index content">
-    <?= $this->Html->link(__('New Order'), ['action' => 'add'], ['class' => 'button float-right']) ?>
-    <h3><?= __('Orders') ?></h3>
-    <div class="table-responsive">
-        <table>
+<div class="max-w-6xl mx-auto py-8">
+    <h2 class="text-3xl font-bold text-gray-800 mb-6">My Orders</h2>
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white shadow rounded-lg">
             <thead>
-                <tr>
-                    <th><?= $this->Paginator->sort('order_id') ?></th>
-                    <th><?= $this->Paginator->sort('user_id') ?></th>
-                    <th><?= $this->Paginator->sort('total_amount') ?></th>
-                    <th><?= $this->Paginator->sort('payment_method') ?></th>
-                    <th><?= $this->Paginator->sort('order_status') ?></th>
-                    <th><?= $this->Paginator->sort('order_date') ?></th>
-                    <th><?= $this->Paginator->sort('is_deleted') ?></th>
-                    <th><?= $this->Paginator->sort('created_at') ?></th>
-                    <th><?= $this->Paginator->sort('updated_at') ?></th>
-                    <th class="actions"><?= __('Actions') ?></th>
-                </tr>
+            <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+                <th class="py-3 px-6 text-left">Order ID</th>
+                <th class="py-3 px-6 text-left">Total Amount</th>
+                <th class="py-3 px-6 text-left">Payment Method</th>
+                <th class="py-3 px-6 text-left">Order Status</th>
+                <th class="py-3 px-6 text-left">Order Date</th>
+                <th class="py-3 px-6 text-center">Details</th>
+            </tr>
             </thead>
-            <tbody>
-                <?php foreach ($orders as $order): ?>
-                <tr>
-                    <td><?= h($order->order_id) ?></td>
-                    <td><?= $order->hasValue('user') ? $this->Html->link($order->user->first_name, ['controller' => 'Users', 'action' => 'view', $order->user->user_id]) : '' ?></td>
-                    <td><?= $this->Number->format($order->total_amount) ?></td>
-                    <td><?= h($order->payment_method) ?></td>
-                    <td><?= h($order->order_status) ?></td>
-                    <td><?= h($order->order_date) ?></td>
-                    <td><?= $this->Number->format($order->is_deleted) ?></td>
-                    <td><?= h($order->created_at) ?></td>
-                    <td><?= h($order->updated_at) ?></td>
-                    <td class="actions">
-                        <?= $this->Html->link(__('View'), ['action' => 'view', $order->order_id]) ?>
-                        <?= $this->Html->link(__('Edit'), ['action' => 'edit', $order->order_id]) ?>
-                        <?= $this->Form->postLink(__('Delete'), ['action' => 'delete', $order->order_id], ['confirm' => __('Are you sure you want to delete # {0}?', $order->order_id)]) ?>
+            <tbody class="text-gray-700 text-sm font-light">
+            <?php foreach ($orders as $order): ?>
+                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <td class="py-3 px-6 text-left"><?= h($order->order_id) ?></td>
+                    <td class="py-3 px-6 text-left"><?= $this->Number->format($order->total_amount) ?></td>
+                    <td class="py-3 px-6 text-left"><?= h($order->payment_method) ?></td>
+                    <td class="py-3 px-6 text-left"><?= h($order->order_status) ?></td>
+                    <td class="py-3 px-6 text-left"><?= h($order->order_date) ?></td>
+                    <td class="py-3 px-6 text-center">
+                        <?= $this->Html->link('View', ['action' => 'view', $order->order_id], ['class' => 'bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600']) ?>
                     </td>
                 </tr>
-                <?php endforeach; ?>
+            <?php endforeach; ?>
             </tbody>
         </table>
     </div>
-    <div class="paginator">
-        <ul class="pagination">
-            <?= $this->Paginator->first('<< ' . __('first')) ?>
-            <?= $this->Paginator->prev('< ' . __('previous')) ?>
-            <?= $this->Paginator->numbers() ?>
-            <?= $this->Paginator->next(__('next') . ' >') ?>
-            <?= $this->Paginator->last(__('last') . ' >>') ?>
+    <div class="mt-4">
+        <ul class="flex justify-center space-x-2">
+            <?= $this->Paginator->first('<<', ['class' => 'px-3 py-1 bg-gray-200 rounded']) ?>
+            <?= $this->Paginator->prev('<', ['class' => 'px-3 py-1 bg-gray-200 rounded']) ?>
+            <?= $this->Paginator->numbers(['before' => '', 'after' => '', 'class' => 'px-3 py-1 bg-gray-200 rounded']) ?>
+            <?= $this->Paginator->next('>', ['class' => 'px-3 py-1 bg-gray-200 rounded']) ?>
+            <?= $this->Paginator->last('>>', ['class' => 'px-3 py-1 bg-gray-200 rounded']) ?>
         </ul>
-        <p><?= $this->Paginator->counter(__('Page {{page}} of {{pages}}, showing {{current}} record(s) out of {{count}} total')) ?></p>
+        <p class="text-center text-gray-600 mt-2">
+            <?= $this->Paginator->counter(__('Page {{page}} of {{pages}}, showing {{current}} record(s) out of {{count}} total')) ?>
+        </p>
     </div>
 </div>
+
+
