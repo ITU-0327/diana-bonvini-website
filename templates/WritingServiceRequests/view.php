@@ -52,9 +52,9 @@
                 <tr>
                     <th class="p-3 font-semibold text-gray-700"><?= __('Document') ?></th>
                     <td class="p-3">
-                        <?php if (!empty($writingServiceRequest->document)): ?>
+                        <?php if (!empty($writingServiceRequest->document)) : ?>
                             <?= $this->Html->link('View Document', '/' . $writingServiceRequest->document, ['target' => '_blank', 'class' => 'text-blue-500 hover:underline']) ?>
-                        <?php else: ?>
+                        <?php else : ?>
                             <span class="text-gray-500 italic">No Document</span>
                         <?php endif; ?>
                     </td>
@@ -64,12 +64,12 @@
 
             <!-- Messages -->
             <h4 class="text-xl font-semibold mb-4">Conversation</h4>
-            <?php if (!empty($messages) && $messages->count() > 0): ?>
+            <?php if (!empty($messages) && $messages->count() > 0) : ?>
                 <div class="space-y-4 mb-6">
-                    <?php foreach ($messages as $msg): ?>
-                        <div class="p-3 border rounded <?= $msg->sender_id === $userId ? 'bg-green-50' : 'bg-blue-50' ?>">
+                    <?php foreach ($messages as $msg) : ?>
+                        <div class="p-3 border rounded <?= $msg->sender_id === $userId ? 'bg-green-50' : $userId === 'bg-blue-50' ?>">
                             <strong>
-                                <?= $msg->sender_id === $userId
+                                <?= $msg->sender_id
                                     ? 'You'
                                     : h($msg->sender->first_name . ' ' . $msg->sender->last_name) ?>
                             </strong>
@@ -78,7 +78,7 @@
                         </div>
                     <?php endforeach; ?>
                 </div>
-            <?php else: ?>
+            <?php else : ?>
                 <p class="text-gray-500 mb-6">No messages yet.</p>
             <?php endif; ?>
 
@@ -90,10 +90,10 @@
                     'label' => false,
                     'placeholder' => 'Type your reply...',
                     'rows' => 4,
-                    'class' => 'w-full border border-gray-300 rounded p-2'
+                    'class' => 'w-full border border-gray-300 rounded p-2',
                 ]) ?>
                 <?= $this->Form->button('Send Message', [
-                    'class' => 'bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700'
+                    'class' => 'bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700',
                 ]) ?>
             </div>
             <?= $this->Form->end() ?>
