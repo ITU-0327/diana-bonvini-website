@@ -73,7 +73,7 @@ $user = $this->getRequest()->getAttribute('identity');
                                         Check All Requests
                                     </a>
                                 </li>
-                            <?php elseif ($userType === 'customer') : ?>
+                            <?php else: ?>
                                 <li class="menu-item">
                                     <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'add']) ?>"
                                        class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
