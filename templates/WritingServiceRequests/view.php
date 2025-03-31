@@ -67,9 +67,9 @@
             <?php if (!empty($messages) && $messages->count() > 0) : ?>
                 <div class="space-y-4 mb-6">
                     <?php foreach ($messages as $msg) : ?>
-                        <div class="p-3 border rounded <?= $msg->sender_id === $userId ? 'bg-green-50' : $userId === 'bg-blue-50' ?>">
+                        <div class="p-3 border rounded <?= $msg->sender_id === $userId ? 'bg-green-50' : 'bg-blue-50' ?>">
                             <strong>
-                                <?= $msg->sender_id
+                                <?= $msg->sender_id === $userId
                                     ? 'You'
                                     : h($msg->sender->first_name . ' ' . $msg->sender->last_name) ?>
                             </strong>
