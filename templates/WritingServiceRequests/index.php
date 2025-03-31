@@ -45,8 +45,6 @@ $firstName = $user->get('first_name');
                 <th class="px-4 py-3"><?= $this->Paginator->sort('notes') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('final_price') ?></th>
                 <th class="px-4 py-3"><?= $this->Paginator->sort('request_status') ?></th>
-                <th class="px-4 py-3"><?= $this->Paginator->sort('created_at') ?></th>
-                <th class="px-4 py-3"><?= $this->Paginator->sort('updated_at') ?></th>
                 <th class="px-4 py-3"><?= __('Document') ?></th>
                 <th class="px-4 py-3"><?= __('Actions') ?></th>
             </tr>
@@ -60,12 +58,6 @@ $firstName = $user->get('first_name');
                     <td class="px-4 py-2"><?= h($writingServiceRequest->notes) ?></td>
                     <td class="px-4 py-2"><?= $writingServiceRequest->final_price === null ? '' : $this->Number->format($writingServiceRequest->final_price) ?></td>
                     <td class="px-4 py-2"><?= h($writingServiceRequest->request_status) ?></td>
-                    <td class="px-4 py-2">
-                        <span class="text-gray-500 local-time" data-datetime="<?= h($writingServiceRequest->created_at->format('c')) ?>"></span>
-                    </td>
-                    <td class="px-4 py-2">
-                        <span class="text-gray-500 local-time" data-datetime="<?= h($writingServiceRequest->updated_at->format('c')) ?>"></span>
-                    </td>
                     <td class="px-4 py-2">
                         <?php if (!empty($writingServiceRequest->document)): ?>
                             <?= $this->Html->link('View Document', '/' . $writingServiceRequest->document, ['target' => '_blank', 'class' => 'text-blue-500 hover:underline']) ?>
