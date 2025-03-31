@@ -109,7 +109,7 @@ class WritingServiceRequestsController extends AppController
             $data   = $this->request->getData();
 
             // Handle file upload
-            $documentPath = $this->handleDocumentUpload($data['document'] ?? null, 'add');
+            $documentPath = $this->_handleDocumentUpload($data['document'] ?? null, 'add');
             if ($this->response->getStatusCode() === 302) {
                 return $this->response;
             }
@@ -158,7 +158,7 @@ class WritingServiceRequestsController extends AppController
             $data = $this->request->getData();
 
             // Handle file upload
-            $documentPath = $this->handleDocumentUpload($data['document'] ?? null, 'edit');
+            $documentPath = $this->_handleDocumentUpload($data['document'] ?? null, 'edit');
             if ($this->response->getStatusCode() === 302) {
                 return $this->response;
             }
@@ -167,10 +167,6 @@ class WritingServiceRequestsController extends AppController
             } else {
                 unset($data['document']);
             }
-
-            // (Optional) parse these if you still need them for something else
-            // $data['service_type'] = ...
-            // $data['word_count_range'] = ...
 
             $data['user_id'] = $userId;
 
@@ -215,7 +211,9 @@ class WritingServiceRequestsController extends AppController
      */
     public function adminIndex()
     {
+        /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
+
         if (!$user || $user->user_type !== 'admin') {
             $this->Flash->error(__('You are not authorized to access admin area.'));
 
@@ -259,8 +257,6 @@ class WritingServiceRequestsController extends AppController
             $data = $this->request->getData();
 
             if (!empty($data['reply_message'])) {
-                // Append new message data to the request_messages association.
-                // (We assume here that your RequestMessagesTable uses "Users" as the alias for sender.)
                 $data['request_messages'][] = [
                     'user_id' => $user->user_id,
                     'message' => $data['reply_message'],
@@ -291,7 +287,7 @@ class WritingServiceRequestsController extends AppController
      * @param string $redirectAction
      * @return \Cake\Http\Response|string|null
      */
-    protected function handleDocumentUpload(?UploadedFileInterface $file, string $redirectAction): string|Response|null
+    protected function _handleDocumentUpload(?UploadedFileInterface $file, string $redirectAction): string|Response|null
     {
         if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
             return null;

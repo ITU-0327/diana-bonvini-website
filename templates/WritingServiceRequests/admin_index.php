@@ -5,7 +5,7 @@
  */
 ?>
 <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-    <h3 class="text-2xl font-semibold text-gray-800">All Writing Service Requests (Admin)</h3>
+    <h3 class="text-2xl font-semibold text-gray-800">Writing Service Requests</h3>
 
     <div class="overflow-auto border rounded">
         <table class="min-w-full text-sm text-left text-gray-800">
@@ -25,7 +25,7 @@
             <tbody class="divide-y divide-gray-200">
             <?php foreach ($writingServiceRequests as $req) : ?>
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-2"><?= h($req->request_id) ?></td>
+                    <td class="px-4 py-2"><?= h($req->writing_service_request_id) ?></td>
                     <td class="px-4 py-2">
                         <?php if (!empty($req->user)) : ?>
                             <?= h($req->user->first_name . ' ' . $req->user->last_name) ?>
@@ -42,8 +42,8 @@
                     <td class="px-4 py-2 space-x-2 whitespace-nowrap">
                         <?= $this->Html->link(
                             'View',
-                            ['action' => 'adminView', $req->request_id],
-                            ['class' => 'text-blue-600 hover:underline']
+                            ['action' => 'adminView', $req->writing_service_request_id],
+                            ['class' => 'text-blue-600 hover:underline'],
                         ) ?>
                     </td>
                 </tr>
@@ -75,16 +75,14 @@
             const isoTime = el.dataset.datetime;
             const date = new Date(isoTime);
 
-            const formatted = date.toLocaleString(undefined, {
+            el.textContent = date.toLocaleString(undefined, {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
                 hour: '2-digit',
                 minute: '2-digit',
-                hour12: false,
+                hour12: true,
             });
-
-            el.textContent = formatted;
         });
     });
 </script>

@@ -3,8 +3,8 @@
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\WritingServiceRequest> $writingServiceRequests
  */
+/** @var \App\Model\Entity\User $user */
 $user = $this->request->getAttribute('identity');
-$firstName = $user->get('first_name');
 ?>
 
 <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
@@ -21,7 +21,7 @@ $firstName = $user->get('first_name');
     <!-- Greeting with animation -->
     <div class="mt-2 flex items-center space-x-2 animate-fade-in">
         <span class="text-2xl">👋</span>
-        <p class="text-gray-700 text-lg font-medium">Hi, <?= h($firstName) ?>!</p>
+        <p class="text-gray-700 text-lg font-medium">Hi, <?= h($user->first_name) ?>!</p>
     </div>
 
     <!-- Animation styles -->
