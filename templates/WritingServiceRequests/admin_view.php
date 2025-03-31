@@ -12,14 +12,16 @@
         <div class="bg-white shadow rounded-lg p-4">
             <h4 class="text-lg font-semibold text-gray-700 mb-4">Admin Actions</h4>
             <div class="flex flex-col space-y-2">
-                <?= $this->Form->postLink('Delete This Request',
+                <?= $this->Form->postLink(
+                    'Delete This Request',
                     ['action' => 'delete', $writingServiceRequest->request_id],
                     [
                         'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->request_id),
-                        'class' => 'text-red-600 hover:underline'
+                        'class' => 'text-red-600 hover:underline',
                     ]
                 ) ?>
-                <?= $this->Html->link('Back to All Requests',
+                <?= $this->Html->link(
+                    'Back to All Requests',
                     ['action' => 'adminIndex'],
                     ['class' => 'text-blue-600 hover:underline']
                 ) ?>
@@ -71,11 +73,11 @@
                 <tr class="bg-gray-50">
                     <th class="p-3 font-semibold text-gray-700">Document</th>
                     <td class="p-3">
-                        <?php if (!empty($writingServiceRequest->document)): ?>
+                        <?php if (!empty($writingServiceRequest->document)) : ?>
                             <?= $this->Html->link('View Document', '/' . $writingServiceRequest->document, [
-                                'target' => '_blank', 'class' => 'text-blue-500 hover:underline'
+                                'target' => '_blank', 'class' => 'text-blue-500 hover:underline',
                             ]) ?>
-                        <?php else: ?>
+                        <?php else : ?>
                             <span class="text-gray-500 italic">No Document</span>
                         <?php endif; ?>
                     </td>
@@ -85,12 +87,12 @@
 
             <!-- Conversation -->
             <h4 class="text-xl font-semibold mt-6">Conversation</h4>
-            <?php if (!empty($messages) && $messages->count() > 0): ?>
+            <?php if (!empty($messages) && $messages->count() > 0) : ?>
                 <div class="space-y-4">
-                    <?php foreach ($messages as $msg): ?>
-                        <div class="p-3 border rounded <?= $msg->sender_id === $adminId ? 'bg-green-50' : 'bg-blue-50' ?>">
+                    <?php foreach ($messages as $msg) : ?>
+                        <div class="p-3 border rounded <?= $msg->sender_id === $adminId ? 'bg-green-50' : $adminId === 'bg-blue-50' ?>">
                             <strong>
-                                <?= $msg->sender_id === $adminId
+                                <?= $msg->sender_id
                                     ? 'You'
                                     : h($msg->sender->first_name . ' ' . $msg->sender->last_name) ?>
                             </strong>
@@ -99,7 +101,7 @@
                         </div>
                     <?php endforeach; ?>
                 </div>
-            <?php else: ?>
+            <?php else : ?>
                 <p class="text-gray-500">No conversation yet.</p>
             <?php endif; ?>
 
@@ -109,19 +111,19 @@
             <div class="space-y-4">
                 <?= $this->Form->control('final_price', [
                     'label' => 'Final Price',
-                    'class' => 'w-full border-gray-300 rounded'
+                    'class' => 'w-full border-gray-300 rounded',
                 ]) ?>
                 <?= $this->Form->control('request_status', [
                     'label' => 'Request Status',
-                    'class' => 'w-full border-gray-300 rounded'
+                    'class' => 'w-full border-gray-300 rounded',
                 ]) ?>
 
                 <?= $this->Form->label('reply_message', 'Your Message') ?>
                 <?= $this->Form->textarea('reply_message', ['class' => 'w-full border-gray-300 rounded']) ?>
             </div>
             <div class="mt-4">
-                <?= $this->Form->button('Update', [
-                    'class' => 'bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700'
+                <?= $this->Form->button('Send Message', [
+                    'class' => 'bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700',
                 ]) ?>
             </div>
             <?= $this->Form->end() ?>
@@ -137,7 +139,7 @@
             const isoTime = el.dataset.datetime;
             const date = new Date(isoTime);
 
-            const formatted = date.toLocaleString(undefined, {
+            el.textContent = date.toLocaleString(undefined, {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
@@ -145,8 +147,6 @@
                 minute: '2-digit',
                 hour12: false, // 24-hour format
             });
-
-            el.textContent = formatted;
         });
     });
 </script>

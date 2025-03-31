@@ -5,10 +5,10 @@
             <div class="flex flex-col space-y-2">
                 <?= $this->Form->postLink(__('Delete'), ['action' => 'delete', $writingServiceRequest->request_id], [
                     'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->request_id),
-                    'class' => 'text-red-600 hover:underline'
+                    'class' => 'text-red-600 hover:underline',
                 ]) ?>
                 <?= $this->Html->link(__('Back To My Request List'), ['action' => 'index'], [
-                    'class' => 'text-blue-600 hover:underline'
+                    'class' => 'text-blue-600 hover:underline',
                 ]) ?>
             </div>
         </div>
@@ -46,7 +46,7 @@
                 <div>
                     <?= $this->Form->control('notes', [
                         'label' => 'Notes',
-                        'class' => 'w-full border-gray-300 rounded shadow-sm'
+                        'class' => 'w-full border-gray-300 rounded shadow-sm',
                     ]) ?>
                 </div>
 
@@ -54,14 +54,14 @@
                 <div>
                     <?= $this->Form->control('final_price', [
                         'label' => 'Final Price',
-                        'class' => 'w-full border-gray-300 rounded shadow-sm'
+                        'class' => 'w-full border-gray-300 rounded shadow-sm',
                     ]) ?>
                 </div>
 
                 <div>
                     <?= $this->Form->control('request_status', [
                         'label' => 'Request Status',
-                        'class' => 'w-full border-gray-300 rounded shadow-sm'
+                        'class' => 'w-full border-gray-300 rounded shadow-sm',
                     ]) ?>
                 </div>
 
@@ -83,12 +83,12 @@
 
                 <div>
                     <label class="block font-semibold text-gray-700"><?= __('Existing Document') ?></label>
-                    <?php if (!empty($writingServiceRequest->document)): ?>
+                    <?php if (!empty($writingServiceRequest->document)) : ?>
                         <?= $this->Html->link('View Document', '/' . $writingServiceRequest->document, [
                             'target' => '_blank',
-                            'class' => 'text-blue-600 hover:underline'
+                            'class' => 'text-blue-600 hover:underline',
                         ]) ?>
-                    <?php else: ?>
+                    <?php else : ?>
                         <span class="text-gray-500 italic"><?= __('No Document Uploaded') ?></span>
                     <?php endif; ?>
                 </div>
@@ -96,14 +96,14 @@
                 <p class="text-sm text-gray-500 mb-1">Want change document?</p>
                 <?= $this->Form->file('document', [
                     'class' => 'w-full border-gray-300 rounded shadow-sm',
-                    'accept' => '.pdf,.jpg,.jpeg,.docx'
+                    'accept' => '.pdf,.jpg,.jpeg,.docx',
                 ]) ?>
                 <p class="text-sm text-gray-500 mb-1">Only PDF, JPG, and DOCX files can be uploaded.</p>
             </fieldset>
 
             <div class="mt-6">
                 <?= $this->Form->button(__('Submit'), [
-                    'class' => 'bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition'
+                    'class' => 'bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition',
                 ]) ?>
             </div>
 
@@ -120,7 +120,7 @@
             const isoTime = el.dataset.datetime;
             const date = new Date(isoTime);
 
-            const formatted = date.toLocaleString(undefined, {
+            el.textContent = date.toLocaleString(undefined, {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
@@ -128,8 +128,6 @@
                 minute: '2-digit',
                 hour12: false,
             });
-
-            el.textContent = formatted;
         });
     });
 </script>

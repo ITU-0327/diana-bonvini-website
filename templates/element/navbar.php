@@ -66,14 +66,14 @@ $user = $this->getRequest()->getAttribute('identity');
                         ?>
 
                         <ul class="absolute left-0 top-full w-64 bg-white border border-gray-200 rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-300 z-10">
-                            <?php if ($userType === 'admin'): ?>
+                            <?php if ($userType === 'admin') : ?>
                                 <li class="menu-item">
                                     <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'adminIndex']) ?>"
                                        class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
                                         Check All Requests
                                     </a>
                                 </li>
-                            <?php elseif ($userType === 'customer'): ?>
+                            <?php elseif ($userType === 'customer') : ?>
                                 <li class="menu-item">
                                     <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'add']) ?>"
                                        class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
@@ -184,7 +184,7 @@ $user = $this->getRequest()->getAttribute('identity');
                                 'Log Out',
                                 ['controller' => 'Users', 'action' => 'logout'],
                                 [
-                                    'class' => 'block w-full text-left px-4 py-2 mt-4 text-base text-gray-700 hover:bg-gray-100 rounded'
+                                    'class' => 'block w-full text-left px-4 py-2 mt-4 text-base text-gray-700 hover:bg-gray-100 rounded',
                                 ]
                             ) ?>
                         </div>

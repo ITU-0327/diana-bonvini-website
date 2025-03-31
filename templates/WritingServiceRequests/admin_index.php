@@ -1,7 +1,7 @@
 <?php
 /**
  * @var \App\View\AppView $this
- * @var \App\Model\Entity\WritingServiceRequest[]|\Cake\Datasource\ResultSetInterface $writingServiceRequests
+ * @var \Cake\Datasource\ResultSetInterface|array<\App\Model\Entity\WritingServiceRequest> $writingServiceRequests
  */
 ?>
 <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
@@ -23,7 +23,7 @@
             </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
-            <?php foreach ($writingServiceRequests as $req): ?>
+            <?php foreach ($writingServiceRequests as $req) : ?>
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-2"><?= h($req->request_id) ?></td>
                     <td class="px-4 py-2">
@@ -40,7 +40,8 @@
                         <span class="local-time" data-datetime="<?= h($req->created_at->format('c')) ?>"></span>
                     </td>
                     <td class="px-4 py-2 space-x-2 whitespace-nowrap">
-                        <?= $this->Html->link('View',
+                        <?= $this->Html->link(
+                            'View',
                             ['action' => 'adminView', $req->request_id],
                             ['class' => 'text-blue-600 hover:underline']
                         ) ?>
