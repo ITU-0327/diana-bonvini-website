@@ -50,14 +50,6 @@
                     <td class="p-3"><?= $writingServiceRequest->final_price === null ? 'N/A' : $this->Number->format($writingServiceRequest->final_price) ?></td>
                 </tr>
                 <tr>
-                    <th class="p-3 font-semibold text-gray-700"><?= __('Created At') ?></th>
-                    <td class="p-3"><?= h($writingServiceRequest->created_at) ?></td>
-                </tr>
-                <tr class="bg-gray-50">
-                    <th class="p-3 font-semibold text-gray-700"><?= __('Updated At') ?></th>
-                    <td class="p-3"><?= h($writingServiceRequest->updated_at) ?></td>
-                </tr>
-                <tr>
                     <th class="p-3 font-semibold text-gray-700"><?= __('Document') ?></th>
                     <td class="p-3">
                         <?php if (!empty($writingServiceRequest->document)): ?>
