@@ -163,22 +163,24 @@ CREATE TABLE writing_service_requests (
     user_id CHAR(36) NOT NULL,
     service_type ENUM('creative_writing', 'editing', 'proofreading') NOT NULL,
     word_count_range VARCHAR(50) NOT NULL,
-    `notes` varchar(100) DEFAULT NULL,
-    `final_price` decimal(10,2) DEFAULT NULL,
-    `request_status` enum('pending','in_progress','expired') NOT NULL DEFAULT 'pending',
+    notes VARCHAR(100) DEFAULT NULL,
+    final_price DECIMAL(10,2) DEFAULT NULL,
+    request_status ENUM('pending', 'in_progress', 'expired') NOT NULL DEFAULT 'pending',
     is_deleted TINYINT NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    document varchar(255) DEFAULT NULL,
+    document VARCHAR(255) DEFAULT NULL,
     CONSTRAINT fk_writing_service_requests_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 ) ENGINE=InnoDB;
 
 --Table: request_messages
-CREATE TABLE `request_messages` (
-    `message_id` char(36) NOT NULL,
-    `request_id` char(36) NOT NULL,
-    `message` text NOT NULL,
-    `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    `sender_id` char(36) NOT NULL
+CREATE TABLE request_messages (
+    message_id CHAR(36) NOT NULL,
+    request_id CHAR(36) NOT NULL,
+    message TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    user_id CHAR(36) NOT NULL,
+    CONSTRAINT fk_request_messages_request FOREIGN KEY (request_id) REFERENCES writing_service_requests(request_id) ON DELETE CASCADE,
+    CONSTRAINT fk_request_messages_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 ) ENGINE=InnoDB
