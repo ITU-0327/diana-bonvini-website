@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use Cake\Http\Response;
-use Cake\Utility\Text;
 use Psr\Http\Message\UploadedFileInterface;
 
 /**
@@ -56,7 +55,6 @@ class WritingServiceRequestsController extends AppController
     {
         /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
-        $userId = $user?->get('user_id');
 
         if (!$user) {
             $this->Flash->error(__('You need to be logged in.'));
@@ -73,7 +71,7 @@ class WritingServiceRequestsController extends AppController
 
             if (!empty($data['reply_message'])) {
                 $data['request_messages'][] = [
-                    'user_id' => $userId,
+                    'user_id' => $user->user_id,
                     'message'   => $data['reply_message'],
                 ];
 
@@ -211,13 +209,89 @@ class WritingServiceRequestsController extends AppController
     }
 
     /**
+     * Admin index method
+     *
+     * @return \Cake\Http\Response|null|void Renders view
+     */
+    public function adminIndex()
+    {
+        $user = $this->Authentication->getIdentity();
+        if (!$user || $user->user_type !== 'admin') {
+            $this->Flash->error(__('You are not authorized to access admin area.'));
+
+            return $this->redirect(['controller' => 'Users', 'action' => 'login']);
+        }
+
+        $query = $this->WritingServiceRequests->find()
+            ->contain(['Users']);
+
+        $this->paginate = [
+            'order' => ['WritingServiceRequests.created_at' => 'DESC'],
+        ];
+
+        $writingServiceRequests = $this->paginate($query);
+        $this->set(compact('writingServiceRequests'));
+    }
+
+    /**
+     * Admin view method
+     *
+     * @param string|null $id Writing Service Request id.
+     * @return \Cake\Http\Response|null|void Renders view
+     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
+     */
+    public function adminView(?string $id = null)
+    {
+        /** @var \App\Model\Entity\User|null $user */
+        $user = $this->Authentication->getIdentity();
+
+        if (!$user || $user->user_type !== 'admin') {
+            $this->Flash->error(__('You are not authorized to access admin area.'));
+
+            return $this->redirect(['controller' => 'Users', 'action' => 'login']);
+        }
+
+        $writingServiceRequest = $this->WritingServiceRequests->get($id, [
+            'contain' => ['Users', 'RequestMessages.Users'],
+        ]);
+
+        if ($this->request->is(['post', 'put', 'patch'])) {
+            $data = $this->request->getData();
+
+            if (!empty($data['reply_message'])) {
+                // Append new message data to the request_messages association.
+                // (We assume here that your RequestMessagesTable uses "Users" as the alias for sender.)
+                $data['request_messages'][] = [
+                    'user_id' => $user->user_id,
+                    'message' => $data['reply_message'],
+                ];
+            }
+
+            $writingServiceRequest = $this->WritingServiceRequests->patchEntity(
+                $writingServiceRequest,
+                $data,
+            );
+
+            if ($this->WritingServiceRequests->save($writingServiceRequest)) {
+                $this->Flash->success(__('Request updated successfully (admin).'));
+
+                return $this->redirect(['action' => 'adminView', $id]);
+            } else {
+                $this->Flash->error(__('Failed to update. Please try again.'));
+            }
+        }
+
+        $this->set(compact('writingServiceRequest'));
+    }
+
+    /**
      * Handles document upload
      *
      * @param \Psr\Http\Message\UploadedFileInterface|null $file
      * @param string $redirectAction
      * @return \Cake\Http\Response|string|null
      */
-    private function handleDocumentUpload(?UploadedFileInterface $file, string $redirectAction): string|Response|null
+    protected function handleDocumentUpload(?UploadedFileInterface $file, string $redirectAction): string|Response|null
     {
         if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
             return null;
@@ -245,80 +319,5 @@ class WritingServiceRequestsController extends AppController
         $file->moveTo($filePath);
 
         return 'uploads/documents/' . $filename;
-    }
-
-    // src/Controller/WritingServiceRequestsController.php
-
-    public function adminIndex()
-    {
-        $user = $this->Authentication->getIdentity();
-        if (!$user || $user->user_type !== 'admin') {
-            $this->Flash->error(__('You are not authorized to access admin area.'));
-
-            return $this->redirect(['controller' => 'Users', 'action' => 'login']);
-        }
-
-        $query = $this->WritingServiceRequests->find()
-            ->contain(['Users']);
-
-        $this->paginate = [
-            'order' => ['WritingServiceRequests.created_at' => 'DESC'],
-        ];
-
-        $writingServiceRequests = $this->paginate($query);
-        $this->set(compact('writingServiceRequests'));
-    }
-
-    public function adminView(?string $id = null)
-    {
-        $user = $this->Authentication->getIdentity();
-        $userId = $user->get('user_id');
-
-        if (!$user || $user->user_type !== 'admin') {
-            $this->Flash->error(__('You are not authorized to access admin area.'));
-
-            return $this->redirect(['controller' => 'Users', 'action' => 'login']);
-        }
-
-        $writingServiceRequest = $this->WritingServiceRequests->get($id, [
-            'contain' => ['Users'],
-        ]);
-
-        $requestMessagesTable = $this->getTableLocator()->get('RequestMessages');
-
-        $messages = $requestMessagesTable->find()
-            ->contain(['Senders'])
-            ->where(['request_id' => $id])
-            ->orderAsc('RequestMessages.created_at')
-            ->all();
-
-        if ($this->request->is(['post', 'put', 'patch'])) {
-            $data = $this->request->getData();
-
-            $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $data);
-
-            if (!empty($data['reply_message'])) {
-                $newMessage = $requestMessagesTable->newEntity([
-                    'message_id' => Text::uuid(),
-                    'request_id' => $id,
-                    'sender_id'  => $userId,
-                    'message'    => $data['reply_message'],
-                ]);
-
-                if (!$requestMessagesTable->save($newMessage)) {
-                    $this->Flash->error(__('Failed to send admin message.'));
-                }
-            }
-
-            if ($this->WritingServiceRequests->save($writingServiceRequest)) {
-                $this->Flash->success(__('Request updated successfully (admin).'));
-
-                return $this->redirect(['action' => 'adminView', $id]);
-            } else {
-                $this->Flash->error(__('Failed to update. Please try again.'));
-            }
-        }
-
-        $this->set(compact('writingServiceRequest', 'messages', 'userId'));
     }
 }

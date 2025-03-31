@@ -2,8 +2,6 @@
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\WritingServiceRequest $writingServiceRequest
- * @var \Cake\Collection\CollectionInterface $messages
- * @var string $userId
  */
 ?>
 <div class="flex flex-col lg:flex-row gap-6 p-6">
@@ -14,16 +12,16 @@
             <div class="flex flex-col space-y-2">
                 <?= $this->Form->postLink(
                     'Delete This Request',
-                    ['action' => 'delete', $writingServiceRequest->request_id],
+                    ['action' => 'delete', $writingServiceRequest->writing_service_request_id],
                     [
-                        'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->request_id),
+                        'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->writing_service_request_id),
                         'class' => 'text-red-600 hover:underline',
-                    ]
+                    ],
                 ) ?>
                 <?= $this->Html->link(
                     'Back to All Requests',
                     ['action' => 'adminIndex'],
-                    ['class' => 'text-blue-600 hover:underline']
+                    ['class' => 'text-blue-600 hover:underline'],
                 ) ?>
             </div>
         </div>
@@ -33,7 +31,7 @@
     <div class="w-full lg:w-3/4">
         <div class="bg-white shadow rounded-lg p-6 space-y-4">
             <h3 class="text-2xl font-bold text-gray-800 mb-4">
-                Request #<?= h($writingServiceRequest->request_id) ?> (Admin View)
+                Request #<?= h($writingServiceRequest->writing_service_request_id) ?> (Admin View)
             </h3>
 
             <!-- Request Details -->
@@ -41,7 +39,9 @@
                 <tbody class="divide-y divide-gray-200">
                 <tr class="bg-gray-50">
                     <th class="p-3 font-semibold text-gray-700">User</th>
-                    <td class="p-3"><?= h($writingServiceRequest->user->first_name . ' ' . $writingServiceRequest->user->last_name) ?></td>
+                    <td class="p-3">
+                        <?= h($writingServiceRequest->user->first_name . ' ' . $writingServiceRequest->user->last_name) ?>
+                    </td>
                 </tr>
                 <tr>
                     <th class="p-3 font-semibold text-gray-700">Service Type</th>
@@ -61,15 +61,21 @@
                 </tr>
                 <tr>
                     <th class="p-3 font-semibold text-gray-700">Final Price</th>
-                    <td class="p-3"><?= $writingServiceRequest->final_price === null ? '' : $this->Number->format($writingServiceRequest->final_price) ?></td>
+                    <td class="p-3">
+                        <?= $writingServiceRequest->final_price === null ? '' : $this->Number->format($writingServiceRequest->final_price) ?>
+                    </td>
                 </tr>
                 <tr class="bg-gray-50">
                     <th class="p-3 font-semibold text-gray-700">Created At</th>
-                    <td class="p-3"><span class="local-time" data-datetime="<?= h($writingServiceRequest->created_at->format('c')) ?>"></span></td>
+                    <td class="p-3">
+                        <span class="local-time" data-datetime="<?= h($writingServiceRequest->created_at->format('c')) ?>"></span>
+                    </td>
                 </tr>
                 <tr>
                     <th class="p-3 font-semibold text-gray-700">Updated At</th>
-                    <td class="p-3"><span class="local-time" data-datetime="<?= h($writingServiceRequest->updated_at->format('c')) ?>"></span></td>
+                    <td class="p-3">
+                        <span class="local-time" data-datetime="<?= h($writingServiceRequest->updated_at->format('c')) ?>"></span>
+                    </td>
                 </tr>
                 <tr class="bg-gray-50">
                     <th class="p-3 font-semibold text-gray-700">Document</th>
@@ -89,13 +95,21 @@
 
             <!-- Conversation -->
             <h4 class="text-xl font-semibold mt-6">Conversation</h4>
-            <?php if (!empty($messages) && $messages->count() > 0) : ?>
+            <?php if (!empty($writingServiceRequest->request_messages) && count($writingServiceRequest->request_messages)) : ?>
                 <div class="space-y-4">
-                    <?php foreach ($messages as $msg) : ?>
-                        <div class="p-3 border rounded <?= $msg->sender_id === $userId ? 'bg-blue-50' : 'bg-green-50' ?>">
-                            <strong><?= h($msg->sender->first_name . ' ' . $msg->sender->last_name) ?></strong>
-                            <p><?= nl2br(h($msg->message)) ?></p>
-                            <small class="text-gray-500 local-time" data-datetime="<?= h($msg->created_at->format('c')) ?>"></small>
+                    <?php foreach ($writingServiceRequest->request_messages as $msg) : ?>
+                        <div class="p-4 border rounded bg-gray-50">
+                            <div class="mb-2 font-bold text-gray-700">
+                                <?= h($msg->user->first_name . ' ' . $msg->user->last_name) ?>
+                            </div>
+                            <div class="text-gray-800">
+                                <?= nl2br(h($msg->message)) ?>
+                            </div>
+                            <?php if (!empty($msg->created_at)) : ?>
+                                <div class="mt-1 text-sm text-gray-500">
+                                    <?= $msg->created_at->i18nFormat('yyyy-MM-dd HH:mm') ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -103,9 +117,11 @@
                 <p class="text-gray-500">No conversation yet.</p>
             <?php endif; ?>
 
-            <!-- Admin reply -->
+            <!-- Admin Reply -->
             <h4 class="text-xl font-semibold mt-6">Admin Reply</h4>
-            <?= $this->Form->create($writingServiceRequest, ['url' => ['action' => 'adminView', $writingServiceRequest->request_id]]) ?>
+            <?= $this->Form->create($writingServiceRequest, [
+                'url' => ['action' => 'adminView', $writingServiceRequest->writing_service_request_id],
+            ]) ?>
             <div class="space-y-4">
                 <?= $this->Form->control('final_price', [
                     'label' => 'Final Price',
@@ -116,7 +132,9 @@
                     'class' => 'w-full border-gray-300 rounded',
                 ]) ?>
                 <?= $this->Form->label('reply_message', 'Your Message') ?>
-                <?= $this->Form->textarea('reply_message', ['class' => 'w-full border-gray-300 rounded']) ?>
+                <?= $this->Form->textarea('reply_message', [
+                    'class' => 'w-full border-gray-300 rounded',
+                ]) ?>
             </div>
             <div class="mt-4">
                 <?= $this->Form->button('Send Message', [
@@ -141,7 +159,7 @@
                 day: '2-digit',
                 hour: '2-digit',
                 minute: '2-digit',
-                hour12: false,
+                hour12: true,
             });
         });
     });
