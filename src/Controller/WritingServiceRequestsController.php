@@ -100,8 +100,8 @@ class WritingServiceRequestsController extends AppController
      */
     public function add()
     {
+        /** @var \App\Model\Entity\User $user */
         $user = $this->Authentication->getIdentity();
-        $userId = $user?->get('user_id');
 
         $writingServiceRequest = $this->WritingServiceRequests->newEmptyEntity();
 
@@ -119,13 +119,7 @@ class WritingServiceRequestsController extends AppController
                 unset($data['document']);
             }
 
-            // (Optional) parse these if you still need them for something else
-            $serviceType     = $data['service_type_display'] ?? null;
-            $wordCountRange  = $data['word_count_range_display'] ?? null;
-
-            $data['service_type']      = $serviceType;
-            $data['word_count_range']  = $wordCountRange;
-            $data['user_id']           = $userId;
+            $data['user_id'] = $user->user_id;
 
             $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $data);
 
@@ -137,7 +131,7 @@ class WritingServiceRequestsController extends AppController
             $this->Flash->error(__('The writing service request could not be saved. Please, try again.'));
         }
 
-        $this->set(compact('writingServiceRequest', 'userId'));
+        $this->set(compact('writingServiceRequest'));
     }
 
     /**
@@ -151,7 +145,6 @@ class WritingServiceRequestsController extends AppController
     {
         /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
-        $userId = $user?->get('user_id');
         $writingServiceRequest = $this->WritingServiceRequests->get($id);
 
         if ($this->request->is(['patch', 'post', 'put'])) {
@@ -168,7 +161,7 @@ class WritingServiceRequestsController extends AppController
                 unset($data['document']);
             }
 
-            $data['user_id'] = $userId;
+            $data['user_id'] = $user->user_id;
 
             $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $data);
 
@@ -181,7 +174,7 @@ class WritingServiceRequestsController extends AppController
             $this->Flash->error(__('The writing service request could not be saved. Please, try again.'));
         }
 
-        $this->set(compact('writingServiceRequest', 'userId'));
+        $this->set(compact('writingServiceRequest'));
     }
 
     /**

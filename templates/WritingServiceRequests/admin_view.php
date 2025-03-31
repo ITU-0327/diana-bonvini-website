@@ -95,19 +95,22 @@
 
             <!-- Conversation -->
             <h4 class="text-xl font-semibold mt-6">Conversation</h4>
-            <?php if (!empty($writingServiceRequest->request_messages) && count($writingServiceRequest->request_messages)) : ?>
+            <?php if (!empty($writingServiceRequest->request_messages)) : ?>
                 <div class="space-y-4">
                     <?php foreach ($writingServiceRequest->request_messages as $msg) : ?>
-                        <div class="p-4 border rounded bg-gray-50">
-                            <div class="mb-2 font-bold text-gray-700">
-                                <?= h($msg->user->first_name . ' ' . $msg->user->last_name) ?>
+                        <?php
+                        $isAdmin = isset($msg->user) && strtolower($msg->user->user_type) === 'admin';
+                        ?>
+                        <div class="p-4 rounded-lg <?= $isAdmin ? 'bg-blue-100 rounded-bl-none' : 'bg-green-100 rounded-br-none' ?>">
+                            <div class="mb-1 font-bold text-sm text-gray-700">
+                                <?= h($msg->user->first_name . ' ' . $msg->user->last_name . ($isAdmin ? ' (Admin)' : '')) ?>
                             </div>
-                            <div class="text-gray-800">
+                            <div class="text-gray-800 text-sm">
                                 <?= nl2br(h($msg->message)) ?>
                             </div>
                             <?php if (!empty($msg->created_at)) : ?>
-                                <div class="mt-1 text-sm text-gray-500">
-                                    <?= $msg->created_at->i18nFormat('yyyy-MM-dd HH:mm') ?>
+                                <div class="mt-1 text-xs text-gray-500">
+                                    <span class="local-time" data-datetime="<?= h($msg->created_at->format('c')) ?>"></span>
                                 </div>
                             <?php endif; ?>
                         </div>

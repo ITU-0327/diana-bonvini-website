@@ -20,7 +20,7 @@ $this->assign('title', 'Landing Page Example');
                 [
                     'class' => 'button-style',
                     'style' => 'margin-right: 1rem; padding: 0.5rem 1rem; background-color: #333; color: #fff; text-decoration: none; border-radius: 4px;',
-                ]
+                ],
             ) ?>
             <?php
             $user = $this->request->getAttribute('identity');
@@ -34,7 +34,7 @@ $this->assign('title', 'Landing Page Example');
                     [
                         'class' => 'button-style',
                         'style' => 'padding: 0.5rem 1rem; background-color: #333; color: #fff; text-decoration: none; border-radius: 4px;',
-                    ]
+                    ],
                 ) ?>
             <?php else : ?>
                 <?= $this->Html->link(
@@ -43,7 +43,7 @@ $this->assign('title', 'Landing Page Example');
                     [
                         'class' => 'button-style',
                         'style' => 'padding: 0.5rem 1rem; background-color: #333; color: #fff; text-decoration: none; border-radius: 4px;',
-                    ]
+                    ],
                 ) ?>
             <?php endif; ?>
         </div>

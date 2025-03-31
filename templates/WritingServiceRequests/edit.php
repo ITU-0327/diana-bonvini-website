@@ -1,10 +1,17 @@
+<?php
+/**
+ * @var \App\View\AppView $this
+ * @var \App\Model\Entity\WritingServiceRequest $writingServiceRequest
+ */
+?>
+
 <div class="flex flex-col lg:flex-row gap-6 p-6 max-w-5xl mx-auto">
     <aside class="w-full lg:w-1/4">
         <div class="bg-white p-4 shadow rounded">
             <h4 class="text-lg font-semibold text-gray-700 mb-4"><?= __('Actions') ?></h4>
             <div class="flex flex-col space-y-2">
-                <?= $this->Form->postLink(__('Delete'), ['action' => 'delete', $writingServiceRequest->request_id], [
-                    'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->request_id),
+                <?= $this->Form->postLink(__('Delete'), ['action' => 'delete', $writingServiceRequest->writing_service_request_id], [
+                    'confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->writing_service_request_id),
                     'class' => 'text-red-600 hover:underline',
                 ]) ?>
                 <?= $this->Html->link(__('Back To My Request List'), ['action' => 'index'], [
@@ -19,8 +26,6 @@
             <?= $this->Form->create($writingServiceRequest, ['type' => 'file']) ?>
             <fieldset class="space-y-6">
                 <legend class="text-2xl font-bold text-gray-800 mb-4"><?= __('Edit Writing Service Request') ?></legend>
-
-                <?= $this->Form->hidden('user_id', ['value' => $userId]) ?>
 
                 <div>
                     <?= $this->Form->label('service_type', 'Service Type', ['class' => 'block font-medium text-gray-700']) ?>
@@ -126,7 +131,7 @@
                 day: '2-digit',
                 hour: '2-digit',
                 minute: '2-digit',
-                hour12: false,
+                hour12: true,
             });
         });
     });

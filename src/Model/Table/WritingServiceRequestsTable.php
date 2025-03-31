@@ -49,8 +49,7 @@ class WritingServiceRequestsTable extends Table
 
         $this->hasMany('RequestMessages', [
             'foreignKey' => 'writing_service_request_id',
-            'joinType' => 'INNER',
-            'order' => ['RequestMessages.created_at' => 'DESC'],
+            'sort' => ['RequestMessages.created_at' => 'DESC'],
         ]);
     }
 
