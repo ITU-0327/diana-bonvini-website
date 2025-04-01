@@ -1,59 +1,75 @@
-<!-- File: templates/Pages/landingpage.php -->
-
 <?php
 /**
  * @var \App\View\AppView $this
  */
-$this->assign('title', 'Landing Page Example');
+$this->assign('title', 'Diana Bonvini - Artist & Writer');
 ?>
 
-<div style="display: flex; justify-content: center; align-items: center; gap: 2rem; margin: 2rem;">
-    <!-- Text block on the left -->
-    <div style="flex: 1;">
-        <h1>Welcome to Diana Bonvini page</h1>
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
 
-        <!-- button -->
-        <div style="margin-top: 1rem;">
-            <?= $this->Html->link(
-                'Shop Art',
-                ['controller' => 'Artworks', 'action' => 'index'],
-                [
-                    'class' => 'button-style',
-                    'style' => 'margin-right: 1rem; padding: 0.5rem 1rem; background-color: #333; color: #fff; text-decoration: none; border-radius: 4px;',
-                ],
-            ) ?>
-            <?php
-            $user = $this->request->getAttribute('identity');
-            $userType = $user?->get('user_type');
-            ?>
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
 
-            <?php if ($userType === 'admin') : ?>
-                <?= $this->Html->link(
-                    'Check All Writing Service Requests',
-                    ['controller' => 'WritingServiceRequests', 'action' => 'adminIndex'],
-                    [
-                        'class' => 'button-style',
-                        'style' => 'padding: 0.5rem 1rem; background-color: #333; color: #fff; text-decoration: none; border-radius: 4px;',
-                    ],
-                ) ?>
-            <?php else : ?>
-                <?= $this->Html->link(
-                    'Get A Writing Service',
-                    ['controller' => 'WritingServiceRequests', 'action' => 'add'],
-                    [
-                        'class' => 'button-style',
-                        'style' => 'padding: 0.5rem 1rem; background-color: #333; color: #fff; text-decoration: none; border-radius: 4px;',
-                    ],
-                ) ?>
-            <?php endif; ?>
-        </div>
+    .gradient-overlay {
+        background: linear-gradient(45deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%);
+    }
+
+    .full-bleed {
+        position: fixed;
+        top: 64px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: calc(100vh - 64px);
+        object-fit: cover;
+        object-position: center;
+    }
+</style>
+
+<div class="relative h-screen w-screen overflow-hidden">
+    <!-- Full-bleed Background -->
+    <div class="full-bleed">
+        <img src="<?= $this->Url->assetUrl('img/Landingpage/Landing-Page-Db.jpg') ?>"
+             alt="Diana Bonvini Artistic Background"
+             class="full-bleed transform transition-transform duration-1000 ease-out">
     </div>
 
-    <!-- right side image -->
-    <div style="flex: 1;">
-        <?= $this->Html->image('Landingpage/wallowing-breeze-main.png', [
-            'alt' => 'Wallowing Breeze Image',
-            'style' => 'max-width: 100%; height: auto; border: 1px solid #ccc;',
-        ]) ?>
+    <!-- Gradient Overlay -->
+    <div class="full-bleed gradient-overlay"></div>
+
+    <!-- Centered Main Content -->
+    <div class="relative z-10 flex items-center justify-center" style="height: calc(100vh - 64px);">
+        <div class="text-center text-white animate-fadeIn">
+            <h2 class="text-5xl font-serif mb-6">Where Art Meets Literature</h2>
+            <p class="text-xl mb-12 max-w-2xl mx-auto">
+                Experience the intersection of visual beauty and eloquent storytelling through contemporary creations.
+            </p>
+            <div class="space-x-8">
+                <?= $this->Html->link(
+                    'Explore Art Collection →',
+                    ['controller' => 'Artworks', 'action' => 'index'],
+                    [
+                        'class' => 'px-10 py-4 bg-transparent border-2 border-amber-400 text-amber-400 hover:bg-amber-400 hover:text-black transition-all rounded-full',
+                    ],
+                ) ?>
+                <?= $this->Html->link(
+                    'Request Writing Service →',
+                    ['controller' => 'WritingServiceRequests', 'action' => 'add'],
+                    [
+                        'class' => 'px-10 py-4 bg-amber-400 text-black hover:bg-amber-500 transform hover:scale-105 transition-all rounded-full',
+                    ],
+                ) ?>
+            </div>
+        </div>
     </div>
 </div>
