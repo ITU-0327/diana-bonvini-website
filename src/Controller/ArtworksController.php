@@ -5,6 +5,7 @@ namespace App\Controller;
 
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
+use Exception;
 
 /**
  * Artworks Controller
@@ -49,7 +50,18 @@ class ArtworksController extends AppController
     public function view(?string $id = null)
     {
         $artwork = $this->Artworks->get($id, contain: []);
-        $this->set(compact('artwork'));
+
+        $filename = basename($artwork->image_path);
+        $originalPath = WWW_ROOT . 'img/' . $artwork->image_path;
+        $watermarkedPath = WWW_ROOT . 'img/watermarked/' . $filename;
+
+        if (!file_exists($watermarkedPath)) {
+            $this->addTiledWatermark($originalPath, $watermarkedPath);
+        }
+
+        $watermarkedUrl = '/img/watermarked/' . $filename;
+
+        $this->set(compact('artwork', 'watermarkedUrl'));
     }
 
     /**
@@ -132,5 +144,88 @@ class ArtworksController extends AppController
         }
 
         return $this->redirect(['action' => 'index']);
+    }
+
+    /**
+     * @param string $originalPath
+     * @param string $outputPath
+     * @return void
+     * @throws \Exception
+     */
+    private function addTiledWatermark(string $originalPath, string $outputPath): void
+    {
+        if (!file_exists($originalPath) || !is_file($originalPath)) {
+            throw new Exception("Original image does not exist or is not a valid file: $originalPath");
+        }
+
+        $dir = dirname($outputPath);
+        if (!is_dir($dir)) {
+            mkdir($dir, 0775, true);
+        }
+
+        $info = getimagesize($originalPath);
+        if (!$info || !isset($info['mime'])) {
+            throw new Exception("Unable to obtain image type: $originalPath");
+        }
+
+        $mime = $info['mime'];
+
+        switch ($mime) {
+            case 'image/jpeg':
+                $im = imagecreatefromjpeg($originalPath);
+                break;
+            case 'image/png':
+                $im = imagecreatefrompng($originalPath);
+                break;
+            case 'image/webp':
+                $im = imagecreatefromwebp($originalPath);
+                break;
+            default:
+                throw new Exception("Unsupported picture types: $mime");
+        }
+
+        if (!$im) {
+            throw new Exception("Unable to load original image resource: $originalPath");
+        }
+
+        $width = imagesx($im);
+        $height = imagesy($im);
+
+        $watermark = imagecreatetruecolor($width, $height);
+        imagesavealpha($watermark, true);
+        $transparent = imagecolorallocatealpha($watermark, 0, 0, 0, 127);
+        imagefill($watermark, 0, 0, $transparent);
+
+        $text = 'dbdesign';
+        $fontSize = 50;
+        $angle = -45;
+        $fontPath = WWW_ROOT . 'font/arial.ttf';
+        if (!file_exists($fontPath)) {
+            throw new Exception("Files not found: $fontPath");
+        }
+        $textColor = imagecolorallocatealpha($watermark, 0, 0, 0, 75);
+
+        for ($y = -100; $y < $height + 100; $y += 100) {
+            for ($x = -100; $x < $width + 100; $x += 250) {
+                imagettftext($watermark, $fontSize, $angle, $x, $y, $textColor, $fontPath, $text);
+            }
+        }
+
+        imagecopy($im, $watermark, 0, 0, 0, 0, $width, $height);
+
+        switch ($mime) {
+            case 'image/jpeg':
+                imagejpeg($im, $outputPath, 90);
+                break;
+            case 'image/png':
+                imagepng($im, $outputPath);
+                break;
+            case 'image/webp':
+                imagewebp($im, $outputPath);
+                break;
+        }
+
+        imagedestroy($im);
+        imagedestroy($watermark);
     }
 }
