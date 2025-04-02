@@ -36,7 +36,6 @@ class ArtworksController extends AppController
     {
         $query = $this->Artworks->find()->where(['is_deleted' => 0]);
         $artworks = $this->paginate($query);
-
         $this->set(compact('artworks'));
     }
 
@@ -62,7 +61,27 @@ class ArtworksController extends AppController
     {
         $artwork = $this->Artworks->newEmptyEntity();
         if ($this->request->is('post')) {
-            $artwork = $this->Artworks->patchEntity($artwork, $this->request->getData());
+            $data = $this->request->getData();
+
+            $image = $data['image_path'];
+            if ($image && $image->getError() === UPLOAD_ERR_OK) {
+                $fileName = time() . '_' . $image->getClientFilename();
+                $targetPath = WWW_ROOT . 'img' . DS . 'Artworks' . DS . $fileName;
+
+                $dir = WWW_ROOT . 'img' . DS . 'Artworks';
+                if (!file_exists($dir)) {
+                    mkdir($dir, 0755, true);
+                }
+
+                $image->moveTo($targetPath);
+                $data['image_path'] = 'Artworks/' . $fileName;
+            } else {
+                $data['image_path'] = null;
+            }
+
+            $data['availability_status'] = 'available';
+
+            $artwork = $this->Artworks->patchEntity($artwork, $data);
             if ($this->Artworks->save($artwork)) {
                 $this->Flash->success(__('The artwork has been saved.'));
 

@@ -4,6 +4,12 @@
  * @var iterable<\App\Model\Entity\Artwork> $artworks
  */
 ?>
+
+<?php
+$user = $this->getRequest()->getAttribute('identity');
+$userType = $user?->get('user_type');
+?>
+
 <div class="max-w-6xl mx-auto px-4 py-8">
     <!-- Heading with a short underline on the left -->
     <div class="flex flex-col items-start mb-8">
@@ -19,6 +25,14 @@
         <button id="filter-sold" class="px-4 py-2 bg-gray-500 text-white rounded-full hover:bg-gray-600 transition">
             Art Sold
         </button>
+
+        <?php if ($userType === 'admin') : ?>
+            <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'add']) ?>"
+               class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                ➕ Add New Artwork
+            </a>
+        <?php endif; ?>
+
     </div>
 
     <!-- Artworks Grid -->
@@ -42,7 +56,6 @@
                         <h2 class="text-xl font-bold mb-2"><?= h($artwork->title) ?></h2>
                         <p class="mb-4">$<?= $this->Number->format($artwork->price) ?></p>
 
-                        <!-- Add to Cart Button (prevent parent click) -->
                         <?= $this->Form->create(null, [
                             'url' => ['controller' => 'Carts', 'action' => 'add', $artwork->artwork_id],
                             'class' => 'no-detail'
