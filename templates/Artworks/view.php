@@ -13,10 +13,36 @@ $user = $this->request->getAttribute('identity');
         <div class="space-y-6">
             <!-- Main Artwork Image -->
             <div class="bg-white shadow rounded p-4 flex items-center justify-center">
-                <?= $this->Html->image($artwork->image_path, [
-                    'alt'   => $artwork->title,
+                <?= $this->Html->image($watermarkedUrl, [
+                    'alt' => $artwork->title,
                     'class' => 'object-cover max-h-96',
                 ]) ?>
+            </div>
+
+            <!-- Thumbnails -->
+            <div class="flex space-x-2">
+                <div class="w-20 h-20 bg-white shadow rounded p-1 flex items-center justify-center">
+                    <img
+                        src="/img/artworks/wallowing-breeze-thumb1.jpg"
+                        alt="Wallowing Breeze Thumbnail 1"
+                        class="object-cover h-full"
+                    />
+                </div>
+                <div class="w-20 h-20 bg-white shadow rounded p-1 flex items-center justify-center">
+                    <img
+                        src="/img/artworks/wallowing-breeze-thumb2.jpg"
+                        alt="Wallowing Breeze Thumbnail 2"
+                        class="object-cover h-full"
+                    />
+                </div>
+            </div>
+
+            <!-- "View in a room" Link -->
+            <div>
+                <a href="#"
+                   class="inline-block text-sm text-indigo-600 hover:text-indigo-500 underline">
+                    View in a room
+                </a>
             </div>
         </div>
 
