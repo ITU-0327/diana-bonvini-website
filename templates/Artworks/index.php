@@ -4,7 +4,14 @@
  * @var iterable<\App\Model\Entity\Artwork> $artworks
  */
 ?>
+
+<?php
+$user = $this->getRequest()->getAttribute('identity');
+$userType = $user?->get('user_type');
+?>
+
 <div class="max-w-6xl mx-auto px-4 py-8">
+
     <h1 class="text-3xl font-bold mb-6">Art Gallery</h1>
 
     <!-- Filter Buttons: Only two options -->
@@ -15,6 +22,14 @@
         <button id="filter-sold" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
             Art Sold
         </button>
+
+        <?php if ($userType === 'admin') : ?>
+            <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'add']) ?>"
+               class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                ➕ Add New Artwork
+            </a>
+        <?php endif; ?>
+
     </div>
 
     <!-- Artworks Grid -->
@@ -69,6 +84,7 @@
                             <span class="text-red-600 font-bold">Sold</span>
                         </div>
                     <?php endif; ?>
+
                 </div>
             </a>
         <?php endforeach; ?>
