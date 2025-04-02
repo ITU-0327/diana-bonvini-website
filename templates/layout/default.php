@@ -9,44 +9,61 @@ $siteTitle = 'Diana Bonvini Art & Writing';
 ?>
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <?= $this->Html->charset() ?>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title><?= $siteTitle ?>: <?= $this->fetch('title') ?></title>
-        <?= $this->Html->meta('icon') ?>
+<head>
+    <?= $this->Html->charset() ?>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?= $siteTitle ?>: <?= $this->fetch('title') ?></title>
+    <?= $this->Html->meta('icon') ?>
 
-        <!-- Tailwind CSS CDN for rapid development -->
-        <script src="https://cdn.tailwindcss.com"></script>
-        <?= $this->Html->css('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css');?>
-        <?= $this->Html->css('styles.css') ?>
+    <!-- Tailwind CSS CDN for rapid development -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <?= $this->Html->css('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css'); ?>
+    <?= $this->Html->css('styles.css') ?>
 
-        <?= $this->fetch('meta') ?>
-        <?= $this->fetch('css') ?>
-        <?= $this->fetch('script') ?>
-        <?= $this->Html->css('about') ?>
-    </head>
-    <!-- Using flex-col and min-h-screen so that the main content grows -->
-    <body class="bg-gray-50 min-h-screen flex flex-col">
-        <!-- Navigation -->
-        <?= $this->element('navbar') ?>
+    <?= $this->fetch('meta') ?>
+    <?= $this->fetch('css') ?>
+    <?= $this->fetch('script') ?>
+    <?= $this->Html->css('about') ?>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+<!-- Navigation -->
+<?= $this->element('navbar') ?>
 
-        <!-- Main Content set to flex-grow to push the footer down -->
-        <main class="flex-grow container mx-auto py-10">
-            <?= $this->Flash->render() ?>
-            <?= $this->fetch('content') ?>
-        </main>
+<!-- Main Content set to flex-grow to push the footer down -->
+<main class="flex-grow container mx-auto py-10">
+    <?= $this->Flash->render() ?>
+    <?= $this->fetch('content') ?>
+</main>
 
-        <!-- Footer will always stick to the bottom -->
-        <footer class="bg-gray-800 text-gray-300 py-4">
-            <div class="container mx-auto text-center">
-                &copy; <?= date('Y') ?> Diana Bonvini. All rights reserved.
+<!-- Surprising New Footer -->
+<footer class="bg-gradient-to-r from-teal-600 to-teal-800 text-white py-8">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+            <div class="mb-4 md:mb-0">
+                <h3 class="text-2xl font-bold">diana bonvini.</h3>
             </div>
-        </footer>
+            <div class="flex space-x-4">
+                <a href="#" class="hover:text-gray-300 transition">
+                    <i class="fab fa-facebook-f"></i>
+                </a>
+                <a href="#" class="hover:text-gray-300 transition">
+                    <i class="fab fa-instagram"></i>
+                </a>
+                <a href="#" class="hover:text-gray-300 transition">
+                    <i class="fab fa-linkedin-in"></i>
+                </a>
+            </div>
+        </div>
+        <div class="mt-4 border-t border-teal-400 pt-4 text-center text-sm">
+            &copy; <?= date('Y') ?> Diana Bonvini. All rights reserved.
+        </div>
+    </div>
+</footer>
 
-        <?= $this->fetch('scriptBottom') ?>
-        <?= $this->Html->script('https://unpkg.com/lucide@latest') ?>
-        <script>
-            lucide.createIcons();
-        </script>
-    </body>
+<?= $this->fetch('scriptBottom') ?>
+<?= $this->Html->script('https://unpkg.com/lucide@latest') ?>
+<script>
+    lucide.createIcons();
+</script>
+</body>
 </html>
