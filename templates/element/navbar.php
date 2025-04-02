@@ -108,7 +108,9 @@ $userType = $user?->get('user_type');
                             </svg>
                         </a>
                         <!-- Dropdown -->
-                        <ul class="absolute left-0 top-full w-48 bg-white border border-gray-200 rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-300 z-10">
+                        <ul class="absolute left-0 top-full mt-0 min-w-[12rem] bg-white border border-gray-200 rounded shadow-lg
+           opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto
+           transition-opacity duration-300 z-20">
                             <li>
                                 <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index']) ?>"
                                    class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
