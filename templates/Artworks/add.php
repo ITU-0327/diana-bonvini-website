@@ -13,18 +13,15 @@
     </aside>
     <div class="column column-80">
         <div class="artworks form content">
-            <?= $this->Form->create($artwork) ?>
+            <?= $this->Form->create($artwork, ['type' => 'file']) ?>
             <fieldset>
                 <legend><?= __('Add Artwork') ?></legend>
                 <?php
                     echo $this->Form->control('title');
                     echo $this->Form->control('description');
-                    echo $this->Form->control('image_path');
+                    echo $this->Form->control('image_path', ['type' => 'file']);
                     echo $this->Form->control('price');
-                    echo $this->Form->control('availability_status');
-                    echo $this->Form->control('is_deleted');
-                    echo $this->Form->control('created_at');
-                    echo $this->Form->control('updated_at');
+
                 ?>
             </fieldset>
             <?= $this->Form->button(__('Submit')) ?>
