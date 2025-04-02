@@ -2,11 +2,17 @@
 /**
  * @var \App\View\AppView $this
  */
+$this->assign('title', 'Contact Me');
 ?>
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Header with left underline -->
+    <div class="flex flex-col items-start mb-8">
+        <h1 class="text-3xl uppercase text-gray-800">Contact Me</h1>
+        <div class="mt-1 w-16 h-[2px] bg-gray-800"></div>
+    </div>
 
-<div class="max-w-3xl mx-auto p-6">
+    <!-- Contact Card -->
     <div class="bg-white shadow rounded-lg p-6">
-        <h1 class="text-3xl font-bold text-gray-800 mb-4">Contact Me</h1>
         <p class="text-gray-700 mb-6">
             If you have any questions about writing services, artwork, or custom commissions, feel free to reach out.
         </p>
@@ -21,7 +27,7 @@
             </ul>
         </div>
 
-        <!-- Social Links with Icons -->
+        <!-- Social Links -->
         <div class="mt-6">
             <h2 class="text-lg font-semibold text-gray-800 mb-2">Follow Me</h2>
             <div class="flex gap-4 items-center text-gray-600">

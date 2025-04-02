@@ -4,57 +4,51 @@
  * @var \App\Model\Entity\Order $order
  */
 ?>
-<div class="row">
-    <aside class="column">
-        <div class="side-nav">
-            <h4 class="heading"><?= __('Actions') ?></h4>
-            <?= $this->Html->link(__('Edit Order'), ['action' => 'edit', $order->order_id], ['class' => 'side-nav-item']) ?>
-            <?= $this->Form->postLink(__('Delete Order'), ['action' => 'delete', $order->order_id], ['confirm' => __('Are you sure you want to delete # {0}?', $order->order_id), 'class' => 'side-nav-item']) ?>
-            <?= $this->Html->link(__('List Orders'), ['action' => 'index'], ['class' => 'side-nav-item']) ?>
-            <?= $this->Html->link(__('New Order'), ['action' => 'add'], ['class' => 'side-nav-item']) ?>
-        </div>
-    </aside>
-    <div class="column column-80">
-        <div class="orders view content">
-            <h3><?= h($order->payment_method) ?></h3>
-            <table>
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Header with left underline -->
+    <div class="flex flex-col items-start mb-8">
+        <h1 class="text-3xl uppercase text-gray-800">Order Details</h1>
+        <div class="mt-1 w-16 h-[2px] bg-gray-800"></div>
+    </div>
+
+    <!-- Order Details Card -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <table class="min-w-full">
+            <tbody class="divide-y divide-gray-200">
+            <tr>
+                <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Order ID</th>
+                <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h($order->order_id) ?></td>
+            </tr>
+            <?php if ($order->has('user')): ?>
                 <tr>
-                    <th><?= __('Order Id') ?></th>
-                    <td><?= h($order->order_id) ?></td>
+                    <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">User</th>
+                    <td class="py-3 px-6 text-left text-sm text-gray-800">
+                        <?= $this->Html->link($order->user->first_name . ' ' . $order->user->last_name, ['controller' => 'Users', 'action' => 'view', $order->user->user_id]) ?>
+                    </td>
                 </tr>
-                <tr>
-                    <th><?= __('User') ?></th>
-                    <td><?= $order->hasValue('user') ? $this->Html->link($order->user->first_name, ['controller' => 'Users', 'action' => 'view', $order->user->user_id]) : '' ?></td>
-                </tr>
-                <tr>
-                    <th><?= __('Payment Method') ?></th>
-                    <td><?= h($order->payment_method) ?></td>
-                </tr>
-                <tr>
-                    <th><?= __('Order Status') ?></th>
-                    <td><?= h($order->order_status) ?></td>
-                </tr>
-                <tr>
-                    <th><?= __('Total Amount') ?></th>
-                    <td><?= $this->Number->format($order->total_amount) ?></td>
-                </tr>
-                <tr>
-                    <th><?= __('Is Deleted') ?></th>
-                    <td><?= $this->Number->format($order->is_deleted) ?></td>
-                </tr>
-                <tr>
-                    <th><?= __('Order Date') ?></th>
-                    <td><?= h($order->order_date) ?></td>
-                </tr>
-                <tr>
-                    <th><?= __('Created At') ?></th>
-                    <td><?= h($order->created_at) ?></td>
-                </tr>
-                <tr>
-                    <th><?= __('Updated At') ?></th>
-                    <td><?= h($order->updated_at) ?></td>
-                </tr>
-            </table>
-        </div>
+            <?php endif; ?>
+            <tr>
+                <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Payment Method</th>
+                <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h($order->payment_method) ?></td>
+            </tr>
+            <tr>
+                <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Order Status</th>
+                <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h($order->order_status) ?></td>
+            </tr>
+            <tr>
+                <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Total Amount</th>
+                <td class="py-3 px-6 text-left text-sm text-gray-800">$<?= $this->Number->format($order->total_amount) ?></td>
+            </tr>
+            <tr>
+                <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Order Date</th>
+                <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h($order->order_date) ?></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Action Link -->
+    <div class="mt-6 text-center">
+        <?= $this->Html->link('Back to Orders', ['action' => 'index'], ['class' => 'text-teal-600 hover:text-teal-700 font-semibold']) ?>
     </div>
 </div>

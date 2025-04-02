@@ -1,41 +1,48 @@
-
 <?php
 /**
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\Order> $orders
  */
 ?>
-<div class="max-w-6xl mx-auto py-8">
-    <h2 class="text-3xl font-bold text-gray-800 mb-6">My Orders</h2>
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Header with left-aligned underline -->
+    <div class="flex flex-col items-start mb-8">
+        <h1 class="text-3xl uppercase text-gray-800">My Orders</h1>
+        <div class="mt-1 w-16 h-[2px] bg-gray-800"></div>
+    </div>
+
+
     <div class="overflow-x-auto">
-        <table class="min-w-full bg-white shadow rounded-lg">
+        <table class="min-w-full bg-white rounded-lg shadow">
             <thead>
-            <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+            <tr class="bg-gray-100 text-gray-600 uppercase text-sm">
                 <th class="py-3 px-6 text-left">Order ID</th>
-                <th class="py-3 px-6 text-left">Total Amount</th>
-                <th class="py-3 px-6 text-left">Payment Method</th>
-                <th class="py-3 px-6 text-left">Order Status</th>
-                <th class="py-3 px-6 text-left">Order Date</th>
+                <th class="py-3 px-6 text-left">Total</th>
+                <th class="py-3 px-6 text-left">Status</th>
                 <th class="py-3 px-6 text-center">Details</th>
             </tr>
             </thead>
-            <tbody class="text-gray-700 text-sm font-light">
-            <?php foreach ($orders as $order) : ?>
+            <tbody class="text-gray-700 text-sm">
+            <?php foreach ($orders as $order): ?>
                 <tr class="border-b border-gray-200 hover:bg-gray-50">
-                    <td class="py-3 px-6 text-left"><?= h($order->payment->payment_id) ?></td>
-                    <td class="py-3 px-6 text-left"><?= $this->Number->format($order->total_amount) ?></td>
-                    <td class="py-3 px-6 text-left"><?= h($order->payment->payment_method) ?></td>
-                    <td class="py-3 px-6 text-left"><?= h($order->order_status) ?></td>
-                    <td class="py-3 px-6 text-left"><?= h($order->order_date) ?></td>
+                    <td class="py-3 px-6"><?= h($order->order_id) ?></td>
+                    <td class="py-3 px-6">$<?= $this->Number->format($order->total_amount) ?></td>
+                    <td class="py-3 px-6"><?= h($order->order_status) ?></td>
                     <td class="py-3 px-6 text-center">
-                        <?= $this->Html->link('View', ['action' => 'view', $order->order_id], ['class' => 'bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600']) ?>
+                        <?= $this->Html->link(
+                            'View',
+                            ['action' => 'view', $order->order_id],
+                            ['class' => 'bg-teal-600 text-white py-1 px-3 rounded hover:bg-teal-700 transition']
+                        ) ?>
                     </td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
         </table>
     </div>
-    <div class="mt-4">
+
+    <!-- Pagination -->
+    <div class="mt-6">
         <ul class="flex justify-center space-x-2">
             <?= $this->Paginator->first('<<', ['class' => 'px-3 py-1 bg-gray-200 rounded']) ?>
             <?= $this->Paginator->prev('<', ['class' => 'px-3 py-1 bg-gray-200 rounded']) ?>

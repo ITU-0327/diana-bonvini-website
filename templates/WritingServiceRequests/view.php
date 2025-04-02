@@ -4,118 +4,108 @@
  * @var \App\Model\Entity\WritingServiceRequest $writingServiceRequest
  */
 ?>
-<div class="flex flex-col lg:flex-row gap-6 p-6">
-    <!-- Sidebar -->
-    <aside class="w-full lg:w-1/4">
-        <div class="bg-white shadow rounded-lg p-4">
-            <h4 class="text-lg font-semibold text-gray-700 mb-4"><?= __('Actions') ?></h4>
-            <div class="flex flex-col space-y-2">
-                <?= $this->Html->link(__('Edit This Request'), ['action' => 'edit', $writingServiceRequest->writing_service_request_id], ['class' => 'text-blue-600 hover:underline']) ?>
-                <?= $this->Form->postLink(
-                    __('Delete This Request'),
-                    ['action' => 'delete', $writingServiceRequest->writing_service_request_id],
-                    ['confirm' => __('Are you sure you want to delete # {0}?', $writingServiceRequest->writing_service_request_id), 'class' => 'text-red-600 hover:underline'],
-                ) ?>
-                <?= $this->Html->link(__('View My Requests'), ['action' => 'index'], ['class' => 'text-blue-600 hover:underline']) ?>
-                <?= $this->Html->link(__('Make A New Request'), ['action' => 'add'], ['class' => 'text-blue-600 hover:underline']) ?>
-            </div>
-        </div>
-    </aside>
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <!-- Header with left underline -->
+    <div class="flex flex-col items-start mb-8">
+        <h1 class="text-3xl uppercase text-gray-800">Writing Service Request Details</h1>
+        <div class="mt-1 w-16 h-[2px] bg-gray-800"></div>
+    </div>
 
-    <!-- Main content -->
-    <div class="w-full lg:w-3/4">
-        <div class="bg-white shadow rounded-lg p-6">
-            <h3 class="text-2xl font-bold text-gray-800 mb-6">
-                <?= h($writingServiceRequest->service_type) ?> Request Details
-            </h3>
-
-            <!-- Request info -->
-            <table class="w-full text-left border border-gray-200 rounded overflow-hidden mb-8">
-                <tbody class="divide-y divide-gray-200">
-                <tr class="bg-gray-50">
-                    <th class="p-3 font-semibold text-gray-700"><?= __('Request ID') ?></th>
-                    <td class="p-3"><?= h($writingServiceRequest->writing_service_request_id) ?></td>
-                </tr>
+    <!-- Request Details Card -->
+    <div class="bg-white shadow rounded-lg p-6 mb-8">
+        <table class="min-w-full">
+            <tbody class="divide-y divide-gray-200">
+            <tr>
+                <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Request ID</th>
+                <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h($writingServiceRequest->writing_service_request_id) ?></td>
+            </tr>
+            <tr>
+                <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Service Type</th>
+                <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h($writingServiceRequest->service_type) ?></td>
+            </tr>
+            <tr>
+                <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Word Count Range</th>
+                <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h($writingServiceRequest->word_count_range) ?></td>
+            </tr>
+            <tr>
+                <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Status</th>
+                <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h($writingServiceRequest->request_status) ?></td>
+            </tr>
+            <tr>
+                <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Final Price</th>
+                <td class="py-3 px-6 text-left text-sm text-gray-800">
+                    <?= $writingServiceRequest->final_price === null ? 'N/A' : $this->Number->format($writingServiceRequest->final_price) ?>
+                </td>
+            </tr>
+            <tr>
+                <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Document</th>
+                <td class="py-3 px-6 text-left text-sm text-gray-800">
+                    <?php if (!empty($writingServiceRequest->document)) : ?>
+                        <?= $this->Html->link(
+                            'View Document',
+                            '/' . $writingServiceRequest->document,
+                            ['target' => '_blank', 'class' => 'text-blue-500 hover:underline']
+                        ) ?>
+                    <?php else : ?>
+                        <span class="italic text-gray-500">No Document</span>
+                    <?php endif; ?>
+                </td>
+            </tr>
+            <?php if (!empty($writingServiceRequest->notes)) : ?>
                 <tr>
-                    <th class="p-3 font-semibold text-gray-700"><?= __('Word Count Range') ?></th>
-                    <td class="p-3"><?= h($writingServiceRequest->word_count_range) ?></td>
+                    <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Notes</th>
+                    <td class="py-3 px-6 text-left text-sm text-gray-800"><?= nl2br(h($writingServiceRequest->notes)) ?></td>
                 </tr>
-                <tr class="bg-gray-50">
-                    <th class="p-3 font-semibold text-gray-700"><?= __('Notes') ?></th>
-                    <td class="p-3"><?= nl2br(h($writingServiceRequest->notes)) ?></td>
-                </tr>
-                <tr>
-                    <th class="p-3 font-semibold text-gray-700"><?= __('Status') ?></th>
-                    <td class="p-3"><?= h($writingServiceRequest->request_status) ?></td>
-                </tr>
-                <tr class="bg-gray-50">
-                    <th class="p-3 font-semibold text-gray-700"><?= __('Final Price') ?></th>
-                    <td class="p-3">
-                        <?= $writingServiceRequest->final_price === null
-                            ? 'N/A'
-                            : $this->Number->format($writingServiceRequest->final_price) ?>
-                    </td>
-                </tr>
-                <tr>
-                    <th class="p-3 font-semibold text-gray-700"><?= __('Document') ?></th>
-                    <td class="p-3">
-                        <?php if (!empty($writingServiceRequest->document)) : ?>
-                            <?= $this->Html->link(
-                                'View Document',
-                                '/' . $writingServiceRequest->document,
-                                ['target' => '_blank', 'class' => 'text-blue-500 hover:underline'],
-                            ) ?>
-                        <?php else : ?>
-                            <span class="text-gray-500 italic">No Document</span>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-
-            <!-- Conversation -->
-            <h4 class="text-xl font-semibold mt-6">Conversation</h4>
-            <?php if (!empty($writingServiceRequest->request_messages)) : ?>
-                <div class="space-y-4">
-                    <?php foreach ($writingServiceRequest->request_messages as $msg) : ?>
-                        <?php
-                        $isAdmin = isset($msg->user) && strtolower($msg->user->user_type) === 'admin';
-                        ?>
-                        <div class="p-4 rounded-lg <?= $isAdmin ? 'bg-blue-100 rounded-bl-none' : 'bg-green-100 rounded-br-none' ?>">
-                            <div class="mb-1 font-bold text-sm text-gray-700">
-                                <?= h($msg->user->first_name . ' ' . $msg->user->last_name . ($isAdmin ? ' (Admin)' : '')) ?>
-                            </div>
-                            <div class="text-gray-800 text-sm">
-                                <?= nl2br(h($msg->message)) ?>
-                            </div>
-                            <?php if (!empty($msg->created_at)) : ?>
-                                <div class="mt-1 text-xs text-gray-500">
-                                    <span class="local-time" data-datetime="<?= h($msg->created_at->format('c')) ?>"></span>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php else : ?>
-                <p class="text-gray-500 mb-6">No messages yet.</p>
             <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
 
-            <!-- Reply form -->
-            <h4 class="text-xl font-semibold mb-2">Reply to Admin</h4>
-            <?= $this->Form->create(null, ['url' => ['action' => 'view', $writingServiceRequest->writing_service_request_id]]) ?>
+    <!-- Conversation Card -->
+    <div class="bg-white shadow rounded-lg p-6 mb-8">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Conversation</h2>
+        <?php if (!empty($writingServiceRequest->request_messages)) : ?>
             <div class="space-y-4">
-                <?= $this->Form->textarea('reply_message', [
-                    'label' => false,
-                    'placeholder' => 'Type your reply...',
-                    'rows' => 4,
-                    'class' => 'w-full border border-gray-300 rounded p-2',
-                ]) ?>
-                <?= $this->Form->button('Send Message', [
-                    'class' => 'bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700',
-                ]) ?>
+                <?php foreach ($writingServiceRequest->request_messages as $msg) : ?>
+                    <?php
+                    $isAdmin = isset($msg->user) && strtolower($msg->user->user_type) === 'admin';
+                    ?>
+                    <div class="p-4 rounded-lg <?= $isAdmin ? 'bg-blue-100 rounded-bl-none' : 'bg-green-100 rounded-br-none' ?>">
+                        <div class="mb-1 font-bold text-sm text-gray-700">
+                            <?= h($msg->user->first_name . ' ' . $msg->user->last_name . ($isAdmin ? ' (Admin)' : '')) ?>
+                        </div>
+                        <div class="text-gray-800 text-sm">
+                            <?= nl2br(h($msg->message)) ?>
+                        </div>
+                        <?php if (!empty($msg->created_at)) : ?>
+                            <div class="mt-1 text-xs text-gray-500">
+                                <span class="local-time" data-datetime="<?= h($msg->created_at->format('c')) ?>"></span>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
             </div>
-            <?= $this->Form->end() ?>
+        <?php else : ?>
+            <p class="text-gray-500">No messages yet.</p>
+        <?php endif; ?>
+    </div>
+
+    <!-- Reply Form Card -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Reply to Admin</h2>
+        <?= $this->Form->create(null, ['url' => ['action' => 'view', $writingServiceRequest->writing_service_request_id]]) ?>
+        <div class="space-y-4">
+            <?= $this->Form->textarea('reply_message', [
+                'label' => false,
+                'placeholder' => 'Type your reply...',
+                'rows' => 4,
+                'class' => 'w-full border border-gray-300 rounded p-2',
+            ]) ?>
+            <?= $this->Form->button('Send Message', [
+                'class' => 'bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700',
+            ]) ?>
         </div>
+        <?= $this->Form->end() ?>
     </div>
 </div>
 
