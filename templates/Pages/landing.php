@@ -4,23 +4,34 @@ $this->extend('/layout/landing');
 ?>
 
 <div class="text-center animate-fadeIn max-w-2xl px-4">
-    <h2 class="text-5xl font-serif mb-6">Where Art Meets Literature</h2>
-    <p class="text-xl mb-12">
+    <h2 class="text-6xl font-bold mb-6 text-white">Where Art Meets Literature</h2>
+    <p class="text-2xl mb-8 text-white">
         Experience the intersection of visual beauty and eloquent storytelling through contemporary creations.
     </p>
-    <div class="space-x-8">
+
+    <!-- Button Container -->
+    <div class="flex justify-center items-center space-x-4">
+        <!-- Button #1 -->
         <?= $this->Html->link(
-            'Explore Art Collection →',
+            'EXPLORE ART COLLECTION',
             ['controller' => 'Artworks', 'action' => 'index'],
             [
-                'class' => 'px-10 py-4 bg-transparent border-2 border-amber-400 text-amber-400 hover:bg-amber-400 hover:text-black transition-all rounded-full',
+                'class' => 'inline-block whitespace-nowrap px-8 py-4 text-lg font-bold '
+                    . 'bg-white text-teal-500 border-2 border-white '
+                    . 'hover:bg-teal-400 hover:text-white transition-all '
+                    . 'rounded-full transform hover:scale-105',
             ]
         ) ?>
+
+        <!-- Button #2 -->
         <?= $this->Html->link(
-            'Request Writing Service →',
+            'REQUEST WRITING SERVICE',
             ['controller' => 'WritingServiceRequests', 'action' => 'add'],
             [
-                'class' => 'px-10 py-4 bg-amber-400 text-black hover:bg-amber-500 transform hover:scale-105 transition-all rounded-full',
+                'class' => 'inline-block whitespace-nowrap px-8 py-4 text-lg font-bold '
+                    . 'bg-transparent text-white border-2 border-white '
+                    . 'hover:bg-teal-400 hover:text-white transition-all '
+                    . 'rounded-full transform hover:scale-105',
             ]
         ) ?>
     </div>
