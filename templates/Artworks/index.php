@@ -28,7 +28,7 @@ $userType = $user?->get('user_type');
 
         <?php if ($userType === 'admin') : ?>
             <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'add']) ?>"
-               class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+               class="px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition">
                 ➕ Add New Artwork
             </a>
         <?php endif; ?>
@@ -38,19 +38,16 @@ $userType = $user?->get('user_type');
     <!-- Artworks Grid -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
         <?php foreach ($artworks as $artwork) : ?>
-            <div
-                class="relative group artwork-card cursor-pointer"
+            <div class="relative group artwork-card cursor-pointer"
                 data-status="<?= h($artwork->availability_status) ?>"
-                data-url="<?= $this->Url->build(['action' => 'view', $artwork->artwork_id]) ?>"
-                onclick="if (!event.target.closest('.no-detail')) { window.location.href = this.getAttribute('data-url'); }"
-            >
+                data-url="<?= $this->Url->build(['action' => 'view', $artwork->artwork_id]) ?>">
                 <!-- Artwork Image -->
                 <?= $this->Html->image($artwork->image_path, [
                     'alt' => $artwork->title,
                     'class' => 'w-full h-auto object-cover',
                 ]) ?>
 
-                <?php if ($artwork->availability_status === 'available'): ?>
+                <?php if ($artwork->availability_status === 'available') : ?>
                     <!-- Hover Overlay for Available Art -->
                     <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100">
                         <h2 class="text-xl font-bold mb-2"><?= h($artwork->title) ?></h2>
@@ -58,18 +55,19 @@ $userType = $user?->get('user_type');
 
                         <?= $this->Form->create(null, [
                             'url' => ['controller' => 'Carts', 'action' => 'add', $artwork->artwork_id],
-                            'class' => 'no-detail'
+                            'class' => 'no-detail',
                         ]) ?>
                         <?= $this->Form->button('Add to Cart', [
                             'class' => 'px-4 py-2 bg-white text-black rounded-full hover:bg-gray-200 transition no-detail',
-                            'onclick' => 'event.stopPropagation();'
+                            'onclick' => 'event.stopPropagation();',
                         ]) ?>
                         <?= $this->Form->end() ?>
                     </div>
-                <?php else: ?>
-                    <!-- Sold Overlay -->
-                    <div class="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center text-white text-2xl font-bold">
-                        Sold
+                <?php else : ?>
+                    <!-- Sold Overlay with Price -->
+                    <div class="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center text-white text-2xl font-bold">
+                        <div>Sold</div>
+                        <div class="mt-2 text-xl">$<?= $this->Number->format($artwork->price) ?></div>
                     </div>
                 <?php endif; ?>
             </div>
@@ -79,6 +77,19 @@ $userType = $user?->get('user_type');
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        function handleArtworkClick(e) {
+            // If the clicked element (or its ancestor) doesn't have the no-detail class, redirect.
+            if (!e.target.closest('.no-detail')) {
+                // Use e.currentTarget (the element the event listener is attached to)
+                window.location.href = e.currentTarget.getAttribute('data-url');
+            }
+        }
+
+        // Attach the event listener to each artwork card
+        document.querySelectorAll('.artwork-card').forEach(function(card) {
+            card.addEventListener('click', handleArtworkClick);
+        });
+
         // Function to filter cards by status
         function filterCards(status) {
             document.querySelectorAll('.artwork-card').forEach(function(card) {
