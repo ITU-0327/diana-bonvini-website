@@ -288,8 +288,8 @@ class ArtworksController extends AppController
         }
         $textColor = imagecolorallocatealpha($watermark, 0, 0, 0, 75);
 
-        for ($y = -100; $y < $height + 100; $y += 100) {
-            for ($x = -100; $x < $width + 100; $x += 250) {
+        for ($y = -100; $y < $height + 100; $y += 200) { // 更大间距
+            for ($x = -100; $x < $width + 100; $x += 400) {
                 imagettftext($watermark, $fontSize, $angle, $x, $y, $textColor, $fontPath, $text);
             }
         }
