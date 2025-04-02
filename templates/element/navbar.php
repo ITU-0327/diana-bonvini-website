@@ -143,14 +143,14 @@ $userType = $user?->get('user_type');
                         </a>
                         <!-- Dropdown -->
                         <ul class="absolute left-0 top-full w-64 bg-white border border-gray-200 rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-300 z-10">
-                            <?php if ($userType === 'admin'): ?>
+                            <?php if ($userType === 'admin') : ?>
                                 <li>
                                     <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'adminIndex']) ?>"
                                        class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
                                         Check All Requests
                                     </a>
                                 </li>
-                            <?php else: ?>
+                            <?php else : ?>
                                 <li>
                                     <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'add']) ?>"
                                        class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
@@ -183,15 +183,20 @@ $userType = $user?->get('user_type');
                     <?= $this->Html->image('navbar/shopping-cart.png', ['class' => 'h-6 w-6']) ?>
                 </a>
                 <!-- User Profile Dropdown with animated icon effect -->
-                <?php if ($user): ?>
-                    <div class="relative group">
-            <span class="flex items-center justify-center h-9 w-9 rounded-full border border-gray-300 overflow-hidden nav-icon">
-              <i data-lucide="user"></i>
-            </span>
+                <?php if ($user) : ?>
+                    <div class="relative group" id="profileDropdownWrapper">
+                        <div class="w-16 h-16 rounded-full absolute -top-3 -left-3 z-10
+              pointer-events-auto group-hover:bg-transparent cursor-pointer">
+                        </div>
+                        <!-- Profile icon -->
+                        <span class="relative z-20 flex items-center justify-center h-9 w-9 rounded-full border border-gray-300 overflow-hidden nav-icon cursor-pointer">
+                            <i data-lucide="user"></i>
+                          </span>
+                        <!-- Dropdown -->
                         <div class="absolute right-0 top-full mt-1 w-96 bg-white border border-gray-200 rounded shadow-lg p-6
-            opacity-0 translate-y-2 group-hover:translate-y-0 group-hover:opacity-100
-            pointer-events-none group-hover:pointer-events-auto
-            transition-all duration-300 z-20">
+                              opacity-0 translate-y-2 pointer-events-none
+                              group-hover:translate-y-0 group-hover:opacity-100 group-hover:pointer-events-auto
+                              transition-all duration-300 z-20">
                             <h5 class="text-gray-900 font-bold mb-4 text-2xl">User Profile</h5>
                             <div class="flex items-center space-x-4">
                 <span class="flex items-center justify-center h-20 w-20 rounded-full border border-gray-300 overflow-hidden">
@@ -238,7 +243,7 @@ $userType = $user?->get('user_type');
                             <?= $this->Form->postLink('Log Out', ['controller' => 'Users', 'action' => 'logout'], ['class' => 'block w-full text-left px-4 py-2 mt-4 text-base text-gray-700 hover:bg-gray-100 rounded']) ?>
                         </div>
                     </div>
-                <?php else: ?>
+                <?php else : ?>
                     <div>
                         <?= $this->Html->link('Login', ['controller' => 'Users', 'action' => 'login'], ['class' => 'text-indigo-600 hover:text-indigo-500 font-semibold']) ?>
                     </div>
@@ -273,11 +278,11 @@ $userType = $user?->get('user_type');
                 <a href="<?= $this->Url->build('/contact') ?>"
                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:text-teal-500">Contact</a>
             </li>
-            <?php if ($user): ?>
+            <?php if ($user) : ?>
                 <li>
                     <?= $this->Form->postLink('Log Out', ['controller' => 'Users', 'action' => 'logout'], ['class' => 'block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:text-teal-500']) ?>
                 </li>
-            <?php else: ?>
+            <?php else : ?>
                 <li>
                     <a href="<?= $this->Url->build(['controller' => 'Users', 'action' => 'login']) ?>"
                        class="block px-3 py-2 rounded-md text-base font-medium text-teal-500">Login</a>
