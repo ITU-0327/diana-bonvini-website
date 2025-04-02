@@ -16,10 +16,7 @@ $this->extend('/layout/landing');
             'EXPLORE ART COLLECTION',
             ['controller' => 'Artworks', 'action' => 'index'],
             [
-                'class' => 'inline-block whitespace-nowrap px-8 py-4 text-lg font-bold '
-                    . 'bg-white text-teal-500 border-2 border-white '
-                    . 'hover:bg-teal-400 hover:text-white transition-all '
-                    . 'rounded-full transform hover:scale-105',
+                'class' => 'inline-block whitespace-nowrap px-8 py-4 text-lg font-bold bg-white text-teal-500 border-2 border-white hover:bg-teal-400 hover:text-white hover:border-teal-400 transition-all rounded-full transform hover:scale-105',
             ]
         ) ?>
 
@@ -28,10 +25,7 @@ $this->extend('/layout/landing');
             'REQUEST WRITING SERVICE',
             ['controller' => 'WritingServiceRequests', 'action' => 'add'],
             [
-                'class' => 'inline-block whitespace-nowrap px-8 py-4 text-lg font-bold '
-                    . 'bg-transparent text-white border-2 border-white '
-                    . 'hover:bg-teal-400 hover:text-white transition-all '
-                    . 'rounded-full transform hover:scale-105',
+                'class' => 'inline-block whitespace-nowrap px-8 py-4 text-lg font-bold bg-transparent text-white border-2 border-white hover:bg-teal-400 hover:text-white hover:border-teal-400 transition-all rounded-full transform hover:scale-105',
             ]
         ) ?>
     </div>
