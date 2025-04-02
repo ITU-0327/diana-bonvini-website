@@ -19,7 +19,7 @@
                 <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Order ID</th>
                 <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h($order->order_id) ?></td>
             </tr>
-            <?php if ($order->has('user')): ?>
+            <?php if ($order->has('user')) : ?>
                 <tr>
                     <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">User</th>
                     <td class="py-3 px-6 text-left text-sm text-gray-800">
@@ -29,7 +29,7 @@
             <?php endif; ?>
             <tr>
                 <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Payment Method</th>
-                <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h($order->payment_method) ?></td>
+                <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h($order->payment->payment_method) ?></td>
             </tr>
             <tr>
                 <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Order Status</th>

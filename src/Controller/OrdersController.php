@@ -208,7 +208,7 @@ class OrdersController extends AppController
      */
     public function view(?string $id = null): void
     {
-        $order = $this->Orders->get($id, contain: ['Users']);
+        $order = $this->Orders->get($id, contain: ['Users', 'Payments']);
         $this->set(compact('order'));
     }
 

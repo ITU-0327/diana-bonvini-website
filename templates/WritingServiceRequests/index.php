@@ -3,7 +3,6 @@
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\WritingServiceRequest> $writingServiceRequests
  */
-$user = $this->request->getAttribute('identity');
 ?>
 <div class="max-w-7xl mx-auto px-4 py-8">
     <!-- Header with Left-Aligned Underline -->
@@ -21,12 +20,12 @@ $user = $this->request->getAttribute('identity');
                 <th class="py-3 px-6 text-left">Service Type</th>
                 <th class="py-3 px-6 text-left">Final Price</th>
                 <th class="py-3 px-6 text-left">Status</th>
-                <th class="py-3 px-6 text-center">Document</th>
+                <th class="py-3 px-6 text-left">Submitted At</th>
                 <th class="py-3 px-6 text-center">Details</th>
             </tr>
             </thead>
             <tbody class="text-gray-700 text-sm">
-            <?php foreach ($writingServiceRequests as $request): ?>
+            <?php foreach ($writingServiceRequests as $request) : ?>
                 <tr class="border-b border-gray-200 hover:bg-gray-50">
                     <td class="py-3 px-6"><?= h($request->writing_service_request_id) ?></td>
                     <td class="py-3 px-6"><?= h($request->service_type) ?></td>
@@ -34,14 +33,11 @@ $user = $this->request->getAttribute('identity');
                         <?= $request->final_price !== null ? '$' . $this->Number->format($request->final_price) : '-' ?>
                     </td>
                     <td class="py-3 px-6"><?= h($request->request_status) ?></td>
-                    <td class="py-3 px-6 text-center">
-                        <?php if (!empty($request->document)): ?>
-                            <?= $this->Html->link('View', '/' . $request->document, [
-                                'target' => '_blank',
-                                'class' => 'text-blue-500 hover:underline'
-                            ]) ?>
+                    <td class="py-3 px-6">
+                        <?php if (!empty($request->created_at)) : ?>
+                            <span class="local-time" data-datetime="<?= h($request->created_at->format('c')) ?>"></span>
                         <?php else: ?>
-                            <span class="text-gray-400 italic">None</span>
+                            -
                         <?php endif; ?>
                     </td>
                     <td class="py-3 px-6 text-center">
@@ -71,3 +67,18 @@ $user = $this->request->getAttribute('identity');
         </p>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const timeElements = document.querySelectorAll('.local-time');
+        timeElements.forEach(el => {
+            const isoTime = el.dataset.datetime;
+            const date = new Date(isoTime);
+            el.textContent = date.toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+        });
+    });
+</script>

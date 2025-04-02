@@ -38,6 +38,16 @@
                 </td>
             </tr>
             <tr>
+                <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Submitted At</th>
+                <td class="py-3 px-6 text-left text-sm text-gray-800">
+                    <?php if (!empty($writingServiceRequest->created_at)) : ?>
+                        <span class="local-time" data-datetime="<?= h($writingServiceRequest->created_at->format('c')) ?>"></span>
+                    <?php else: ?>
+                        <span>N/A</span>
+                    <?php endif; ?>
+                </td>
+            </tr>
+            <tr>
                 <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Document</th>
                 <td class="py-3 px-6 text-left text-sm text-gray-800">
                     <?php if (!empty($writingServiceRequest->document)) : ?>
