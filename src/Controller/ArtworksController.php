@@ -5,6 +5,7 @@ namespace App\Controller;
 
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
+use Exception;
 
 /**
  * Artworks Controller
@@ -286,7 +287,7 @@ class ArtworksController extends AppController
         if (!file_exists($fontPath)) {
             throw new Exception("Files not found: $fontPath");
         }
-        $textColor = imagecolorallocatealpha($watermark, 0, 0, 0, 75);
+        $textColor = imagecolorallocatealpha($watermark, 225, 225, 225, 75);
 
         for ($y = -100; $y < $height + 100; $y += 200) { // 更大间距
             for ($x = -100; $x < $width + 100; $x += 400) {
