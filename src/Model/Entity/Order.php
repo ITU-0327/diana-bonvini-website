@@ -10,7 +10,7 @@ use Cake\ORM\Entity;
  *
  * @property string $order_id
  * @property string $user_id
- * @property float $total_amount
+ * @property string $total_amount
  * @property string $order_status
  * @property \Cake\I18n\DateTime $order_date
  * @property string $billing_first_name
@@ -22,8 +22,8 @@ use Cake\ORM\Entity;
  * @property string|null $shipping_address2
  * @property string $shipping_suburb
  * @property string $shipping_state
- * @property string $shipping_postcode
- * @property string $shipping_phone
+ * @property int $shipping_postcode
+ * @property int $shipping_phone
  * @property string|null $order_notes
  * @property int $is_deleted
  * @property \Cake\I18n\DateTime $created_at
