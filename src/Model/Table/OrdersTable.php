@@ -3,19 +3,16 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
-use Cake\Event\EventInterface;
-use Cake\Datasource\EntityInterface;
-use ArrayObject;
 
 /**
  * Orders Model
  *
  * @property \App\Model\Table\UsersTable&\Cake\ORM\Association\BelongsTo $Users
- * @property \App\Model\Table\ArtworkOrdersTable&\Cake\ORM\Association\HasMany $ArtworkOrders
- * @property \App\Model\Table\PaymentsTable&\Cake\ORM\Association\HasOne $Payments
+ *
  * @method \App\Model\Entity\Order newEmptyEntity()
  * @method \App\Model\Entity\Order newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\Order> newEntities(array $data, array $options = [])
@@ -49,18 +46,6 @@ class OrdersTable extends Table
         $this->belongsTo('Users', [
             'foreignKey' => 'user_id',
             'joinType' => 'INNER',
-        ]);
-
-        $this->hasMany('ArtworkOrders', [
-            'foreignKey' => 'order_id',
-            'dependent' => true,
-            'cascadeCallbacks' => true,
-        ]);
-
-        $this->hasOne('Payments', [
-            'foreignKey' => 'order_id',
-            'dependent' => true,
-            'cascadeCallbacks' => true,
         ]);
     }
 
@@ -144,14 +129,12 @@ class OrdersTable extends Table
             ->notEmptyString('shipping_state');
 
         $validator
-            ->scalar('shipping_postcode')
-            ->maxLength('shipping_postcode', 20)
+            ->integer('shipping_postcode')
             ->requirePresence('shipping_postcode', 'create')
             ->notEmptyString('shipping_postcode');
 
         $validator
-            ->scalar('shipping_phone')
-            ->maxLength('shipping_phone', 50)
+            ->integer('shipping_phone')
             ->requirePresence('shipping_phone', 'create')
             ->notEmptyString('shipping_phone');
 
@@ -183,33 +166,7 @@ class OrdersTable extends Table
     public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->existsIn(['user_id'], 'Users'), ['errorField' => 'user_id']);
+
         return $rules;
-    }
-
-    /**
-     * Before save callback.
-     *
-     * Generates a new order ID in the format "O-####" if none exists.
-     *
-     * @param \Cake\Event\EventInterface $event The event instance.
-     * @param \Cake\Datasource\EntityInterface $entity The entity instance.
-     * @param \ArrayObject<string, mixed> $options The options for the save.
-     * @return void
-     */
-    public function beforeSave(EventInterface $event, EntityInterface $entity, ArrayObject $options): void
-    {
-        if ($entity->isNew() && empty($entity->order_id)) {
-            // Get the most recent order, ordered by creation date
-            $lastOrder = $this->find()
-                ->select(['order_id'])
-                ->order(['created_at' => 'DESC'])
-                ->first();
-
-            // Extract the numeric part from the previous order ID, or start at 0 if none exists
-            $lastNumber = $lastOrder ? (int)substr($lastOrder->order_id, 2) : 0;
-
-            // Generate a new order ID in the format "O-####"
-            $entity->order_id = sprintf("O-%04d", $lastNumber + 1);
-        }
     }
 }
