@@ -60,12 +60,16 @@ class ArtworkOrdersTable extends Table
      */
     public function validationDefault(Validator $validator): Validator
     {
+        // Remove the requirePresence and notEmptyString for order_id so it can be filled later.
         $validator
-            ->uuid('order_id')
-            ->notEmptyString('order_id');
+            ->scalar('order_id')
+            ->maxLength('order_id', 20);
 
+        // Accept artwork_id in the format "A001"
         $validator
-            ->uuid('artwork_id')
+            ->scalar('artwork_id')
+            ->maxLength('artwork_id', 20)
+            ->requirePresence('artwork_id', 'create')
             ->notEmptyString('artwork_id');
 
         $validator

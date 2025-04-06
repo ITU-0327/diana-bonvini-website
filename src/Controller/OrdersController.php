@@ -41,7 +41,6 @@ class OrdersController extends AppController
 
         if (!$cart) {
             $this->Flash->error('No items in your cart.');
-
             return $this->redirect(['controller' => 'Carts', 'action' => 'index']);
         }
 
@@ -81,6 +80,12 @@ class OrdersController extends AppController
             $data['user_id'] = $user->user_id;
         }
 
+        // Set default values for required fields.
+        if (empty($data['shipping_state'])) {
+            $data['shipping_state'] = 'NSW'; // Use a sensible default or retrieve from user profile.
+        }
+        $data['is_deleted'] = '0';
+
         // Get the current user's cart.
         /** @var \App\Model\Entity\Cart $cart */
         $cart = $this->fetchTable('Carts')->find()
@@ -90,7 +95,6 @@ class OrdersController extends AppController
 
         if (!$cart || empty($cart->artwork_carts)) {
             $this->Flash->error(__('Your cart is empty.'));
-
             return $this->redirect(['controller' => 'Carts', 'action' => 'index']);
         }
 
@@ -118,7 +122,7 @@ class OrdersController extends AppController
         $data['order_status']   = 'pending';
         $data['order_date']     = date('Y-m-d H:i:s');
 
-        // Patch the entity including associated data.
+        // Patch the order entity (associated ArtworkOrders will be patched too).
         $order = $this->Orders->newEntity($data, [
             'associated' => ['ArtworkOrders'],
         ]);
@@ -138,23 +142,21 @@ class OrdersController extends AppController
                 'payment_date'   => date('Y-m-d H:i:s'),
                 'payment_method' => 'bank transfer',
                 'status'         => 'pending',
+                'is_deleted'     => '0'
             ];
             $payment = $paymentsTable->newEntity($paymentData);
             if (!$paymentsTable->save($payment)) {
                 $connection->rollback();
                 $this->Flash->error(__('There was an error placing your order. Please try again. (Payment)'));
-
                 return $this->redirect(['action' => 'checkout']);
             }
 
             $connection->commit();
             $this->Flash->success(__('Your order has been placed successfully.'));
-
             return $this->redirect(['action' => 'confirmation', $order->order_id]);
         } else {
             $connection->rollback();
             $this->Flash->error(__('There was an error placing your order. Please try again.'));
-
             return $this->redirect(['action' => 'checkout']);
         }
     }
@@ -171,7 +173,6 @@ class OrdersController extends AppController
     {
         if (!$orderId) {
             $this->Flash->error(__('Invalid order.'));
-
             return $this->redirect(['action' => 'index']);
         }
 
@@ -181,7 +182,6 @@ class OrdersController extends AppController
             ->first();
 
         $this->set(compact('order'));
-
         return null;
     }
 
@@ -195,7 +195,6 @@ class OrdersController extends AppController
         $query = $this->Orders->find()
             ->contain(['Users', 'Payments']);
         $orders = $this->paginate($query);
-
         $this->set(compact('orders'));
     }
 
@@ -208,7 +207,7 @@ class OrdersController extends AppController
      */
     public function view(?string $id = null): void
     {
-        $order = $this->Orders->get($id, contain: ['Users', 'Payments']);
+        $order = $this->Orders->get($id, ['contain' => ['Users', 'Payments']]);
         $this->set(compact('order'));
     }
 
@@ -221,17 +220,16 @@ class OrdersController extends AppController
      */
     public function edit(?string $id = null)
     {
-        $order = $this->Orders->get($id, contain: []);
+        $order = $this->Orders->get($id, ['contain' => []]);
         if ($this->request->is(['patch', 'post', 'put'])) {
             $order = $this->Orders->patchEntity($order, $this->request->getData());
             if ($this->Orders->save($order)) {
                 $this->Flash->success(__('The order has been saved.'));
-
                 return $this->redirect(['action' => 'index']);
             }
             $this->Flash->error(__('The order could not be saved. Please, try again.'));
         }
-        $users = $this->Orders->Users->find('list', limit: 200)->all();
+        $users = $this->Orders->Users->find('list', ['limit' => 200])->all();
         $this->set(compact('order', 'users'));
     }
 
@@ -251,7 +249,6 @@ class OrdersController extends AppController
         } else {
             $this->Flash->error(__('The order could not be deleted. Please, try again.'));
         }
-
         return $this->redirect(['action' => 'index']);
     }
 }

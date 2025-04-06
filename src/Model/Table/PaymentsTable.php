@@ -51,9 +51,11 @@ class PaymentsTable extends Table
     }
 
     /**
-     * @param \Cake\Event\EventInterface<\App\Model\Entity\Payment> $event
-     * @param \App\Model\Entity\Payment $entity
-     * @param \ArrayObject<string, mixed> $options
+     * Before save callback.
+     *
+     * @param \Cake\Event\EventInterface $event The event instance.
+     * @param \App\Model\Entity\Payment $entity The payment entity.
+     * @param \ArrayObject<string, mixed> $options The options for the save.
      * @return void
      * @throws \Random\RandomException
      */
@@ -92,8 +94,11 @@ class PaymentsTable extends Table
      */
     public function validationDefault(Validator $validator): Validator
     {
+        // Accept order_id in the format "O-0001"
         $validator
-            ->uuid('order_id')
+            ->scalar('order_id')
+            ->maxLength('order_id', 20)
+            ->requirePresence('order_id', 'create')
             ->notEmptyString('order_id');
 
         $validator
@@ -132,7 +137,6 @@ class PaymentsTable extends Table
     public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->existsIn(['order_id'], 'Orders'), ['errorField' => 'order_id']);
-
         return $rules;
     }
 }

@@ -64,8 +64,11 @@ class ArtworkCartsTable extends Table
             ->uuid('cart_id')
             ->notEmptyString('cart_id');
 
+        // Use scalar validation so artwork_id can store "A001", etc.
         $validator
-            ->uuid('artwork_id')
+            ->scalar('artwork_id')
+            ->maxLength('artwork_id', 20)
+            ->requirePresence('artwork_id', 'create')
             ->notEmptyString('artwork_id');
 
         $validator

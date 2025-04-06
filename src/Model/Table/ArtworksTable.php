@@ -3,8 +3,11 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use Cake\Event\EventInterface;
+use Cake\Datasource\EntityInterface;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
+use ArrayObject;
 
 /**
  * Artworks Model
@@ -86,5 +89,32 @@ class ArtworksTable extends Table
             ->notEmptyDateTime('updated_at');
 
         return $validator;
+    }
+
+    /**
+     * Before save callback.
+     *
+     * Generates a new artwork ID in the format "A###" if none exists.
+     *
+     * @param \Cake\Event\EventInterface $event The event instance.
+     * @param \Cake\Datasource\EntityInterface $entity The entity instance.
+     * @param \ArrayObject<string, mixed> $options The options for the save.
+     * @return void
+     */
+    public function beforeSave(EventInterface $event, EntityInterface $entity, ArrayObject $options): void
+    {
+        if ($entity->isNew() && empty($entity->artwork_id)) {
+            // Get the most recent artwork, ordered by creation date.
+            $lastArtwork = $this->find()
+                ->select(['artwork_id'])
+                ->order(['created_at' => 'DESC'])
+                ->first();
+
+            // Extract the numeric part from the previous artwork ID, or start at 0 if none exists.
+            $lastNumber = $lastArtwork ? (int)substr($lastArtwork->artwork_id, 1) : 0;
+
+            // Generate a new artwork ID in the format "A###" (e.g., A001, A002, etc.)
+            $entity->artwork_id = sprintf("A%03d", $lastNumber + 1);
+        }
     }
 }
