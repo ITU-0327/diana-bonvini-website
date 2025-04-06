@@ -3,16 +3,19 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
-use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
+use Cake\Event\EventInterface;
+use Cake\Datasource\EntityInterface;
+use ArrayObject;
 
 /**
  * Orders Model
  *
  * @property \App\Model\Table\UsersTable&\Cake\ORM\Association\BelongsTo $Users
- *
+ * @property \App\Model\Table\ArtworkOrdersTable&\Cake\ORM\Association\HasMany $ArtworkOrders
+ * @property \App\Model\Table\PaymentsTable&\Cake\ORM\Association\HasOne $Payment
  * @method \App\Model\Entity\Order newEmptyEntity()
  * @method \App\Model\Entity\Order newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\Order> newEntities(array $data, array $options = [])
@@ -29,12 +32,6 @@ use Cake\Validation\Validator;
  */
 class OrdersTable extends Table
 {
-    /**
-     * Initialize method
-     *
-     * @param array<string, mixed> $config The configuration for the Table.
-     * @return void
-     */
     public function initialize(array $config): void
     {
         parent::initialize($config);
@@ -47,14 +44,22 @@ class OrdersTable extends Table
             'foreignKey' => 'user_id',
             'joinType' => 'INNER',
         ]);
+
+        $this->hasMany('ArtworkOrders', [
+            'foreignKey' => 'order_id',
+            'dependent' => true,
+            'cascadeCallbacks' => true,
+        ]);
+
+        // Define the payment association with the singular alias "Payment"
+        $this->hasOne('Payment', [
+            'className' => 'App\Model\Table\PaymentsTable',
+            'foreignKey' => 'order_id',
+            'dependent' => true,
+            'cascadeCallbacks' => true,
+        ]);
     }
 
-    /**
-     * Default validation rules.
-     *
-     * @param \Cake\Validation\Validator $validator Validator instance.
-     * @return \Cake\Validation\Validator
-     */
     public function validationDefault(Validator $validator): Validator
     {
         $validator
@@ -128,15 +133,29 @@ class OrdersTable extends Table
             ->requirePresence('shipping_state', 'create')
             ->notEmptyString('shipping_state');
 
+        // Custom rule: shipping_postcode must be an integer with at most 5 digits.
         $validator
-            ->integer('shipping_postcode')
+            ->integer('shipping_postcode', 'Shipping postcode must be an integer.')
             ->requirePresence('shipping_postcode', 'create')
-            ->notEmptyString('shipping_postcode');
+            ->notEmptyString('shipping_postcode')
+            ->add('shipping_postcode', 'maxDigits', [
+                'rule' => function ($value, $context) {
+                    return strlen((string)$value) <= 5;
+                },
+                'message' => 'Shipping postcode must be at most 5 digits.'
+            ]);
 
+        // Custom rule: shipping_phone must be an integer with at most 15 digits.
         $validator
-            ->integer('shipping_phone')
+            ->integer('shipping_phone', 'Shipping phone must be an integer.')
             ->requirePresence('shipping_phone', 'create')
-            ->notEmptyString('shipping_phone');
+            ->notEmptyString('shipping_phone')
+            ->add('shipping_phone', 'maxDigits', [
+                'rule' => function ($value, $context) {
+                    return strlen((string)$value) <= 15;
+                },
+                'message' => 'Shipping phone must be at most 15 digits.'
+            ]);
 
         $validator
             ->scalar('order_notes')
@@ -156,17 +175,21 @@ class OrdersTable extends Table
         return $validator;
     }
 
-    /**
-     * Returns a rules checker object that will be used for validating
-     * application integrity.
-     *
-     * @param \Cake\ORM\RulesChecker $rules The rules object to be modified.
-     * @return \Cake\ORM\RulesChecker
-     */
     public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->existsIn(['user_id'], 'Users'), ['errorField' => 'user_id']);
-
         return $rules;
+    }
+
+    public function beforeSave(EventInterface $event, EntityInterface $entity, ArrayObject $options): void
+    {
+        if ($entity->isNew() && empty($entity->order_id)) {
+            $lastOrder = $this->find()
+                ->select(['order_id'])
+                ->order(['created_at' => 'DESC'])
+                ->first();
+            $lastNumber = $lastOrder ? (int)substr($lastOrder->order_id, 2) : 0;
+            $entity->order_id = sprintf("O-%04d", $lastNumber + 1);
+        }
     }
 }
