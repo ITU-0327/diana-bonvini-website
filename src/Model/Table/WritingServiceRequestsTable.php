@@ -3,12 +3,9 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
-use Cake\Event\EventInterface;
-use Cake\Datasource\EntityInterface;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
-use ArrayObject;
 
 /**
  * WritingServiceRequests Model
@@ -123,32 +120,5 @@ class WritingServiceRequestsTable extends Table
         $rules->add($rules->existsIn(['user_id'], 'Users'), ['errorField' => 'user_id']);
 
         return $rules;
-    }
-
-    /**
-     * Before save callback.
-     *
-     * Generates a new writing service request ID in the format "O-####" if none exists.
-     *
-     * @param \Cake\Event\EventInterface $event The event instance.
-     * @param \Cake\Datasource\EntityInterface $entity The entity instance.
-     * @param \ArrayObject<string, mixed> $options The options for the save.
-     * @return void
-     */
-    public function beforeSave(EventInterface $event, EntityInterface $entity, ArrayObject $options): void
-    {
-        if ($entity->isNew() && empty($entity->writing_service_request_id)) {
-            // Get the most recent writing service request, ordered by creation date
-            $lastRequest = $this->find()
-                ->select(['writing_service_request_id'])
-                ->order(['created_at' => 'DESC'])
-                ->first();
-
-            // Extract the numeric part from the previous ID, or start at 0 if none exists.
-            $lastNumber = $lastRequest ? (int)substr($lastRequest->writing_service_request_id, 2) : 0;
-
-            // Generate a new writing service request ID in the format "O-####"
-            $entity->writing_service_request_id = sprintf("O-%04d", $lastNumber + 1);
-        }
     }
 }
