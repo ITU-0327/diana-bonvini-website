@@ -62,9 +62,10 @@ class WritingServiceRequestsController extends AppController
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
 
-        $writingServiceRequest = $this->WritingServiceRequests->get($id, [
-            'contain' => ['Users', 'RequestMessages.Users'],
-        ]);
+        $writingServiceRequest = $this->WritingServiceRequests->get(
+            $id,
+            contain: ['Users', 'RequestMessages.Users'],
+        );
 
         if ($this->request->is(['post', 'put', 'patch'])) {
             $data = $this->request->getData();
@@ -242,9 +243,10 @@ class WritingServiceRequestsController extends AppController
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
 
-        $writingServiceRequest = $this->WritingServiceRequests->get($id, [
-            'contain' => ['Users', 'RequestMessages.Users'],
-        ]);
+        $writingServiceRequest = $this->WritingServiceRequests->get(
+            $id,
+            contain: ['Users', 'RequestMessages.Users'],
+        );
 
         if ($this->request->is(['post', 'put', 'patch'])) {
             $data = $this->request->getData();
