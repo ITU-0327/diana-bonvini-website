@@ -79,7 +79,7 @@ class OrdersTable extends Table
     }
 
     /**
-     * Generates a Payment ID in the format "O-AB12345".
+     * Generates an Order ID in the format "O-AB12345".
      *
      * @return string
      * @throws \Random\RandomException
@@ -113,12 +113,19 @@ class OrdersTable extends Table
         $validator
             ->decimal('total_amount')
             ->requirePresence('total_amount', 'create')
-            ->notEmptyString('total_amount');
+            ->notEmptyString('total_amount')
+            ->add('total_amount', 'nonNegative', [
+                'rule' => function ($value, $context) {
+                    return $value >= 0;
+                },
+                'message' => 'Total amount must be non-negative.',
+            ]);
 
         $validator
             ->scalar('order_status')
             ->requirePresence('order_status', 'create')
-            ->notEmptyString('order_status');
+            ->notEmptyString('order_status')
+            ->inList('order_status', ['pending', 'confirmed', 'completed', 'cancelled'], 'Invalid order status.');
 
         $validator
             ->dateTime('order_date')
@@ -129,13 +136,21 @@ class OrdersTable extends Table
             ->scalar('billing_first_name')
             ->maxLength('billing_first_name', 255)
             ->requirePresence('billing_first_name', 'create')
-            ->notEmptyString('billing_first_name');
+            ->notEmptyString('billing_first_name')
+            ->add('billing_first_name', 'alpha', [
+                'rule' => ['custom', '/^[a-zA-Z \'-]+$/'],
+                'message' => 'First name should only contain letters, spaces, apostrophes, and hyphens.',
+            ]);
 
         $validator
             ->scalar('billing_last_name')
             ->maxLength('billing_last_name', 255)
             ->requirePresence('billing_last_name', 'create')
-            ->notEmptyString('billing_last_name');
+            ->notEmptyString('billing_last_name')
+            ->add('billing_last_name', 'alpha', [
+                'rule' => ['custom', '/^[a-zA-Z \'-]+$/'],
+                'message' => 'Last name should only contain letters, spaces, apostrophes, and hyphens.',
+            ]);
 
         $validator
             ->scalar('billing_company')
@@ -146,13 +161,15 @@ class OrdersTable extends Table
             ->scalar('billing_email')
             ->maxLength('billing_email', 255)
             ->requirePresence('billing_email', 'create')
-            ->notEmptyString('billing_email');
+            ->notEmptyString('billing_email')
+            ->email('billing_email', false, 'Please provide a valid email address.');
 
         $validator
             ->scalar('shipping_country')
             ->maxLength('shipping_country', 2)
             ->requirePresence('shipping_country', 'create')
-            ->notEmptyString('shipping_country');
+            ->notEmptyString('shipping_country')
+            ->inList('shipping_country', ['AU'], 'Please select a valid country.');
 
         $validator
             ->scalar('shipping_address1')
@@ -181,13 +198,21 @@ class OrdersTable extends Table
             ->scalar('shipping_postcode')
             ->maxLength('shipping_postcode', 20)
             ->requirePresence('shipping_postcode', 'create')
-            ->notEmptyString('shipping_postcode');
+            ->notEmptyString('shipping_postcode')
+            ->add('shipping_postcode', 'validFormat', [
+                'rule' => ['custom', '/^[0-9]{4}$/'],
+                'message' => 'Please enter a valid 4-digit postal code.',
+            ]);
 
         $validator
             ->scalar('shipping_phone')
             ->maxLength('shipping_phone', 50)
             ->requirePresence('shipping_phone', 'create')
-            ->notEmptyString('shipping_phone');
+            ->notEmptyString('shipping_phone')
+            ->add('shipping_phone', 'validFormat', [
+                'rule' => ['custom', '/^[0-9\-\+\(\) ]+$/'],
+                'message' => 'Please enter a valid phone number.',
+            ]);
 
         $validator
             ->scalar('order_notes')
