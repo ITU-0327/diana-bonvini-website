@@ -178,7 +178,7 @@ $userType = $user?->get('user_type');
             <!-- Right: Cart and User Profile (visible only on large screens) -->
             <div class="hidden md:flex items-center space-x-6">
                 <!-- Cart -->
-                <a href="<?= $this->Url->build(['controller' => 'Carts', 'action' => 'index']) ?>" class="relative nav-icon">
+                <a href="<?= $this->Url->build(['controller' => 'Carts', 'action' => 'index']) ?>" class="relative">
                     <?= $this->Html->image('navbar/shopping-cart.png', ['class' => 'h-6 w-6']) ?>
                 </a>
                 <!-- User Profile or Login -->
@@ -186,14 +186,15 @@ $userType = $user?->get('user_type');
                     <div class="relative group" id="profileDropdownWrapper">
                         <div class="w-16 h-16 rounded-full absolute -top-3 -left-3 z-10 pointer-events-auto group-hover:bg-transparent cursor-pointer"></div>
                         <span class="relative z-20 flex items-center justify-center h-9 w-9 rounded-full border border-gray-300 overflow-hidden nav-icon cursor-pointer">
-            <i data-lucide="user"></i>
-          </span>
+                            <i data-lucide="user"></i>
+                        </span>
                         <div class="absolute right-0 top-full mt-1 w-96 bg-white border border-gray-200 rounded shadow-lg p-6 opacity-0 translate-y-2 pointer-events-none group-hover:translate-y-0 group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-300 z-20">
                             <h5 class="text-gray-900 font-bold mb-4 text-2xl">User Profile</h5>
                             <div class="flex items-center space-x-4">
-              <span class="flex items-center justify-center h-20 w-20 rounded-full border border-gray-300 overflow-hidden">
-                <i data-lucide="user" class="w-16 h-16"></i>
-              </span>
+                                <span class="flex items-center justify-center h-20 w-20 rounded-full border border-gray-300 overflow-hidden">
+                                    <i data-lucide="user" class="w-16 h-16"></i>
+                                </span>
+
                                 <div>
                                     <h4 class="text-gray-800 font-semibold text-xl">
                                         <?= h($user->first_name . ' ' . $user->last_name) ?>
