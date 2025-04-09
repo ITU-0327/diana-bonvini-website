@@ -3,6 +3,9 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\WritingServiceRequest $writingServiceRequest
  */
+
+use Cake\Utility\Inflector;
+
 ?>
 <div class="flex flex-col lg:flex-row gap-6 p-6">
     <!-- Sidebar -->
@@ -31,12 +34,16 @@
     <div class="w-full lg:w-3/4">
         <div class="bg-white shadow rounded-lg p-6 space-y-4">
             <h3 class="text-2xl font-bold text-gray-800 mb-4">
-                Request #<?= h($writingServiceRequest->writing_service_request_id) ?> (Admin View)
+                Request #<?= h($writingServiceRequest->service_title) ?> (Admin View)
             </h3>
 
             <!-- Request Details -->
             <table class="w-full text-left border border-gray-200 rounded overflow-hidden">
                 <tbody class="divide-y divide-gray-200">
+                <tr class="bg-gray-50">
+                    <th class="p-3 font-semibold text-gray-700">ID</th>
+                    <td class="p-3"><?= h($writingServiceRequest->writing_service_request_id) ?></td>
+                </tr>
                 <tr class="bg-gray-50">
                     <th class="p-3 font-semibold text-gray-700">User</th>
                     <td class="p-3">
@@ -45,11 +52,7 @@
                 </tr>
                 <tr>
                     <th class="p-3 font-semibold text-gray-700">Service Type</th>
-                    <td class="p-3"><?= h($writingServiceRequest->service_type) ?></td>
-                </tr>
-                <tr class="bg-gray-50">
-                    <th class="p-3 font-semibold text-gray-700">Word Count Range</th>
-                    <td class="p-3"><?= h($writingServiceRequest->word_count_range) ?></td>
+                    <td class="p-3"><?= h(Inflector::humanize($writingServiceRequest->service_type)) ?></td>
                 </tr>
                 <tr>
                     <th class="p-3 font-semibold text-gray-700">Notes</th>
@@ -57,24 +60,18 @@
                 </tr>
                 <tr class="bg-gray-50">
                     <th class="p-3 font-semibold text-gray-700">Status</th>
-                    <td class="p-3"><?= h($writingServiceRequest->request_status) ?></td>
+                    <td class="p-3"><?= h(Inflector::humanize($writingServiceRequest->request_status)) ?></td>
                 </tr>
                 <tr>
                     <th class="p-3 font-semibold text-gray-700">Final Price</th>
                     <td class="p-3">
-                        <?= $writingServiceRequest->final_price === null ? '' : $this->Number->format($writingServiceRequest->final_price) ?>
+                        <?= $writingServiceRequest->final_price === null ? 'N/A' : $this->Number->format($writingServiceRequest->final_price) ?>
                     </td>
                 </tr>
                 <tr class="bg-gray-50">
                     <th class="p-3 font-semibold text-gray-700">Created At</th>
                     <td class="p-3">
                         <span class="local-time" data-datetime="<?= h($writingServiceRequest->created_at->format('c')) ?>"></span>
-                    </td>
-                </tr>
-                <tr>
-                    <th class="p-3 font-semibold text-gray-700">Updated At</th>
-                    <td class="p-3">
-                        <span class="local-time" data-datetime="<?= h($writingServiceRequest->updated_at->format('c')) ?>"></span>
                     </td>
                 </tr>
                 <tr class="bg-gray-50">
@@ -131,11 +128,19 @@
                     'class' => 'w-full border-gray-300 rounded',
                 ]) ?>
                 <?= $this->Form->control('request_status', [
+                    'type' => 'select',
+                    'options' => [
+                        'pending' => 'Pending',
+                        'in_progress' => 'In Progress',
+                        'expired' => 'Expired',
+                    ],
+                    'default' => $writingServiceRequest->request_status,
                     'label' => 'Request Status',
                     'class' => 'w-full border-gray-300 rounded',
                 ]) ?>
-                <?= $this->Form->label('reply_message', 'Your Message') ?>
-                <?= $this->Form->textarea('reply_message', [
+                <?= $this->Form->control('reply_message', [
+                    'type' => 'textarea',
+                    'label' => 'Your Message',
                     'class' => 'w-full border-gray-300 rounded',
                 ]) ?>
             </div>

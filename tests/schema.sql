@@ -147,11 +147,11 @@ CREATE TABLE artwork_carts (
 
 -- Table: writing_service_requests
 CREATE TABLE writing_service_requests (
-    writing_service_request_id CHAR(36) NOT NULL PRIMARY KEY,
+    writing_service_request_id CHAR(9) NOT NULL PRIMARY KEY,
     user_id CHAR(36) NOT NULL,
+    service_title VARCHAR(100) DEFAULT NULL,
     service_type ENUM('creative_writing', 'editing', 'proofreading') NOT NULL,
-    word_count_range VARCHAR(50) NOT NULL,
-    notes VARCHAR(100) DEFAULT NULL,
+    notes VARCHAR(1000) DEFAULT NULL,
     final_price DECIMAL(10,2) DEFAULT NULL,
     request_status ENUM('pending', 'in_progress', 'expired') NOT NULL DEFAULT 'pending',
     document VARCHAR(255) DEFAULT NULL,

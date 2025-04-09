@@ -28,6 +28,15 @@
                 <legend class="text-2xl font-bold text-gray-800 mb-4"><?= __('Edit Writing Service Request') ?></legend>
 
                 <div>
+                    <?= $this->Form->control('service_title', [
+                        'label' => 'Service Title (max 100 characters)',
+                        'maxlength' => 100,
+                        'placeholder' => 'Enter service title',
+                        'class' => 'w-full border-gray-300 rounded shadow-sm'
+                    ]) ?>
+                </div>
+
+                <div>
                     <?= $this->Form->label('service_type', 'Service Type', ['class' => 'block font-medium text-gray-700']) ?>
                     <?= $this->Form->select('service_type', [
                         '' => 'Please select a service',
@@ -38,52 +47,14 @@
                 </div>
 
                 <div>
-                    <?= $this->Form->label('word_count_range', 'Word Count Range', ['class' => 'block font-medium text-gray-700']) ?>
-                    <?= $this->Form->select('word_count_range', [
-                        '' => 'Please select a word count range',
-                        'under_5000' => 'Under 5000',
-                        '5000_20000' => '5000 - 20000',
-                        '20000_50000' => '20000 - 50000',
-                        '50000_plus' => '50000+',
-                    ], ['class' => 'w-full mt-1 border-gray-300 rounded shadow-sm']) ?>
-                </div>
-
-                <div>
-                    <?= $this->Form->control('notes', [
-                        'label' => 'Notes',
-                        'class' => 'w-full border-gray-300 rounded shadow-sm',
+                    <?= $this->Form->label('notes', 'Notes (maximum 100 characters)', [
+                        'class' => 'block font-medium text-gray-700 mb-2',
                     ]) ?>
-                </div>
-
-                <!-- Final Price (if still needed) -->
-                <div>
-                    <?= $this->Form->control('final_price', [
-                        'label' => 'Final Price',
-                        'class' => 'w-full border-gray-300 rounded shadow-sm',
+                    <?= $this->Form->textarea('notes', [
+                        'maxlength' => 100,
+                        'rows' => 3,
+                        'class' => 'block w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm',
                     ]) ?>
-                </div>
-
-                <div>
-                    <?= $this->Form->control('request_status', [
-                        'label' => 'Request Status',
-                        'class' => 'w-full border-gray-300 rounded shadow-sm',
-                    ]) ?>
-                </div>
-
-                <!-- Removed the Estimated Price block -->
-
-                <div>
-                    <label class="block font-semibold text-gray-700"><?= __('Created At') ?></label>
-                    <p class="text-gray-600">
-                        <span class="local-time" data-datetime="<?= h($writingServiceRequest->created_at->format('c')) ?>"></span>
-                    </p>
-                </div>
-
-                <div>
-                    <label class="block font-semibold text-gray-700"><?= __('Updated At') ?></label>
-                    <p class="text-gray-600">
-                        <span class="local-time" data-datetime="<?= h($writingServiceRequest->updated_at->format('c')) ?>"></span>
-                    </p>
                 </div>
 
                 <div>
@@ -98,7 +69,7 @@
                     <?php endif; ?>
                 </div>
 
-                <p class="text-sm text-gray-500 mb-1">Want change document?</p>
+                <p class="block font-semibold text-gray-700">Want change document?</p>
                 <?= $this->Form->file('document', [
                     'class' => 'w-full border-gray-300 rounded shadow-sm',
                     'accept' => '.pdf,.jpg,.jpeg,.docx',

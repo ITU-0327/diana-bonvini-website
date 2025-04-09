@@ -3,6 +3,9 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\WritingServiceRequest $writingServiceRequest
  */
+
+use Cake\Utility\Inflector;
+
 ?>
 <div class="max-w-6xl mx-auto px-4 py-8">
     <!-- Header with left underline -->
@@ -20,16 +23,16 @@
                 <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h($writingServiceRequest->writing_service_request_id) ?></td>
             </tr>
             <tr>
-                <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Service Type</th>
-                <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h($writingServiceRequest->service_type) ?></td>
+                <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Request Title</th>
+                <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h($writingServiceRequest->service_title) ?></td>
             </tr>
             <tr>
-                <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Word Count Range</th>
-                <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h($writingServiceRequest->word_count_range) ?></td>
+                <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Service Type</th>
+                <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h(Inflector::humanize($writingServiceRequest->service_type)) ?></td>
             </tr>
             <tr>
                 <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Status</th>
-                <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h($writingServiceRequest->request_status) ?></td>
+                <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h(Inflector::humanize($writingServiceRequest->request_status)) ?></td>
             </tr>
             <tr>
                 <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Final Price</th>
