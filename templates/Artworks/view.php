@@ -16,32 +16,6 @@
                     'class' => 'object-cover max-h-96',
                 ]) ?>
             </div>
-
-            <!-- Thumbnails -->
-            <div class="flex space-x-2">
-                <div class="w-20 h-20 bg-white shadow rounded p-1 flex items-center justify-center">
-                    <img
-                        src="/img/artworks/wallowing-breeze-thumb1.jpg"
-                        alt="Wallowing Breeze Thumbnail 1"
-                        class="object-cover h-full"
-                    />
-                </div>
-                <div class="w-20 h-20 bg-white shadow rounded p-1 flex items-center justify-center">
-                    <img
-                        src="/img/artworks/wallowing-breeze-thumb2.jpg"
-                        alt="Wallowing Breeze Thumbnail 2"
-                        class="object-cover h-full"
-                    />
-                </div>
-            </div>
-
-            <!-- "View in a room" Link -->
-            <div>
-                <a href="#"
-                   class="inline-block text-sm text-indigo-600 hover:text-indigo-500 underline">
-                    View in a room
-                </a>
-            </div>
         </div>
 
         <!-- Right Column: Artwork Details -->
@@ -51,7 +25,7 @@
                 <?= $this->Html->link(
                     '<i class="fa-solid fa-arrow-left"></i> Back',
                     ['action' => 'index'],
-                    ['class' => 'text-gray-600 hover:text-gray-800 text-sm', 'escape' => false]
+                    ['class' => 'text-gray-600 hover:text-gray-800 text-sm', 'escape' => false],
                 ) ?>
             </div>
 
@@ -80,17 +54,21 @@
             </div>
 
             <!-- Add to Cart Button -->
-            <div>
-                <?= $this->Form->create(null, ['url' => ['controller' => 'Carts', 'action' => 'add', $artwork->artwork_id]]) ?>
-                <?= $this->Form->button(
-                    '<i class="fa fa-shopping-cart mr-2"></i>Add to Cart',
-                    [
-                        'escapeTitle' => false,
-                        'class' => 'inline-flex items-center bg-indigo-600 text-white py-2 px-6 rounded hover:bg-indigo-700',
-                    ]
-                ) ?>
-                <?= $this->Form->end() ?>
-            </div>
+            <?php if ($artwork->availability_status == 'sold') : ?>
+                <div class="text-red-500 font-semibold">Sold</div>
+            <?php else : ?>
+                <div>
+                    <?= $this->Form->create(null, ['url' => ['controller' => 'Carts', 'action' => 'add', $artwork->artwork_id]]) ?>
+                    <?= $this->Form->button(
+                        '<i class="fa fa-shopping-cart mr-2"></i>Add to Cart',
+                        [
+                            'escapeTitle' => false,
+                            'class' => 'inline-flex items-center bg-indigo-600 text-white py-2 px-6 rounded hover:bg-indigo-700',
+                        ],
+                    ) ?>
+                    <?= $this->Form->end() ?>
+                </div>
+            <?php endif; ?>
 
             <!-- Tax/Shipping Info -->
             <div class="text-sm text-gray-500">
