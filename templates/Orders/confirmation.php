@@ -23,12 +23,10 @@
                     <span class="font-bold">Total Amount:</span>
                     $<?= number_format($order->total_amount, 2) ?>
                 </p>
-                <?php if (!empty($order->payment)) : ?>
-                    <p class="mb-2 text-base">
-                        <span class="font-bold">Reference No:</span>
-                        <?= h($order->payment->payment_id) ?>
-                    </p>
-                <?php endif; ?>
+                <p class="mb-2 text-base">
+                    <span class="font-bold">Reference No:</span>
+                    <?= h($order->order_id) ?>
+                </p>
             </div>
             <!-- Bank Transfer Instructions -->
             <div>
@@ -43,7 +41,7 @@
                 </ul>
                 <?php if (!empty($order->payment)) : ?>
                     <p class="text-gray-700 text-base">
-                        Use <span class="font-semibold">Reference No: <?= h($order->payment->payment_id) ?></span>
+                        Use <span class="font-semibold">Reference No: <?= h($order->order_id) ?></span>
                         in your transfer reference.
                     </p>
                 <?php endif; ?>

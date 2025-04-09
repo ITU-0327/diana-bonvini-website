@@ -47,7 +47,7 @@ CREATE TABLE artworks (
 
 -- Table: orders
 CREATE TABLE orders (
-    order_id CHAR(36) NOT NULL PRIMARY KEY,
+    order_id CHAR(9) NOT NULL PRIMARY KEY,
     user_id CHAR(36) NOT NULL,
     total_amount DECIMAL(10,2) NOT NULL,
     order_status ENUM('pending','confirmed','completed','cancelled') NOT NULL,
@@ -73,7 +73,7 @@ CREATE TABLE orders (
 -- Table: artwork_orders
 CREATE TABLE artwork_orders (
     artwork_order_id CHAR(36) NOT NULL PRIMARY KEY,
-    order_id CHAR(36) NOT NULL,
+    order_id CHAR(9) NOT NULL,
     artwork_id CHAR(36) NOT NULL,
     quantity INT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
@@ -112,8 +112,8 @@ CREATE TABLE contact_messages (
 
 -- Table: payments
 CREATE TABLE payments (
-    payment_id CHAR(9) NOT NULL PRIMARY KEY,
-    order_id CHAR(36) NOT NULL,
+    payment_id CHAR(36) NOT NULL PRIMARY KEY,
+    order_id CHAR(9) NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     payment_date DATETIME NOT NULL,
     payment_method ENUM('bank transfer','credit card') NOT NULL,

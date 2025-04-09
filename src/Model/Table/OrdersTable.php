@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use App\Model\Entity\Order;
+use ArrayObject;
+use Cake\Event\EventInterface;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
@@ -59,6 +62,40 @@ class OrdersTable extends Table
             'dependent' => true,
             'cascadeCallbacks' => true,
         ]);
+    }
+
+    /**
+     * @param \Cake\Event\EventInterface<\App\Model\Entity\Order> $event
+     * @param \App\Model\Entity\Order $entity
+     * @param \ArrayObject<string, mixed> $options
+     * @return void
+     * @throws \Random\RandomException
+     */
+    public function beforeSave(EventInterface $event, Order $entity, ArrayObject $options): void
+    {
+        if ($entity->isNew() && empty($entity->order_id)) {
+            $entity->order_id = $this->generateOrderId();
+        }
+    }
+
+    /**
+     * Generates a Payment ID in the format "O-AB12345".
+     *
+     * @return string
+     * @throws \Random\RandomException
+     */
+    private function generateOrderId(): string
+    {
+        do {
+            $letters = '';
+            for ($i = 0; $i < 2; $i++) {
+                $letters .= chr(random_int(65, 90));
+            }
+            $digits = str_pad((string)random_int(0, 99999), 5, '0', STR_PAD_LEFT);
+            $orderId = 'O-' . $letters . $digits;
+        } while ($this->exists(['order_id' => $orderId]));
+
+        return $orderId;
     }
 
     /**

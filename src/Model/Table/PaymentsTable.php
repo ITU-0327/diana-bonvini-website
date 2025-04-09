@@ -3,9 +3,6 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
-use App\Model\Entity\Payment;
-use ArrayObject;
-use Cake\Event\EventInterface;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
@@ -51,40 +48,6 @@ class PaymentsTable extends Table
     }
 
     /**
-     * @param \Cake\Event\EventInterface<\App\Model\Entity\Payment> $event
-     * @param \App\Model\Entity\Payment $entity
-     * @param \ArrayObject<string, mixed> $options
-     * @return void
-     * @throws \Random\RandomException
-     */
-    public function beforeSave(EventInterface $event, Payment $entity, ArrayObject $options): void
-    {
-        if ($entity->isNew() && empty($entity->payment_id)) {
-            $entity->payment_id = $this->generatePaymentId();
-        }
-    }
-
-    /**
-     * Generates a Payment ID in the format "O-AB12345".
-     *
-     * @return string
-     * @throws \Random\RandomException
-     */
-    private function generatePaymentId(): string
-    {
-        do {
-            $letters = '';
-            for ($i = 0; $i < 2; $i++) {
-                $letters .= chr(random_int(65, 90));
-            }
-            $digits = str_pad((string)random_int(0, 99999), 5, '0', STR_PAD_LEFT);
-            $paymentId = 'O-' . $letters . $digits;
-        } while ($this->exists(['payment_id' => $paymentId]));
-
-        return $paymentId;
-    }
-
-    /**
      * Default validation rules.
      *
      * @param \Cake\Validation\Validator $validator Validator instance.
@@ -93,8 +56,8 @@ class PaymentsTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
-            ->uuid('order_id')
-            ->notEmptyString('order_id');
+            ->notEmptyString('order_id')
+            ->add('order_id', 'unique', ['rule' => 'validateUnique', 'provider' => 'table']);
 
         $validator
             ->decimal('amount')
@@ -131,6 +94,7 @@ class PaymentsTable extends Table
      */
     public function buildRules(RulesChecker $rules): RulesChecker
     {
+        $rules->add($rules->isUnique(['order_id']), ['errorField' => 'order_id']);
         $rules->add($rules->existsIn(['order_id'], 'Orders'), ['errorField' => 'order_id']);
 
         return $rules;
