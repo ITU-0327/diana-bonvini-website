@@ -71,18 +71,16 @@ class UsersTable extends Table
             ->scalar('password')
             ->maxLength('password', 255)
             ->requirePresence('password', function ($context) {
-                return empty($context['data']['oauth_provider']);
+                return $context['newRecord'] && empty($context['data']['oauth_provider']);
             })
             ->notEmptyString('password', 'Password is required', function ($context) {
-                return empty($context['data']['oauth_provider']);
+                return $context['newRecord'] && empty($context['data']['oauth_provider']);
             })
             ->add('password', 'complexity', [
                 'rule' => function ($value, $context) {
-                    // Skip complexity check if using OAuth.
-                    if (!empty($context['data']['oauth_provider'])) {
+                    if (!empty($context['data']['oauth_provider']) || $value === null || $value === '') {
                         return true;
                     }
-                    // Enforce complexity for traditional accounts.
                     return strlen($value) >= 8 &&
                         preg_match('/[A-Z]/', $value) &&
                         preg_match('/[a-z]/', $value) &&
@@ -97,8 +95,34 @@ class UsersTable extends Table
             ->allowEmptyString('phone_number');
 
         $validator
-            ->scalar('address')
-            ->allowEmptyString('address');
+            ->scalar('street_address')
+            ->maxLength('street_address', 255)
+            ->allowEmptyString('street_address');
+
+        $validator
+            ->scalar('street_address2')
+            ->maxLength('street_address2', 255)
+            ->allowEmptyString('street_address2');
+
+        $validator
+            ->scalar('suburb')
+            ->maxLength('suburb', 255)
+            ->allowEmptyString('suburb');
+
+        $validator
+            ->scalar('state')
+            ->maxLength('state', 255)
+            ->allowEmptyString('state');
+
+        $validator
+            ->scalar('postcode')
+            ->maxLength('postcode', 20)
+            ->allowEmptyString('postcode');
+
+        $validator
+            ->scalar('country')
+            ->maxLength('country', 255)
+            ->allowEmptyString('country');
 
         $validator
             ->scalar('user_type')
