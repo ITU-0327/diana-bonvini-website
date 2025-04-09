@@ -27,7 +27,7 @@ $siteTitle = 'Diana Bonvini Art & Writing';
         .full-bleed {
             position: fixed;
             inset: 0;
-            width: 100vw;
+            width: 100%;
             height: 100%;
             object-fit: cover;
             object-position: center;
@@ -38,7 +38,7 @@ $siteTitle = 'Diana Bonvini Art & Writing';
     <?= $this->fetch('css') ?>
     <?= $this->fetch('script') ?>
 </head>
-<body class="relative text-white min-h-screen flex flex-col overflow-hidden">
+<body class="relative text-white min-h-screen flex flex-col overflow-x-hidden">
 
 <!-- Background -->
 <div class="fixed inset-0 -z-10">
