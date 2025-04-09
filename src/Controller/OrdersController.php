@@ -75,11 +75,9 @@ class OrdersController extends AppController
 
         // Build the base order data from the request.
         $data = $this->request->getData();
-        if ($this->Authentication->getIdentity()) {
-            /** @var \App\Model\Entity\User $user */
-            $user = $this->Authentication->getIdentity();
-            $data['user_id'] = $user->user_id;
-        }
+        /** @var \App\Model\Entity\User $user */
+        $user = $this->Authentication->getIdentity();
+        $data['user_id'] = $user->user_id;
 
         // Get the current user's cart.
         /** @var \App\Model\Entity\Cart $cart */
@@ -153,9 +151,10 @@ class OrdersController extends AppController
             return $this->redirect(['action' => 'confirmation', $order->order_id]);
         } else {
             $connection->rollback();
-            $this->Flash->error(__('There was an error placing your order. Please try again.'));
+            $this->Flash->error(__('There were errors in your order submission. Please correct them and try again.'));
+            $this->set(compact('order', 'cart', 'user'));
 
-            return $this->redirect(['action' => 'checkout']);
+            return $this->render('checkout');
         }
     }
 

@@ -26,13 +26,19 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <?= $this->Form->control('billing_first_name', [
                         'label' => 'First Name *',
+                        'value' => $user ? $user->first_name : '',
                         'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                         'required' => true,
+                        'pattern' => "^[a-zA-Z '\\-]+$",
+                        'title' => 'First name should only contain letters, spaces, apostrophes, and hyphens.'
                     ]) ?>
                     <?= $this->Form->control('billing_last_name', [
                         'label' => 'Last Name *',
+                        'value' => $user ? $user->last_name : '',
                         'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                         'required' => true,
+                        'pattern' => "^[a-zA-Z '\\-]+$",
+                        'title' => 'Last name should only contain letters, spaces, apostrophes, and hyphens.'
                     ]) ?>
                 </div>
                 <?= $this->Form->control('billing_company', [
@@ -42,10 +48,10 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                 ]) ?>
                 <?= $this->Form->control('billing_email', [
                     'label' => 'Email Address *',
+                    'value' => $user ? $user->email : '',
                     'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                     'type' => 'email',
                     'required' => true,
-                    'value' => $user ? $user->email : '',
                 ]) ?>
             </section>
 
@@ -95,13 +101,17 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                         'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                         'required' => true,
                         'id' => 'postcodeField',
+                        'pattern' => "^[0-9]{4}$",
+                        'title' => 'Please enter a valid 4-digit postal code.'
                     ]) ?>
                 </div>
                 <?= $this->Form->control('shipping_phone', [
                     'label' => 'Phone *',
+                    'value' => $user ? $user->phone_number : '',
                     'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                     'required' => true,
-                    'value' => $user ? $user->phone_number : '',
+                    'pattern' => "^[0-9\\-\\+\\(\\) ]+$",
+                    'title' => 'Please enter a valid phone number.'
                 ]) ?>
             </section>
 
