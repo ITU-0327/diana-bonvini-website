@@ -71,16 +71,18 @@ class UsersTable extends Table
             ->scalar('password')
             ->maxLength('password', 255)
             ->requirePresence('password', function ($context) {
-                return $context['newRecord'] && empty($context['data']['oauth_provider']);
+                return empty($context['data']['oauth_provider']);
             })
             ->notEmptyString('password', 'Password is required', function ($context) {
-                return $context['newRecord'] && empty($context['data']['oauth_provider']);
+                return empty($context['data']['oauth_provider']);
             })
             ->add('password', 'complexity', [
                 'rule' => function ($value, $context) {
-                    if (!empty($context['data']['oauth_provider']) || $value === null || $value === '') {
+                    // Skip complexity check if using OAuth.
+                    if (!empty($context['data']['oauth_provider'])) {
                         return true;
                     }
+                    // Enforce complexity for traditional accounts.
                     return strlen($value) >= 8 &&
                         preg_match('/[A-Z]/', $value) &&
                         preg_match('/[a-z]/', $value) &&
