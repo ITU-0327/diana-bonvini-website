@@ -15,7 +15,12 @@ use Cake\ORM\Entity;
  * @property string $email
  * @property string|null $password
  * @property string|null $phone_number
- * @property string|null $address
+ * @property string|null $street_address
+ * @property string|null $street_address2
+ * @property string|null $suburb
+ * @property string|null $state
+ * @property string|null $postcode
+ * @property string|null $country
  * @property string $user_type
  * @property \Cake\I18n\DateTime|null $last_login
  * @property int $is_deleted
@@ -41,7 +46,12 @@ class User extends Entity
         'email' => true,
         'password' => true,
         'phone_number' => true,
-        'address' => true,
+        'street_address' => true,
+        'street_address2' => true,
+        'suburb' => true,
+        'state' => true,
+        'postcode' => true,
+        'country' => true,
         'user_type' => true,
         'last_login' => true,
         'is_deleted' => true,

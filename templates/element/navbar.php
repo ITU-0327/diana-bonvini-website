@@ -91,14 +91,12 @@ $userType = $user?->get('user_type');
                 <a href="<?= $this->Url->build('/') ?>" class="flex items-center nav-logo">
                     <span class="font-bold text-2xl text-gray-800">diana bonvini.</span>
                 </a>
-            </div>
-
-            <!-- Middle: Navigation Menu (visible only on large screens, aligned to left) -->
-            <div class="hidden md:flex items-center">
-                <ul class="nav-menu">
-                    <!-- Art Dropdown -->
-                    <li class="relative group">
-                        <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index']) ?>">
+                <!-- Navigation Menu -->
+                <ul class="flex space-x-4">
+                    <!-- Buy Art with Dropdown -->
+                    <li class="menu-item relative group">
+                        <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index']) ?>"
+                           class="block px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded">
                             Art
                             <svg class="inline ml-1 h-4 w-4" fill="none" stroke="currentColor"
                                  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -229,6 +227,17 @@ $userType = $user?->get('user_type');
                                 </li>
                                 <li class="menu-item">
                                     <a href="#" class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
+                                        <i class="fa-solid fa-calendar-check h-6 w-6 text-indigo-500"></i>
+                                        <div>
+                                            <p class="text-gray-700 font-medium text-base">My Bookings</p>
+                                            <p class="text-xs text-gray-500">Scheduled Sessions</p>
+                                        </div>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <!-- Updated Account Settings Link -->
+                                    <a href="<?= $this->Url->build(['controller' => 'Users', 'action' => 'view', $user->user_id]) ?>"
+                                       class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
                                         <i class="fa-solid fa-user-cog h-6 w-6 text-indigo-500"></i>
                                         <div>
                                             <p class="text-gray-700 font-medium text-base">Account Settings</p>
@@ -237,7 +246,15 @@ $userType = $user?->get('user_type');
                                     </a>
                                 </li>
                             </ul>
-                            <?= $this->Form->postLink('Log Out', ['controller' => 'Users', 'action' => 'logout'], ['class' => 'block w-full text-left px-4 py-2 mt-4 text-base text-gray-700 hover:bg-gray-100 rounded']) ?>
+
+                            <!-- Log Out Button -->
+                            <?= $this->Form->postLink(
+                                'Log Out',
+                                ['controller' => 'Users', 'action' => 'logout'],
+                                [
+                                    'class' => 'block w-full text-left px-4 py-2 mt-4 text-base text-gray-700 hover:bg-gray-100 rounded',
+                                ]
+                            ) ?>
                         </div>
                     </div>
                 <?php else : ?>

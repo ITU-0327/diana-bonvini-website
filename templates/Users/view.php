@@ -4,67 +4,55 @@
  * @var \App\Model\Entity\User $user
  */
 ?>
-<div class="row">
-    <aside class="column">
-        <div class="side-nav">
-            <h4 class="heading"><?= __('Actions') ?></h4>
-            <?= $this->Html->link(__('Edit User'), ['action' => 'edit', $user->user_id], ['class' => 'side-nav-item']) ?>
-            <?= $this->Form->postLink(__('Delete User'), ['action' => 'delete', $user->user_id], ['confirm' => __('Are you sure you want to delete # {0}?', $user->user_id), 'class' => 'side-nav-item']) ?>
-            <?= $this->Html->link(__('List Users'), ['action' => 'index'], ['class' => 'side-nav-item']) ?>
-            <?= $this->Html->link(__('New User'), ['action' => 'add'], ['class' => 'side-nav-item']) ?>
+<!-- Using flex layout -->
+<div class="flex flex-col md:flex-row">
+    <!-- Sidebar section -->
+    <aside class="w-full md:w-1/4 p-4">
+        <div class="bg-white p-4 shadow rounded">
+            <h4 class="text-xl font-bold mb-4"><?= __('Actions') ?></h4>
+            <?= $this->Html->link(__('Edit User'), ['action' => 'edit', $user->user_id], [
+                'class' => 'block text-blue-500 hover:underline mb-2'
+            ]) ?>
         </div>
     </aside>
-    <div class="column column-80">
-        <div class="users view content">
-            <h3><?= h($user->first_name) ?></h3>
-            <table>
+    <!-- Main Content Section -->
+    <div class="w-full md:w-3/4 p-4">
+        <div class="bg-white p-6 shadow rounded">
+            <h3 class="text-2xl font-bold mb-4">User Profile</h3>
+            <table class="min-w-full divide-y divide-gray-200">
+                <tbody class="bg-white divide-y divide-gray-200">
                 <tr>
-                    <th><?= __('User Id') ?></th>
-                    <td><?= h($user->user_id) ?></td>
+                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500"><?= __('First Name') ?></th>
+                    <td class="px-6 py-3 text-sm text-gray-900"><?= h($user->first_name) ?></td>
                 </tr>
                 <tr>
-                    <th><?= __('First Name') ?></th>
-                    <td><?= h($user->first_name) ?></td>
+                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500"><?= __('Last Name') ?></th>
+                    <td class="px-6 py-3 text-sm text-gray-900"><?= h($user->last_name) ?></td>
                 </tr>
                 <tr>
-                    <th><?= __('Last Name') ?></th>
-                    <td><?= h($user->last_name) ?></td>
+                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500"><?= __('Email') ?></th>
+                    <td class="px-6 py-3 text-sm text-gray-900"><?= h($user->email) ?></td>
                 </tr>
                 <tr>
-                    <th><?= __('Email') ?></th>
-                    <td><?= h($user->email) ?></td>
+                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500"><?= __('Phone Number') ?></th>
+                    <td class="px-6 py-3 text-sm text-gray-900"><?= h($user->phone_number) ?></td>
                 </tr>
                 <tr>
-                    <th><?= __('Phone Number') ?></th>
-                    <td><?= h($user->phone_number) ?></td>
+                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500"><?= __('Last Login') ?></th>
+                    <td class="px-6 py-3 text-sm text-gray-900"><?= h($user->last_login) ?></td>
                 </tr>
                 <tr>
-                    <th><?= __('User Type') ?></th>
-                    <td><?= h($user->user_type) ?></td>
+                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500"><?= __('Address') ?></th>
+                    <td class="px-6 py-3 text-sm text-gray-900">
+                        <?= h($user->street_address) ?>
+                        <?php if (!empty($user->suburb) || !empty($user->state) || !empty($user->postcode)): ?>
+                            , <?= trim(h($user->suburb . ' ' . $user->state . ' ' . $user->postcode)) ?>
+                        <?php endif; ?>
+                        <?= $user->country ? ', ' . h($user->country) : '' ?>
+                    </td>
                 </tr>
-                <tr>
-                    <th><?= __('Is Deleted') ?></th>
-                    <td><?= $this->Number->format($user->is_deleted) ?></td>
-                </tr>
-                <tr>
-                    <th><?= __('Last Login') ?></th>
-                    <td><?= h($user->last_login) ?></td>
-                </tr>
-                <tr>
-                    <th><?= __('Created At') ?></th>
-                    <td><?= h($user->created_at) ?></td>
-                </tr>
-                <tr>
-                    <th><?= __('Updated At') ?></th>
-                    <td><?= h($user->updated_at) ?></td>
-                </tr>
+                </tbody>
             </table>
-            <div class="text">
-                <strong><?= __('Address') ?></strong>
-                <blockquote>
-                    <?= $this->Text->autoParagraph(h($user->address)); ?>
-                </blockquote>
-            </div>
         </div>
     </div>
 </div>
