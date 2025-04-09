@@ -159,7 +159,7 @@ class UsersController extends AppController
      */
     public function view(?string $id = null)
     {
-        $user = $this->Users->get($id, ['contain' => []]);
+        $user = $this->Users->get($id, contain: []);
         $this->set(compact('user'));
     }
 
