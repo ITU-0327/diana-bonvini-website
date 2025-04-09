@@ -9,9 +9,9 @@ use Cake\ORM\Entity;
  * WritingServiceRequest Entity
  *
  * @property string $writing_service_request_id
+ * @property string $service_title
  * @property string $user_id
  * @property string $service_type
- * @property string $word_count_range
  * @property string|null $notes
  * @property string|null $final_price
  * @property string $request_status
@@ -35,9 +35,9 @@ class WritingServiceRequest extends Entity
      * @var array<string, bool>
      */
     protected array $_accessible = [
+        'service_title' => true,
         'user_id' => true,
         'service_type' => true,
-        'word_count_range' => true,
         'notes' => true,
         'final_price' => true,
         'request_status' => true,

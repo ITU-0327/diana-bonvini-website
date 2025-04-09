@@ -3,6 +3,7 @@
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\WritingServiceRequest> $writingServiceRequests
  */
+use Cake\Utility\Inflector;
 ?>
 <div class="max-w-7xl mx-auto px-4 py-8">
     <!-- Header with Left-Aligned Underline -->
@@ -17,6 +18,7 @@
             <thead>
             <tr class="bg-gray-100 text-gray-600 uppercase text-sm">
                 <th class="py-3 px-6 text-left">Request ID</th>
+                <th class="py-3 px-6 text-left">Request Title</th>
                 <th class="py-3 px-6 text-left">Service Type</th>
                 <th class="py-3 px-6 text-left">Final Price</th>
                 <th class="py-3 px-6 text-left">Status</th>
@@ -28,15 +30,16 @@
             <?php foreach ($writingServiceRequests as $request) : ?>
                 <tr class="border-b border-gray-200 hover:bg-gray-50">
                     <td class="py-3 px-6"><?= h($request->writing_service_request_id) ?></td>
-                    <td class="py-3 px-6"><?= h($request->service_type) ?></td>
+                    <td class="py-3 px-6"><?= h($request->service_title) ?></td>
+                    <td class="py-3 px-6"><?= h(Inflector::humanize($request->service_type)) ?></td>
                     <td class="py-3 px-6">
                         <?= $request->final_price !== null ? '$' . $this->Number->format($request->final_price) : '-' ?>
                     </td>
-                    <td class="py-3 px-6"><?= h($request->request_status) ?></td>
+                    <td class="py-3 px-6"><?= h(Inflector::humanize($request->request_status)) ?></td>
                     <td class="py-3 px-6">
                         <?php if (!empty($request->created_at)) : ?>
                             <span class="local-time" data-datetime="<?= h($request->created_at->format('c')) ?>"></span>
-                        <?php else: ?>
+                        <?php else : ?>
                             -
                         <?php endif; ?>
                     </td>
@@ -44,7 +47,7 @@
                         <?= $this->Html->link(
                             'View',
                             ['action' => 'view', $request->writing_service_request_id],
-                            ['class' => 'bg-teal-600 text-white py-1 px-3 rounded hover:bg-teal-700 transition']
+                            ['class' => 'bg-teal-600 text-white py-1 px-3 rounded hover:bg-teal-700 transition'],
                         ) ?>
                     </td>
                 </tr>

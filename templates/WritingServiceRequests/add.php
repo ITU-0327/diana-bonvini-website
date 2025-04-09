@@ -15,6 +15,18 @@
     <div class="bg-white shadow rounded-lg p-6 mb-8">
         <?= $this->Form->create($writingServiceRequest, ['type' => 'file', 'class' => 'space-y-6']) ?>
 
+        <!-- Service Title -->
+        <div>
+            <?= $this->Form->label('service_title', 'Request Title', [
+                'class' => 'block font-medium text-gray-700 mb-2',
+            ]) ?>
+            <?= $this->Form->text('service_title', [
+                'maxlength' => 100,
+                'placeholder' => 'Briefly describe your service...',
+                'class' => 'block w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm',
+            ]) ?>
+        </div>
+
         <!-- Service Type -->
         <div>
             <?= $this->Form->label('service_type', 'Service Type', [
@@ -22,39 +34,22 @@
             ]) ?>
             <?= $this->Form->select('service_type', [
                 '' => 'Please select a service',
-                'creative_writing' => 'Creative Writing',
-                'editing' => 'Editing',
-                'proofreading' => 'Proofreading',
+                'creative_writing' => 'Creative Writing - This service delivers high-quality, original content tailored to your needs.',
+                'editing' => 'Editing - This service refines your text for clarity, tone, and structure.',
+                'proofreading' => 'Proofreading - This service reviews your text for grammar, punctuation, and style consistency.',
             ], [
                 'id' => 'service-type',
                 'class' => 'block w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm',
             ]) ?>
         </div>
 
-        <!-- Word Count Range -->
-        <div>
-            <?= $this->Form->label('word_count_range', 'Word Count Range', [
-                'class' => 'block font-medium text-gray-700 mb-2',
-            ]) ?>
-            <?= $this->Form->select('word_count_range', [
-                '' => 'Please select a word count range',
-                'under_5000' => 'Under 5000',
-                '5000_20000' => '5000 - 20000',
-                '20000_50000' => '20000 - 50000',
-                '50000_plus' => '50000+',
-            ], [
-                'id' => 'word-count',
-                'class' => 'block w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm',
-            ]) ?>
-        </div>
-
         <!-- Notes -->
         <div>
-            <?= $this->Form->label('notes', 'Notes (maximum 100 characters)', [
+            <?= $this->Form->label('notes', 'Notes', [
                 'class' => 'block font-medium text-gray-700 mb-2',
             ]) ?>
             <?= $this->Form->textarea('notes', [
-                'maxlength' => 100,
+                'maxlength' => 1000,
                 'rows' => 3,
                 'class' => 'block w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm',
             ]) ?>
@@ -62,9 +57,13 @@
 
         <!-- File Upload -->
         <div>
-            <?= $this->Form->label('document', 'Upload Document', [
+            <?= $this->Form->label('document', 'Upload Document <span class="text-sm text-gray-500">(Optional)</span>', [
                 'class' => 'block font-medium text-gray-700 mb-2',
+                'escape' => false,
             ]) ?>
+            <p class="mb-2 text-sm text-gray-600">
+                Upload any reference documents, drafts, or examples that will help us understand your requirements better.
+            </p>
             <?= $this->Form->file('document', [
                 'class' => 'block w-full text-gray-700 py-2 px-3 border border-gray-300 rounded cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500',
                 'accept' => '.pdf,.jpg,.jpeg,.docx',

@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use App\Model\Entity\WritingServiceRequest;
+use ArrayObject;
+use Cake\Event\EventInterface;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
@@ -54,6 +57,42 @@ class WritingServiceRequestsTable extends Table
     }
 
     /**
+     * Before save event callback.
+     *
+     * @param \Cake\Event\EventInterface $event The event object.
+     * @param \App\Model\Entity\WritingServiceRequest $entity The entity being saved.
+     * @param \ArrayObject<string, mixed> $options Options passed to the save method.
+     * @return void
+     * @throws \Random\RandomException
+     */
+    public function beforeSave(EventInterface $event, WritingServiceRequest $entity, ArrayObject $options): void
+    {
+        if ($entity->isNew() && empty($entity->writing_service_request_id)) {
+            $entity->writing_service_request_id = $this->generateRequestId();
+        }
+    }
+
+    /**
+     * Generates a unique request ID.
+     *
+     * @return string
+     * @throws \Random\RandomException
+     */
+    private function generateRequestId(): string
+    {
+        do {
+            $letters = '';
+            for ($i = 0; $i < 2; $i++) {
+                $letters .= chr(random_int(65, 90));
+            }
+            $digits = str_pad((string)random_int(0, 99999), 5, '0', STR_PAD_LEFT);
+            $requestId = 'R-' . $letters . $digits;
+        } while ($this->exists(['writing_service_request_id' => $requestId]));
+
+        return $requestId;
+    }
+
+    /**
      * Default validation rules.
      *
      * @param \Cake\Validation\Validator $validator Validator instance.
@@ -61,6 +100,12 @@ class WritingServiceRequestsTable extends Table
      */
     public function validationDefault(Validator $validator): Validator
     {
+        $validator
+            ->scalar('service_title')
+            ->maxLength('service_title', 100, 'Title must be no more than 100 characters.')
+            ->requirePresence('service_title', 'create')
+            ->notEmptyString('service_title');
+
         $validator
             ->uuid('user_id')
             ->notEmptyString('user_id');
@@ -71,14 +116,8 @@ class WritingServiceRequestsTable extends Table
             ->notEmptyString('service_type');
 
         $validator
-            ->scalar('word_count_range')
-            ->maxLength('word_count_range', 50)
-            ->requirePresence('word_count_range', 'create')
-            ->notEmptyString('word_count_range');
-
-        $validator
             ->scalar('notes')
-            ->maxLength('notes', 100)
+            ->maxLength('notes', 1000, 'Notes must be no more than 1000 characters.')
             ->allowEmptyString('notes');
 
         $validator
