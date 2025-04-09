@@ -18,6 +18,7 @@ declare(strict_types=1);
 use Cake\Chronos\Chronos;
 use Cake\Core\Configure;
 use Cake\Datasource\ConnectionManager;
+use Cake\Mailer\TransportFactory;
 use Cake\TestSuite\ConnectionHelper;
 use Cake\TestSuite\Fixture\SchemaLoader;
 use Migrations\TestSuite\Migrator;
@@ -57,6 +58,11 @@ ConnectionManager::setConfig('test_debug_kit', [
     'cacheMetadata' => true,
     'quoteIdentifiers' => false,
 ]);
+
+if (TransportFactory::getConfig('default')) {
+    TransportFactory::drop('default');
+    TransportFactory::setConfig('default', ['className' => 'Debug']);
+}
 
 ConnectionManager::alias('test_debug_kit', 'debug_kit');
 
