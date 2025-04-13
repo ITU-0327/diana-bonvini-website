@@ -107,7 +107,7 @@ class ArtworksController extends AppController
             if ($this->Artworks->save($artwork)) {
                 $this->Flash->success(__('The artwork has been saved.'));
 
-                return $this->redirect(['action' => 'index']);
+                return $this->redirect(['action' => 'view', $artwork->artwork_id]);
             }
             $this->Flash->error(__('The artwork could not be saved. Please, try again.'));
         }

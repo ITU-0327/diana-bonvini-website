@@ -38,18 +38,21 @@ $userType = $user?->get('user_type');
     <!-- Artworks Grid -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
         <?php foreach ($artworks as $artwork) : ?>
-            <div class="relative group artwork-card cursor-pointer"
+            <div
+                class="relative group artwork-card cursor-pointer aspect-[4/3]"
                 data-status="<?= h($artwork->availability_status) ?>"
-                data-url="<?= $this->Url->build(['action' => 'view', $artwork->artwork_id]) ?>">
+                data-url="<?= $this->Url->build(['action' => 'view', $artwork->artwork_id]) ?>"
+            >
                 <!-- Artwork Image -->
                 <?= $this->Html->image($artwork->image_path, [
-                    'alt' => $artwork->title,
-                    'class' => 'w-full h-auto object-cover',
+                    'alt'   => $artwork->title,
+                    'class' => 'w-full h-full object-cover', // Let the picture be cut adaptively in the 4:3 container
                 ]) ?>
 
                 <?php if ($artwork->availability_status === 'available') : ?>
                     <!-- Hover Overlay for Available Art -->
-                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100">
+                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition
+                            flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100">
                         <h2 class="text-xl font-bold mb-2"><?= h($artwork->title) ?></h2>
                         <p class="mb-4">$<?= $this->Number->format($artwork->price) ?></p>
 
@@ -65,7 +68,8 @@ $userType = $user?->get('user_type');
                     </div>
                 <?php else : ?>
                     <!-- Sold Overlay with Price -->
-                    <div class="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center text-white text-2xl font-bold">
+                    <div class="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center
+                            text-white text-2xl font-bold">
                         <div>Sold</div>
                         <div class="mt-2 text-xl">$<?= $this->Number->format($artwork->price) ?></div>
                     </div>
