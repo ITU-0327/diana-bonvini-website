@@ -89,7 +89,7 @@ $userType = $user?->get('user_type');
             <!-- Left: Logo (always visible) -->
             <div class="flex items-center">
                 <a href="<?= $this->Url->build('/') ?>" class="flex items-center nav-logo">
-                    <span class="font-bold text-2xl text-gray-800">diana bonvini.</span>
+                    <span class="font-bold text-2xl text-gray-800">diana bonvini</span>
                 </a>
             </div>
 
