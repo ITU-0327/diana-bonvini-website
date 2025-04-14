@@ -59,7 +59,7 @@ class WritingServiceRequestsTable extends Table
     /**
      * Before save event callback.
      *
-     * @param \Cake\Event\EventInterface $event The event object.
+     * @param \Cake\Event\EventInterface<\App\Model\Entity\WritingServiceRequest> $event The event object.
      * @param \App\Model\Entity\WritingServiceRequest $entity The entity being saved.
      * @param \ArrayObject<string, mixed> $options Options passed to the save method.
      * @return void
