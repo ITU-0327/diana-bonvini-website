@@ -8,7 +8,65 @@ use Cake\Utility\Inflector;
 
 ?>
 <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-    <h3 class="text-2xl font-semibold text-gray-800">Writing Service Requests</h3>
+    <!-- Header with Left-Aligned Underline -->
+    <div class="flex flex-col items-start mb-8">
+        <h1 class="text-3xl uppercase text-gray-800">Writing Service Requests</h1>
+        <div class="mt-1 w-16 h-[2px] bg-gray-800"></div>
+    </div>
+
+    <?= $this->Form->create(null, ['type' => 'get']) ?>
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 border-b pb-4 mb-4">
+        <!-- Search Input -->
+        <div class="w-full md:w-1/3">
+            <label for="q" class="block text-sm font-medium text-gray-700">Search keywords</label>
+            <input type="text" name="q" id="q"
+                   value="<?= h($this->request->getQuery('q')) ?>"
+                   placeholder="e.g. Title or Name"
+                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+        </div>
+
+        <!-- Filter Dropdowns -->
+        <div class="flex flex-col md:flex-row gap-4 w-full md:w-2/3">
+            <div class="flex-1">
+                <label for="service_type" class="block text-sm font-medium text-gray-700">Service type</label>
+                <?= $this->Form->select('service_type', [
+                    'creative_writing' => 'Creative Writing',
+                    'editing' => 'Editing',
+                    'proofreading' => 'Proofreading',
+                ], [
+                    'empty' => 'All',
+                    'default' => $this->request->getQuery('service_type'),
+                    'class' => 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm'
+                ]) ?>
+            </div>
+
+            <div class="flex-1">
+                <label for="request_status" class="block text-sm font-medium text-gray-700">Request status</label>
+                <?= $this->Form->select('request_status', [
+                    'pending' => 'Pending',
+                    'in_progress' => 'In Progress',
+                    'expired' => 'Expired',
+                ], [
+                    'empty' => 'All',
+                    'default' => $this->request->getQuery('request_status'),
+                    'class' => 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm'
+                ]) ?>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex gap-2 mt-4 md:mt-0">
+            <button type="submit"
+                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                See Result
+            </button>
+            <a href="<?= $this->Url->build(['action' => 'adminIndex']) ?>"
+               class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                Reset
+            </a>
+        </div>
+    </div>
+    <?= $this->Form->end() ?>
 
     <div class="overflow-auto border rounded">
         <table class="min-w-full text-sm text-left text-gray-800">

@@ -210,18 +210,40 @@ class WritingServiceRequestsController extends AppController
 
         if (!$user || $user->user_type !== 'admin') {
             $this->Flash->error(__('You are not authorized to access admin area.'));
-
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
 
         $query = $this->WritingServiceRequests->find()
             ->contain(['Users']);
 
+        $serviceType = $this->request->getQuery('service_type');
+        $requestStatus = $this->request->getQuery('request_status');
+        $keyword = $this->request->getQuery('q');
+
+        if (!empty($serviceType)) {
+            $query->where(['WritingServiceRequests.service_type' => $serviceType]);
+        }
+
+        if (!empty($requestStatus)) {
+            $query->where(['WritingServiceRequests.request_status' => $requestStatus]);
+        }
+
+        if (!empty($keyword)) {
+            $query->where([
+                'OR' => [
+                    'WritingServiceRequests.service_title LIKE' => '%' . $keyword . '%',
+                    'Users.first_name LIKE' => '%' . $keyword . '%',
+                    'Users.last_name LIKE' => '%' . $keyword . '%'
+                ]
+            ]);
+        }
+
         $this->paginate = [
             'order' => ['WritingServiceRequests.created_at' => 'DESC'],
         ];
 
         $writingServiceRequests = $this->paginate($query);
+
         $this->set(compact('writingServiceRequests'));
     }
 
