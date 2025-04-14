@@ -210,6 +210,7 @@ class WritingServiceRequestsController extends AppController
 
         if (!$user || $user->user_type !== 'admin') {
             $this->Flash->error(__('You are not authorized to access admin area.'));
+
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
 
@@ -233,8 +234,8 @@ class WritingServiceRequestsController extends AppController
                 'OR' => [
                     'WritingServiceRequests.service_title LIKE' => '%' . $keyword . '%',
                     'Users.first_name LIKE' => '%' . $keyword . '%',
-                    'Users.last_name LIKE' => '%' . $keyword . '%'
-                ]
+                    'Users.last_name LIKE' => '%' . $keyword . '%',
+                ],
             ]);
         }
 
