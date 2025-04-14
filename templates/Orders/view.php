@@ -41,7 +41,9 @@
             </tr>
             <tr>
                 <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Order Date</th>
-                <td class="py-3 px-6 text-left text-sm text-gray-800"><?= h($order->order_date) ?></td>
+                <td class="py-3 px-6 text-left text-sm text-gray-800">
+                    <span class="local-time" data-datetime="<?= h($order->order_date->format('c')) ?>"></span>
+                </td>
             </tr>
             </tbody>
         </table>
@@ -52,3 +54,21 @@
         <?= $this->Html->link('Back to Orders', ['action' => 'index'], ['class' => 'text-teal-600 hover:text-teal-700 font-semibold']) ?>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const timeElements = document.querySelectorAll('.local-time');
+        timeElements.forEach(el => {
+            const isoTime = el.dataset.datetime;
+            const date = new Date(isoTime);
+            el.textContent = date.toLocaleString(undefined, {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true,
+            });
+        });
+    });
+</script>
