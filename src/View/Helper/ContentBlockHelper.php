@@ -63,13 +63,13 @@ class ContentBlockHelper extends Helper
      * Usage: $this->ContentBlock->html('test');
      *
      * @param string $slug The unique slug of the content block.
-     * @return string|null The HTML content or null if not found.
+     * @return string The HTML content.
      */
-    public function html(string $slug): ?string
+    public function html(string $slug): string
     {
         $rawContent = $this->findOrFail($slug, 'html')->value ?? '';
 
-        return $this->processTokens($rawContent, 'html');
+        return $this->processTokens($rawContent, 'html') ?? '';
     }
 
     /**
@@ -78,13 +78,13 @@ class ContentBlockHelper extends Helper
      * Usage: $this->ContentBlock->text('test');
      *
      * @param string $slug The unique slug of the content block.
-     * @return string|null The escaped text content.
+     * @return string The escaped text content.
      */
-    public function text(string $slug): ?string
+    public function text(string $slug): string
     {
         $rawContent = strip_tags($this->findOrFail($slug, 'text')->value ?? '');
 
-        return $this->processTokens($rawContent, 'text');
+        return $this->processTokens($rawContent, 'text') ?? '';
     }
 
     /**
