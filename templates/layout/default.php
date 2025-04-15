@@ -44,12 +44,26 @@ $siteTitle = 'Diana Bonvini Art & Writing';
                 <h3 class="text-2xl font-bold"><?= $this->ContentBlock->text('logo') ?></h3>
             </div>
             <div class="flex space-x-4">
-                <a href="<?= $this->ContentBlock->text('instagram-link') ?>" class="hover:text-gray-300 transition">
-                    <i class="fab fa-instagram"></i>
-                </a>
-                <a href="<?= $this->ContentBlock->text('linkedin-link') ?>" class="hover:text-gray-300 transition">
-                    <i class="fab fa-linkedin-in"></i>
-                </a>
+                <?= $this->ContentBlock->url(
+                    'instagram-link',
+                    [
+                        'text' => '<i class="fab fa-instagram"></i>',
+                        'target' => '_blank',
+                        'rel' => 'noopener noreferrer',
+                        'class' => 'hover:text-gray-300 transition',
+                        'escape' => false,
+                    ],
+                ) ?>
+                <?= $this->ContentBlock->url(
+                    'linkedin-link',
+                    [
+                        'text' => '<i class="fab fa-linkedin-in"></i>',
+                        'target' => '_blank',
+                        'rel' => 'noopener noreferrer',
+                        'class' => 'hover:text-gray-300 transition',
+                        'escape' => false,
+                    ],
+                ) ?>
             </div>
         </div>
         <div class="mt-4 border-t border-teal-400 pt-4 text-center text-sm">

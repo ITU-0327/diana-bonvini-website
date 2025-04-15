@@ -53,7 +53,13 @@
                 </div>
                 <!-- Block Value (short preview) -->
                 <div class="mt-3">
-                    <p class="text-sm"><?= h($block->value) ?></p>
+                    <?php if ($block->type === 'image') : ?>
+                        <?= $this->ContentBlock->image($block->slug, ['class' => 'w-full h-48 object-cover rounded']) ?>
+                    <?php elseif ($block->type === 'url') : ?>
+                        <?= $this->ContentBlock->url($block->slug, ['class' => 'text-blue-600 hover:underline']) ?>
+                    <?php else : ?>
+                        <p class="text-sm"><?= h($block->value) ?></p>
+                    <?php endif; ?>
                 </div>
                 <!-- Action Buttons -->
                 <div class="mt-4 flex justify-between text-sm">

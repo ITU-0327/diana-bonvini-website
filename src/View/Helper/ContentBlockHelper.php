@@ -6,7 +6,6 @@ namespace App\View\Helper;
 use App\Model\Entity\ContentBlock;
 use Cake\ORM\TableRegistry;
 use Cake\View\Helper;
-//use Cake\View\Helper\HtmlHelper;
 use InvalidArgumentException;
 
 /**
@@ -94,6 +93,41 @@ class ContentBlockHelper extends Helper
         $path = $this->findOrFail($slug, 'image')->value;
 
         return $path ? $this->Html->image($path, $options) : null;
+    }
+
+    /**
+     * Renders a URL block.
+     *
+     * Usage: $this->ContentBlock->url('link-slug', ['text' => 'Visit Website', 'class' => 'custom-class']);
+     *
+     * If the URL value is an email address, it will automatically use the mailto: protocol.
+     * If no 'text' option is provided, the link text will be the URL itself.
+     *
+     * @param string $slug The unique slug of the content block.
+     * @param array<string, mixed> $options Options for rendering the link.
+     *     Optionally, 'text' can be provided to specify the link text.
+     * @return string|null The generated HTML link or null if there is no URL.
+     */
+    public function url(string $slug, array $options = []): ?string
+    {
+        $block = $this->findOrFail($slug, 'url');
+        $url = $block->value;
+        if (!$url) {
+            return null;
+        }
+
+        // Determine the link text.
+        $linkText = $options['text'] ?? $url;
+        // Remove the text key as it is not an option for the Html->link() helper.
+        unset($options['text']);
+
+        // If the URL is a valid email address, prepend "mailto:".
+        if (filter_var($url, FILTER_VALIDATE_EMAIL)) {
+            $url = 'mailto:' . $url;
+        }
+
+        // Return the generated link using the Html helper.
+        return $this->Html->link($linkText, $url, $options);
     }
 
     /**

@@ -180,7 +180,7 @@ CREATE TABLE content_blocks (
     slug VARCHAR(255) NOT NULL UNIQUE,
     label VARCHAR(255) NOT NULL,
     description TEXT,
-    type ENUM('html','text','image') NOT NULL,
+    type ENUM('html','text','image', 'url') NOT NULL,
     value LONGTEXT,
     previous_value LONGTEXT,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
