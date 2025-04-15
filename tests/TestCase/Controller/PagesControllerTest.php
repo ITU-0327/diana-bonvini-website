@@ -29,6 +29,15 @@ class PagesControllerTest extends TestCase
     use IntegrationTestTrait;
 
     /**
+     * Fixtures
+     *
+     * @var list<string>
+     */
+    protected array $fixtures = [
+        'app.ContentBlocks',
+    ];
+
+    /**
      * testDisplay method
      *
      * @return void
