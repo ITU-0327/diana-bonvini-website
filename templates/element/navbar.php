@@ -103,7 +103,7 @@ $userType = $user?->get('user_type');
             <!-- Right: Cart and User Profile (visible only on large screens) -->
             <div class="hidden md:flex items-center space-x-6">
                 <!-- Cart -->
-                <a href="<?= $this->Url->build(['controller' => 'Carts', 'action' => 'index']) ?>" class="relative">
+                <a href="<?= $this->Url->build(['controller' => 'Carts', 'action' => 'index']) ?>" class="relative transform transition hover:scale-110">
                     <?= $this->Html->image('navbar/shopping-cart.png', ['class' => 'h-6 w-6']) ?>
                 </a>
                 <!-- User Profile or Login -->
@@ -221,7 +221,7 @@ $userType = $user?->get('user_type');
             <?php if ($user) : ?>
                 <li class="mt-2 border-t border-gray-200 pt-3">
                     <a href="<?= $this->Url->build(['controller' => 'Carts', 'action' => 'index']) ?>"
-                       class="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:text-teal-500 nav-icon">
+                       class="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:text-teal-500">
                         <?= $this->Html->image('navbar/shopping-cart.png', ['class' => 'h-5 w-5']) ?>
                         <span>Cart</span>
                     </a>
