@@ -90,7 +90,7 @@
                             [
                                 'confirm' => 'Are you sure you want to retrieve the previous value?',
                                 'escape' => false,
-                                'class' => 'text-blue-600 hover:text-blue-800',
+                                'class' => 'text-red-600 hover:text-red-800',
                                 'title' => 'Retrieve previous value',
                             ],
                         ) ?>

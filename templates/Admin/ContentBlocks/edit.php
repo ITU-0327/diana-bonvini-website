@@ -4,37 +4,33 @@
  * @var \App\Model\Entity\ContentBlock $contentBlock
  */
 ?>
-<div class="row">
-    <aside class="column">
-        <div class="side-nav">
-            <h4 class="heading"><?= __('Actions') ?></h4>
-            <?= $this->Form->postLink(
-                __('Delete'),
-                ['action' => 'delete', $contentBlock->content_block_id],
-                ['confirm' => __('Are you sure you want to delete # {0}?', $contentBlock->content_block_id), 'class' => 'side-nav-item']
-            ) ?>
-            <?= $this->Html->link(__('List Content Blocks'), ['action' => 'index'], ['class' => 'side-nav-item']) ?>
+
+<div class="container mx-auto px-6 py-10">
+    <?= $this->element('page_title', ['title' => 'Edit Content Block Value']) ?>
+
+    <div class="max-w-lg mx-auto bg-white shadow rounded-lg p-6">
+        <div class="mb-6">
+            <p class="text-xl font-semibold text-gray-800"><?= h($contentBlock->label) ?></p>
+            <p class="mt-1 text-sm text-gray-600"><?= h($contentBlock->description) ?></p>
         </div>
-    </aside>
-    <div class="column column-80">
-        <div class="contentBlocks form content">
-            <?= $this->Form->create($contentBlock) ?>
-            <fieldset>
-                <legend><?= __('Edit Content Block') ?></legend>
-                <?php
-                    echo $this->Form->control('parent');
-                    echo $this->Form->control('slug');
-                    echo $this->Form->control('label');
-                    echo $this->Form->control('description');
-                    echo $this->Form->control('type');
-                    echo $this->Form->control('value');
-                    echo $this->Form->control('previous_value');
-                    echo $this->Form->control('created_at');
-                    echo $this->Form->control('updated_at');
-                ?>
-            </fieldset>
-            <?= $this->Form->button(__('Submit')) ?>
-            <?= $this->Form->end() ?>
+
+        <?= $this->Form->create($contentBlock, ['class' => 'space-y-6']) ?>
+        <?php
+        echo $this->Form->control('value', [
+            'label' => 'Value',
+            'type' => 'textarea',
+            'rows' => 4,
+            'class' => 'w-full border border-gray-300 rounded p-2',
+        ]);
+        ?>
+        <div class="flex items-center justify-end space-x-4">
+            <?= $this->Form->button(__('Save'), [
+                'class' => 'bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700',
+            ]) ?>
+            <?= $this->Html->link(__('Cancel'), ['action' => 'index'], [
+                'class' => 'text-gray-600 hover:underline',
+            ]) ?>
         </div>
+        <?= $this->Form->end() ?>
     </div>
 </div>
