@@ -211,3 +211,67 @@ footer {
         margin: 1rem;
     }
 }
+
+/* Animated Gradient Underline for Menu Links */
+.nav-menu {
+    display: flex;
+    gap: 1rem;
+}
+.nav-menu li {
+    position: relative;
+}
+.nav-menu a {
+    font-weight: 600;
+    color: #404041;
+    padding: 0.5rem 0.75rem;
+    transition: color 0.3s ease, transform 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+.nav-menu a::before,
+.nav-logo::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%) scaleX(0);
+    transform-origin: center;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, #008080, #7FFFD4);
+    transition: transform 0.3s ease;
+}
+.nav-menu a:hover::before,
+.nav-menu a:focus::before {
+    transform: translateX(-50%) scaleX(1);
+}
+.nav-menu a:hover,
+.nav-menu a:focus {
+    color: #008080;
+    transform: translateY(-2px);
+}
+
+/* Animated Effect for Logo */
+.nav-logo {
+    position: relative;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+.nav-logo:hover::before,
+.nav-logo:focus::before {
+    transform: translateX(-50%) scaleX(1);
+}
+.nav-logo:hover,
+.nav-logo:focus {
+    color: #008080;
+    transform: translateY(-2px);
+}
+
+/* Animated Effect for Icons (Cart and Profile) */
+.nav-icon {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.nav-icon:hover,
+.nav-icon:focus {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0, 128, 128, 0.3);
+}

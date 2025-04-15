@@ -9,81 +9,6 @@ $user = $this->getRequest()->getAttribute('identity');
 $userType = $user?->get('user_type');
 ?>
 <nav class="bg-white shadow">
-    <style>
-        /* Animated Gradient Underline for Menu Links */
-        .nav-menu {
-            display: flex;
-            gap: 1rem;
-        }
-        .nav-menu li {
-            position: relative;
-        }
-        .nav-menu a {
-            font-weight: 600;
-            color: #404041;
-            padding: 0.5rem 0.75rem;
-            transition: color 0.3s ease, transform 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        .nav-menu a::before {
-            content: "";
-            position: absolute;
-            left: 50%;
-            bottom: 0;
-            transform: translateX(-50%) scaleX(0);
-            transform-origin: center;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, #008080, #7FFFD4);
-            transition: transform 0.3s ease;
-        }
-        .nav-menu a:hover::before,
-        .nav-menu a:focus::before {
-            transform: translateX(-50%) scaleX(1);
-        }
-        .nav-menu a:hover,
-        .nav-menu a:focus {
-            color: #008080;
-            transform: translateY(-2px);
-        }
-        /* Animated Effect for Logo */
-        .nav-logo {
-            position: relative;
-            transition: color 0.3s ease, transform 0.3s ease;
-        }
-        .nav-logo::before {
-            content: "";
-            position: absolute;
-            left: 50%;
-            bottom: 0;
-            transform: translateX(-50%) scaleX(0);
-            transform-origin: center;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, #008080, #7FFFD4);
-            transition: transform 0.3s ease;
-        }
-        .nav-logo:hover::before,
-        .nav-logo:focus::before {
-            transform: translateX(-50%) scaleX(1);
-        }
-        .nav-logo:hover,
-        .nav-logo:focus {
-            color: #008080;
-            transform: translateY(-2px);
-        }
-        /* Animated Effect for Icons (Cart and Profile) */
-        .nav-icon {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .nav-icon:hover,
-        .nav-icon:focus {
-            transform: scale(1.1);
-            box-shadow: 0 4px 8px rgba(0,128,128,0.3);
-        }
-    </style>
-
     <div class="container mx-auto px-4">
         <div class="flex justify-between items-center h-16">
             <!-- Left: Logo (always visible) -->
@@ -276,39 +201,46 @@ $userType = $user?->get('user_type');
                 </a>
             </li>
             <li>
-                <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'info']) ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:text-teal-500">
+                <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'info']) ?>"
+                   class="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:text-teal-500">
                     Writing Services
                 </a>
             </li>
             <li>
-                <a href="<?= $this->Url->build('/about') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:text-teal-500">
+                <a href="<?= $this->Url->build('/about') ?>"
+                   class="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:text-teal-500">
                     About
                 </a>
             </li>
             <li>
-                <a href="<?= $this->Url->build('/contact') ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:text-teal-500">
+                <a href="<?= $this->Url->build('/contact') ?>"
+                   class="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:text-teal-500">
                     Contact
                 </a>
             </li>
             <?php if ($user) : ?>
                 <li class="mt-2 border-t border-gray-200 pt-3">
-                    <a href="<?= $this->Url->build(['controller' => 'Carts', 'action' => 'index']) ?>" class="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:text-teal-500 nav-icon">
+                    <a href="<?= $this->Url->build(['controller' => 'Carts', 'action' => 'index']) ?>"
+                       class="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:text-teal-500 nav-icon">
                         <?= $this->Html->image('navbar/shopping-cart.png', ['class' => 'h-5 w-5']) ?>
                         <span>Cart</span>
                     </a>
                 </li>
                 <li>
-                    <a href="<?= $this->Url->build(['controller' => 'Orders', 'action' => 'index']) ?>" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-teal-500">
+                    <a href="<?= $this->Url->build(['controller' => 'Orders', 'action' => 'index']) ?>"
+                       class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-teal-500">
                         My Orders
                     </a>
                 </li>
                 <li>
-                    <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'index']) ?>" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-teal-500">
+                    <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'index']) ?>"
+                       class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-teal-500">
                         My Services
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-teal-500">
+                    <a href="<?= $this->Url->build(['controller' => 'Users', 'action' => 'edit', $user->user_id]) ?>"
+                       class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-teal-500">
                         Account Settings
                     </a>
                 </li>
@@ -317,7 +249,8 @@ $userType = $user?->get('user_type');
                 </li>
             <?php else : ?>
                 <li class="mt-2 border-t border-gray-200 pt-3">
-                    <a href="<?= $this->Url->build(['controller' => 'Users', 'action' => 'login']) ?>" class="block px-3 py-2 rounded-md text-base font-medium text-teal-500">
+                    <a href="<?= $this->Url->build(['controller' => 'Users', 'action' => 'login']) ?>"
+                       class="block px-3 py-2 rounded-md text-base font-medium text-teal-500">
                         Login
                     </a>
                 </li>
