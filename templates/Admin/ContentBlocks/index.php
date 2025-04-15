@@ -2,56 +2,97 @@
 /**
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\ContentBlock> $contentBlocks
+ * @var array<string> $parents
  */
 ?>
-<div class="contentBlocks index content">
-    <?= $this->Html->link(__('New Content Block'), ['action' => 'add'], ['class' => 'button float-right']) ?>
-    <h3><?= __('Content Blocks') ?></h3>
-    <div class="table-responsive">
-        <table>
-            <thead>
-                <tr>
-                    <th><?= $this->Paginator->sort('parent') ?></th>
-                    <th><?= $this->Paginator->sort('slug') ?></th>
-                    <th><?= $this->Paginator->sort('label') ?></th>
-                    <th><?= $this->Paginator->sort('type') ?></th>
-                    <th><?= $this->Paginator->sort('updated_at') ?></th>
-                    <th class="actions"><?= __('Actions') ?></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($contentBlocks as $contentBlock): ?>
-                <tr>
-                    <td><?= h($contentBlock->parent) ?></td>
-                    <td><?= h($contentBlock->slug) ?></td>
-                    <td><?= h($contentBlock->label) ?></td>
-                    <td><?= h($contentBlock->type) ?></td>
-                    <td><?= h($contentBlock->updated_at) ?></td>
-                    <td class="actions">
-                        <?= $this->Html->link(__('View'), ['action' => 'view', $contentBlock->content_block_id]) ?>
-                        <?= $this->Html->link(__('Edit'), ['action' => 'edit', $contentBlock->content_block_id]) ?>
-                        <?= $this->Form->postLink(
-                            __('Delete'),
-                            ['action' => 'delete', $contentBlock->content_block_id],
-                            [
-                                'method' => 'delete',
-                                'confirm' => __('Are you sure you want to delete # {0}?', $contentBlock->content_block_id),
-                            ]
-                        ) ?>
-                    </td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+
+<div class="container mx-auto px-4 py-8">
+    <?= $this->element('page_title', ['title' => 'Manage Content Blocks']) ?>
+
+    <div class="flex space-x-4 mb-6">
+        <button class="filter-btn bg-blue-600 text-white rounded px-4 py-2" data-filter="all">All</button>
+
+        <?php
+        // Separate out the global (empty) parent from the rest.
+        $globalExists = false;
+        $otherParents = [];
+        foreach ($parents as $parent) {
+            if ($parent === '' || $parent === null) {
+                $globalExists = true;
+            } else {
+                $otherParents[] = $parent;
+            }
+        }
+        // Output the "Global" button if an empty parent exists.
+        if ($globalExists) :
+            ?>
+            <button class="filter-btn bg-gray-200 text-gray-800 rounded px-4 py-2" data-filter="">
+                Global
+            </button>
+            <?php
+        endif;
+            // Output buttons for the other parents.
+        foreach ($otherParents as $parent) :
+            $displayName = ucfirst($parent);
+            ?>
+            <button class="filter-btn bg-gray-200 text-gray-800 rounded px-4 py-2" data-filter="<?= h($parent) ?>">
+            <?= h($displayName) ?>
+            </button>
+        <?php endforeach; ?>
     </div>
-    <div class="paginator">
-        <ul class="pagination">
-            <?= $this->Paginator->first('<< ' . __('first')) ?>
-            <?= $this->Paginator->prev('< ' . __('previous')) ?>
-            <?= $this->Paginator->numbers() ?>
-            <?= $this->Paginator->next(__('next') . ' >') ?>
-            <?= $this->Paginator->last(__('last') . ' >>') ?>
-        </ul>
-        <p><?= $this->Paginator->counter(__('Page {{page}} of {{pages}}, showing {{current}} record(s) out of {{count}} total')) ?></p>
+
+    <!-- Grid Display of Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <?php foreach ($contentBlocks as $block) : ?>
+            <!-- Add data-parent attribute to each card; leave empty if block->parent is empty -->
+            <div class="content-block bg-white shadow rounded-lg p-4 flex flex-col justify-between" data-parent="<?= h($block->parent) ?>">
+                <!-- Block Heading -->
+                <div>
+                    <h2 class="text-xl font-semibold"><?= h($block->label) ?></h2>
+                    <p class="text-sm text-gray-600"><?= h($block->description) ?></p>
+                </div>
+                <!-- Block Value (short preview) -->
+                <div class="mt-3">
+                    <p class="text-sm"><?= h($block->value) ?></p>
+                </div>
+                <!-- Action Buttons -->
+                <div class="mt-4 flex justify-between text-sm">
+                    <?= $this->Html->link('Edit', ['action' => 'edit', $block->content_block_id], ['class' => 'text-green-600 hover:underline']) ?>
+                    <?= $this->Form->postLink('Delete', ['action' => 'delete', $block->content_block_id], [
+                        'confirm' => 'Are you sure?',
+                        'class' => 'text-red-600 hover:underline',
+                    ]) ?>
+                </div>
+            </div>
+        <?php endforeach; ?>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Select all filter buttons and content blocks.
+        const filterButtons = document.querySelectorAll(".filter-btn");
+        const contentBlocks = document.querySelectorAll(".content-block");
+
+        filterButtons.forEach(button => {
+            button.addEventListener("click", function(e) {
+                e.preventDefault();
+                // Remove an "active" styling from all buttons.
+                filterButtons.forEach(btn => btn.classList.remove("active"));
+                // Mark this button as active.
+                this.classList.add("active");
+
+                const filterValue = this.getAttribute("data-filter");
+                contentBlocks.forEach(block => {
+                    const blockParent = block.getAttribute("data-parent");
+                    // Show block if filter is "all" or matches.
+                    if (filterValue === "all" || blockParent === filterValue) {
+                        block.style.display = "";
+                    } else {
+                        block.style.display = "none";
+                    }
+                });
+            });
+        });
+    });
+</script>

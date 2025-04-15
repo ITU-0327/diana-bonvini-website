@@ -329,3 +329,8 @@ footer {
     object-fit: cover;
     object-position: center;
 }
+
+.filter-btn.active {
+    background-color: var(--color-diana-primary);
+    color: var(--color-white);
+}

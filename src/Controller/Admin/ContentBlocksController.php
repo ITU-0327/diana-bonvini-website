@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Controller\AppController;
+use Cake\Http\Response;
 
 /**
  * ContentBlocks Controller
@@ -15,14 +16,22 @@ class ContentBlocksController extends AppController
     /**
      * Index method
      *
-     * @return \Cake\Http\Response|null|void Renders view
+     * @return void Renders view
      */
-    public function index()
+    public function index(): void
     {
+        // Prepare a query for distinct parent values.
+        $parentsQuery = $this->ContentBlocks->find('list', [
+            'keyField' => 'parent',
+            'valueField' => 'parent',
+        ])->distinct(['parent']);
+
+        $parents = $parentsQuery->toArray();
+
         $query = $this->ContentBlocks->find();
         $contentBlocks = $this->paginate($query);
 
-        $this->set(compact('contentBlocks'));
+        $this->set(compact('contentBlocks', 'parents'));
     }
 
     /**
@@ -52,7 +61,7 @@ class ContentBlocksController extends AppController
      * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function edit($id = null)
+    public function edit(?string $id = null)
     {
         $contentBlock = $this->ContentBlocks->get($id, contain: []);
         if ($this->request->is(['patch', 'post', 'put'])) {
@@ -74,7 +83,7 @@ class ContentBlocksController extends AppController
      * @return \Cake\Http\Response|null Redirects to index.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function delete($id = null)
+    public function delete(?string $id = null): ?Response
     {
         $this->request->allowMethod(['post', 'delete']);
         $contentBlock = $this->ContentBlocks->get($id);
