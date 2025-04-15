@@ -4,7 +4,48 @@
  */
 
 $this->assign('title', 'Diana Bonvini - Artist & Writer');
-$this->extend('/layout/landing');
+
+// Override the body class block (if used elsewhere)
+$this->start('bodyClass');
+echo 'relative text-white min-h-screen flex flex-col overflow-x-hidden';
+$this->end();
+
+// Add landing-specific head extras (if any)
+$this->start('headExtras');
+?>
+<style>
+    .gradient-overlay {
+        background: linear-gradient(45deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%);
+    }
+    .full-bleed {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+    }
+</style>
+<?php
+$this->end();
+
+// Override the background block with the landing background markup.
+$this->start('background');
+?>
+<div class="fixed inset-0 -z-10">
+    <?= $this->Html->image('Landingpage/Landing-Page-Db.jpg', [
+        'alt' => 'Landing Background',
+        'class' => 'full-bleed',
+    ]) ?>
+    <div class="full-bleed gradient-overlay"></div>
+</div>
+<?php
+$this->end();
+
+// Override the main container classes for centered content.
+$this->start('mainClass');
+echo 'relative z-10 flex-grow flex items-center justify-center min-h-[calc(100vh-80px)]';
+$this->end();
 ?>
 
 <div class="text-center animate-fadeIn max-w-2xl px-4">
