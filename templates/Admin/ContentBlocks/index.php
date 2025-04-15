@@ -44,8 +44,19 @@
     <!-- Grid Display of Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <?php foreach ($contentBlocks as $block) : ?>
-            <!-- Add data-parent attribute to each card; leave empty if block->parent is empty -->
-            <div class="content-block bg-white shadow rounded-lg p-4 flex flex-col justify-between" data-parent="<?= h($block->parent) ?>">
+            <div class="content-block relative bg-white shadow rounded-lg p-4 flex flex-col justify-between" data-parent="<?= h($block->parent) ?>">
+                <!-- Top Right Type Icon -->
+                <div class="absolute top-6 right-5 text-2xl text-gray-500" title="<?= ucfirst($block->type) ?>">
+                    <?php
+                    echo match ($block->type) {
+                        'text' => '<i class="fa-solid fa-font"></i>',
+                        'url' => '<i class="fa-solid fa-link"></i>',
+                        'image' => '<i class="fa-solid fa-image"></i>',
+                        'html' => '<i class="fa-solid fa-code"></i>',
+                        default => '<i class="fa-solid fa-file"></i>',
+                    }; ?>
+                </div>
+
                 <!-- Block Heading -->
                 <div>
                     <h2 class="text-xl font-semibold"><?= h($block->label) ?></h2>
@@ -62,12 +73,28 @@
                     <?php endif; ?>
                 </div>
                 <!-- Action Buttons -->
-                <div class="mt-4 flex justify-between text-sm">
-                    <?= $this->Html->link('Edit', ['action' => 'edit', $block->content_block_id], ['class' => 'text-green-600 hover:underline']) ?>
-                    <?= $this->Form->postLink('Delete', ['action' => 'delete', $block->content_block_id], [
-                        'confirm' => 'Are you sure?',
-                        'class' => 'text-red-600 hover:underline',
-                    ]) ?>
+                <div class="mt-4 mr-2 flex justify-end items-center space-x-4 text-sm">
+                    <?= $this->Html->link(
+                        '<i class="fa-solid fa-pencil"></i>',
+                        ['action' => 'edit', $block->content_block_id],
+                        [
+                            'escape' => false,
+                            'class' => 'text-blue-600 hover:text-blue-800',
+                            'title' => 'Edit',
+                        ],
+                    ) ?>
+                    <?php if (!empty($block->previous_value)) : ?>
+                        <?= $this->Form->postLink(
+                            '<i class="fa-solid fa-rotate-left"></i>',
+                            ['action' => 'revert', $block->content_block_id],
+                            [
+                                'confirm' => 'Are you sure you want to retrieve the previous value?',
+                                'escape' => false,
+                                'class' => 'text-blue-600 hover:text-blue-800',
+                                'title' => 'Retrieve previous value',
+                            ],
+                        ) ?>
+                    <?php endif; ?>
                 </div>
             </div>
         <?php endforeach; ?>
