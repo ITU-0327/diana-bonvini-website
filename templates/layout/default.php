@@ -40,22 +40,19 @@ $siteTitle = 'Diana Bonvini Art & Writing';
     <div class="container mx-auto px-4">
         <div class="flex flex-col md:flex-row justify-between items-center">
             <div class="mb-4 md:mb-0">
-                <h3 class="text-2xl font-bold">diana bonvini.</h3>
+                <h3 class="text-2xl font-bold"><?= $this->ContentBlock->text('logo') ?></h3>
             </div>
             <div class="flex space-x-4">
-                <a href="#" class="hover:text-gray-300 transition">
-                    <i class="fab fa-facebook-f"></i>
-                </a>
-                <a href="#" class="hover:text-gray-300 transition">
+                <a href="<?= $this->ContentBlock->text('instagram-link') ?>" class="hover:text-gray-300 transition">
                     <i class="fab fa-instagram"></i>
                 </a>
-                <a href="#" class="hover:text-gray-300 transition">
+                <a href="<?= $this->ContentBlock->text('linkedin-link') ?>" class="hover:text-gray-300 transition">
                     <i class="fab fa-linkedin-in"></i>
                 </a>
             </div>
         </div>
         <div class="mt-4 border-t border-teal-400 pt-4 text-center text-sm">
-            &copy; <?= date('Y') ?> Diana Bonvini. All rights reserved.
+            <?= $this->ContentBlock->text('copyright-notice'); ?>
         </div>
     </div>
 </footer>

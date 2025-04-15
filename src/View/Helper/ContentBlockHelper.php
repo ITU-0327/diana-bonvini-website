@@ -47,11 +47,11 @@ class ContentBlockHelper extends Helper
             ->first();
 
         if (!$block) {
-            throw new InvalidArgumentException("Content block '{$slug}' not found.");
+            throw new InvalidArgumentException("Content block '$slug' not found.");
         }
 
         if ($expectedType && $block->type !== $expectedType) {
-            throw new InvalidArgumentException("Content block '{$slug}' type is '{$block->type}', expected '{$expectedType}'.");
+            throw new InvalidArgumentException("Content block '$slug' type is '$block->type', expected '$expectedType'.");
         }
 
         return $block;
@@ -117,6 +117,10 @@ class ContentBlockHelper extends Helper
         // Use a regular expression to find tokens (e.g., {{email}})
         return preg_replace_callback('/\{\{(\w+)}}/', function ($matches) use ($expectedType) {
             $tokenSlug = $matches[1];
+            if ($tokenSlug === 'currentYear') {
+                return date('Y');
+            }
+
             // Fetch the block value for this token
             $replacement = $this->findOrFail($tokenSlug, $expectedType)->value;
 
