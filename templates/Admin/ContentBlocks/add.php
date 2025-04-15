@@ -23,9 +23,6 @@
                     echo $this->Form->control('description');
                     echo $this->Form->control('type');
                     echo $this->Form->control('value');
-                    echo $this->Form->control('previous_value');
-                    echo $this->Form->control('created_at');
-                    echo $this->Form->control('updated_at');
                 ?>
             </fieldset>
             <?= $this->Form->button(__('Submit')) ?>

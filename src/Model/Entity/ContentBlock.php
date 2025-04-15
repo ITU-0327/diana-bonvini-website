@@ -31,6 +31,11 @@ class ContentBlock extends Entity
      * @var array<string, bool>
      */
     protected array $_accessible = [
+        'parent' => true,
+        'slug' => true,
+        'label' => true,
+        'description' => true,
+        'type' => true,
         'value' => true,
     ];
 

@@ -22,6 +22,7 @@ use Cake\View\View;
  *
  * Your application's default view class
  *
+ * @property \App\View\Helper\ContentBlockHelper $ContentBlock
  * @link https://book.cakephp.org/5/en/views.html#the-app-view
  */
 class AppView extends View
