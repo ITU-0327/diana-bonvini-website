@@ -30,7 +30,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                         'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                         'required' => true,
                         'pattern' => "^[a-zA-Z '\\-]+$",
-                        'title' => 'First name should only contain letters, spaces, apostrophes, and hyphens.'
+                        'title' => 'First name should only contain letters, spaces, apostrophes, and hyphens.',
                     ]) ?>
                     <?= $this->Form->control('billing_last_name', [
                         'label' => 'Last Name *',
@@ -38,7 +38,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                         'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                         'required' => true,
                         'pattern' => "^[a-zA-Z '\\-]+$",
-                        'title' => 'Last name should only contain letters, spaces, apostrophes, and hyphens.'
+                        'title' => 'Last name should only contain letters, spaces, apostrophes, and hyphens.',
                     ]) ?>
                 </div>
                 <?= $this->Form->control('billing_company', [
@@ -101,8 +101,8 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                         'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                         'required' => true,
                         'id' => 'postcodeField',
-                        'pattern' => "^[0-9]{4}$",
-                        'title' => 'Please enter a valid 4-digit postal code.'
+                        'pattern' => '^[0-9]{4}$',
+                        'title' => 'Please enter a valid 4-digit postal code.',
                     ]) ?>
                 </div>
                 <?= $this->Form->control('shipping_phone', [
@@ -110,8 +110,8 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                     'value' => $user ? $user->phone_number : '',
                     'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                     'required' => true,
-                    'pattern' => "^[0-9\\-\\+\\(\\) ]+$",
-                    'title' => 'Please enter a valid phone number.'
+                    'pattern' => '^[0-9\\-\\+\\(\\) ]+$',
+                    'title' => 'Please enter a valid phone number.',
                 ]) ?>
             </section>
 
@@ -196,7 +196,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
             </div>
             <!-- Place Order Button in the Card Footer -->
             <div class="mt-6">
-                <?= $this->Form->button('Place Order', [
+                <?= $this->Form->button('Proceed to Payment', [
                     'class' => 'w-full inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-md transition-colors duration-200 text-xl',
                 ]) ?>
             </div>

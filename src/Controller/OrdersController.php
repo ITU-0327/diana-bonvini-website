@@ -3,7 +3,11 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Cake\Core\Configure;
 use Cake\Http\Response;
+use Cake\Routing\Router;
+use Stripe\Checkout\Session;
+use Stripe\Stripe;
 
 /**
  * Orders Controller
@@ -66,8 +70,10 @@ class OrdersController extends AppController
      * Place Order method
      *
      * Processes the order and saves it to the database.
+     * After a successful save, creates a Stripe Checkout session and immediately redirects the customer
+     * to Stripe's hosted payment page.
      *
-     * @return \Cake\Http\Response|null Redirects to the confirmation page.
+     * @return \Cake\Http\Response|null Redirects to Stripe's payment page.
      */
     public function placeOrder(): ?Response
     {
@@ -97,10 +103,10 @@ class OrdersController extends AppController
         $orderItems = [];
         foreach ($cart->artwork_carts as $cartItem) {
             if (isset($cartItem->artwork)) {
-                $quantity   = $cartItem->quantity;
-                $price      = $cartItem->artwork->price;
-                $lineTotal  = (float)$quantity * $price;
-                $total     += $lineTotal;
+                $quantity  = $cartItem->quantity;
+                $price     = $cartItem->artwork->price;
+                $lineTotal = (float)$quantity * $price;
+                $total    += $lineTotal;
                 $orderItems[] = [
                     'artwork_id' => $cartItem->artwork->artwork_id,
                     'quantity'   => $quantity,
@@ -116,25 +122,25 @@ class OrdersController extends AppController
         $data['order_status']   = 'pending';
         $data['order_date']     = date('Y-m-d H:i:s');
 
-        // Patch the entity including associated data.
+        // Patch the order entity including associated artwork orders.
         $order = $this->Orders->newEntity($data, [
             'associated' => ['ArtworkOrders'],
         ]);
 
-        // Begin transaction and save.
+        // Begin a transaction and save the order.
         $connection = $this->Orders->getConnection();
         $connection->begin();
         if ($this->Orders->save($order, ['associated' => ['ArtworkOrders']])) {
-            // Optionally clear the cart.
+            // Clear the cart.
             $this->fetchTable('Carts')->delete($cart);
 
-            // Create a payment record.
+            // (Optionally) Create a payment record.
             $paymentsTable = $this->fetchTable('Payments');
             $paymentData = [
                 'order_id'       => $order->order_id,
                 'amount'         => $order->total_amount,
                 'payment_date'   => date('Y-m-d H:i:s'),
-                'payment_method' => 'bank transfer',
+                'payment_method' => 'stripe',
                 'status'         => 'pending',
             ];
             $payment = $paymentsTable->newEntity($paymentData);
@@ -148,7 +154,10 @@ class OrdersController extends AppController
             $connection->commit();
             $this->Flash->success(__('Your order has been placed successfully.'));
 
-            return $this->redirect(['action' => 'confirmation', $order->order_id]);
+            // Create a Stripe Checkout session and immediately redirect the customer.
+            $stripeUrl = $this->_createStripeSessionUrl($order->order_id);
+
+            return $this->redirect($stripeUrl);
         } else {
             $connection->rollback();
             $this->Flash->error(__('There were errors in your order submission. Please correct them and try again.'));
@@ -156,6 +165,71 @@ class OrdersController extends AppController
 
             return $this->render('checkout');
         }
+    }
+
+    /**
+     * Private method to create a Stripe Checkout session URL based on the order details.
+     *
+     * @param string $orderId The ID of the order.
+     * @return string The URL of the Stripe Checkout session.
+     */
+    private function _createStripeSessionUrl(string $orderId): string
+    {
+        // Load the order with its associated artwork orders and artwork details.
+        $ordersTable = $this->getTableLocator()->get('Orders');
+        $order = $ordersTable->get($orderId, [
+            'contain' => ['ArtworkOrders' => ['Artworks']],
+        ]);
+
+        $lineItems = [];
+        if (!empty($order->artwork_orders)) {
+            foreach ($order->artwork_orders as $artworkOrder) {
+                // Convert price in dollars to cents.
+                $unitAmount = round((float)$artworkOrder->price * 100);
+                $lineItems[] = [
+                    'price_data' => [
+                        'currency' => 'aud',
+                        'product_data' => [
+                            'name' => $artworkOrder->artwork->title,
+                        ],
+                        'unit_amount' => $unitAmount,
+                    ],
+                    'quantity' => $artworkOrder->quantity,
+                ];
+            }
+        } else {
+            // Fallback if no artwork orders exist.
+            $amount = round((float)$order->total_amount * 100);
+            $lineItems[] = [
+                'price_data' => [
+                    'currency' => 'aud',
+                    'product_data' => [
+                        'name' => 'Order Payment - Order #' . $orderId,
+                    ],
+                    'unit_amount' => $amount,
+                ],
+                'quantity' => 1,
+            ];
+        }
+
+        // Set your Stripe secret key.
+        Stripe::setApiKey(Configure::read('Stripe.secret'));
+
+        // Create the Stripe Checkout session.
+        $session = Session::create([
+            'payment_method_types' => ['card'],
+            'line_items' => $lineItems,
+            'mode' => 'payment',
+            // On successful payment, redirect to your order confirmation page.
+            'success_url' => Router::url(
+                ['controller' => 'Orders', 'action' => 'confirmation', $orderId],
+                true,
+            ) . '?session_id={CHECKOUT_SESSION_ID}',
+            // On cancellation, redirect back to the checkout page where billing is entered.
+            'cancel_url' => Router::url(['controller' => 'Orders', 'action' => 'checkout'], true),
+        ]);
+
+        return $session->url;
     }
 
     /**
@@ -187,14 +261,13 @@ class OrdersController extends AppController
     /**
      * Index method
      *
-     * @return void Renders view
+     * @return void Renders view.
      */
     public function index(): void
     {
         $query = $this->Orders->find()
             ->contain(['Users', 'Payments']);
         $orders = $this->paginate($query);
-
         $this->set(compact('orders'));
     }
 
@@ -202,12 +275,12 @@ class OrdersController extends AppController
      * View method
      *
      * @param string|null $id Order id.
-     * @return void Renders view
+     * @return void Renders view.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
     public function view(?string $id = null): void
     {
-        $order = $this->Orders->get($id, contain: ['Users', 'Payments']);
+        $order = $this->Orders->get($id, ['contain' => ['Users', 'Payments']]);
         $this->set(compact('order'));
     }
 
@@ -220,7 +293,7 @@ class OrdersController extends AppController
      */
     public function edit(?string $id = null)
     {
-        $order = $this->Orders->get($id, contain: []);
+        $order = $this->Orders->get($id);
         if ($this->request->is(['patch', 'post', 'put'])) {
             $order = $this->Orders->patchEntity($order, $this->request->getData());
             if ($this->Orders->save($order)) {
@@ -230,7 +303,7 @@ class OrdersController extends AppController
             }
             $this->Flash->error(__('The order could not be saved. Please, try again.'));
         }
-        $users = $this->Orders->Users->find('list', limit: 200)->all();
+        $users = $this->Orders->Users->find('list', ['limit' => 200])->all();
         $this->set(compact('order', 'users'));
     }
 
