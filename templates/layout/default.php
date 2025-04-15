@@ -20,9 +20,6 @@ $siteTitle = 'Diana Bonvini Art & Writing';
     <?= $this->Html->css('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css'); ?>
     <?= $this->Html->css('styles.css') ?>
 
-    <!-- Block for additional head content -->
-    <?= $this->fetch('headExtras') ?>
-
     <?= $this->fetch('meta') ?>
     <?= $this->fetch('css') ?>
     <?= $this->fetch('script') ?>

@@ -10,25 +10,6 @@ $this->start('bodyClass');
 echo 'relative text-white min-h-screen flex flex-col overflow-x-hidden';
 $this->end();
 
-// Add landing-specific head extras (if any)
-$this->start('headExtras');
-?>
-<style>
-    .gradient-overlay {
-        background: linear-gradient(45deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%);
-    }
-    .full-bleed {
-        position: fixed;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        object-position: center;
-    }
-</style>
-<?php
-$this->end();
-
 // Override the background block with the landing background markup.
 $this->start('background');
 ?>
