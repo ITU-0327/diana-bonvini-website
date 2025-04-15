@@ -37,5 +37,8 @@ class AppView extends View
      */
     public function initialize(): void
     {
+        parent::initialize();
+        // Load the ContentBlock helper.
+        $this->loadHelper('ContentBlock');
     }
 }
