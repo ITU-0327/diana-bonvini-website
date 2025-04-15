@@ -6,7 +6,7 @@ namespace App\View\Helper;
 use App\Model\Entity\ContentBlock;
 use Cake\ORM\TableRegistry;
 use Cake\View\Helper;
-use Cake\View\Helper\HtmlHelper;
+//use Cake\View\Helper\HtmlHelper;
 use InvalidArgumentException;
 
 /**
@@ -20,13 +20,6 @@ class ContentBlockHelper extends Helper
      * @var array<string>
      */
     public array $helpers = ['Html'];
-
-    /**
-     * Explicitly declare the Html helper property so that static analyzers recognize it.
-     *
-     * @var \Cake\View\Helper\HtmlHelper
-     */
-    public HtmlHelper $Html;
 
     /**
      * Fetches a content block by slug and verifies its type.

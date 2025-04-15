@@ -17,9 +17,8 @@ $this->assign('title', 'Contact Me');
         <div class="mb-8">
             <h2 class="text-lg font-semibold text-gray-800 mb-2">Contact Info</h2>
             <ul class="space-y-1 text-gray-700">
-                <li><strong>Email:</strong> diana@example.com</li>
-                <li><strong>Phone:</strong> +61 400 123 456</li>
-                <li><strong>Location:</strong> Adelaide, Australia</li>
+                <li><strong>Email:</strong> <?= $this->ContentBlock->text('email') ?></li>
+                <li><strong>Phone:</strong> <?= $this->ContentBlock->text('phone-number') ?></li>
             </ul>
         </div>
 
@@ -27,12 +26,12 @@ $this->assign('title', 'Contact Me');
         <div class="mt-6">
             <h2 class="text-lg font-semibold text-gray-800 mb-2">Follow Me</h2>
             <div class="flex gap-4 items-center text-gray-600">
-                <a href="https://instagram.com/yourprofile" target="_blank" rel="noopener noreferrer"
+                <a href="<?= $this->ContentBlock->text('instagram-link') ?>" target="_blank" rel="noopener noreferrer"
                    class="flex items-center gap-2 hover:text-pink-500 transition">
                     <i data-lucide="instagram" class="w-5 h-5"></i>
                     <span class="sr-only">Instagram</span>
                 </a>
-                <a href="https://linkedin.com/in/yourprofile" target="_blank" rel="noopener noreferrer"
+                <a href="<?= $this->ContentBlock->text('linkedin-link') ?>" target="_blank" rel="noopener noreferrer"
                    class="flex items-center gap-2 hover:text-blue-700 transition">
                     <i data-lucide="linkedin" class="w-5 h-5"></i>
                     <span class="sr-only">LinkedIn</span>

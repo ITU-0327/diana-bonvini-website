@@ -14,7 +14,7 @@ $this->end();
 $this->start('background');
 ?>
 <div class="fixed inset-0 -z-10">
-    <?= $this->Html->image('Landingpage/Landing-Page-Db.jpg', [
+    <?= $this->ContentBlock->image('landing-background', [
         'alt' => 'Landing Background',
         'class' => 'full-bleed',
     ]) ?>
