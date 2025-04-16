@@ -12,10 +12,8 @@ use Cake\Core\Configure;
 $googleMapsApiKey = Configure::read('GoogleMaps.key');
 ?>
 <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-    <div class="flex flex-col items-start mb-8">
-        <h1 class="text-3xl uppercase text-gray-800">Checkout</h1>
-        <div class="mt-1 w-16 h-[2px] bg-gray-800"></div>
-    </div>
+    <?= $this->element('page_title', ['title' => 'Checkout']) ?>
+
     <?= $this->Form->create($order, ['url' => ['action' => 'placeOrder'], 'class' => 'space-y-8']) ?>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
         <!-- LEFT COLUMN: Checkout Fields -->

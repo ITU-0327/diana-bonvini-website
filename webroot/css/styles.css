@@ -1,6 +1,13 @@
-/* diana.css */
+/* ========================================================================
+   Box-Sizing & Resets
+   ======================================================================== */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
 
-/* Color Variables (adjust these to your branding) */
+/* ========================================================================
+   Color Variables & Global Settings
+   ======================================================================== */
 :root {
     --color-diana-primary: #008080;       /* Teal */
     --color-diana-secondary: #7FFFD4;       /* Aquamarine */
@@ -32,7 +39,7 @@
     --color-message-info-border: #6cb2eb;
 }
 
-/* Base Styles */
+/* Global Base Styles */
 body {
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-weight: 400;
@@ -42,7 +49,9 @@ body {
     padding: 0;
 }
 
-/* Headings */
+/* ========================================================================
+   Typography
+   ======================================================================== */
 h1, h2, h3, h4, h5, h6 {
     font-family: "Raleway", sans-serif;
     font-weight: 400;
@@ -50,19 +59,21 @@ h1, h2, h3, h4, h5, h6 {
     margin-top: 0;
 }
 
-/* Links */
 a {
     color: var(--color-links);
     text-decoration: none;
     transition: color 0.2s ease-in-out;
 }
+
 a:hover,
 a:focus,
 a:active {
     color: var(--color-links-active);
 }
 
-/* Buttons */
+/* ========================================================================
+   Buttons & Forms
+   ======================================================================== */
 button,
 input[type='button'],
 input[type='reset'],
@@ -75,6 +86,7 @@ input[type='submit'] {
     cursor: pointer;
     transition: background-color 0.2s ease-in-out;
 }
+
 button:hover,
 input[type='button']:hover,
 input[type='reset']:hover,
@@ -82,7 +94,6 @@ input[type='submit']:hover {
     background-color: var(--color-diana-accent);
 }
 
-/* Forms */
 input,
 textarea,
 select {
@@ -91,15 +102,18 @@ select {
     border-radius: 0.25rem;
     font-size: 1rem;
 }
+
 input:focus,
 textarea:focus,
 select:focus {
     outline: none;
     border-color: var(--color-diana-primary);
-    box-shadow: 0 0 5px rgba(0,128,128,0.5);
+    box-shadow: 0 0 5px rgba(0, 128, 128, 0.5);
 }
 
-/* Navigation (Top Nav) */
+/* ========================================================================
+   Navigation (Top Nav)
+   ======================================================================== */
 .top-nav {
     display: flex;
     align-items: center;
@@ -107,22 +121,27 @@ select:focus {
     padding: 2rem;
     background: var(--color-white);
 }
+
 .top-nav-title a {
     font-size: 2.4rem;
     color: var(--color-diana-primary);
     font-weight: bold;
 }
+
 .top-nav-links a {
     margin: 0 0.5rem;
     color: var(--color-diana-lightgray);
     font-weight: bold;
 }
+
 .top-nav-links a:hover,
 .top-nav-links a:focus {
     color: var(--color-links-active);
 }
 
-/* Content Container */
+/* ========================================================================
+   Content Container & Footer
+   ======================================================================== */
 .content {
     background: var(--color-white);
     padding: 2rem;
@@ -132,7 +151,6 @@ select:focus {
     box-shadow: 0 7px 14px rgba(60,66,87,0.1), 0 3px 6px rgba(0,0,0,0.07);
 }
 
-/* Footer */
 footer {
     background: var(--color-diana-primary);
     color: var(--color-white);
@@ -140,7 +158,9 @@ footer {
     padding: 1rem 0;
 }
 
-/* Flash Messages */
+/* ========================================================================
+   Flash Messages
+   ======================================================================== */
 .message {
     padding: 0.5rem 1rem;
     border: 1px solid var(--color-message-info-border);
@@ -150,38 +170,44 @@ footer {
     margin-bottom: 1rem;
     cursor: pointer;
 }
+
 .message.success {
     background: var(--color-message-success-bg);
     color: var(--color-message-success-text);
     border-color: var(--color-message-success-border);
 }
+
 .message.warning {
     background: var(--color-message-warning-bg);
     color: var(--color-message-warning-text);
     border-color: var(--color-message-warning-border);
 }
+
 .message.error {
     background: var(--color-message-error-bg);
     color: var(--color-message-error-text);
     border-color: var(--color-message-error-border);
 }
 
-/* Utility Classes */
+/* ========================================================================
+   Utility Classes & Pagination
+   ======================================================================== */
 .table-responsive {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
 
-/* Pagination */
 .pagination {
     display: flex;
     list-style: none;
     padding: 0;
     justify-content: center;
 }
+
 .pagination li {
     margin: 0 0.25rem;
 }
+
 .pagination a {
     display: inline-block;
     padding: 0.5rem 0.75rem;
@@ -191,13 +217,16 @@ footer {
     text-decoration: none;
     transition: background 0.3s, color 0.3s;
 }
+
 .pagination a:hover,
 .pagination li.active a {
     background: var(--color-diana-primary);
     color: var(--color-white);
 }
 
-/* Responsive Adjustments */
+/* ========================================================================
+   Responsive Adjustments
+   ======================================================================== */
 @media screen and (max-width: 640px) {
     .top-nav {
         flex-direction: column;
@@ -210,4 +239,98 @@ footer {
         padding: 1rem;
         margin: 1rem;
     }
+}
+
+/* ========================================================================
+   Navigation Animations (Nav Menu, Logo, & Icons)
+   ======================================================================== */
+
+/* Nav Menu & Links */
+.nav-menu {
+    display: flex;
+    gap: 1rem;
+}
+
+.nav-menu li {
+    position: relative;
+}
+
+.nav-menu a {
+    font-weight: 600;
+    color: var(--color-diana-gray);
+    padding: 0.5rem 0.75rem;
+    transition: color 0.3s ease, transform 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Shared pseudo-element for animated underline on links and logo */
+.nav-menu a::before,
+.nav-logo::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%) scaleX(0);
+    transform-origin: center;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-diana-primary), var(--color-diana-secondary));
+    transition: transform 0.3s ease;
+}
+
+.nav-menu a:hover::before,
+.nav-menu a:focus::before {
+    transform: translateX(-50%) scaleX(1);
+}
+
+.nav-menu a:hover,
+.nav-menu a:focus {
+    color: var(--color-diana-primary);
+    transform: translateY(-2px);
+}
+
+/* Nav Logo Animation */
+.nav-logo {
+    position: relative;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.nav-logo:hover::before,
+.nav-logo:focus::before {
+    transform: translateX(-50%) scaleX(1);
+}
+
+.nav-logo:hover,
+.nav-logo:focus {
+    color: var(--color-diana-primary);
+    transform: translateY(-2px);
+}
+
+/* Icon Effects (Cart, Profile, etc.) */
+.nav-icon {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.nav-icon:hover,
+.nav-icon:focus {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0, 128, 128, 0.3);
+}
+
+.gradient-overlay {
+    background: linear-gradient(45deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%);
+}
+.full-bleed {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.filter-btn.active {
+    background-color: var(--color-diana-primary);
+    color: var(--color-white);
 }

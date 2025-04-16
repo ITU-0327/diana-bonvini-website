@@ -49,10 +49,6 @@ return function (RouteBuilder $routes): void {
      */
     $routes->setRouteClass(DashedRoute::class);
 
-    $routes->connect('/about', ['controller' => 'Pages', 'action' => 'display', 'about']);
-    $routes->connect('/contact', ['controller' => 'Pages', 'action' => 'display', 'contact']);
-    $routes->connect('/writing-service-requests/info', ['controller' => 'Pages', 'action' => 'display', 'info']);
-
     $routes->scope('/', function (RouteBuilder $builder): void {
         /*
          * Here, we are connecting '/' (base path) to a controller called 'Pages',
@@ -61,10 +57,13 @@ return function (RouteBuilder $routes): void {
          */
         $builder->connect('/', ['controller' => 'Pages', 'action' => 'display', 'landing']);
 
-        /*
-         * ...and connect the rest of 'Pages' controller's URLs.
-         */
-        $builder->connect('/pages/*', 'Pages::display');
+        // Connect static pages
+        $builder->connect('/about', ['controller' => 'Pages', 'action' => 'display', 'about']);
+        $builder->connect('/contact', ['controller' => 'Pages', 'action' => 'display', 'contact']);
+        $builder->connect('/writing-service-requests/info', ['controller' => 'Pages', 'action' => 'display', 'info']);
+
+        // Connect any additional page requests to the Pages controller.
+        $builder->connect('/pages/*', ['controller' => 'Pages', 'action' => 'display']);
 
         /*
          * Connect catchall routes for all controllers.
@@ -80,6 +79,19 @@ return function (RouteBuilder $routes): void {
          * See https://book.cakephp.org/5/en/development/routing.html#fallbacks-method for more information
          */
         $builder->fallbacks();
+    });
+
+    // Admin Routes – for CMS management and other admin functions.
+    // These routes will be accessible via URLs like /admin/cms-blocks, /admin/users, etc.
+    $routes->prefix('Admin', function (RouteBuilder $builder): void {
+        // Connect the base path for the admin area.
+        $builder->connect('/', ['controller' => 'Pages', 'action' => 'index']);
+
+        // You could connect a specific route for your CMS admin dashboard here.
+        // For example: $builder->connect('/cms', ['controller' => 'CmsBlocks', 'action' => 'index']);
+
+        // Fallback routes for admin controllers.
+        $builder->fallbacks(DashedRoute::class);
     });
 
     /*

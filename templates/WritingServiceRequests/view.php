@@ -8,11 +8,7 @@ use Cake\Utility\Inflector;
 
 ?>
 <div class="max-w-6xl mx-auto px-4 py-8">
-    <!-- Header with left underline -->
-    <div class="flex flex-col items-start mb-8">
-        <h1 class="text-3xl uppercase text-gray-800">Writing Service Request Details</h1>
-        <div class="mt-1 w-16 h-[2px] bg-gray-800"></div>
-    </div>
+    <?= $this->element('page_title', ['title' => 'Writing Service Request Details']) ?>
 
     <!-- Request Details Card -->
     <div class="bg-white shadow rounded-lg p-6 mb-8">

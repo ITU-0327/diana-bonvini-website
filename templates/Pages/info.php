@@ -5,7 +5,7 @@
 ?>
 
 <div class="max-w-4xl mx-auto p-6">
-    <h1 class="text-4xl font-bold text-center text-gray-800 mb-10">Writing Services</h1>
+    <?= $this->element('page_title', ['title' => 'Writing Services']) ?>
 
     <div class="space-y-10 text-gray-700">
         <section>

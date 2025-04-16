@@ -25,6 +25,7 @@ class CartsControllerTest extends TestCase
         'app.Artworks',
         'app.ArtworkCarts',
         'app.Carts',
+        'app.ContentBlocks',
     ];
 
     /**
