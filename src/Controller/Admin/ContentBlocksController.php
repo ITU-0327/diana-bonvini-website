@@ -145,21 +145,23 @@ class ContentBlocksController extends AppController
     protected function _handleImageUpload(UploadedFileInterface $upload, ?string $filenamePrefix = null): ?string
     {
         if ($upload->getError() !== UPLOAD_ERR_OK) {
-            if ($upload->getError() == UPLOAD_ERR_INI_SIZE) {
+            if ($upload->getError() === UPLOAD_ERR_INI_SIZE) {
                 $this->Flash->error(__('The file you uploaded is too big'));
             }
 
             return null;
         }
-        $prefix = $filenamePrefix ? $filenamePrefix . '.' : '';
 
+        $clientFilename = $upload->getClientFilename() ?? '';
+        $rawExt = pathinfo($clientFilename, PATHINFO_EXTENSION);
         $extension = preg_replace(
             '/[^a-z0-9]/',
             '',
-            strtolower((new SplFileInfo($upload->getClientFilename()))->getExtension()),
+            strtolower($rawExt),
         );
 
-        $filename =  $prefix . md5(random_bytes(10)) . '.' . $extension;
+        $prefix = $filenamePrefix ? $filenamePrefix . '.' : '';
+        $filename = $prefix . md5(random_bytes(10)) . '.' . $extension;
 
         $destDir = new SplFileInfo(WWW_ROOT . 'img' . DS . 'content_blocks' . DS);
         if (!$destDir->isDir()) {
