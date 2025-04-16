@@ -65,13 +65,6 @@ class ArtworksController extends AppController
         $artwork = $this->Artworks->get($id, contain: []);
 
         $filename = basename($artwork->image_path);
-        $originalPath = WWW_ROOT . 'img/' . $artwork->image_path;
-        $watermarkedPath = WWW_ROOT . 'img/watermarked/' . $filename;
-
-        if (!file_exists($watermarkedPath)) {
-            $this->addTiledWatermark($originalPath, $watermarkedPath);
-        }
-
         $watermarkedUrl = '/img/watermarked/' . $filename;
 
         $this->set(compact('artwork', 'watermarkedUrl'));
