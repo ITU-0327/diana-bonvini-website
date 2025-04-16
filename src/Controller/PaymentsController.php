@@ -32,8 +32,17 @@ class PaymentsController extends AppController
      */
     public function cancel(): ?Response
     {
+        // Retrieve the order_id from the query parameters.
+        $orderId = $this->request->getQuery('order_id');
+
         $this->Flash->error(__('Your payment was cancelled.'));
-        // Redirect back to the checkout page or another appropriate page.
+
+        // Redirect to resumeCheckout with the order ID if available
+        if ($orderId) {
+            return $this->redirect(['controller' => 'Orders', 'action' => 'resumeCheckout', $orderId]);
+        }
+
+        // Fallback to regular checkout if order_id isn't available
         return $this->redirect(['controller' => 'Orders', 'action' => 'checkout']);
     }
 }
