@@ -37,6 +37,19 @@ class ArtworksController extends AppController
     {
         $query = $this->Artworks->find()->where(['is_deleted' => 0]);
         $artworks = $this->paginate($query);
+
+        foreach ($artworks as $artwork) {
+            $filename = basename($artwork->image_path);
+            $originalPath = WWW_ROOT . 'img/' . $artwork->image_path;
+            $watermarkedPath = WWW_ROOT . 'img/watermarked/' . $filename;
+
+            if (!file_exists($watermarkedPath)) {
+                $this->addTiledWatermark($originalPath, $watermarkedPath);
+            }
+
+            $artwork->watermarkedUrl = '/img/watermarked/' . $filename;
+        }
+
         $this->set(compact('artworks'));
     }
 
@@ -205,7 +218,7 @@ class ArtworksController extends AppController
         }
         $textColor = imagecolorallocatealpha($watermark, 225, 225, 225, 75);
 
-        for ($y = -100; $y < $height + 100; $y += 200) { // 更大间距
+        for ($y = -100; $y < $height + 100; $y += 200) {
             for ($x = -100; $x < $width + 100; $x += 400) {
                 imagettftext($watermark, $fontSize, $angle, $x, $y, $textColor, $fontPath, $text);
             }
