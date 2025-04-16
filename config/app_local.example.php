@@ -91,6 +91,15 @@ return [
             'url' => env('EMAIL_TRANSPORT_DEFAULT_URL', null),
         ],
     ],
+    /*
+     * Stripe configuration.
+     *
+     * To use the Stripe API, you need to enable the payment.
+     */
+    'Stripe' => [
+        'secret' => env('STRIP_SECRET_API_KEY', null),
+        'publishable' => env('STRIPE_PUBLISHABLE_API_KEY', null),
+    ],
 
     /*
      * Google Maps configuration.
