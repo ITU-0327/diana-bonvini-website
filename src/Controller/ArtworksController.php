@@ -38,18 +38,6 @@ class ArtworksController extends AppController
         $query = $this->Artworks->find()->where(['is_deleted' => 0]);
         $artworks = $this->paginate($query);
 
-        foreach ($artworks as $artwork) {
-            $filename = basename($artwork->image_path);
-            $originalPath = WWW_ROOT . 'img/' . $artwork->image_path;
-            $watermarkedPath = WWW_ROOT . 'img/watermarked/' . $filename;
-
-            if (!file_exists($watermarkedPath)) {
-                $this->addTiledWatermark($originalPath, $watermarkedPath);
-            }
-
-            $artwork->watermarkedUrl = '/img/watermarked/' . $filename;
-        }
-
         $this->set(compact('artworks'));
     }
 
@@ -63,11 +51,7 @@ class ArtworksController extends AppController
     public function view(?string $id = null)
     {
         $artwork = $this->Artworks->get($id, contain: []);
-
-        $filename = basename($artwork->image_path);
-        $watermarkedUrl = '/img/watermarked/' . $filename;
-
-        $this->set(compact('artwork', 'watermarkedUrl'));
+        $this->set(compact('artwork'));
     }
 
     /**
@@ -84,7 +68,8 @@ class ArtworksController extends AppController
             $image = $data['image_path'];
             if ($image && $image->getError() === UPLOAD_ERR_OK) {
                 $fileName = time() . '_' . $image->getClientFilename();
-                $targetPath = WWW_ROOT . 'img' . DS . 'Artworks' . DS . $fileName;
+                $relativePath = 'Artworks/' . $fileName;
+                $targetPath = WWW_ROOT . 'img' . DS . $relativePath;
 
                 $dir = WWW_ROOT . 'img' . DS . 'Artworks';
                 if (!file_exists($dir)) {
@@ -92,7 +77,10 @@ class ArtworksController extends AppController
                 }
 
                 $image->moveTo($targetPath);
-                $data['image_path'] = 'Artworks/' . $fileName;
+
+                $this->addTiledWatermark($targetPath, $targetPath);
+
+                $data['image_path'] = $relativePath;
             } else {
                 $data['image_path'] = null;
             }
@@ -107,6 +95,7 @@ class ArtworksController extends AppController
             }
             $this->Flash->error(__('The artwork could not be saved. Please, try again.'));
         }
+
         $this->set(compact('artwork'));
     }
 

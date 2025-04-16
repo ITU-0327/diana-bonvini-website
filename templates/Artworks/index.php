@@ -40,7 +40,7 @@ $userType = $user?->get('user_type');
                 data-url="<?= $this->Url->build(['action' => 'view', $artwork->artwork_id]) ?>"
             >
                 <!-- Artwork Image -->
-                <?= $this->Html->image($artwork->watermarkedUrl, [
+                <?= $this->Html->image($artwork->image_path, [
                     'alt'   => $artwork->title,
                     'class' => 'w-full h-full object-cover',
                 ]) ?>

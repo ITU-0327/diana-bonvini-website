@@ -13,7 +13,7 @@ $user = $this->request->getAttribute('identity');
         <div class="space-y-6">
             <!-- Main Artwork Image -->
             <div class="bg-white shadow rounded p-4 flex items-center justify-center">
-                <?= $this->Html->image($watermarkedUrl, [
+                <?= $this->Html->image($artwork->image_path, [
                     'alt' => $artwork->title,
                     'class' => 'object-cover max-h-96',
                 ]) ?>
