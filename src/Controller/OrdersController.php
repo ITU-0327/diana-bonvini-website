@@ -521,9 +521,6 @@ class OrdersController extends AppController
                     $this->log('Cart cleanup error: ' . $e->getMessage(), 'error');
                 }
             }
-
-            // Set a success message
-            $this->Flash->success(__('Your payment was successful! Your order has been placed.'));
         }
 
         $this->set(compact('order', 'hasSuccessfulPayment'));
