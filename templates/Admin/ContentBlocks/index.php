@@ -65,7 +65,7 @@
                 <!-- Block Value (short preview) -->
                 <div class="mt-3">
                     <?php if ($block->type === 'image') : ?>
-                        <?= $this->ContentBlock->image($block->slug, ['class' => 'w-full h-48 object-cover rounded']) ?>
+                        <?= $this->ContentBlock->image($block->slug, ['class' => 'max-w-full max-h-48 object-contain rounded mx-auto', 'alt' => $block->label]) ?>
                     <?php elseif ($block->type === 'url') : ?>
                         <?= $this->ContentBlock->url($block->slug, ['class' => 'text-blue-600 hover:underline']) ?>
                     <?php else : ?>

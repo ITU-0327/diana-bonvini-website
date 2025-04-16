@@ -8,7 +8,7 @@
 <div class="container mx-auto px-6 py-10">
     <?= $this->element('page_title', ['title' => 'Edit Content Block']) ?>
 
-    <div class="max-w-lg mx-auto bg-white shadow rounded-lg p-6">
+    <div class="w-full sm:w-3/4 md:w-2/3 lg:w-1/2 max-w-3xl mx-auto bg-white shadow rounded-lg p-6">
         <div class="mb-6">
             <p class="text-xl font-semibold text-gray-800"><?= h($contentBlock->label) ?></p>
             <p class="mt-1 text-sm text-gray-600"><?= h($contentBlock->description) ?></p>
@@ -36,16 +36,17 @@
                     'label' => 'HTML Content',
                     'type' => 'textarea',
                     'rows' => 10,
-                    'class' => 'w-full border border-gray-300 rounded p-2 ckeditor'
+                    'class' => 'w-full border border-gray-300 rounded p-2 ckeditor',
                 ]);
                 break;
 
             case 'image':
                 // Show current image preview if exists
                 if ($contentBlock->value) {
-                    echo '<div class="mb-4">';
+                    echo '<div class="mb-4 text-center">';
                     echo $this->Html->image($contentBlock->value, [
-                        'class' => 'w-full h-48 object-cover rounded mb-2',
+                        'class' => 'max-w-full object-contain rounded mx-auto',
+                        'alt' => $contentBlock->label,
                     ]);
                     echo '</div>';
                 }
