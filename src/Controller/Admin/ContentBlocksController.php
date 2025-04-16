@@ -5,6 +5,8 @@ namespace App\Controller\Admin;
 
 use App\Controller\AppController;
 use Cake\Http\Response;
+use Psr\Http\Message\UploadedFileInterface;
+use SplFileInfo;
 
 /**
  * ContentBlocks Controller
@@ -60,17 +62,30 @@ class ContentBlocksController extends AppController
      * @param string|null $id Content Block id.
      * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
+     * @throws \Random\RandomException
      */
     public function edit(?string $id = null)
     {
         $contentBlock = $this->ContentBlocks->get($id);
+        $oldValue = $contentBlock->value;
 
         if ($this->request->is(['patch', 'post', 'put'])) {
-            $oldValue = $contentBlock->value;
+            $data = $this->request->getData();
 
-            $this->ContentBlocks->patchEntity($contentBlock, $this->request->getData());
+            if ($contentBlock->type === 'image') {
+                $uploaded = $data['value'];
+                $newPath  = $this->_handleImageUpload($uploaded);
+                if ($newPath) {
+                    $data['value'] = $newPath;
+                    $contentBlock->previous_value = $oldValue;
+                } else {
+                    $data['value'] = $oldValue;
+                }
+            }
 
-            if ($contentBlock->isDirty('value')) {
+            $this->ContentBlocks->patchEntity($contentBlock, $data);
+
+            if ($contentBlock->type !== 'image' && $contentBlock->isDirty('value')) {
                 $contentBlock->previous_value = $oldValue;
             }
 
@@ -107,7 +122,7 @@ class ContentBlocksController extends AppController
             return $this->redirect(['action' => 'index']);
         }
 
-        $contentBlock->value          = $contentBlock->previous_value;
+        $contentBlock->value = $contentBlock->previous_value;
         $contentBlock->previous_value = null;
 
         if ($this->ContentBlocks->save($contentBlock)) {
@@ -117,5 +132,42 @@ class ContentBlocksController extends AppController
         }
 
         return $this->redirect(['action' => 'index']);
+    }
+
+    /**
+     * Handles an uploaded file for image‐type content blocks.
+     *
+     * @param \Psr\Http\Message\UploadedFileInterface $upload The uploaded file object.
+     * @param string|null $filenamePrefix Optional prefix for the filename.
+     * @return string|null Relative path under webroot/img/ if saved, or null otherwise.
+     * @throws \Random\RandomException
+     */
+    protected function _handleImageUpload(UploadedFileInterface $upload, ?string $filenamePrefix = null): ?string
+    {
+        if ($upload->getError() !== UPLOAD_ERR_OK) {
+            if ($upload->getError() == UPLOAD_ERR_INI_SIZE) {
+                $this->Flash->error(__('The file you uploaded is too big'));
+            }
+
+            return null;
+        }
+        $prefix = $filenamePrefix ? $filenamePrefix . '.' : '';
+
+        $extension = preg_replace(
+            '/[^a-z0-9]/',
+            '',
+            strtolower((new SplFileInfo($upload->getClientFilename()))->getExtension()),
+        );
+
+        $filename =  $prefix . md5(random_bytes(10)) . '.' . $extension;
+
+        $destDir = new SplFileInfo(WWW_ROOT . 'img' . DS . 'content_blocks' . DS);
+        if (!$destDir->isDir()) {
+            mkdir($destDir->getPathname(), 0777, true);
+        }
+
+        $upload->moveTo($destDir->getPathname() . DS . $filename);
+
+        return 'content_blocks/' . $filename;
     }
 }
