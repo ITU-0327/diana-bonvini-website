@@ -14,7 +14,7 @@ $this->assign('title', 'Contact Me');
                 'instagram-link',
                 [
                     'text' => '<i data-lucide="instagram" class="w-5 h-5"></i>
-                                    <span class="sr-only">Instagram</span>',
+                               <span class="sr-only">Instagram</span>',
                     'target' => '_blank',
                     'rel' => 'noopener noreferrer',
                     'class' => 'flex items-center gap-2 hover:text-pink-500 transition',
@@ -25,7 +25,7 @@ $this->assign('title', 'Contact Me');
                 'instagram-link',
                 [
                     'text' => '<i data-lucide="linkedin" class="w-5 h-5"></i>
-                                    <span class="sr-only">LinkedIn</span>',
+                               <span class="sr-only">LinkedIn</span>',
                     'target' => '_blank',
                     'rel' => 'noopener noreferrer',
                     'class' => 'flex items-center gap-2 hover:text-blue-700 transition',

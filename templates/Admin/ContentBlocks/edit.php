@@ -111,9 +111,11 @@ $allTypes = TableRegistry::getTableLocator()
 
             <!-- Live Preview -->
             <?php if (in_array($contentBlock->type, ['text','html'])) : ?>
-                <div class="token-preview hidden bg-gray-50 border border-gray-200 rounded p-4 font-mono text-sm space-y-2">
-                    <div class="text-gray-600 text-xs">Live Preview:</div>
-                    <div class="preview-content whitespace-pre-wrap text-gray-800"></div>
+                <div class="mb-2">
+                    <span class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Live Preview</span>
+                </div>
+                <div class="token-preview hidden bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                    <div class="cms-content preview-content whitespace-pre-wrap text-gray-800 space-y-4"></div>
                 </div>
             <?php endif; ?>
 
@@ -128,21 +130,8 @@ $allTypes = TableRegistry::getTableLocator()
     </div>
 </div>
 
-<!-- CKEditor for HTML -->
-<?php if ($contentBlock->type === 'html') : ?>
-    <script src="https://cdn.ckeditor.com/ckeditor5/39.0.0/classic/ckeditor.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('textarea.ckeditor').forEach(el => {
-                ClassicEditor.create(el, {
-                    toolbar: ['heading','|','bold','italic','link','bulletedList','numberedList','|','insertTable','blockQuote','|','undo','redo']
-                }).catch(console.error);
-            });
-        });
-    </script>
-<?php endif; ?>
-
 <!-- Token JS (copy & live replace) -->
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.0/classic/ckeditor.js"></script>
 <script>
     const tokenMapping = <?= json_encode($allValues) ?>;
     const tokenTypes   = <?= json_encode($allTypes) ?>;
@@ -158,38 +147,90 @@ $allTypes = TableRegistry::getTableLocator()
         });
 
         // Live preview
-        document.querySelectorAll('.token-input').forEach(textarea => {
+        // Live preview for plain <textarea>
+        document.querySelectorAll('.token-input:not(.ckeditor)').forEach(textarea => {
+            // start at the wrapper around the textarea
             const controlDiv = textarea.closest('.input') || textarea.parentElement;
-            const previewBox = controlDiv.nextElementSibling;
-            if (!previewBox?.classList.contains('token-preview')) return;
+            let previewBox = controlDiv.nextElementSibling;
+            // skip any non-preview siblings (e.g. the "Live Preview" label)
+            while (previewBox && !previewBox.classList.contains('token-preview')) {
+                previewBox = previewBox.nextElementSibling;
+            }
+            if (!previewBox) return;
             const previewContent = previewBox.querySelector('.preview-content');
 
-            function updatePreview() {
+            function updatePlainPreview() {
                 const text = textarea.value;
-                // Check for any token pattern
                 const hasToken = /\{\{[\w-]+}}/.test(text);
-
                 if (!hasToken) {
-                    // Hide preview if no token
                     previewBox.classList.add('hidden');
                     return;
                 }
-
-                // Otherwise show preview and render
                 previewBox.classList.remove('hidden');
-                previewContent.innerHTML = text.replace(/\{\{([\w-]+)\}\}/g, (m, slug) => {
-                    const val = tokenMapping[slug] ?? m;
-                    const cls = ({
-                        text: 'token-text',
-                        html: 'token-html',
-                        url: 'token-url',
-                    })[tokenTypes[slug]] || 'token-system';
-                    return `<span class="${cls}">${val}</span>`;
-                });
+                previewContent.innerHTML = text.replace(
+                    /\{\{([\w-]+)}}/g,
+                    (m, slug) => {
+                        const val = tokenMapping[slug] ?? m;
+                        const cls = {
+                            text: 'token-text',
+                            html: 'token-html',
+                            url:  'token-url',
+                        }[tokenTypes[slug]] || 'token-system';
+                        return `<span class="${cls}">${val}</span>`;
+                    }
+                );
             }
 
-            textarea.addEventListener('input', updatePreview);
-            updatePreview();
+            textarea.addEventListener('input', updatePlainPreview);
+            updatePlainPreview();
+        });
+
+
+// Live preview for CKEditor instances
+        document.querySelectorAll('textarea.ckeditor').forEach(textarea => {
+            const controlDiv = textarea.closest('.input') || textarea.parentElement;
+            let previewBox = controlDiv.nextElementSibling;
+            while (previewBox && !previewBox.classList.contains('token-preview')) {
+                previewBox = previewBox.nextElementSibling;
+            }
+            if (!previewBox) return;
+            const previewContent = previewBox.querySelector('.preview-content');
+
+            ClassicEditor
+                .create(textarea, {
+                    toolbar: [
+                        'heading','|','bold','italic','link',
+                        'bulletedList','numberedList','|',
+                        'insertTable','blockQuote','|','undo','redo'
+                    ]
+                })
+                .then(editor => {
+                    function updateHtmlPreview() {
+                        const html = editor.getData();
+                        const hasToken = /\{\{[\w-]+}}/.test(html);
+                        if (!hasToken) {
+                            previewBox.classList.add('hidden');
+                            return;
+                        }
+                        previewBox.classList.remove('hidden');
+                        previewContent.innerHTML = html.replace(
+                            /\{\{([\w-]+)}}/g,
+                            (m, slug) => {
+                                const val = tokenMapping[slug] ?? m;
+                                const cls = {
+                                    text: 'token-text',
+                                    html: 'token-html',
+                                    url:  'token-url',
+                                }[tokenTypes[slug]] || 'token-system';
+                                return `<span class="${cls}">${val}</span>`;
+                            }
+                        );
+                    }
+
+                    updateHtmlPreview();
+                    editor.model.document.on('change:data', updateHtmlPreview);
+                })
+                .catch(console.error);
         });
     });
 </script>
