@@ -6,6 +6,8 @@ namespace App\Controller;
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
 use Exception;
+use GdImage;
+use Psr\Http\Message\UploadedFileInterface;
 
 /**
  * Artworks Controller
@@ -50,7 +52,7 @@ class ArtworksController extends AppController
      */
     public function view(?string $id = null): void
     {
-        $artwork = $this->Artworks->get($id, contain: []);
+        $artwork = $this->Artworks->get($id);
         $this->set(compact('artwork'));
     }
 
@@ -65,35 +67,13 @@ class ArtworksController extends AppController
         $artwork = $this->Artworks->newEmptyEntity();
         if ($this->request->is('post')) {
             $data = $this->request->getData();
+            $image = $data['image_path'] ?? null;
 
-            $image = $data['image_path'];
-            if ($image && $image->getError() === UPLOAD_ERR_OK) {
-                // Reject anything that isn’t a JPEG
-                if ($image->getClientMediaType() !== 'image/jpeg') {
-                    $this->Flash->error(__('Only JPEG images are allowed.'));
-                    $this->set(compact('artwork'));
+            // Extracted upload+watermark logic:
+            $watermarked = $this->_processImageUpload($image);
+            $data['image_path'] = $watermarked;
 
-                    return;
-                }
-
-                $fileName = time() . '_' . $image->getClientFilename();
-                $relativePath = 'Artworks/' . $fileName;
-                $targetPath = WWW_ROOT . 'img' . DS . $relativePath;
-
-                $dir = WWW_ROOT . 'img' . DS . 'Artworks';
-                if (!file_exists($dir)) {
-                    mkdir($dir, 0755, true);
-                }
-
-                $image->moveTo($targetPath);
-
-                $this->addTiledWatermark($targetPath, $targetPath);
-
-                $data['image_path'] = $relativePath;
-            } else {
-                $data['image_path'] = null;
-            }
-
+            // Default status
             $data['availability_status'] = 'available';
 
             $artwork = $this->Artworks->patchEntity($artwork, $data);
@@ -113,13 +93,21 @@ class ArtworksController extends AppController
      *
      * @param string|null $id Artwork id.
      * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
+     * @throws \Cake\Datasource\Exception\RecordNotFoundException|\Exception When record not found.
      */
     public function edit(?string $id = null)
     {
-        $artwork = $this->Artworks->get($id, contain: []);
+        $artwork = $this->Artworks->get($id);
+
         if ($this->request->is(['patch', 'post', 'put'])) {
-            $artwork = $this->Artworks->patchEntity($artwork, $this->request->getData());
+            $data  = $this->request->getData();
+            $image = $data['image_path'] ?? null;
+
+            if ($image instanceof UploadedFileInterface && $image->getError() === UPLOAD_ERR_OK) {
+                $data['image_path'] = $this->_processImageUpload($image);
+            }
+
+            $artwork = $this->Artworks->patchEntity($artwork, $data);
             if ($this->Artworks->save($artwork)) {
                 $this->Flash->success(__('The artwork has been saved.'));
 
@@ -127,6 +115,7 @@ class ArtworksController extends AppController
             }
             $this->Flash->error(__('The artwork could not be saved. Please, try again.'));
         }
+
         $this->set(compact('artwork'));
     }
 
@@ -151,78 +140,189 @@ class ArtworksController extends AppController
     }
 
     /**
-     * @param string $originalPath
-     * @param string $outputPath
-     * @return void
+     * Handles moving the uploaded file, validating it, adding a tiled watermark,
+     * and returning the relative path for storage (or null on failure).
+     *
+     * @param \Psr\Http\Message\UploadedFileInterface|null $file
+     * @return string|null  Relative path under img/Artworks or null
      * @throws \Exception
      */
-    private function addTiledWatermark(string $originalPath, string $outputPath): void
+    private function _processImageUpload(?UploadedFileInterface $file): ?string
     {
-        if (!file_exists($originalPath) || !is_file($originalPath)) {
-            throw new Exception("Original image does not exist or is not a valid file: $originalPath");
+        if (
+            !($file instanceof UploadedFileInterface)
+            || $file->getError() !== UPLOAD_ERR_OK
+        ) {
+            return null;
         }
 
-        $dir = dirname($outputPath);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0775, true);
+        if ($file->getClientMediaType() !== 'image/jpeg') {
+            $this->Flash->error(__('Only JPEG images are allowed.'));
+
+            return null;
         }
 
-        $info = getimagesize($originalPath);
-        if (!$info || !isset($info['mime'])) {
-            throw new Exception("Unable to obtain image type: $originalPath");
+        $originalPath = $this->_saveOriginalImage($file);
+
+        $dir  = WWW_ROOT . 'img' . DS . dirname($originalPath);
+        $name = basename($originalPath);
+        $wmName = 'wm_' . $name;
+        $watermarkedRelative = dirname($originalPath) . '/' . $wmName;
+        $watermarkedFull     = $dir . DS . $wmName;
+
+        $this->_addTiledWatermark(
+            WWW_ROOT . 'img' . DS . $originalPath,
+            $watermarkedFull,
+        );
+
+        return $watermarkedRelative;
+    }
+
+    /**
+     * Moves the uploaded file into img/Artworks and
+     * returns its relative path (e.g. "Artworks/12345_pic.jpeg").
+     *
+     * @param \Psr\Http\Message\UploadedFileInterface $file
+     * @return string
+     */
+    private function _saveOriginalImage(UploadedFileInterface $file): string
+    {
+        $fileName     = time() . '_' . $file->getClientFilename();
+        $relativeDir  = 'Artworks';
+        $relativePath = $relativeDir . '/' . $fileName;
+        $targetDir    = WWW_ROOT . 'img' . DS . $relativeDir;
+
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0755, true);
         }
 
-        $mime = $info['mime'];
+        $file->moveTo($targetDir . DS . $fileName);
 
-        $im = match ($mime) {
-            'image/jpeg' => imagecreatefromjpeg($originalPath),
-            'image/png' => imagecreatefrompng($originalPath),
-            'image/webp' => imagecreatefromwebp($originalPath),
-            default => throw new Exception("Unsupported picture types: $mime"),
-        };
+        return $relativePath;
+    }
 
-        if (!$im) {
-            throw new Exception("Unable to load original image resource: $originalPath");
+    /**
+     * Adds a tiled text watermark for JPEGs and writes out a PNG.
+     *
+     * @param string $originalPath Full path to the JPEG source.
+     * @param string $outputPath   Full path where the PNG should be written.
+     * @throws \Exception
+     */
+    private function _addTiledWatermark(string $originalPath, string $outputPath): void
+    {
+        $this->_assertOriginalIsJpeg($originalPath);
+
+        $source = imagecreatefromjpeg($originalPath);
+        if (!$source instanceof GdImage) {
+            throw new Exception("Failed to load JPEG: $originalPath");
         }
 
-        $width = imagesx($im);
-        $height = imagesy($im);
+        $watermark = null;
+        try {
+            [$w, $h] = [imagesx($source), imagesy($source)];
+            $watermark = $this->_createTransparentCanvas($w, $h);
+            $this->_drawTiledText($watermark, $w, $h);
 
-        $watermark = imagecreatetruecolor($width, $height);
-        imagesavealpha($watermark, true);
-        $transparent = imagecolorallocatealpha($watermark, 0, 0, 0, 127);
-        imagefill($watermark, 0, 0, $transparent);
+            imagecopy($source, $watermark, 0, 0, 0, 0, $w, $h);
+            $this->_ensureDirectoryExists(dirname($outputPath));
 
-        $text = 'Diana Bonvini';
+            if (!imagepng($source, $outputPath)) {
+                throw new Exception("Failed to save PNG: $outputPath");
+            }
+        } finally {
+            imagedestroy($source);
+            if ($watermark instanceof GdImage) {
+                imagedestroy($watermark);
+            }
+        }
+    }
+
+    /**
+     * Asserts that the original image is a JPEG and readable.
+     *
+     * @param string $path Full path to the JPEG source.
+     * @throws \Exception
+     */
+    private function _assertOriginalIsJpeg(string $path): void
+    {
+        if (!is_readable($path)) {
+            throw new Exception("File not found or unreadable: $path");
+        }
+        $info = getimagesize($path);
+        if ($info === false || $info['mime'] !== 'image/jpeg') {
+            throw new Exception("Only JPEG originals are supported: $path");
+        }
+    }
+
+    /**
+     * Creates a truecolor canvas with transparency.
+     *
+     * @param int $width
+     * @param int $height
+     * @return \GdImage
+     * @throws \Exception
+     */
+    private function _createTransparentCanvas(int $width, int $height): GdImage
+    {
+        $canvas = imagecreatetruecolor($width, $height);
+        if (!$canvas instanceof GdImage) {
+            throw new Exception('Failed to create watermark canvas');
+        }
+        imagesavealpha($canvas, true);
+
+        $transparent = imagecolorallocatealpha($canvas, 0, 0, 0, 127);
+        if ($transparent === false) {
+            imagedestroy($canvas);
+            throw new Exception('Failed to allocate transparent color');
+        }
+        imagefill($canvas, 0, 0, $transparent);
+
+        return $canvas;
+    }
+
+    /**
+     * Draws the tiled watermark text onto the canvas.
+     *
+     * @param \GdImage $canvas
+     * @param int      $width
+     * @param int      $height
+     * @throws \Exception
+     */
+    private function _drawTiledText(GdImage $canvas, int $width, int $height): void
+    {
+        $text     = 'dbdesign';
         $fontSize = 50;
-        $angle = -45;
+        $angle    = -45;
         $fontPath = WWW_ROOT . 'font/arial.ttf';
-        if (!file_exists($fontPath)) {
-            throw new Exception("Files not found: $fontPath");
+
+        if (!is_readable($fontPath)) {
+            throw new Exception("Font file not found: $fontPath");
         }
-        $textColor = imagecolorallocatealpha($watermark, 225, 225, 225, 75);
+        $color = imagecolorallocatealpha($canvas, 225, 225, 225, 75);
+        if ($color === false) {
+            throw new Exception('Failed to allocate text color');
+        }
 
         for ($y = -100; $y < $height + 100; $y += 200) {
             for ($x = -100; $x < $width + 100; $x += 400) {
-                imagettftext($watermark, $fontSize, $angle, $x, $y, $textColor, $fontPath, $text);
+                imagettftext($canvas, $fontSize, $angle, $x, $y, $color, $fontPath, $text);
             }
         }
+    }
 
-        imagecopy($im, $watermark, 0, 0, 0, 0, $width, $height);
-
-        switch ($mime) {
-            case 'image/jpeg':
-                imagejpeg($im, $outputPath, 90);
-                break;
-            case 'image/png':
-                imagepng($im, $outputPath);
-                break;
-            case 'image/webp':
-                imagewebp($im, $outputPath);
-                break;
+    /**
+     * Ensures the directory exists, or throws.
+     *
+     * @param string $dir
+     * @throws \Exception
+     */
+    private function _ensureDirectoryExists(string $dir): void
+    {
+        if (is_dir($dir)) {
+            return;
         }
-
-        imagedestroy($im);
-        imagedestroy($watermark);
+        if (!mkdir($dir, 0775, true) && !is_dir($dir)) {
+            throw new Exception("Failed to create directory: $dir");
+        }
     }
 }
