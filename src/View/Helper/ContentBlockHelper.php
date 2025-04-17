@@ -50,6 +50,30 @@ class ContentBlockHelper extends Helper
     }
 
     /**
+     * Finds a content block by slug without type validation.
+     *
+     * @param string $slug The unique slug of the content block.
+     * @return \App\Model\Entity\ContentBlock
+     * @throws \InvalidArgumentException if the block is not found.
+     */
+    private function findAny(string $slug): ContentBlock
+    {
+        /**
+         * @var \App\Model\Table\ContentBlocksTable $contentBlocks
+         */
+        $contentBlocks = TableRegistry::getTableLocator()->get('ContentBlocks');
+        $block = $contentBlocks->find()
+            ->where(['slug' => $slug])
+            ->first();
+
+        if (!$block) {
+            throw new InvalidArgumentException("Content block '$slug' not found.");
+        }
+
+        return $block;
+    }
+
+    /**
      * Renders an HTML block.
      *
      * Usage: $this->ContentBlock->html('test');
@@ -61,7 +85,7 @@ class ContentBlockHelper extends Helper
     {
         $rawContent = $this->findOrFail($slug, 'html')->value ?? '';
 
-        return $this->processTokens($rawContent, 'html') ?? '';
+        return $this->processTokens($rawContent) ?? '';
     }
 
     /**
@@ -76,7 +100,7 @@ class ContentBlockHelper extends Helper
     {
         $rawContent = strip_tags($this->findOrFail($slug, 'text')->value ?? '');
 
-        return $this->processTokens($rawContent, 'text') ?? '';
+        return $this->processTokens($rawContent) ?? '';
     }
 
     /**
@@ -133,25 +157,50 @@ class ContentBlockHelper extends Helper
     /**
      * Replace tokens in the given content with corresponding block values.
      *
-     * Tokens are of the form {{slug}}.
+     * Tokens are of the form {{slug}} or {{slug-with-hyphens}}.
+     * Supports content blocks of any type (html, text, url, image).
      *
      * @param string $content The content to process.
-     * @param string $expectedType The expected type ('html', 'text', or 'image') for the tokens.
      * @return string|null The content with tokens replaced.
      */
-    public function processTokens(string $content, string $expectedType): ?string
+    public function processTokens(string $content): ?string
     {
-        // Use a regular expression to find tokens (e.g., {{email}})
-        return preg_replace_callback('/\{\{(\w+)}}/', function ($matches) use ($expectedType) {
+        // Use a regular expression to find tokens (e.g., {{email}} or {{linkedin-link}})
+        return preg_replace_callback('/\{\{([\w-]+)}}/', function ($matches) {
             $tokenSlug = $matches[1];
             if ($tokenSlug === 'currentYear') {
                 return date('Y');
             }
 
-            // Fetch the block value for this token
-            $replacement = $this->findOrFail($tokenSlug, $expectedType)->value;
+            try {
+                // Find the content block without type restriction
+                $block = $this->findAny($tokenSlug);
 
-            return $replacement ?? $matches[0];
+                // Handle different block types
+                switch ($block->type) {
+                    case 'url':
+                        // For URL blocks, create a link with the URL as both href and text
+                        $url = $block->value;
+                        if (!$url) {
+                            return $matches[0];
+                        }
+
+                        // If the URL is an email address, keep email as text but use mailto: link
+                        if (filter_var($url, FILTER_VALIDATE_EMAIL)) {
+                            return $this->Html->link($url, 'mailto:' . $url);
+                        } else {
+                            // For regular URLs, use the URL as both text and link
+                            return $this->Html->link($url, $url);
+                        }
+
+                    default:
+                        // For text and html blocks, just return the value
+                        return $block->value ?? $matches[0];
+                }
+            } catch (InvalidArgumentException $e) {
+                // If the token can't be resolved, return the original token
+                return $matches[0];
+            }
         }, $content);
     }
 }
