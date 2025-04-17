@@ -68,6 +68,12 @@
                         <?= $this->ContentBlock->image($block->slug, ['class' => 'max-w-full max-h-48 object-contain rounded mx-auto', 'alt' => $block->label]) ?>
                     <?php elseif ($block->type === 'url') : ?>
                         <?= $this->ContentBlock->url($block->slug, ['class' => 'text-blue-600 hover:underline']) ?>
+                    <?php elseif ($block->type === 'html') : ?>
+                        <div class="text-sm text-gray-700">
+                            <?= $this->ContentBlock->html($block->slug) ?>
+                        </div>
+                    <?php elseif ($block->type === 'text') : ?>
+                        <p class="text-sm"><?= $this->ContentBlock->text($block->slug) ?></p>
                     <?php else : ?>
                         <p class="text-sm"><?= h($block->value) ?></p>
                     <?php endif; ?>
