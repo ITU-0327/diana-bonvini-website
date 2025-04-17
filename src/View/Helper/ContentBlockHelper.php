@@ -197,7 +197,7 @@ class ContentBlockHelper extends Helper
                         // For text and html blocks, just return the value
                         return $block->value ?? $matches[0];
                 }
-            } catch (InvalidArgumentException $e) {
+            } catch (InvalidArgumentException) {
                 // If the token can't be resolved, return the original token
                 return $matches[0];
             }
