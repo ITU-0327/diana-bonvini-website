@@ -5,13 +5,18 @@
  */
 use Cake\ORM\TableRegistry;
 
+// Map slug → value
 $allValues = TableRegistry::getTableLocator()
     ->get('ContentBlocks')
     ->find('list', ['keyField' => 'slug', 'valueField' => 'value'])
     ->toArray();
 
-// JSON‐encode it for your JS
-$jsTokenMap = json_encode($allValues, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT);
+// Map slug → type
+$allTypes = TableRegistry::getTableLocator()
+    ->get('ContentBlocks')
+    ->find('list', ['keyField' => 'slug', 'valueField' => 'type'])
+    ->toArray();
+
 ?>
 
 <div class="container mx-auto px-6 py-10">
@@ -152,7 +157,7 @@ $jsTokenMap = json_encode($allValues, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT);
         font-family: monospace;
         cursor: pointer;
     }
-    .token-url {
+    .token-text {
         background-color: #ecfdf5;
         border-color: #a7f3d0;
     }
@@ -160,13 +165,9 @@ $jsTokenMap = json_encode($allValues, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT);
         background-color: #fef3c7;
         border-color: #fde68a;
     }
-    .token-text {
+    .token-url {
         background-color: #e0f2fe;
         border-color: #bae6fd;
-    }
-    .token-image {
-        background-color: #fce7f3;
-        border-color: #fbcfe8;
     }
     .token-system {
         background-color: #f3e8ff;
@@ -221,7 +222,8 @@ $jsTokenMap = json_encode($allValues, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT);
 
 <!-- Token copy and preview functionality -->
 <script>
-    const tokenMapping = <?= $jsTokenMap ?>;
+    const tokenMapping = <?= json_encode($allValues, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    const tokenTypes   = <?= json_encode($allTypes, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 
     document.addEventListener('DOMContentLoaded', () => {
         // Set up token copying
@@ -243,24 +245,30 @@ $jsTokenMap = json_encode($allValues, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT);
         });
 
         document.querySelectorAll(".token-input").forEach(textarea => {
-            // find the corresponding preview-content in the same .token-preview wrapper
             const previewContent = textarea
-                .closest("div")           // step up from the textarea's wrapper
-                .nextElementSibling       // skip past Form control wrapper
+                .closest("div")
+                .nextElementSibling
                 .querySelector(".preview-content");
 
             function updatePreview() {
                 const text = textarea.value;
-                // First, replace any {{slug}} with its mapped value (or leave it alone if not found)
-                previewContent.innerHTML = text.replace(/\{\{([\w-]+)}}/g, (__, slug) => {
-                    return tokenMapping[slug] ?? `{{${slug}}}`;
+                const html = text.replace(/\{\{([\w-]+)}}/g, (__, slug) => {
+                    const val = tokenMapping[slug] ?? `{{${slug}}}`;
+                    // Wrap the actual value in a colored span:
+                    const typeClass = {
+                        text: 'token-text',
+                        html: 'token-html',
+                        url:  'token-url',
+                    }[tokenTypes[slug]] || 'token-system';
+
+                    return `<span class="${typeClass}">${val}</span>`;
+
                 });
+                previewContent.innerHTML = html || '<span class="text-gray-400">No tokens yet…</span>';
             }
 
-            // run once on load
-            updatePreview();
-            // run on every keystroke
             textarea.addEventListener("input", updatePreview);
+            updatePreview();
         });
     });
 </script>
