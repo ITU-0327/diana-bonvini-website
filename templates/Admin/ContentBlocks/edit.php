@@ -5,269 +5,185 @@
  */
 use Cake\ORM\TableRegistry;
 
-// Map slug → value
+// Build maps for JS
 $allValues = TableRegistry::getTableLocator()
     ->get('ContentBlocks')
-    ->find('list', ['keyField' => 'slug', 'valueField' => 'value'])
+    ->find('list', ['keyField' => 'slug','valueField' => 'value'])
     ->toArray();
-
-// Map slug → type
 $allTypes = TableRegistry::getTableLocator()
     ->get('ContentBlocks')
-    ->find('list', ['keyField' => 'slug', 'valueField' => 'type'])
+    ->find('list', ['keyField' => 'slug','valueField' => 'type'])
     ->toArray();
-
 ?>
 
-<div class="container mx-auto px-6 py-10">
+<div class="container mx-auto px-6 py-12">
     <?= $this->element('page_title', ['title' => 'Edit Content Block']) ?>
 
-    <div class="w-full sm:w-3/4 md:w-2/3 lg:w-1/2 max-w-3xl mx-auto bg-white shadow rounded-lg p-6">
-        <div class="mb-6">
-            <p class="text-xl font-semibold text-gray-800"><?= h($contentBlock->label) ?></p>
-            <p class="mt-1 text-sm text-gray-600"><?= h($contentBlock->description) ?></p>
-        </div>
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="px-8 py-6 space-y-6">
 
-        <?= $this->Form->create($contentBlock, [
-            'type' => 'file',
-            'class' => 'space-y-6',
-        ]) ?>
+            <!-- Label & Description -->
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800"><?= h($contentBlock->label) ?></h2>
+                <p class="mt-2 text-gray-600"><?= h($contentBlock->description) ?></p>
+            </div>
 
-        <?php if (in_array($contentBlock->type, ['text', 'html'])) : ?>
-        <div class="mb-4 p-4 bg-blue-50 rounded-lg">
-            <h3 class="text-sm font-medium text-blue-700 mb-2">Content Tokens</h3>
-            <p class="text-sm text-blue-600 mb-2">
-                You can embed dynamic content using tokens in the format <code class="bg-blue-100 px-1 rounded">{{token-name}}</code>
-            </p>
+            <?= $this->Form->create($contentBlock, ['type' => 'file','class' => 'space-y-6']) ?>
+
+            <!-- Token Instructions (collapsible) -->
+            <?php if (in_array($contentBlock->type, ['text','html'])) : ?>
+                <details class="group bg-teal-50 border-l-4 border-teal-400 rounded p-4">
+                    <summary class="cursor-pointer font-semibold text-teal-700 group-open:text-teal-900">
+                        Tokens &mdash; click to expand
+                    </summary>
+                    <p class="mt-2 text-teal-600 text-sm">
+                        Embed dynamic content using tokens like <code class="bg-teal-100 px-1 rounded">{{token-name}}</code>.
+                        Click any pill to copy.
+                    </p>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <?php foreach ($this->ContentBlock->getAvailableTokens() as $type => $list) : ?>
+                            <?php foreach ($list as $token) : ?>
+                                <span
+                                    class="token-example cursor-pointer select-none bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-xs font-medium"
+                                    data-token="{{<?= h($token['slug']) ?>}}"
+                                    title="Click to copy"><?= h($token['slug']) ?></span>
+                            <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    </div>
+                </details>
+            <?php endif; ?>
 
             <?php
-            $tokens = $this->ContentBlock->getAvailableTokens(5);
-            if (!empty($tokens)) :
-                ?>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
-                <?php foreach ($tokens as $type => $typeTokens) : ?>
-                <div>
-                    <h4 class="text-xs font-medium text-blue-800 mb-1"><?= ucfirst($type) ?> Tokens:</h4>
-                    <ul class="text-xs space-y-1">
-                        <?php foreach ($typeTokens as $token) : ?>
-                        <li>
-                            <code class="bg-blue-100 px-1 rounded cursor-pointer token-example"
-                                  data-token="{{<?= $token['slug'] ?>}}"
-                                  title="Click to copy"><?= $token['slug'] ?></code>
-                            <span class="text-xs text-gray-500"><?= $token['label'] ?></span>
-                        </li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-                <?php endforeach; ?>
-            </div>
-            <?php endif; ?>
-        </div>
-        <?php endif; ?>
-
-        <?php
-        switch ($contentBlock->type) {
-            case 'text':
-                echo $this->Form->control('value', [
-                    'label' => 'Text Value',
-                    'type' => 'textarea',
-                    'rows' => 6,
-                    'class' => 'w-full border border-gray-300 rounded p-2 token-input',
-                ]);
-                // Always show the preview box:
-                echo '<div class="token-preview p-4 bg-gray-50 border border-gray-200 rounded mt-2">';
-                echo '<div class="text-xs text-gray-600 mb-1">Live Token Preview:</div>';
-                echo '<div class="preview-content text-sm text-gray-700"></div>';
-                echo '</div>';
-                break;
-
-            case 'html':
-                echo $this->Form->control('value', [
-                    'label' => 'HTML Content',
-                    'type' => 'textarea',
-                    'rows' => 10,
-                    'class' => 'w-full border border-gray-300 rounded p-2 ckeditor token-input',
-                ]);
-                echo '<div class="token-preview p-4 bg-gray-50 border border-gray-200 rounded mt-2">';
-                echo '<div class="text-xs text-gray-600 mb-1">Live Token Preview:</div>';
-                echo '<div class="preview-content text-sm text-gray-700"></div>';
-                echo '</div>';
-                break;
-
-            case 'image':
-                // Show current image preview if exists
-                if ($contentBlock->value) {
-                    echo '<div class="mb-4 text-center">';
-                    echo $this->Html->image($contentBlock->value, [
-                        'class' => 'max-w-full object-contain rounded mx-auto',
-                        'alt' => $contentBlock->label,
+            switch ($contentBlock->type) {
+                case 'text':
+                    echo $this->Form->control('value', [
+                        'label' => 'Text Value',
+                        'type' => 'textarea',
+                        'rows' => 6,
+                        'class' => 'w-full border border-gray-300 rounded p-3 token-input',
                     ]);
-                    echo '</div>';
-                }
-                // File input
-                echo $this->Form->control('value', [
-                    'label' => 'Upload New Image',
-                    'type' => 'file',
-                    'class' => 'w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100',
-                ]);
-                break;
+                    break;
 
-            case 'url':
-                // Single-line URL input
-                echo $this->Form->control('value', [
-                    'label' => 'URL',
-                    'type' => 'url',
-                    'class' => 'w-full border border-gray-300 rounded p-2',
-                ]);
-                break;
+                case 'html':
+                    echo $this->Form->control('value', [
+                        'label' => 'HTML Content',
+                        'type' => 'textarea',
+                        'rows' => 10,
+                        'class' => 'w-full border border-gray-300 rounded p-3 ckeditor token-input',
+                    ]);
+                    break;
 
-            default:
-                // Fallback to textarea
-                echo $this->Form->control('value', [
-                    'label' => 'Value',
-                    'type' => 'textarea',
-                    'rows' => 6,
-                    'class' => 'w-full border border-gray-300 rounded p-2',
-                ]);
-                break;
-        }
-        ?>
+                case 'image':
+                    if ($contentBlock->value) {
+                        echo '<div class="text-center mb-4">';
+                        echo $this->Html->image($contentBlock->value, [
+                            'class' => 'inline-block max-w-full max-h-96 object-contain rounded',
+                            'alt' => $contentBlock->label,
+                        ]);
+                        echo '</div>';
+                    }
 
-        <div class="flex items-center justify-end space-x-4">
-            <?= $this->Form->button(__('Save'), [
-                'class' => 'bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700',
-            ]) ?>
-            <?= $this->Html->link(__('Cancel'), ['action' => 'index'], [
-                'class' => 'text-gray-600 hover:underline',
-            ]) ?>
+                    echo $this->Form->control('value', [
+                        'label' => 'Upload New Image',
+                        'type' => 'file',
+                        'class' => 'block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-teal-100 file:text-teal-800 hover:file:bg-teal-200',
+                    ]);
+                    break;
+
+                case 'url':
+                    $this->Form->control('value', [
+                        'label' => 'URL',
+                        'type' => 'url',
+                        'class' => 'w-full border border-gray-300 rounded p-3',
+                    ]);
+                    break;
+
+                default:
+                    echo $this->Form->control('value', [
+                        'label' => 'Value',
+                        'type' => 'textarea',
+                        'rows' => 6,
+                        'class' => 'w-full border border-gray-300 rounded p-3',
+                    ]);
+                    break;
+            }
+            ?>
+
+            <!-- Live Preview -->
+            <?php if (in_array($contentBlock->type, ['text','html'])) : ?>
+                <div class="token-preview bg-gray-50 border border-gray-200 rounded p-4 font-mono text-sm space-y-2">
+                    <div class="text-gray-600 text-xs">Live Preview:</div>
+                    <div class="preview-content whitespace-pre-wrap text-gray-800"></div>
+                </div>
+            <?php endif; ?>
+
+            <!-- Actions -->
+            <div class="flex justify-end space-x-4">
+                <?= $this->Form->button(__('Save'), ['class' => 'bg-teal-600 text-white px-6 py-2 rounded hover:bg-teal-700']) ?>
+                <?= $this->Html->link(__('Cancel'), ['action' => 'index'], ['class' => 'text-gray-600 hover:underline']) ?>
+            </div>
+
+            <?= $this->Form->end() ?>
         </div>
-
-        <?= $this->Form->end() ?>
     </div>
 </div>
 
-<!-- Add styles for token highlights -->
-<style>
-    .token-highlight {
-        display: inline-block;
-        padding: 0 4px;
-        border-radius: 4px;
-        background-color: #eef2ff;
-        border: 1px solid #c7d2fe;
-        font-family: monospace;
-        cursor: pointer;
-    }
-    .token-text {
-        background-color: #ecfdf5;
-        border-color: #a7f3d0;
-    }
-    .token-html {
-        background-color: #fef3c7;
-        border-color: #fde68a;
-    }
-    .token-url {
-        background-color: #e0f2fe;
-        border-color: #bae6fd;
-    }
-    .token-system {
-        background-color: #f3e8ff;
-        border-color: #e9d5ff;
-    }
-    .token-invalid {
-        background-color: #fee2e2;
-        border-color: #fecaca;
-    }
-    .token-preview {
-        max-width: 100%;
-        overflow-x: auto;
-        padding: 8px;
-        border: 1px solid #e5e7eb;
-        border-radius: 4px;
-        margin-top: 8px;
-        margin-bottom: 8px;
-        background-color: #f9fafb;
-    }
-</style>
-
+<!-- CKEditor for HTML -->
 <?php if ($contentBlock->type === 'html') : ?>
-    <!-- CKEditor 5 Classic build via CDN -->
     <script src="https://cdn.ckeditor.com/ckeditor5/39.0.0/classic/ckeditor.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const editors = document.querySelectorAll('textarea.ckeditor');
-            editors.forEach(textarea => {
-                ClassicEditor
-                    .create(textarea, {
-                        toolbar: [
-                            'heading', '|',
-                            'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|',
-                            'insertTable', 'blockQuote', '|',
-                            'undo', 'redo'
-                        ],
-                        heading: {
-                            options: [
-                                { model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
-                                { model: 'heading1', view: 'h1', title: 'Heading 1', class: 'ck-heading_heading1' },
-                                { model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' }
-                            ]
-                        }
-                    })
-                    .catch(error => {
-                        console.error(error);
-                    });
+            document.querySelectorAll('textarea.ckeditor').forEach(el => {
+                ClassicEditor.create(el, {
+                    toolbar: ['heading','|','bold','italic','link','bulletedList','numberedList','|','insertTable','blockQuote','|','undo','redo']
+                }).catch(console.error);
             });
         });
     </script>
 <?php endif; ?>
 
-<!-- Token copy and preview functionality -->
+<!-- Token JS (copy & live replace) -->
 <script>
-    const tokenMapping = <?= json_encode($allValues, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-    const tokenTypes   = <?= json_encode($allTypes, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    const tokenMapping = <?= json_encode($allValues) ?>;
+    const tokenTypes   = <?= json_encode($allTypes) ?>;
 
     document.addEventListener('DOMContentLoaded', () => {
-        // Set up token copying
-        document.querySelectorAll('.token-example').forEach(token => {
-            token.addEventListener('click', function() {
-                const tokenText = this.getAttribute('data-token');
-                navigator.clipboard.writeText(tokenText).then(() => {
-                    // Show a temporary "copied" tooltip
-                    const originalTitle = this.title;
-                    this.title = 'Copied!';
-                    this.style.backgroundColor = '#d1fae5';
-
-                    setTimeout(() => {
-                        this.title = originalTitle;
-                        this.style.backgroundColor = '';
-                    }, 1500);
-                });
+        // Copy on click
+        document.querySelectorAll('.token-example').forEach(el => {
+            el.addEventListener('click', () => {
+                navigator.clipboard.writeText(el.dataset.token);
+                el.classList.add('bg-teal-200');
+                setTimeout(() => el.classList.remove('bg-teal-200'), 1000);
             });
         });
 
-        document.querySelectorAll(".token-input").forEach(textarea => {
-            const previewContent = textarea
-                .closest("div")
-                .nextElementSibling
-                .querySelector(".preview-content");
+        // Live preview
+        document.querySelectorAll('.token-input').forEach(textarea => {
+            const controlDiv = textarea.closest('.input') || textarea.parentElement;
+            const previewBox = controlDiv.nextElementSibling;
+            if (!previewBox?.classList.contains('token-preview')) return;
+
+            const previewContent = previewBox.querySelector('.preview-content');
+            if (!previewContent) return;
 
             function updatePreview() {
-                const text = textarea.value;
-                const html = text.replace(/\{\{([\w-]+)}}/g, (__, slug) => {
-                    const val = tokenMapping[slug] ?? `{{${slug}}}`;
-                    // Wrap the actual value in a colored span:
-                    const typeClass = {
-                        text: 'token-text',
-                        html: 'token-html',
-                        url:  'token-url',
-                    }[tokenTypes[slug]] || 'token-system';
-
-                    return `<span class="${typeClass}">${val}</span>`;
-
-                });
+                const html = textarea.value.replace(
+                    /\{\{([\w-]+)}}/g,
+                    (whole, slug) => {
+                        const val = tokenMapping[slug] ?? whole;
+                        const cls = ({
+                            text:  'token-text',
+                            html:  'token-html',
+                            url:   'token-url',
+                            system:'token-system',
+                        })[ tokenTypes[slug] ] || 'token-highlight';
+                        return `<span class="${cls}">${val}</span>`;
+                    }
+                );
                 previewContent.innerHTML = html || '<span class="text-gray-400">No tokens yet…</span>';
             }
 
-            textarea.addEventListener("input", updatePreview);
+            textarea.addEventListener('input', updatePreview);
             updatePreview();
         });
     });
