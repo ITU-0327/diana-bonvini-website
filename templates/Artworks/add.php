@@ -39,6 +39,7 @@
                 <?= $this->Form->label('image_path', 'Upload Image', ['class' => 'block text-lg font-medium text-gray-700 mb-2']) ?>
                 <?= $this->Form->file('image_path', [
                     'class' => 'w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100',
+                    'accept' => 'image/jpeg'
                 ]) ?>
             </div>
 

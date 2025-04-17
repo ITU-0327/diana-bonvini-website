@@ -18,32 +18,6 @@ $user = $this->request->getAttribute('identity');
                     'class' => 'object-cover max-h-96',
                 ]) ?>
             </div>
-
-            <!-- Thumbnails -->
-            <div class="flex space-x-2">
-                <div class="w-20 h-20 bg-white shadow rounded p-1 flex items-center justify-center">
-                    <img
-                        src="/img/artworks/wallowing-breeze-thumb1.jpg"
-                        alt="Wallowing Breeze Thumbnail 1"
-                        class="object-cover h-full"
-                    />
-                </div>
-                <div class="w-20 h-20 bg-white shadow rounded p-1 flex items-center justify-center">
-                    <img
-                        src="/img/artworks/wallowing-breeze-thumb2.jpg"
-                        alt="Wallowing Breeze Thumbnail 2"
-                        class="object-cover h-full"
-                    />
-                </div>
-            </div>
-
-            <!-- "View in a room" Link -->
-            <div>
-                <a href="#"
-                   class="inline-block text-sm text-indigo-600 hover:text-indigo-500 underline">
-                    View in a room
-                </a>
-            </div>
         </div>
 
         <!-- Right Column: Artwork Details -->
@@ -97,7 +71,7 @@ $user = $this->request->getAttribute('identity');
                         '<i class="fa fa-shopping-cart mr-2"></i>Add to Cart',
                         [
                             'escapeTitle' => false,
-                            'class'       => 'inline-flex items-center bg-indigo-600 text-white py-2 px-6 rounded hover:bg-indigo-700',
+                            'class' => 'inline-flex items-center bg-indigo-600 text-white py-2 px-6 rounded hover:bg-indigo-700',
                         ],
                     ) ?>
                     <?= $this->Form->end() ?>
@@ -111,7 +85,7 @@ $user = $this->request->getAttribute('identity');
                             ['action' => 'edit', $artwork->artwork_id],
                             [
                                 'escapeTitle' => false,
-                                'class'       => 'inline-flex items-center bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700',
+                                'class' => 'inline-flex items-center bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700',
                             ],
                         ) ?>
 
@@ -120,8 +94,8 @@ $user = $this->request->getAttribute('identity');
                             ['action' => 'delete', $artwork->artwork_id],
                             [
                                 'escapeTitle' => false,
-                                'confirm'     => 'Are you sure you want to delete this artwork?',
-                                'class'       => 'inline-flex items-center bg-red-600 text-white py-2 px-6 rounded hover:bg-red-700',
+                                'confirm' => 'Are you sure you want to delete this artwork?',
+                                'class' => 'inline-flex items-center bg-red-600 text-white py-2 px-6 rounded hover:bg-red-700',
                             ],
                         ) ?>
                     </div>

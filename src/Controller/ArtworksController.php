@@ -31,9 +31,9 @@ class ArtworksController extends AppController
     /**
      * Index method
      *
-     * @return \Cake\Http\Response|null|void Renders view
+     * @return void Renders view
      */
-    public function index()
+    public function index(): void
     {
         $query = $this->Artworks->find()->where(['is_deleted' => 0]);
         $artworks = $this->paginate($query);
@@ -45,10 +45,10 @@ class ArtworksController extends AppController
      * View method
      *
      * @param string|null $id Artwork id.
-     * @return \Cake\Http\Response|null|void Renders view
+     * @return void Renders view
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function view(?string $id = null)
+    public function view(?string $id = null): void
     {
         $artwork = $this->Artworks->get($id, contain: []);
         $this->set(compact('artwork'));
@@ -58,6 +58,7 @@ class ArtworksController extends AppController
      * Add method
      *
      * @return \Cake\Http\Response|null|void Redirects on successful add, renders view otherwise.
+     * @throws \Exception
      */
     public function add()
     {
@@ -67,6 +68,14 @@ class ArtworksController extends AppController
 
             $image = $data['image_path'];
             if ($image && $image->getError() === UPLOAD_ERR_OK) {
+                // Reject anything that isn’t a JPEG
+                if ($image->getClientMediaType() !== 'image/jpeg') {
+                    $this->Flash->error(__('Only JPEG images are allowed.'));
+                    $this->set(compact('artwork'));
+
+                    return;
+                }
+
                 $fileName = time() . '_' . $image->getClientFilename();
                 $relativePath = 'Artworks/' . $fileName;
                 $targetPath = WWW_ROOT . 'img' . DS . $relativePath;
@@ -165,19 +174,12 @@ class ArtworksController extends AppController
 
         $mime = $info['mime'];
 
-        switch ($mime) {
-            case 'image/jpeg':
-                $im = imagecreatefromjpeg($originalPath);
-                break;
-            case 'image/png':
-                $im = imagecreatefrompng($originalPath);
-                break;
-            case 'image/webp':
-                $im = imagecreatefromwebp($originalPath);
-                break;
-            default:
-                throw new Exception("Unsupported picture types: $mime");
-        }
+        $im = match ($mime) {
+            'image/jpeg' => imagecreatefromjpeg($originalPath),
+            'image/png' => imagecreatefrompng($originalPath),
+            'image/webp' => imagecreatefromwebp($originalPath),
+            default => throw new Exception("Unsupported picture types: $mime"),
+        };
 
         if (!$im) {
             throw new Exception("Unable to load original image resource: $originalPath");

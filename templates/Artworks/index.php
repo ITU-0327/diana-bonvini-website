@@ -41,7 +41,7 @@ $userType = $user?->get('user_type');
             >
                 <!-- Artwork Image -->
                 <?= $this->Html->image($artwork->image_path, [
-                    'alt'   => $artwork->title,
+                    'alt' => $artwork->title,
                     'class' => 'w-full h-full object-cover',
                 ]) ?>
 
