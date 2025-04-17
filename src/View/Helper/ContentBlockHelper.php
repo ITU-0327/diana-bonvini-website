@@ -28,7 +28,7 @@ class ContentBlockHelper extends Helper
      * @return \App\Model\Entity\ContentBlock
      * @throws \InvalidArgumentException if the block is not found or its type doesn't match.
      */
-    private function findOrFail(string $slug, string $expectedType): ContentBlock
+    private function _findOrFail(string $slug, string $expectedType): ContentBlock
     {
         /**
          * @var \App\Model\Table\ContentBlocksTable $contentBlocks
@@ -56,7 +56,7 @@ class ContentBlockHelper extends Helper
      * @return \App\Model\Entity\ContentBlock
      * @throws \InvalidArgumentException if the block is not found.
      */
-    private function findAny(string $slug): ContentBlock
+    private function _findAny(string $slug): ContentBlock
     {
         /**
          * @var \App\Model\Table\ContentBlocksTable $contentBlocks
@@ -83,9 +83,9 @@ class ContentBlockHelper extends Helper
      */
     public function html(string $slug): string
     {
-        $rawContent = $this->findOrFail($slug, 'html')->value ?? '';
+        $rawContent = $this->_findOrFail($slug, 'html')->value ?? '';
 
-        return $this->processTokens($rawContent) ?? '';
+        return $this->_processTokens($rawContent) ?? '';
     }
 
     /**
@@ -98,9 +98,9 @@ class ContentBlockHelper extends Helper
      */
     public function text(string $slug): string
     {
-        $rawContent = strip_tags($this->findOrFail($slug, 'text')->value ?? '');
+        $rawContent = strip_tags($this->_findOrFail($slug, 'text')->value ?? '');
 
-        return $this->processTokens($rawContent) ?? '';
+        return $this->_processTokens($rawContent) ?? '';
     }
 
     /**
@@ -114,7 +114,7 @@ class ContentBlockHelper extends Helper
      */
     public function image(string $slug, array $options = []): ?string
     {
-        $path = $this->findOrFail($slug, 'image')->value;
+        $path = $this->_findOrFail($slug, 'image')->value;
 
         return $path ? $this->Html->image($path, $options) : null;
     }
@@ -134,7 +134,7 @@ class ContentBlockHelper extends Helper
      */
     public function url(string $slug, array $options = []): ?string
     {
-        $block = $this->findOrFail($slug, 'url');
+        $block = $this->_findOrFail($slug, 'url');
         $url = $block->value;
         if (!$url) {
             return null;
@@ -163,7 +163,7 @@ class ContentBlockHelper extends Helper
      * @param string $content The content to process.
      * @return string|null The content with tokens replaced.
      */
-    public function processTokens(string $content): ?string
+    private function _processTokens(string $content): ?string
     {
         // Use a regular expression to find tokens (e.g., {{email}} or {{linkedin-link}})
         return preg_replace_callback('/\{\{([\w-]+)}}/', function ($matches) {
@@ -174,7 +174,7 @@ class ContentBlockHelper extends Helper
 
             try {
                 // Find the content block without type restriction
-                $block = $this->findAny($tokenSlug);
+                $block = $this->_findAny($tokenSlug);
 
                 // Handle different block types
                 switch ($block->type) {
@@ -202,5 +202,36 @@ class ContentBlockHelper extends Helper
                 return $matches[0];
             }
         }, $content);
+    }
+
+    /**
+     * Gets a list of available tokens for display in instructions.
+     *
+     * @param int  $limit  Maximum number of tokens to display per type
+     * @return array<string, list<array{slug:string,label:string,type:string}>>
+     *         Keys are token‐types (`text`, `html`, `url`, `system`), values are lists of
+     *         arrays each with `slug`, `label`, and `type` strings.
+     */
+    public function getAvailableTokens(int $limit = 10): array
+    {
+        $contentBlocks = TableRegistry::getTableLocator()->get('ContentBlocks');
+        $tokens = [];
+        foreach (['text', 'html', 'url'] as $type) {
+            $rows = $contentBlocks->find()
+                ->select(['slug', 'label', 'type'])
+                ->where(['type' => $type, 'parent' => ''])
+                ->limit($limit)
+                ->enableHydration(false)
+                ->toArray();
+            if ($rows) {
+                $tokens[$type] = $rows;
+            }
+        }
+        // built‐in
+        $tokens['system'] = [
+            ['slug' => 'currentYear', 'label' => 'Current Year', 'type' => 'system'],
+        ];
+
+        return $tokens;
     }
 }
