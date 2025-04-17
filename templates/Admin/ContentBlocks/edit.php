@@ -41,8 +41,8 @@ $allTypes = TableRegistry::getTableLocator()
                         Click any pill to copy.
                     </p>
                     <div class="mt-4 flex flex-wrap gap-2">
-                        <?php foreach ($this->ContentBlock->getAvailableTokens() as $type => $list) : ?>
-                            <?php foreach ($list as $token) : ?>
+                        <?php foreach ($this->ContentBlock->getAvailableTokens() as $_list) : ?>
+                            <?php foreach ($_list as $token) : ?>
                                 <span
                                     class="token-example cursor-pointer select-none bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-xs font-medium"
                                     data-token="{{<?= h($token['slug']) ?>}}"
@@ -111,11 +111,15 @@ $allTypes = TableRegistry::getTableLocator()
 
             <!-- Live Preview -->
             <?php if (in_array($contentBlock->type, ['text','html'])) : ?>
-                <div class="mb-2">
-                    <span class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Live Preview</span>
-                </div>
-                <div class="token-preview hidden bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                    <div class="cms-content preview-content whitespace-pre-wrap text-gray-800 space-y-4"></div>
+                <div class="live-preview-wrapper hidden space-y-2">
+                    <div>
+                        <span class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                            Live Preview
+                        </span>
+                    </div>
+                    <div class="token-preview bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                        <div class="cms-content preview-content whitespace-pre-wrap text-gray-800 space-y-4"></div>
+                    </div>
                 </div>
             <?php endif; ?>
 
@@ -146,55 +150,47 @@ $allTypes = TableRegistry::getTableLocator()
             });
         });
 
-        // Live preview
         // Live preview for plain <textarea>
         document.querySelectorAll('.token-input:not(.ckeditor)').forEach(textarea => {
             // start at the wrapper around the textarea
             const controlDiv = textarea.closest('.input') || textarea.parentElement;
-            let previewBox = controlDiv.nextElementSibling;
-            // skip any non-preview siblings (e.g. the "Live Preview" label)
-            while (previewBox && !previewBox.classList.contains('token-preview')) {
-                previewBox = previewBox.nextElementSibling;
-            }
-            if (!previewBox) return;
-            const previewContent = previewBox.querySelector('.preview-content');
+            // The next sibling is our live-preview-wrapper
+            const wrapper    = controlDiv.nextElementSibling;
+            if (!wrapper || !wrapper.classList.contains('live-preview-wrapper')) return;
+            const previewContent = wrapper.querySelector('.preview-content');
 
             function updatePlainPreview() {
                 const text = textarea.value;
                 const hasToken = /\{\{[\w-]+}}/.test(text);
                 if (!hasToken) {
-                    previewBox.classList.add('hidden');
-                    return;
+                    wrapper.classList.add('hidden');
+                } else {
+                    wrapper.classList.remove('hidden');
+                    previewContent.innerHTML = text.replace(
+                        /\{\{([\w-]+)}}/g,
+                        (m, slug) => {
+                            const val = tokenMapping[slug] ?? m;
+                            const cls = {
+                                text: 'token-text',
+                                html: 'token-html',
+                                url:  'token-url',
+                            }[tokenTypes[slug]] || 'token-system';
+                            return `<span class="${cls}">${val}</span>`;
+                        }
+                    );
                 }
-                previewBox.classList.remove('hidden');
-                previewContent.innerHTML = text.replace(
-                    /\{\{([\w-]+)}}/g,
-                    (m, slug) => {
-                        const val = tokenMapping[slug] ?? m;
-                        const cls = {
-                            text: 'token-text',
-                            html: 'token-html',
-                            url:  'token-url',
-                        }[tokenTypes[slug]] || 'token-system';
-                        return `<span class="${cls}">${val}</span>`;
-                    }
-                );
             }
 
             textarea.addEventListener('input', updatePlainPreview);
             updatePlainPreview();
         });
 
-
-// Live preview for CKEditor instances
+        // Live preview for CKEditor instances
         document.querySelectorAll('textarea.ckeditor').forEach(textarea => {
             const controlDiv = textarea.closest('.input') || textarea.parentElement;
-            let previewBox = controlDiv.nextElementSibling;
-            while (previewBox && !previewBox.classList.contains('token-preview')) {
-                previewBox = previewBox.nextElementSibling;
-            }
-            if (!previewBox) return;
-            const previewContent = previewBox.querySelector('.preview-content');
+            const wrapper    = controlDiv.nextElementSibling;
+            if (!wrapper || !wrapper.classList.contains('live-preview-wrapper')) return;
+            const previewContent = wrapper.querySelector('.preview-content');
 
             ClassicEditor
                 .create(textarea, {
@@ -209,22 +205,22 @@ $allTypes = TableRegistry::getTableLocator()
                         const html = editor.getData();
                         const hasToken = /\{\{[\w-]+}}/.test(html);
                         if (!hasToken) {
-                            previewBox.classList.add('hidden');
-                            return;
+                            wrapper.classList.add('hidden');
+                        } else {
+                            wrapper.classList.remove('hidden');
+                            previewContent.innerHTML = html.replace(
+                                /\{\{([\w-]+)}}/g,
+                                (m, slug) => {
+                                    const val = tokenMapping[slug] ?? m;
+                                    const cls = {
+                                        text: 'token-text',
+                                        html: 'token-html',
+                                        url:  'token-url',
+                                    }[tokenTypes[slug]] || 'token-system';
+                                    return `<span class="${cls}">${val}</span>`;
+                                }
+                            );
                         }
-                        previewBox.classList.remove('hidden');
-                        previewContent.innerHTML = html.replace(
-                            /\{\{([\w-]+)}}/g,
-                            (m, slug) => {
-                                const val = tokenMapping[slug] ?? m;
-                                const cls = {
-                                    text: 'token-text',
-                                    html: 'token-html',
-                                    url:  'token-url',
-                                }[tokenTypes[slug]] || 'token-system';
-                                return `<span class="${cls}">${val}</span>`;
-                            }
-                        );
                     }
 
                     updateHtmlPreview();
