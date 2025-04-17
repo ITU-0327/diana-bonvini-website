@@ -9,10 +9,10 @@
    Color Variables & Global Settings
    ======================================================================== */
 :root {
-    --color-diana-primary: #008080;       /* Teal */
-    --color-diana-secondary: #7FFFD4;       /* Aquamarine */
-    --color-diana-accent: #8A2BE2;          /* Violet */
-    --color-diana-highlight: #FFD700;       /* Gold */
+    --color-diana-primary: #0D9488;
+    --color-diana-primary-dark: #0F766E;
+    --color-diana-secondary: #7FFFD4;
+    --color-diana-accent: #8A2BE2;
     --color-diana-gray: #404041;
     --color-diana-lightgray: #606c76;
     --color-white: #fff;
@@ -91,7 +91,22 @@ button:hover,
 input[type='button']:hover,
 input[type='reset']:hover,
 input[type='submit']:hover {
-    background-color: var(--color-diana-accent);
+    background-color: var(--color-diana-primary-dark);
+}
+
+/* Secondary buttons (for links styled as buttons) */
+a.btn-secondary {
+    background-color: #e5e7eb;
+    color: var(--color-diana-gray);
+    padding: 0.5rem 1.5rem;
+    border-radius: 0.25rem;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.2s ease-in-out;
+}
+
+a.btn-secondary:hover {
+    background-color: #d1d5db;
 }
 
 input,
@@ -333,4 +348,46 @@ footer {
 .filter-btn.active {
     background-color: var(--color-diana-primary);
     color: var(--color-white);
+}
+
+/* ========================================================================
+   Token Pills & Live Preview
+   ======================================================================== */
+/* Pill‑style token examples in the “Tokens” panel */
+.token-example {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    background-color: #e0f2fe;
+    color: #0369a1;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.token-example:hover {
+    background-color: #bae6fd;
+}
+
+/* Any <span> inside the preview */
+.token-preview .preview-content span {
+    display: inline-block;
+    padding: 0 0.25rem;
+    border-radius: 0.25rem;
+}
+
+/* Token types (text, html, url, image, system) */
+.token-text {
+    background-color: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+}
+.token-url {
+    background-color: #e0f2fe;
+    border: 1px solid #bae6fd;
+    color: #0369a1;
+}
+.token-system {
+    background-color: #f3e8ff;
+    border: 1px solid #e9d5ff;
+    color: #6b21a8;
 }

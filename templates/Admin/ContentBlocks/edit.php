@@ -91,7 +91,7 @@ $allTypes = TableRegistry::getTableLocator()
                     break;
 
                 case 'url':
-                    $this->Form->control('value', [
+                    echo $this->Form->control('value', [
                         'label' => 'URL',
                         'type' => 'url',
                         'class' => 'w-full border border-gray-300 rounded p-3',
@@ -111,7 +111,7 @@ $allTypes = TableRegistry::getTableLocator()
 
             <!-- Live Preview -->
             <?php if (in_array($contentBlock->type, ['text','html'])) : ?>
-                <div class="token-preview bg-gray-50 border border-gray-200 rounded p-4 font-mono text-sm space-y-2">
+                <div class="token-preview hidden bg-gray-50 border border-gray-200 rounded p-4 font-mono text-sm space-y-2">
                     <div class="text-gray-600 text-xs">Live Preview:</div>
                     <div class="preview-content whitespace-pre-wrap text-gray-800"></div>
                 </div>
@@ -120,7 +120,7 @@ $allTypes = TableRegistry::getTableLocator()
             <!-- Actions -->
             <div class="flex justify-end space-x-4">
                 <?= $this->Form->button(__('Save'), ['class' => 'bg-teal-600 text-white px-6 py-2 rounded hover:bg-teal-700']) ?>
-                <?= $this->Html->link(__('Cancel'), ['action' => 'index'], ['class' => 'text-gray-600 hover:underline']) ?>
+                <?= $this->Html->link(__('Cancel'), ['action' => 'index'], ['class' => 'btn-secondary']) ?>
             </div>
 
             <?= $this->Form->end() ?>
@@ -162,25 +162,30 @@ $allTypes = TableRegistry::getTableLocator()
             const controlDiv = textarea.closest('.input') || textarea.parentElement;
             const previewBox = controlDiv.nextElementSibling;
             if (!previewBox?.classList.contains('token-preview')) return;
-
             const previewContent = previewBox.querySelector('.preview-content');
-            if (!previewContent) return;
 
             function updatePreview() {
-                const html = textarea.value.replace(
-                    /\{\{([\w-]+)}}/g,
-                    (whole, slug) => {
-                        const val = tokenMapping[slug] ?? whole;
-                        const cls = ({
-                            text:  'token-text',
-                            html:  'token-html',
-                            url:   'token-url',
-                            system:'token-system',
-                        })[ tokenTypes[slug] ] || 'token-highlight';
-                        return `<span class="${cls}">${val}</span>`;
-                    }
-                );
-                previewContent.innerHTML = html || '<span class="text-gray-400">No tokens yet…</span>';
+                const text = textarea.value;
+                // Check for any token pattern
+                const hasToken = /\{\{[\w-]+}}/.test(text);
+
+                if (!hasToken) {
+                    // Hide preview if no token
+                    previewBox.classList.add('hidden');
+                    return;
+                }
+
+                // Otherwise show preview and render
+                previewBox.classList.remove('hidden');
+                previewContent.innerHTML = text.replace(/\{\{([\w-]+)\}\}/g, (m, slug) => {
+                    const val = tokenMapping[slug] ?? m;
+                    const cls = ({
+                        text: 'token-text',
+                        html: 'token-html',
+                        url: 'token-url',
+                    })[tokenTypes[slug]] || 'token-system';
+                    return `<span class="${cls}">${val}</span>`;
+                });
             }
 
             textarea.addEventListener('input', updatePreview);
