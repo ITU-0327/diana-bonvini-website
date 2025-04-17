@@ -391,3 +391,26 @@ footer {
     border: 1px solid #e9d5ff;
     color: #6b21a8;
 }
+
+.cms-content p {
+    color: var(--color-diana-gray);
+    margin-bottom: 1.5rem;
+}
+
+.cms-content h2 {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    font-weight: 400;
+    color: var(--color-headings);
+    margin-bottom: 0.5rem;
+}
+
+.cms-content ul {
+    margin-bottom: 2rem;
+    list-style: none;
+}
+
+.cms-content ul li {
+    color: var(--color-diana-gray);
+    margin-bottom: 0.25rem;
+}

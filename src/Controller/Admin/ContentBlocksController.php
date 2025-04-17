@@ -40,12 +40,22 @@ class ContentBlocksController extends AppController
      * Add method
      *
      * @return \Cake\Http\Response|null|void Redirects on successful add, renders view otherwise.
+     * @throws \Random\RandomException
      */
     public function add()
     {
         $contentBlock = $this->ContentBlocks->newEmptyEntity();
         if ($this->request->is('post')) {
-            $contentBlock = $this->ContentBlocks->patchEntity($contentBlock, $this->request->getData());
+            $data = $this->request->getData();
+
+            // If type is "image", process the uploaded file
+            if (!empty($data['type']) && $data['type'] === 'image') {
+                $upload = $data['value'];
+                $newPath = $this->_handleImageUpload($upload);
+                $data['value'] = $newPath;
+            }
+
+            $contentBlock = $this->ContentBlocks->patchEntity($contentBlock, $data);
             if ($this->ContentBlocks->save($contentBlock)) {
                 $this->Flash->success(__('The content block has been saved.'));
 
