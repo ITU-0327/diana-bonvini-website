@@ -5,6 +5,7 @@ namespace App\Controller;
 
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
+use Cake\ORM\TableRegistry;
 use Exception;
 use GdImage;
 use Psr\Http\Message\UploadedFileInterface;
@@ -290,15 +291,26 @@ class ArtworksController extends AppController
      */
     private function _drawTiledText(GdImage $canvas, int $width, int $height): void
     {
-        $text     = 'Diana Bonvini';
-        $fontSize = 50;
-        $angle    = -45;
+        $contentBlocks = TableRegistry::getTableLocator()->get('ContentBlocks');
+
+        $block = $contentBlocks->find()
+            ->select(['value'])
+            ->where(['slug' => 'watermark-text'])
+            ->first();
+
+        if (!$block) {
+            throw new Exception("Content block ‘logo’ not found in CMS");
+        }
+
+        $text = $block->value;
+        $fontSize = 40;
+        $angle= -45;
         $fontPath = WWW_ROOT . 'font/arial.ttf';
 
         if (!is_readable($fontPath)) {
             throw new Exception("Font file not found: $fontPath");
         }
-        $color = imagecolorallocatealpha($canvas, 225, 225, 225, 75);
+        $color = imagecolorallocatealpha($canvas, 225, 225, 225, 96);
         if ($color === false) {
             throw new Exception('Failed to allocate text color');
         }
