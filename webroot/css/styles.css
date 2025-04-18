@@ -334,3 +334,9 @@ footer {
     background-color: var(--color-diana-primary);
     color: var(--color-white);
 }
+
+img {
+    -webkit-user-drag: none;
+    user-drag: none;
+    pointer-events: none;
+}

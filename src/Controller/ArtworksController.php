@@ -167,7 +167,8 @@ class ArtworksController extends AppController
 
         $dir  = WWW_ROOT . 'img' . DS . dirname($originalPath);
         $name = basename($originalPath);
-        $wmName = 'wm_' . $name;
+        $info   = pathinfo($name);
+        $wmName = 'wm_' . $info['filename'] . '.png';
         $watermarkedRelative = dirname($originalPath) . '/' . $wmName;
         $watermarkedFull     = $dir . DS . $wmName;
 
@@ -181,7 +182,7 @@ class ArtworksController extends AppController
 
     /**
      * Moves the uploaded file into img/Artworks and
-     * returns its relative path (e.g. "Artworks/12345_pic.jpeg").
+     * returns its relative path (e.g. 'Artworks/12345_pic.jpeg').
      *
      * @param \Psr\Http\Message\UploadedFileInterface $file
      * @return string
@@ -215,7 +216,7 @@ class ArtworksController extends AppController
 
         $source = imagecreatefromjpeg($originalPath);
         if (!$source instanceof GdImage) {
-            throw new Exception("Failed to load JPEG: $originalPath");
+            throw new Exception('Failed to load JPEG: $originalPath');
         }
 
         $watermark = null;
@@ -228,7 +229,7 @@ class ArtworksController extends AppController
             $this->_ensureDirectoryExists(dirname($outputPath));
 
             if (!imagepng($source, $outputPath)) {
-                throw new Exception("Failed to save PNG: $outputPath");
+                throw new Exception('Failed to save PNG: $outputPath');
             }
         } finally {
             imagedestroy($source);
@@ -247,11 +248,11 @@ class ArtworksController extends AppController
     private function _assertOriginalIsJpeg(string $path): void
     {
         if (!is_readable($path)) {
-            throw new Exception("File not found or unreadable: $path");
+            throw new Exception('File not found or unreadable: $path');
         }
         $info = getimagesize($path);
         if ($info === false || $info['mime'] !== 'image/jpeg') {
-            throw new Exception("Only JPEG originals are supported: $path");
+            throw new Exception('Only JPEG originals are supported: $path');
         }
     }
 
@@ -299,16 +300,16 @@ class ArtworksController extends AppController
             ->first();
 
         if (!$block) {
-            throw new Exception("Content block ‘logo’ not found in CMS");
+            throw new Exception('Content block ‘logo’ not found in CMS');
         }
 
         $text = $block->value;
         $fontSize = 40;
-        $angle= -45;
+        $angle = -45;
         $fontPath = WWW_ROOT . 'font/arial.ttf';
 
         if (!is_readable($fontPath)) {
-            throw new Exception("Font file not found: $fontPath");
+            throw new Exception('Font file not found: $fontPath');
         }
         $color = imagecolorallocatealpha($canvas, 225, 225, 225, 96);
         if ($color === false) {
@@ -334,7 +335,7 @@ class ArtworksController extends AppController
             return;
         }
         if (!mkdir($dir, 0775, true) && !is_dir($dir)) {
-            throw new Exception("Failed to create directory: $dir");
+            throw new Exception('Failed to create directory: $dir');
         }
     }
 }
