@@ -191,7 +191,7 @@ class ArtworksController extends AppController
         $transparent = imagecolorallocatealpha($watermark, 0, 0, 0, 127);
         imagefill($watermark, 0, 0, $transparent);
 
-        $text = 'dbdesign';
+        $text = 'Diana Bonvini';
         $fontSize = 50;
         $angle = -45;
         $fontPath = WWW_ROOT . 'font/arial.ttf';
