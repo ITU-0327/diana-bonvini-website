@@ -290,7 +290,7 @@ class ArtworksController extends AppController
      */
     private function _drawTiledText(GdImage $canvas, int $width, int $height): void
     {
-        $text     = 'dbdesign';
+        $text     = 'Diana Bonvini';
         $fontSize = 50;
         $angle    = -45;
         $fontPath = WWW_ROOT . 'font/arial.ttf';
