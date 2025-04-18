@@ -41,8 +41,8 @@ $userType = $user?->get('user_type');
             >
                 <!-- Artwork Image -->
                 <?= $this->Html->image($artwork->image_path, [
-                    'alt'   => $artwork->title,
-                    'class' => 'w-full h-full object-cover', // Let the picture be cut adaptively in the 4:3 container
+                    'alt' => $artwork->title,
+                    'class' => 'w-full h-full object-cover',
                 ]) ?>
 
                 <?php if ($artwork->availability_status === 'available') : ?>

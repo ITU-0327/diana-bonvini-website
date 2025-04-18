@@ -14,7 +14,7 @@ $user = $this->request->getAttribute('identity');
             <!-- Main Artwork Image -->
             <div class="bg-white shadow rounded p-4 flex items-center justify-center">
                 <?= $this->Html->image($artwork->image_path, [
-                    'alt'   => $artwork->title,
+                    'alt' => $artwork->title,
                     'class' => 'object-cover max-h-96',
                 ]) ?>
             </div>
@@ -65,14 +65,14 @@ $user = $this->request->getAttribute('identity');
                 <div>
                     <?= $this->Form->create(
                         null,
-                        ['url' => ['controller' => 'Carts', 'action' => 'add', $artwork->artwork_id]]
+                        ['url' => ['controller' => 'Carts', 'action' => 'add', $artwork->artwork_id]],
                     ) ?>
                     <?= $this->Form->button(
                         '<i class="fa fa-shopping-cart mr-2"></i>Add to Cart',
                         [
                             'escapeTitle' => false,
-                            'class'       => 'inline-flex items-center bg-indigo-600 text-white py-2 px-6 rounded hover:bg-indigo-700',
-                        ]
+                            'class' => 'inline-flex items-center bg-indigo-600 text-white py-2 px-6 rounded hover:bg-indigo-700',
+                        ],
                     ) ?>
                     <?= $this->Form->end() ?>
                 </div>
@@ -85,8 +85,8 @@ $user = $this->request->getAttribute('identity');
                             ['action' => 'edit', $artwork->artwork_id],
                             [
                                 'escapeTitle' => false,
-                                'class'       => 'inline-flex items-center bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700',
-                            ]
+                                'class' => 'inline-flex items-center bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700',
+                            ],
                         ) ?>
 
                         <?= $this->Form->postLink(
@@ -94,9 +94,9 @@ $user = $this->request->getAttribute('identity');
                             ['action' => 'delete', $artwork->artwork_id],
                             [
                                 'escapeTitle' => false,
-                                'confirm'     => 'Are you sure you want to delete this artwork?',
-                                'class'       => 'inline-flex items-center bg-red-600 text-white py-2 px-6 rounded hover:bg-red-700',
-                            ]
+                                'confirm' => 'Are you sure you want to delete this artwork?',
+                                'class' => 'inline-flex items-center bg-red-600 text-white py-2 px-6 rounded hover:bg-red-700',
+                            ],
                         ) ?>
                     </div>
                 <?php endif; ?>

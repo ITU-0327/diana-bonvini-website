@@ -59,10 +59,11 @@ class ArtworksTable extends Table
             ->allowEmptyString('description');
 
         $validator
-            ->scalar('image_path')
-            ->maxLength('image_path', 255)
-            ->requirePresence('image_path', 'create')
-            ->notEmptyString('image_path');
+            ->requirePresence('image_path', 'create', 'Please select an image.')
+            ->add('image_path', 'uploadError', [
+                'rule' => 'uploadError',
+                'message' => 'Something went wrong with the upload.',
+            ]);
 
         $validator
             ->decimal('price')
