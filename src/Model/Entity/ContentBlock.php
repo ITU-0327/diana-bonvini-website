@@ -14,7 +14,7 @@ use Cake\ORM\Entity;
  * @property string $label
  * @property string|null $description
  * @property string $type
- * @property string|null $value
+ * @property string $value
  * @property string|null $previous_value
  * @property \Cake\I18n\DateTime $created_at
  * @property \Cake\I18n\DateTime $updated_at
