@@ -154,7 +154,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                         <?php foreach ($cart->artwork_carts as $item) : ?>
                             <?php if (isset($item->artwork)) : ?>
                                 <div class="flex items-center space-x-4 border-b pb-4">
-                                    <?= $this->Html->image($item->artwork->image_path, [
+                                    <?= $this->Html->image($item->artwork->image_url, [
                                         'alt' => $item->artwork->title,
                                         'class' => 'w-16 h-16 object-cover rounded',
                                     ]) ?>

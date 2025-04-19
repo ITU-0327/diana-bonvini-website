@@ -32,7 +32,7 @@
                         ?>
                         <tr>
                             <td class="py-2 px-4 border-b">
-                                <?= $this->Html->image($artwork->image_path, [
+                                <?= $this->Html->image($artwork->image_url, [
                                     'alt' => $artwork->title,
                                     'class' => 'w-16 h-16 object-contain',
                                 ]) ?>

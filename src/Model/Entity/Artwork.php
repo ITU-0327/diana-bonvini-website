@@ -11,7 +11,7 @@ use Cake\ORM\Entity;
  * @property string $artwork_id
  * @property string $title
  * @property string|null $description
- * @property string $image_path
+ * @property string $image_url
  * @property float $price
  * @property string $availability_status
  * @property int $is_deleted
@@ -20,6 +20,8 @@ use Cake\ORM\Entity;
  */
 class Artwork extends Entity
 {
+    protected array $_virtual = ['image_url'];
+
     /**
      * Fields that can be mass assigned using newEntity() or patchEntity().
      *
@@ -32,11 +34,23 @@ class Artwork extends Entity
     protected array $_accessible = [
         'title' => true,
         'description' => true,
-        'image_path' => true,
         'price' => true,
         'availability_status' => true,
         'is_deleted' => true,
         'created_at' => true,
         'updated_at' => true,
     ];
+
+    /**
+     * Virtual property for the public URL of the watermarked image in R2.
+     *
+     * @return string
+     */
+    protected function _getImageUrl(): string
+    {
+        $endpoint = 'https://dianabonvini.com';
+        $key = "{$this->artwork_id}_wm.png";
+
+        return "$endpoint/$key";
+    }
 }

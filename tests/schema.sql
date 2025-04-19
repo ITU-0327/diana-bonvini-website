@@ -37,7 +37,6 @@ CREATE TABLE artworks (
     artwork_id CHAR(36) NOT NULL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    image_path VARCHAR(255) NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     availability_status ENUM('available','sold') NOT NULL,
     is_deleted TINYINT NOT NULL DEFAULT 0,
