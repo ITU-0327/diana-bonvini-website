@@ -79,7 +79,7 @@ class ArtworksController extends AppController
                 $this->Flash->success(__('Artwork saved.'));
                 $file = $this->request->getData('image_path');
                 if ($file instanceof UploadedFileInterface && !$file->getError()) {
-                    $this->_processImageUpload($file, (int)$artwork->artwork_id);
+                    $this->_processImageUpload($file, $artwork->artwork_id);
                 }
 
                 return $this->redirect(['action' => 'index']);
@@ -107,7 +107,7 @@ class ArtworksController extends AppController
                 $this->Flash->success(__('Artwork updated.'));
                 $file = $this->request->getData('image_path');
                 if ($file instanceof UploadedFileInterface && !$file->getError()) {
-                    $this->_processImageUpload($file, (int)$artwork->artwork_id);
+                    $this->_processImageUpload($file, $artwork->artwork_id);
                 }
 
                 return $this->redirect(['action' => 'index']);
@@ -141,23 +141,50 @@ class ArtworksController extends AppController
      * and returning the relative path for storage (or null on failure).
      *
      * @param \Psr\Http\Message\UploadedFileInterface $file The uploaded JPEG file.
-     * @param int $artworkId The artwork ID used to name objects.
+     * @param string $artworkId The artwork ID used to name objects.
      * @throws \Exception If the file is not JPEG or any imaging/S3 error occurs.
      */
-    private function _processImageUpload(UploadedFileInterface $file, int $artworkId): void
+    private function _processImageUpload(UploadedFileInterface $file, string $artworkId): void
     {
         $this->_assertJpeg($file);
-        $bytes = $file->getStream()->getContents();
 
-        // original JPEG → private
-        $origKey = "originals/$artworkId.jpg";
-        $this->_putR2Object($origKey, $bytes);
+        // Save original on server
+        $localPath = $this->_saveOriginalLocal($file, $artworkId);
 
-        // create watermarked PNG
-        $png     = $this->_createWatermarkedPng($bytes);
-        $wmKey   = "watermarked/{$artworkId}_wm.png";
+        // Read it into memory for watermarking (or you could re‑use $file->getStream())
+        $bytes = file_get_contents($localPath);
+        if ($bytes === false) {
+            throw new Exception("Failed to read saved file: {$localPath}");
+        }
 
-        $this->_putR2Object($wmKey, $png, 'public-read');
+        // Generate watermarked PNG in memory
+        $png = $this->_createWatermarkedPng($bytes);
+        $wmKey = "{$artworkId}_wm.png";
+
+        // Upload only the watermark to R2
+        $this->_putR2Object($wmKey, $png);
+    }
+
+    /**
+     * Moves the uploaded JPEG into webroot/img/Artworks/{artworkId}.jpg.
+     *
+     * @param \Psr\Http\Message\UploadedFileInterface $file
+     * @param string                                  $artworkId
+     * @return string Full filesystem path to the saved file.
+     * @throws \Exception On any filesystem error.
+     */
+    private function _saveOriginalLocal(UploadedFileInterface $file, string $artworkId): string
+    {
+        $dir  = WWW_ROOT . 'img' . DS . 'Artworks';
+        if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
+            throw new Exception("Unable to create directory: {$dir}");
+        }
+
+        $target = $dir . DS . "{$artworkId}.jpg";
+        // moveTo will overwrite if file exists
+        $file->moveTo($target);
+
+        return $target;
     }
 
     /**
@@ -198,11 +225,10 @@ class ArtworksController extends AppController
      *
      * @param string $key  Object key (e.g. "originals/123.jpg")
      * @param string $body Raw bytes or stream resource
-     * @param string $acl  Canned ACL: "private", "public-read", etc.
      * @return void
      * @throws \Exception On any S3 error
      */
-    private function _putR2Object(string $key, string $body, string $acl = 'private'): void
+    private function _putR2Object(string $key, string $body): void
     {
         $client = $this->_getR2Client();
         $bucket = Configure::read('R2.bucket');
@@ -211,7 +237,6 @@ class ArtworksController extends AppController
             'Bucket' => $bucket,
             'Key'    => $key,
             'Body'   => $body,
-            'ACL'    => $acl,
         ]);
     }
 

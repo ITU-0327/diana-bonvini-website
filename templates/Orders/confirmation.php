@@ -59,7 +59,7 @@
                         <li class="flex items-center justify-between border-b pb-3">
                             <div class="flex items-center">
                                 <?= $this->Html->image(
-                                    $item->artwork->image_path,
+                                    $item->artwork->image_url,
                                     ['alt' => $item->artwork->title, 'class' => 'w-16 h-16 object-cover rounded-lg mr-4'],
                                 ) ?>
                                 <div>
