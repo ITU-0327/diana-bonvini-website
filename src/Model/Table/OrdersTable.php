@@ -55,6 +55,7 @@ class OrdersTable extends Table
             'foreignKey' => 'order_id',
             'dependent' => true,
             'cascadeCallbacks' => true,
+            'saveStrategy' => 'replace',
         ]);
 
         $this->hasOne('Payments', [

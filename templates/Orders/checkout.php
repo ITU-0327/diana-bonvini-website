@@ -5,6 +5,7 @@
  * @var \App\Model\Entity\Cart $cart
  * @var \App\Model\Entity\User|null $user
  * @var float $total
+ * @var string|null $pendingId
  */
 
 use Cake\Core\Configure;
@@ -14,7 +15,15 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
 <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
     <?= $this->element('page_title', ['title' => 'Checkout']) ?>
 
-    <?= $this->Form->create($order, ['url' => ['action' => 'placeOrder'], 'class' => 'space-y-8']) ?>
+    <?= $this->Form->create($order, [
+        'url' => ['action' => 'placeOrder'],
+        'class' => 'space-y-8',
+        'type' => 'post',
+        'id' => 'checkout-form',
+    ]) ?>
+    <?php if (!empty($pendingId)): ?>
+        <?= $this->Form->hidden('order_id', ['value' => $pendingId]) ?>
+    <?php endif; ?>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
         <!-- LEFT COLUMN: Checkout Fields -->
         <div class="lg:col-span-2 bg-white shadow-lg rounded-lg p-8 space-y-8">
@@ -24,29 +33,30 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <?= $this->Form->control('billing_first_name', [
                         'label' => 'First Name *',
-                        'value' => $user ? $user->first_name : '',
+                        'value' => $order->billing_first_name ?? ($user ? $user->first_name : ''),
                         'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                         'required' => true,
                         'pattern' => "^[a-zA-Z '\\-]+$",
-                        'title' => 'First name should only contain letters, spaces, apostrophes, and hyphens.'
+                        'title' => 'First name should only contain letters, spaces, apostrophes, and hyphens.',
                     ]) ?>
                     <?= $this->Form->control('billing_last_name', [
                         'label' => 'Last Name *',
-                        'value' => $user ? $user->last_name : '',
+                        'value' => $order->billing_last_name ?? ($user ? $user->last_name : ''),
                         'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                         'required' => true,
                         'pattern' => "^[a-zA-Z '\\-]+$",
-                        'title' => 'Last name should only contain letters, spaces, apostrophes, and hyphens.'
+                        'title' => 'Last name should only contain letters, spaces, apostrophes, and hyphens.',
                     ]) ?>
                 </div>
                 <?= $this->Form->control('billing_company', [
                     'label' => 'Company Name (optional)',
+                    'value' => $order->billing_company ?? '',
                     'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                     'required' => false,
                 ]) ?>
                 <?= $this->Form->control('billing_email', [
                     'label' => 'Email Address *',
-                    'value' => $user ? $user->email : '',
+                    'value' => $order->billing_email ?? ($user ? $user->email : ''),
                     'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                     'type' => 'email',
                     'required' => true,
@@ -65,24 +75,43 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                         '' => 'Select Country',
                         'AU' => 'Australia',
                     ],
+                    'value' => $order->shipping_country ?? 'AU',
                 ]) ?>
+
+                <!-- Address Lookup - Raw HTML approach -->
+                <div class="mt-4">
+                    <label for="address-lookup" class="block text-sm font-medium text-gray-700 mb-1">Find Address *</label>
+                    <!-- This is a raw HTML input that won't be part of the form submission -->
+                    <input type="text" id="address-lookup" name="address-lookup" placeholder="Start typing your address..."
+                           class="border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                           autocomplete="off">
+                    <p class="text-sm text-gray-500 mt-1">
+                        Type your address to autocomplete or fill in the fields manually below
+                    </p>
+                </div>
+
                 <?= $this->Form->control('shipping_address1', [
                     'label' => 'Street address *',
                     'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                     'required' => true,
                     'placeholder' => 'House number and street name',
+                    'value' => $order->shipping_address1 ?? '',
+                    'id' => 'shipping_address1',
                 ]) ?>
                 <?= $this->Form->control('shipping_address2', [
                     'label' => '',
                     'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 mt-4 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                     'required' => false,
                     'placeholder' => 'Apartment, suite, unit, etc. (optional)',
+                    'value' => $order->shipping_address2 ?? '',
+                    'id' => 'shipping_address2',
                 ]) ?>
                 <?= $this->Form->control('shipping_suburb', [
                     'label' => 'Suburb *',
                     'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                     'required' => true,
-                    'id' => 'suburbField',
+                    'id' => 'shipping_suburb',
+                    'value' => $order->shipping_suburb ?? '',
                 ]) ?>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4">
                     <?= $this->Form->control('shipping_state', [
@@ -90,26 +119,38 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                         'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                         'required' => true,
                         'type' => 'select',
-                        'id' => 'stateField',
-                        'empty' => 'Select Country First',
-                        'disabled' => true,
+                        'id' => 'shipping_state',
+                        'options' => [
+                            '' => 'Select State',
+                            'ACT' => 'Australian Capital Territory',
+                            'NSW' => 'New South Wales',
+                            'NT' => 'Northern Territory',
+                            'QLD' => 'Queensland',
+                            'SA' => 'South Australia',
+                            'TAS' => 'Tasmania',
+                            'VIC' => 'Victoria',
+                            'WA' => 'Western Australia',
+                        ],
+                        'empty' => false,
+                        'value' => $order->shipping_state ?? '',
                     ]) ?>
                     <?= $this->Form->control('shipping_postcode', [
                         'label' => 'Postcode *',
                         'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                         'required' => true,
-                        'id' => 'postcodeField',
-                        'pattern' => "^[0-9]{4}$",
-                        'title' => 'Please enter a valid 4-digit postal code.'
+                        'id' => 'shipping_postcode',
+                        'pattern' => '^[0-9]{4}$',
+                        'title' => 'Please enter a valid 4-digit postal code.',
+                        'value' => $order->shipping_postcode ?? '',
                     ]) ?>
                 </div>
                 <?= $this->Form->control('shipping_phone', [
                     'label' => 'Phone *',
-                    'value' => $user ? $user->phone_number : '',
+                    'value' => $order->shipping_phone ?? ($user ? $user->phone_number : ''),
                     'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                     'required' => true,
-                    'pattern' => "^[0-9\\-\\+\\(\\) ]+$",
-                    'title' => 'Please enter a valid phone number.'
+                    'pattern' => '^[0-9\\-\\+\\(\\) ]+$',
+                    'title' => 'Please enter a valid phone number.',
                 ]) ?>
             </section>
 
@@ -117,14 +158,8 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
             <section>
                 <h2 class="text-2xl font-semibold text-gray-800 mb-6">Payment Method</h2>
                 <p class="text-gray-600 mb-4">
-                    We accept bank transfers. Please transfer the total amount to our bank account. Your order will be confirmed once payment is received.
+                    Your payment will be processed securely through Stripe. You'll be redirected to complete payment after reviewing your order.
                 </p>
-                <div class="p-6 bg-gray-100 rounded-lg space-y-3 text-lg">
-                    <p><strong>Bank Name:</strong> Commonwealth Bank of Australia</p>
-                    <p><strong>BSB:</strong> 062-123</p>
-                    <p><strong>Account Number:</strong> 1234 5678</p>
-                    <p><strong>Account Name:</strong> Diana Bonvini Art &amp; Writing</p>
-                </div>
             </section>
 
             <!-- Order Notes -->
@@ -134,6 +169,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                     'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                     'type' => 'textarea',
                     'placeholder' => 'Enter any special instructions or notes here...',
+                    'value' => $order->order_notes ?? '',
                 ]) ?>
             </section>
         </div>
@@ -179,12 +215,10 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                             }
                         }
                         $shippingCost = 0.00;
-                        $tax = 0.00;
-                        $totalCost = (float)$subtotal + $shippingCost + $tax;
+                        $totalCost = (float)$subtotal + $shippingCost;
                         ?>
                         <p class="text-gray-700 text-lg">Subtotal: $<?= number_format($subtotal, 2) ?></p>
                         <p class="text-gray-700 text-lg">Shipping: $<?= number_format($shippingCost, 2) ?></p>
-                        <p class="text-gray-700 text-lg">Tax: $<?= number_format($tax, 2) ?></p>
                         <hr class="my-3">
                         <p class="text-2xl font-bold text-gray-900">Total: $<?= number_format($totalCost, 2) ?></p>
                     </div>
@@ -194,8 +228,9 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
             </div>
             <!-- Place Order Button in the Card Footer -->
             <div class="mt-6">
-                <?= $this->Form->button('Place Order', [
+                <?= $this->Form->button('Proceed to Payment', [
                     'class' => 'w-full inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-md transition-colors duration-200 text-xl',
+                    'type' => 'submit',
                 ]) ?>
             </div>
         </div>
@@ -203,97 +238,95 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
     <?= $this->Form->end() ?>
 </div>
 
-<!-- JavaScript for Auto-fill Postcode/State -->
+<!-- Load Google Maps API separately from the main DOM -->
+<script src="https://maps.googleapis.com/maps/api/js?key=<?= h($googleMapsApiKey) ?>&libraries=places" defer></script>
+
+<!-- Initialize Google Places in a separate script tag -->
 <script>
-    let countryField;
-    let suburbField;
-    let stateField;
-    let postcodeField;
-
-    function initAutocomplete() {
-        countryField = document.getElementById('shipping-country');
-        suburbField = document.getElementById('suburbField');
-        stateField = document.getElementById('stateField');
-        postcodeField = document.getElementById('postcodeField');
-
-        const statesByCountry = {
-            'AU': [
-                { value: '', text: 'Select State' },
-                { value: 'ACT', text: 'Australian Capital Territory' },
-                { value: 'NSW', text: 'New South Wales' },
-                { value: 'NT', text: 'Northern Territory' },
-                { value: 'QLD', text: 'Queensland' },
-                { value: 'SA', text: 'South Australia' },
-                { value: 'TAS', text: 'Tasmania' },
-                { value: 'VIC', text: 'Victoria' },
-                { value: 'WA', text: 'Western Australia' },
-            ],
-        };
-
-        if (countryField) {
-            countryField.addEventListener('change', function() {
-                const selectedCountry = this.value;
-                const stateDropdown = document.getElementById('stateField');
-
-                if (stateDropdown) {
-                    stateDropdown.innerHTML = '';
-
-                    if (statesByCountry[selectedCountry]) {
-                        statesByCountry[selectedCountry].forEach(state => {
-                            const option = document.createElement('option');
-                            option.value = state.value;
-                            option.textContent = state.text;
-                            stateDropdown.appendChild(option);
-                        });
-                        stateDropdown.disabled = false;
-                    } else {
-                        const option = document.createElement('option');
-                        option.value = '';
-                        option.textContent = 'Select Country First';
-                        stateDropdown.appendChild(option);
-                        stateDropdown.disabled = true;
-                    }
-                } else {
-                    console.error('State dropdown element not found.');
-                }
-            });
+    document.addEventListener('DOMContentLoaded', function (callback) {
+        // Wait for Google Maps API to load
+        function checkGoogleMapsLoaded() {
+            if (typeof google !== 'undefined' && typeof google.maps !== 'undefined' && typeof google.maps.places !== 'undefined') {
+                initPlacesAutocomplete();
+            } else {
+                setTimeout(checkGoogleMapsLoaded, 100);
+            }
         }
 
-        suburbField.addEventListener('blur', function() {
-            const suburb = this.value;
-            const state = document.getElementById('stateField').value;
-            const country = document.getElementById('shipping-country').value;
+        checkGoogleMapsLoaded();
 
-            if (suburb && state && country) {
-                const geocoder = new google.maps.Geocoder();
-                const address = `${suburb}, ${state}, ${country}`;
+        function initPlacesAutocomplete(callback) {
+            var addressInput = document.getElementById('address-lookup');
+            if (!addressInput) return;
 
-                geocoder.geocode({ 'address': address }, function(results, status) {
-                    if (status === 'OK') {
-                        if (results[0]) {
-                            let postcode = null;
-                            for (const component of results[0].address_components) {
-                                if (component.types.includes('postal_code')) {
-                                    postcode = component.long_name;
-                                    break;
-                                }
-                            }
-                            if (postcode) {
-                                postcodeField.value = postcode;
-                            }
+            // Make sure Enter key doesn't submit the form
+            addressInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+
+            // Create autocomplete with Australia restriction
+            var options = {
+                componentRestrictions: { country: 'au' },
+                fields: ['address_components', 'formatted_address'],
+                types: ['address']
+            };
+
+            try {
+                var autocomplete = new google.maps.places.Autocomplete(addressInput, options);
+
+                // When an address is selected
+                autocomplete.addListener('place_changed', function () {
+                    var place = autocomplete.getPlace();
+
+                    if (!place.address_components) {
+                        console.log('No address components found');
+                        return;
+                    }
+
+                    var streetNumber = '';
+                    var streetName = '';
+                    var suburb = '';
+                    var state = '';
+                    var postcode = '';
+
+                    // Extract address components
+                    for (var i = 0; i < place.address_components.length; i++) {
+                        var component = place.address_components[i];
+                        var types = component.types;
+
+                        if (types.indexOf('street_number') !== -1) {
+                            streetNumber = component.long_name;
+                        } else if (types.indexOf('route') !== -1) {
+                            streetName = component.long_name;
+                        } else if (types.indexOf('locality') !== -1 || types.indexOf('sublocality_level_1') !== -1) {
+                            suburb = component.long_name;
+                        } else if (types.indexOf('administrative_area_level_1') !== -1) {
+                            state = component.short_name;
+                        } else if (types.indexOf('postal_code') !== -1) {
+                            postcode = component.long_name;
                         }
-                    } else {
-                        console.error('Geocode was not successful for the following reason: ' + status);
+                    }
+
+                    // Update form fields
+                    document.getElementById('shipping_address1').value = (streetNumber + ' ' + streetName).trim();
+                    document.getElementById('shipping_suburb').value = suburb;
+                    document.getElementById('shipping_postcode').value = postcode;
+
+                    // Update state dropdown
+                    var stateSelect = document.getElementById('shipping_state');
+                    for (var j = 0; j < stateSelect.options.length; j++) {
+                        if (stateSelect.options[j].value === state) {
+                            stateSelect.selectedIndex = j;
+                            break;
+                        }
                     }
                 });
+            } catch (err) {
+                console.error('Google Places Autocomplete error:', err);
             }
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=<?= h($googleMapsApiKey) ?>&libraries=geocoding&callback=initAutocomplete`;
-        script.async = true;
-        document.head.appendChild(script);
+        }
     });
 </script>

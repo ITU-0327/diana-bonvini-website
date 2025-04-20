@@ -56,6 +56,8 @@ class PaymentsTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
+            ->scalar('order_id')
+            ->maxLength('order_id', 9)
             ->notEmptyString('order_id')
             ->add('order_id', 'unique', ['rule' => 'validateUnique', 'provider' => 'table']);
 
@@ -63,6 +65,12 @@ class PaymentsTable extends Table
             ->decimal('amount')
             ->requirePresence('amount', 'create')
             ->notEmptyString('amount');
+
+        $validator
+            ->scalar('transaction_id')
+            ->maxLength('transaction_id', 255)
+            ->allowEmptyString('transaction_id')
+            ->add('transaction_id', 'unique', ['rule' => 'validateUnique', 'provider' => 'table']);
 
         $validator
             ->dateTime('payment_date')
@@ -95,6 +103,7 @@ class PaymentsTable extends Table
     public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->isUnique(['order_id']), ['errorField' => 'order_id']);
+        $rules->add($rules->isUnique(['transaction_id'], ['allowMultipleNulls' => true]), ['errorField' => 'transaction_id']);
         $rules->add($rules->existsIn(['order_id'], 'Orders'), ['errorField' => 'order_id']);
 
         return $rules;

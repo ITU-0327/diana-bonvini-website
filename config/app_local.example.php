@@ -93,6 +93,16 @@ return [
     ],
 
     /*
+     * Stripe configuration.
+     *
+     * To use the Stripe API, you need to enable the payment.
+     */
+    'Stripe' => [
+        'secret' => env('STRIP_SECRET_API_KEY', null),
+        'publishable' => env('STRIPE_PUBLISHABLE_API_KEY', null),
+    ],
+
+    /*
      * Google Maps configuration.
      *
      * To use the Google Maps API, you need to enable the API in the Google Cloud Platform Console.

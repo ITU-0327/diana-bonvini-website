@@ -5,101 +5,44 @@ namespace App\Controller;
 
 use Cake\Http\Response;
 
-/**
- * Payments Controller
- *
- * @property \App\Model\Table\PaymentsTable $Payments
- */
 class PaymentsController extends AppController
 {
     /**
-     * Index method
+     * Payment success callback.
      *
-     * @return \Cake\Http\Response|null|void Renders view
+     * When Stripe calls back on success, redirect the customer to their order confirmation page.
      */
-    public function index()
+    public function success(): ?Response
     {
-        $query = $this->Payments->find()
-            ->contain(['Orders']);
-        $payments = $this->paginate($query);
-
-        $this->set(compact('payments'));
-    }
-
-    /**
-     * View method
-     *
-     * @param string|null $id Payment id.
-     * @return \Cake\Http\Response|null|void Renders view
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function view(?string $id = null)
-    {
-        $payment = $this->Payments->get($id, contain: ['Orders']);
-        $this->set(compact('payment'));
-    }
-
-    /**
-     * Add method
-     *
-     * @return \Cake\Http\Response|null|void Redirects on successful add, renders view otherwise.
-     */
-    public function add()
-    {
-        $payment = $this->Payments->newEmptyEntity();
-        if ($this->request->is('post')) {
-            $payment = $this->Payments->patchEntity($payment, $this->request->getData());
-            if ($this->Payments->save($payment)) {
-                $this->Flash->success(__('The payment has been saved.'));
-
-                return $this->redirect(['action' => 'index']);
-            }
-            $this->Flash->error(__('The payment could not be saved. Please, try again.'));
-        }
-        $orders = $this->Payments->Orders->find('list', limit: 200)->all();
-        $this->set(compact('payment', 'orders'));
-    }
-
-    /**
-     * Edit method
-     *
-     * @param string|null $id Payment id.
-     * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function edit(?string $id = null)
-    {
-        $payment = $this->Payments->get($id, contain: []);
-        if ($this->request->is(['patch', 'post', 'put'])) {
-            $payment = $this->Payments->patchEntity($payment, $this->request->getData());
-            if ($this->Payments->save($payment)) {
-                $this->Flash->success(__('The payment has been saved.'));
-
-                return $this->redirect(['action' => 'index']);
-            }
-            $this->Flash->error(__('The payment could not be saved. Please, try again.'));
-        }
-        $orders = $this->Payments->Orders->find('list', limit: 200)->all();
-        $this->set(compact('payment', 'orders'));
-    }
-
-    /**
-     * Delete method
-     *
-     * @param string|null $id Payment id.
-     * @return \Cake\Http\Response|null Redirects to index.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function delete(?string $id = null): ?Response
-    {
-        $this->request->allowMethod(['post', 'delete']);
-        $payment = $this->Payments->get($id);
-        if ($this->Payments->delete($payment)) {
-            $this->Flash->success(__('The payment has been deleted.'));
+        // Retrieve the order_id from the query parameters.
+        $orderId = $this->request->getQuery('order_id');
+        if ($orderId) {
+            // Redirect to the Orders confirmation page.
+            return $this->redirect(['controller' => 'Orders', 'action' => 'confirmation', $orderId]);
         } else {
-            $this->Flash->error(__('The payment could not be deleted. Please, try again.'));
+            // Fallback redirection if the order_id isn't available.
+            $this->Flash->success(__('Your payment was successful.'));
+
+            return $this->redirect(['controller' => 'Orders', 'action' => 'confirmation']);
+        }
+    }
+
+    /**
+     * Payment cancellation callback.
+     */
+    public function cancel(): ?Response
+    {
+        // Retrieve the order_id from the query parameters.
+        $orderId = $this->request->getQuery('order_id');
+
+        $this->Flash->error(__('Your payment was cancelled.'));
+
+        // Redirect to resumeCheckout with the order ID if available
+        if ($orderId) {
+            return $this->redirect(['controller' => 'Orders', 'action' => 'resumeCheckout', $orderId]);
         }
 
-        return $this->redirect(['action' => 'index']);
+        // Fallback to regular checkout if order_id isn't available
+        return $this->redirect(['controller' => 'Orders', 'action' => 'checkout']);
     }
 }

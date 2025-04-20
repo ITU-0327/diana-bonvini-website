@@ -11,6 +11,7 @@ use Cake\ORM\Entity;
  * @property string $payment_id
  * @property string $order_id
  * @property float $amount
+ * @property string|null $transaction_id
  * @property \Cake\I18n\DateTime $payment_date
  * @property string $payment_method
  * @property string $status
@@ -32,6 +33,7 @@ class Payment extends Entity
     protected array $_accessible = [
         'order_id' => true,
         'amount' => true,
+        'transaction_id' => true,
         'payment_date' => true,
         'payment_method' => true,
         'status' => true,
