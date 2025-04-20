@@ -37,8 +37,8 @@
             <?php foreach ($order->artwork_orders as $item) : ?>
                 <div style="display:flex; padding:10px 0; border-bottom:1px solid #eee;">
                     <div style="flex:0 0 80px;">
-                        <?php if (!empty($item->image_url)) : ?>
-                            <img src="<?= h($item->image_url) ?>" alt="<?= h($item->artwork->title) ?>" style="width:80px; height:auto; border:1px solid #ddd; object-fit:cover;">
+                        <?php if (!empty($item->artwork->image_url)) : ?>
+                            <img src="<?= h($item->artwork->image_url) ?>" alt="<?= h($item->artwork->title) ?>" style="width:80px; height:auto; border:1px solid #ddd; object-fit:cover;">
                         <?php else : ?>
                             <div style="width:80px; height:80px; background:#f5f5f5; border:1px solid #ddd; text-align:center; line-height:80px; color:#aaa;">No Image</div>
                         <?php endif ?>
