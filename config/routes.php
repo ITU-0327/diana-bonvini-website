@@ -53,7 +53,6 @@ return function (RouteBuilder $routes): void {
     $routes->connect('/contact', ['controller' => 'Pages', 'action' => 'display', 'contact']);
     $routes->connect('/writing-service-requests/info', ['controller' => 'Pages', 'action' => 'display', 'info']);
 
-
     $routes->scope('/', function (RouteBuilder $builder): void {
         /*
          * Here, we are connecting '/' (base path) to a controller called 'Pages',
@@ -61,11 +60,6 @@ return function (RouteBuilder $routes): void {
          * to use (in this case, templates/Pages/landing.php)...
          */
         $builder->connect('/', ['controller' => 'Pages', 'action' => 'display', 'landing']);
-        // Add this to your config/routes.php file in the appropriate section:
-
-        $builder->connect('/orders/resume-checkout/{orderId}', ['controller' => 'Orders', 'action' => 'resumeCheckout'])
-            ->setPass(['orderId']);
-        $builder->connect('/orders/resume-checkout', ['controller' => 'Orders', 'action' => 'resumeCheckout']);
 
         /*
          * ...and connect the rest of 'Pages' controller's URLs.
