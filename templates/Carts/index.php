@@ -5,11 +5,7 @@
  */
 ?>
 <div class="max-w-6xl mx-auto px-4 py-8">
-    <!-- Header with left underline -->
-    <div class="flex flex-col items-start mb-8">
-        <h1 class="text-3xl uppercase text-gray-800">Cart</h1>
-        <div class="mt-1 w-16 h-[2px] bg-gray-800"></div>
-    </div>
+    <?= $this->element('page_title', ['title' => 'Cart']) ?>
 
     <?php if ($cart && !empty($cart->artwork_carts)) : ?>
         <!-- Cart Table Card -->
@@ -36,7 +32,7 @@
                         ?>
                         <tr>
                             <td class="py-2 px-4 border-b">
-                                <?= $this->Html->image($artwork->image_path, [
+                                <?= $this->Html->image($artwork->image_url, [
                                     'alt' => $artwork->title,
                                     'class' => 'w-16 h-16 object-contain',
                                 ]) ?>

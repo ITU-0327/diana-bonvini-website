@@ -59,12 +59,6 @@ class ArtworksTable extends Table
             ->allowEmptyString('description');
 
         $validator
-            ->scalar('image_path')
-            ->maxLength('image_path', 255)
-            ->requirePresence('image_path', 'create')
-            ->notEmptyString('image_path');
-
-        $validator
             ->decimal('price')
             ->requirePresence('price', 'create')
             ->notEmptyString('price');

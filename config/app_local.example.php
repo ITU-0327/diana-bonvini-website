@@ -110,4 +110,17 @@ return [
     'GoogleMaps' => [
         'key' => env('GOOGLE_MAPS_API_KEY', null),
     ],
+
+    /*
+     * Cloudflare R2 configuration
+     *
+     * This configuration is used for storing and retrieving files such as images, documents,
+     * and other media assets in your application.
+     */
+    'R2' => [
+        'accountId' => env('CF_R2_ACCOUNT_ID', null),
+        'accessKeyId' => env('CF_R2_ACCESS_KEY_ID', null),
+        'secretAccessKey' => env('CF_R2_SECRET_ACCESS_KEY', null),
+        'bucket' => env('CF_R2_BUCKET', null),
+    ],
 ];

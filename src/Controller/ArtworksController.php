@@ -3,8 +3,15 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use Aws\Credentials\Credentials;
+use Aws\S3\S3Client;
+use Cake\Core\Configure;
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
+use Cake\ORM\TableRegistry;
+use Exception;
+use GdImage;
+use Psr\Http\Message\UploadedFileInterface;
 
 /**
  * Artworks Controller
@@ -30,12 +37,13 @@ class ArtworksController extends AppController
     /**
      * Index method
      *
-     * @return \Cake\Http\Response|null|void Renders view
+     * @return void Renders view
      */
-    public function index()
+    public function index(): void
     {
         $query = $this->Artworks->find()->where(['is_deleted' => 0]);
         $artworks = $this->paginate($query);
+
         $this->set(compact('artworks'));
     }
 
@@ -43,12 +51,12 @@ class ArtworksController extends AppController
      * View method
      *
      * @param string|null $id Artwork id.
-     * @return \Cake\Http\Response|null|void Renders view
+     * @return void Renders view
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function view(?string $id = null)
+    public function view(?string $id = null): void
     {
-        $artwork = $this->Artworks->get($id, contain: []);
+        $artwork = $this->Artworks->get($id);
         $this->set(compact('artwork'));
     }
 
@@ -56,38 +64,26 @@ class ArtworksController extends AppController
      * Add method
      *
      * @return \Cake\Http\Response|null|void Redirects on successful add, renders view otherwise.
+     * @throws \Exception
      */
     public function add()
     {
         $artwork = $this->Artworks->newEmptyEntity();
         if ($this->request->is('post')) {
-            $data = $this->request->getData();
+            $artwork = $this->Artworks->patchEntity($artwork, $this->request->getData());
+            $artwork->availability_status = 'available';
 
-            $image = $data['image_path'];
-            if ($image && $image->getError() === UPLOAD_ERR_OK) {
-                $fileName = time() . '_' . $image->getClientFilename();
-                $targetPath = WWW_ROOT . 'img' . DS . 'Artworks' . DS . $fileName;
-
-                $dir = WWW_ROOT . 'img' . DS . 'Artworks';
-                if (!file_exists($dir)) {
-                    mkdir($dir, 0755, true);
-                }
-
-                $image->moveTo($targetPath);
-                $data['image_path'] = 'Artworks/' . $fileName;
+            if (!$this->Artworks->save($artwork)) {
+                $this->Flash->error(__('Unable to save artwork.'));
             } else {
-                $data['image_path'] = null;
-            }
-
-            $data['availability_status'] = 'available';
-
-            $artwork = $this->Artworks->patchEntity($artwork, $data);
-            if ($this->Artworks->save($artwork)) {
-                $this->Flash->success(__('The artwork has been saved.'));
+                $this->Flash->success(__('Artwork saved.'));
+                $file = $this->request->getData('image_path');
+                if ($file instanceof UploadedFileInterface && !$file->getError()) {
+                    $this->_processImageUpload($file, $artwork->artwork_id);
+                }
 
                 return $this->redirect(['action' => 'index']);
             }
-            $this->Flash->error(__('The artwork could not be saved. Please, try again.'));
         }
         $this->set(compact('artwork'));
     }
@@ -97,19 +93,25 @@ class ArtworksController extends AppController
      *
      * @param string|null $id Artwork id.
      * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
+     * @throws \Cake\Datasource\Exception\RecordNotFoundException|\Exception When record not found.
      */
     public function edit(?string $id = null)
     {
-        $artwork = $this->Artworks->get($id, contain: []);
-        if ($this->request->is(['patch', 'post', 'put'])) {
+        $artwork = $this->Artworks->get($id);
+        if ($this->request->is(['patch','post','put'])) {
             $artwork = $this->Artworks->patchEntity($artwork, $this->request->getData());
-            if ($this->Artworks->save($artwork)) {
-                $this->Flash->success(__('The artwork has been saved.'));
 
-                return $this->redirect(['action' => 'view', $artwork->artwork_id]);
+            if (!$this->Artworks->save($artwork)) {
+                $this->Flash->error(__('Unable to update artwork.'));
+            } else {
+                $this->Flash->success(__('Artwork updated.'));
+                $file = $this->request->getData('image_path');
+                if ($file instanceof UploadedFileInterface && !$file->getError()) {
+                    $this->_processImageUpload($file, $artwork->artwork_id);
+                }
+
+                return $this->redirect(['action' => 'index']);
             }
-            $this->Flash->error(__('The artwork could not be saved. Please, try again.'));
         }
         $this->set(compact('artwork'));
     }
@@ -132,5 +134,194 @@ class ArtworksController extends AppController
         }
 
         return $this->redirect(['action' => 'index']);
+    }
+
+    /**
+     * Handles moving the uploaded file, validating it, adding a tiled watermark,
+     * and returning the relative path for storage (or null on failure).
+     *
+     * @param \Psr\Http\Message\UploadedFileInterface $file The uploaded JPEG file.
+     * @param string $artworkId The artwork ID used to name objects.
+     * @throws \Exception If the file is not JPEG or any imaging/S3 error occurs.
+     */
+    private function _processImageUpload(UploadedFileInterface $file, string $artworkId): void
+    {
+        $this->_assertJpeg($file);
+
+        // Save original on server
+        $localPath = $this->_saveOriginalLocal($file, $artworkId);
+
+        // Read it into memory for watermarking (or you could re‑use $file->getStream())
+        $bytes = file_get_contents($localPath);
+        if ($bytes === false) {
+            throw new Exception("Failed to read saved file: {$localPath}");
+        }
+
+        // Generate watermarked PNG in memory
+        $png = $this->_createWatermarkedPng($bytes);
+        $wmKey = "{$artworkId}_wm.png";
+
+        // Upload only the watermark to R2
+        $this->_putR2Object($wmKey, $png);
+    }
+
+    /**
+     * Moves the uploaded JPEG into webroot/img/Artworks/{artworkId}.jpg.
+     *
+     * @param \Psr\Http\Message\UploadedFileInterface $file
+     * @param string                                  $artworkId
+     * @return string Full filesystem path to the saved file.
+     * @throws \Exception On any filesystem error.
+     */
+    private function _saveOriginalLocal(UploadedFileInterface $file, string $artworkId): string
+    {
+        $dir  = WWW_ROOT . 'img' . DS . 'Artworks';
+        if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
+            throw new Exception("Unable to create directory: {$dir}");
+        }
+
+        $target = $dir . DS . "{$artworkId}.jpg";
+        // moveTo will overwrite if file exists
+        $file->moveTo($target);
+
+        return $target;
+    }
+
+    /**
+     * Ensures that the uploaded file is a JPEG image.
+     *
+     * @param \Psr\Http\Message\UploadedFileInterface $file The upload to check.
+     * @return void
+     * @throws \Exception If the media type is not "image/jpeg".
+     */
+    private function _assertJpeg(UploadedFileInterface $file): void
+    {
+        if ($file->getClientMediaType() !== 'image/jpeg') {
+            throw new Exception('Only JPEG uploads are allowed.');
+        }
+    }
+
+    /**
+     * Creates and returns a configured AWS S3 client pointed at your R2 endpoint.
+     *
+     * @return \Aws\S3\S3Client
+     */
+    private function _getR2Client(): S3Client
+    {
+        $r2 = Configure::read('R2');
+        $creds = new Credentials($r2['accessKeyId'], $r2['secretAccessKey']);
+
+        return new S3Client([
+            'version' => 'latest',
+            'region' => 'auto',
+            'endpoint' => "https://{$r2['accountId']}.r2.cloudflarestorage.com",
+            'use_path_style_endpoint' => true,
+            'credentials' => $creds,
+        ]);
+    }
+
+    /**
+     * Uploads a payload to R2 under the given key, with the given ACL.
+     *
+     * @param string $key  Object key (e.g. "originals/123.jpg")
+     * @param string $body Raw bytes or stream resource
+     * @return void
+     * @throws \Exception On any S3 error
+     */
+    private function _putR2Object(string $key, string $body): void
+    {
+        $client = $this->_getR2Client();
+        $bucket = Configure::read('R2.bucket');
+
+        $client->putObject([
+            'Bucket' => $bucket,
+            'Key'    => $key,
+            'Body'   => $body,
+        ]);
+    }
+
+    /**
+     * Applies a tiled text watermark to the given JPEG bytes and
+     * returns the resulting image as a PNG binary string.
+     *
+     * @param string $jpegBytes Raw JPEG file contents.
+     * @return string           PNG‐encoded binary string with watermark.
+     * @throws \Exception      On invalid image data or GD failures.
+     */
+    private function _createWatermarkedPng(string $jpegBytes): string
+    {
+        $im = imagecreatefromstring($jpegBytes);
+        if (!$im instanceof GdImage) {
+            throw new Exception('Invalid JPEG data.');
+        }
+
+        $width = imagesx($im);
+        $height = imagesy($im);
+        $canvas = imagecreatetruecolor($width, $height);
+        imagesavealpha($canvas, true);
+
+        $bg = imagecolorallocatealpha($canvas, 0, 0, 0, 127);
+        if ($bg === false) {
+            imagedestroy($canvas);
+            imagedestroy($im);
+            throw new Exception('Failed to allocate transparent background color.');
+        }
+        imagefill($canvas, 0, 0, $bg);
+
+        $this->_drawTiledText($canvas, $width, $height);
+        imagecopy($im, $canvas, 0, 0, 0, 0, $width, $height);
+
+        ob_start();
+        imagepng($im);
+        $png = ob_get_clean();
+        if ($png === false) {
+            imagedestroy($canvas);
+            imagedestroy($im);
+            throw new Exception('Failed to capture PNG output.');
+        }
+
+        imagedestroy($canvas);
+        imagedestroy($im);
+
+        return $png;
+    }
+
+    /**
+     * Draws the tiled watermark text onto the canvas.
+     *
+     * @param \GdImage $canvas The GD image resource to draw on.
+     * @param int      $width  Width of the canvas/image.
+     * @param int      $height Height of the canvas/image.
+     * @throws \Exception If the CMS block or font is missing, or GD fails.
+     */
+    private function _drawTiledText(GdImage $canvas, int $width, int $height): void
+    {
+        $block = TableRegistry::getTableLocator()
+            ->get('ContentBlocks')
+            ->find()
+            ->select(['value'])
+            ->where(['slug' => 'watermark-text'])
+            ->first();
+        if (!$block) {
+            throw new Exception('Watermark text not found.');
+        }
+
+        $font = WWW_ROOT . 'font/arial.ttf';
+        if (!is_readable($font)) {
+            throw new Exception("Missing font at $font");
+        }
+
+        $color = imagecolorallocatealpha($canvas, 225, 225, 225, 96);
+        if ($color === false) {
+            throw new Exception('Unable to allocate watermark color.');
+        }
+
+        $size  = 40;
+        $angle = -45;
+        for ($y = -100; $y < $height + 100; $y += 200) {
+            for ($x = -100; $x < $width + 100; $x += 400) {
+                imagettftext($canvas, $size, $angle, $x, $y, $color, $font, $block->value);
+            }
+        }
     }
 }

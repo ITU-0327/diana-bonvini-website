@@ -164,22 +164,21 @@
                 </div>
             </div>
 
-            <!-- Items Ordered -->
-            <div>
-                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Items Ordered</h2>
-                <?php if (!empty($order->artwork_orders)) : ?>
-                    <ul class="space-y-4">
-                        <?php foreach ($order->artwork_orders as $item) : ?>
-                            <li class="flex items-center justify-between border-b pb-3">
-                                <div class="flex items-center">
-                                    <?= $this->Html->image(
-                                        $item->artwork->image_path,
-                                        ['alt' => $item->artwork->title, 'class' => 'w-16 h-16 object-cover rounded-lg mr-4'],
-                                    ) ?>
-                                    <div>
-                                        <p class="font-bold text-gray-900 text-lg"><?= h($item->artwork->title) ?></p>
-                                        <p class="text-gray-600 text-sm">Qty: <?= h($item->quantity) ?></p>
-                                    </div>
+        <!-- Items Ordered -->
+        <div>
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Items Ordered</h2>
+            <?php if (!empty($order->artwork_orders)) : ?>
+                <ul class="space-y-4">
+                    <?php foreach ($order->artwork_orders as $item) : ?>
+                        <li class="flex items-center justify-between border-b pb-3">
+                            <div class="flex items-center">
+                                <?= $this->Html->image(
+                                    $item->artwork->image_url,
+                                    ['alt' => $item->artwork->title, 'class' => 'w-16 h-16 object-cover rounded-lg mr-4'],
+                                ) ?>
+                                <div>
+                                    <p class="font-bold text-gray-900 text-lg"><?= h($item->artwork->title) ?></p>
+                                    <p class="text-gray-600 text-sm">Qty: <?= h($item->quantity) ?></p>
                                 </div>
                                 <div class="text-right">
                                     <p class="font-bold text-gray-900 text-lg">$<?= number_format($item->price * $item->quantity, 2) ?></p>

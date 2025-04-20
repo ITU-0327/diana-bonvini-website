@@ -11,11 +11,7 @@ $userType = $user?->get('user_type');
 ?>
 
 <div class="max-w-6xl mx-auto px-4 py-8">
-    <!-- Heading with a short underline on the left -->
-    <div class="flex flex-col items-start mb-8">
-        <h1 class="text-3xl uppercase tracking-wide text-gray-800">Art Gallery</h1>
-        <div class="mt-1 w-16 h-[2px] bg-gray-800"></div>
-    </div>
+    <?= $this->element('page_title', ['title' => 'Art Gallery']) ?>
 
     <!-- Filter Buttons -->
     <div class="flex space-x-4 mb-8">
@@ -44,9 +40,9 @@ $userType = $user?->get('user_type');
                 data-url="<?= $this->Url->build(['action' => 'view', $artwork->artwork_id]) ?>"
             >
                 <!-- Artwork Image -->
-                <?= $this->Html->image($artwork->image_path, [
-                    'alt'   => $artwork->title,
-                    'class' => 'w-full h-full object-cover', // Let the picture be cut adaptively in the 4:3 container
+                <?= $this->Html->image($artwork->image_url, [
+                    'alt' => $artwork->title,
+                    'class' => 'w-full h-full object-cover',
                 ]) ?>
 
                 <?php if ($artwork->availability_status === 'available') : ?>

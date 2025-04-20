@@ -8,11 +8,7 @@ use Cake\Utility\Inflector;
 
 ?>
 <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-    <!-- Header with Left-Aligned Underline -->
-    <div class="flex flex-col items-start mb-8">
-        <h1 class="text-3xl uppercase text-gray-800">Writing Service Requests</h1>
-        <div class="mt-1 w-16 h-[2px] bg-gray-800"></div>
-    </div>
+    <?= $this->element('page_title', ['title' => 'Writing Service Requests']) ?>
 
     <?= $this->Form->create(null, ['type' => 'get']) ?>
     <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 border-b pb-4 mb-4">

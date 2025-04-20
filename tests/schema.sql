@@ -37,7 +37,6 @@ CREATE TABLE artworks (
     artwork_id CHAR(36) NOT NULL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    image_path VARCHAR(255) NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     availability_status ENUM('available','sold') NOT NULL,
     is_deleted TINYINT NOT NULL DEFAULT 0,
@@ -173,4 +172,18 @@ CREATE TABLE request_messages (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_request_messages_request FOREIGN KEY (writing_service_request_id) REFERENCES writing_service_requests(writing_service_request_id) ON DELETE CASCADE,
     CONSTRAINT fk_request_messages_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+) ENGINE=InnoDB;
+
+-- Table: content_blocks
+CREATE TABLE content_blocks (
+    content_block_id CHAR(36) NOT NULL PRIMARY KEY,
+    parent VARCHAR(100) DEFAULT NULL,
+    slug VARCHAR(255) NOT NULL UNIQUE,
+    label VARCHAR(255) NOT NULL,
+    description TEXT,
+    type ENUM('html','text','image', 'url') NOT NULL,
+    value LONGTEXT,
+    previous_value LONGTEXT,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;

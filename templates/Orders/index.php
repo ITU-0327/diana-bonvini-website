@@ -5,11 +5,7 @@
  */
 ?>
 <div class="max-w-6xl mx-auto px-4 py-8">
-    <!-- Header with left-aligned underline -->
-    <div class="flex flex-col items-start mb-8">
-        <h1 class="text-3xl uppercase text-gray-800">My Orders</h1>
-        <div class="mt-1 w-16 h-[2px] bg-gray-800"></div>
-    </div>
+    <?= $this->element('page_title', ['title' => 'My Orders']) ?>
 
 
     <div class="overflow-x-auto">
@@ -23,7 +19,7 @@
             </tr>
             </thead>
             <tbody class="text-gray-700 text-sm">
-            <?php foreach ($orders as $order): ?>
+            <?php foreach ($orders as $order) : ?>
                 <tr class="border-b border-gray-200 hover:bg-gray-50">
                     <td class="py-3 px-6"><?= h($order->order_id) ?></td>
                     <td class="py-3 px-6">$<?= $this->Number->format($order->total_amount) ?></td>
@@ -32,7 +28,7 @@
                         <?= $this->Html->link(
                             'View',
                             ['action' => 'view', $order->order_id],
-                            ['class' => 'bg-teal-600 text-white py-1 px-3 rounded hover:bg-teal-700 transition']
+                            ['class' => 'bg-teal-600 text-white py-1 px-3 rounded hover:bg-teal-700 transition'],
                         ) ?>
                     </td>
                 </tr>

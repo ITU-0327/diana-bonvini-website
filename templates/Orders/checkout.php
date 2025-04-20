@@ -13,10 +13,8 @@ use Cake\Core\Configure;
 $googleMapsApiKey = Configure::read('GoogleMaps.key');
 ?>
 <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-    <div class="flex flex-col items-start mb-8">
-        <h1 class="text-3xl uppercase text-gray-800">Checkout</h1>
-        <div class="mt-1 w-16 h-[2px] bg-gray-800"></div>
-    </div>
+    <?= $this->element('page_title', ['title' => 'Checkout']) ?>
+
     <?= $this->Form->create($order, [
         'url' => ['action' => 'placeOrder'],
         'class' => 'space-y-8',
@@ -192,7 +190,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                         <?php foreach ($cart->artwork_carts as $item) : ?>
                             <?php if (isset($item->artwork)) : ?>
                                 <div class="flex items-center space-x-4 border-b pb-4">
-                                    <?= $this->Html->image($item->artwork->image_path, [
+                                    <?= $this->Html->image($item->artwork->image_url, [
                                         'alt' => $item->artwork->title,
                                         'class' => 'w-16 h-16 object-cover rounded',
                                     ]) ?>

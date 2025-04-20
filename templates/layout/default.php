@@ -1,7 +1,7 @@
 <?php
 /**
  * Default Layout for Diana Bonvini Website using Tailwind CSS
- * with a Profile Dropdown Card similar to your provided screenshot.
+ * with view blocks for page-specific customizations.
  *
  * @var \App\View\AppView $this
  */
@@ -15,7 +15,7 @@ $siteTitle = 'Diana Bonvini Art & Writing';
     <title><?= $siteTitle ?>: <?= $this->fetch('title') ?></title>
     <?= $this->Html->meta('icon') ?>
 
-    <!-- Tailwind CSS CDN for rapid development -->
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <?= $this->Html->css('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css'); ?>
     <?= $this->Html->css('styles.css') ?>
@@ -23,39 +23,51 @@ $siteTitle = 'Diana Bonvini Art & Writing';
     <?= $this->fetch('meta') ?>
     <?= $this->fetch('css') ?>
     <?= $this->fetch('script') ?>
-    <?= $this->Html->css('about') ?>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col">
+<body class="<?= $this->fetch('bodyClass', 'bg-gray-50 min-h-screen flex flex-col') ?>">
+<!-- Block for custom background content -->
+<?= $this->fetch('background') ?>
+
 <!-- Navigation -->
 <?= $this->element('navbar') ?>
 
-<!-- Main Content set to flex-grow to push the footer down -->
-<main class="flex-grow container mx-auto py-10">
+<!-- Main Content -->
+<main class="<?= $this->fetch('mainClass', 'flex-grow container mx-auto py-10') ?>">
     <?= $this->Flash->render() ?>
     <?= $this->fetch('content') ?>
 </main>
 
-<!-- Surprising New Footer -->
 <footer class="bg-gradient-to-r from-teal-600 to-teal-800 text-white py-8">
     <div class="container mx-auto px-4">
         <div class="flex flex-col md:flex-row justify-between items-center">
             <div class="mb-4 md:mb-0">
-                <h3 class="text-2xl font-bold">diana bonvini.</h3>
+                <h3 class="text-2xl font-bold"><?= $this->ContentBlock->text('logo') ?></h3>
             </div>
             <div class="flex space-x-4">
-                <a href="#" class="hover:text-gray-300 transition">
-                    <i class="fab fa-facebook-f"></i>
-                </a>
-                <a href="#" class="hover:text-gray-300 transition">
-                    <i class="fab fa-instagram"></i>
-                </a>
-                <a href="#" class="hover:text-gray-300 transition">
-                    <i class="fab fa-linkedin-in"></i>
-                </a>
+                <?= $this->ContentBlock->url(
+                    'instagram-link',
+                    [
+                        'text' => '<i class="fab fa-instagram"></i>',
+                        'target' => '_blank',
+                        'rel' => 'noopener noreferrer',
+                        'class' => 'hover:text-gray-300 transition',
+                        'escape' => false,
+                    ],
+                ) ?>
+                <?= $this->ContentBlock->url(
+                    'linkedin-link',
+                    [
+                        'text' => '<i class="fab fa-linkedin-in"></i>',
+                        'target' => '_blank',
+                        'rel' => 'noopener noreferrer',
+                        'class' => 'hover:text-gray-300 transition',
+                        'escape' => false,
+                    ],
+                ) ?>
             </div>
         </div>
         <div class="mt-4 border-t border-teal-400 pt-4 text-center text-sm">
-            &copy; <?= date('Y') ?> Diana Bonvini. All rights reserved.
+            <?= $this->ContentBlock->text('copyright-notice'); ?>
         </div>
     </div>
 </footer>
