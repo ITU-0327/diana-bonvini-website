@@ -395,12 +395,9 @@ class OrdersController extends AppController
         }
 
         try {
-            $this->sendEmail(
-                OrderMailer::class,
-                'confirmation',
-                [$order],
-                $email,
-            );
+            $mailer = new OrderMailer('default');
+            $mailer->confirmation($order);
+            $mailer->deliver();
         } catch (Exception $e) {
             $this->log('Failed to send confirmation email: ' . $e->getMessage(), 'error');
         }
