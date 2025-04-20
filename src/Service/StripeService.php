@@ -3,14 +3,14 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Model\Entity\Order;
 use Cake\Core\Configure;
+use Cake\Datasource\ConnectionManager;
 use Cake\ORM\TableRegistry;
 use Cake\Routing\Router;
 use RuntimeException;
 use Stripe\Checkout\Session;
-use Stripe\Exception\ApiErrorException;
 use Stripe\Stripe;
+use Throwable;
 
 class StripeService
 {
@@ -30,13 +30,13 @@ class StripeService
      *
      * @param string $orderId
      * @return string
-     * @throws ApiErrorException
+     * @throws \Stripe\Exception\ApiErrorException
      */
     public function createCheckoutUrl(string $orderId): string
     {
         // Load the order with its associated artwork orders and artwork details.
         $ordersTable = TableRegistry::getTableLocator()->get('Orders');
-        /** @var Order $order */
+        /** @var \App\Model\Entity\Order $order */
         $order = $ordersTable->get($orderId, contain: ['ArtworkOrders' => ['Artworks']]);
 
         // build line items from the order's artwork_orders
@@ -84,5 +84,64 @@ class StripeService
         }
 
         return $session->url;
+    }
+
+    /**
+     * Confirm a Stripe Checkout session and update DB.
+     *
+     * @param string $orderId
+     * @param string $sessionId
+     * @return bool  True if we confirmed & updated, false otherwise
+     * @throws \Stripe\Exception\ApiErrorException
+     * @throws \Exception
+     */
+    public function confirmCheckout(string $orderId, string $sessionId): bool
+    {
+        $stripeSession = Session::retrieve($sessionId);
+        if ($stripeSession->payment_status !== 'paid') {
+            return false;
+        }
+
+        $paymentsTable = TableRegistry::getTableLocator()->get('Payments');
+        $ordersTable = TableRegistry::getTableLocator()->get('Orders');
+
+        $payment = $paymentsTable->find()
+            ->where(['order_id' => $orderId])
+            ->first();
+        if (!$payment) {
+            return false;
+        }
+
+        /** @var \Cake\Database\Connection $conn */
+        $conn = ConnectionManager::get('default');
+        $conn->begin();
+
+        try {
+            // patch payment
+            $payment = $paymentsTable->patchEntity($payment, [
+                'status' => 'confirmed',
+                'transaction_id' => $sessionId,
+            ]);
+            if (!$paymentsTable->save($payment)) {
+                throw new RuntimeException('Could not save payment');
+            }
+
+            // patch order
+            $order = $ordersTable->get($orderId);
+            $order = $ordersTable->patchEntity($order, [
+                'order_status' => 'confirmed',
+            ]);
+            if (!$ordersTable->save($order)) {
+                throw new RuntimeException('Could not update order');
+            }
+
+            $conn->commit();
+
+            return true;
+        } catch (Throwable) {
+            $conn->rollback();
+
+            return false;
+        }
     }
 }

@@ -2,7 +2,6 @@
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Order $order
- * @var bool $hasSuccessfulPayment
  */
 ?>
 <div class="bg-gray-100 min-h-screen pb-8">

@@ -9,11 +9,8 @@ use App\Model\Entity\ArtworkOrder;
 use App\Model\Entity\Cart;
 use App\Model\Entity\Order;
 use App\Service\StripeService;
-use Cake\Core\Configure;
 use Cake\Http\Response;
 use Exception;
-use Stripe\Checkout\Session;
-use Stripe\Stripe;
 
 /**
  * Orders Controller
@@ -42,12 +39,12 @@ class OrdersController extends AppController
             return $this->redirect(['controller' => 'Carts', 'action' => 'index']);
         }
 
-        $resumeOrderId = $this->request->getQuery('OrderId');
-        if ($resumeOrderId) {
+        $pendingId = $this->request->getQuery('OrderId');
+        if ($pendingId) {
             $this->Flash->info(__('Please review your information and try again.'));
 
             $order = $this->Orders->get(
-                $resumeOrderId,
+                $pendingId,
                 contain: ['ArtworkOrders' => ['Artworks'], 'Users'],
             );
             $total = $this->_calculateOrderTotal($order);
@@ -56,7 +53,7 @@ class OrdersController extends AppController
             $total = $this->_calculateCartTotal($cart);
         }
 
-        $this->set(compact('cart', 'total', 'order', 'user'));
+        $this->set(compact('cart', 'total', 'order', 'user', 'pendingId'));
 
         return null;
     }
@@ -80,12 +77,22 @@ class OrdersController extends AppController
         $user = $this->Authentication->getIdentity();
         $data['user_id'] = $user->user_id;
 
+        // See if we're updating an in‑flight order
+        $pendingId = !empty($data['order_id']) ? (string)$data['order_id'] : null;
+
+        if ($pendingId) {
+            // load the existing pending order (and its artwork_orders)
+            $order = $this->Orders->get(
+                $pendingId,
+                contain: ['ArtworkOrders' => ['Artworks']],
+            );
+        } else {
+            // brand‑new checkout
+            $order = $this->Orders->newEmptyEntity();
+        }
+
         // Get the current user's cart.
-        /** @var \App\Model\Entity\Cart $cart */
-        $cart = $this->fetchTable('Carts')->find()
-            ->contain(['ArtworkCarts' => ['Artworks']])
-            ->where(['user_id' => $data['user_id']])
-            ->first();
+        $cart = $this->_getCart();
 
         if (!$cart || empty($cart->artwork_carts)) {
             $this->Flash->error(__('Your cart is empty.'));
@@ -94,21 +101,15 @@ class OrdersController extends AppController
         }
 
         // Build artwork orders from cart items.
-        $total = 0.0;
+        $total = $this->_calculateCartTotal($cart);
         $orderItems = [];
         foreach ($cart->artwork_carts as $cartItem) {
-            if (isset($cartItem->artwork)) {
-                $quantity  = $cartItem->quantity;
-                $price     = $cartItem->artwork->price;
-                $lineTotal = (float)$quantity * $price;
-                $total    += $lineTotal;
-                $orderItems[] = [
-                    'artwork_id' => $cartItem->artwork->artwork_id,
-                    'quantity'   => $quantity,
-                    'price'      => $price,
-                    'subtotal'   => $lineTotal,
-                ];
-            }
+            $orderItems[] = [
+                'artwork_id' => $cartItem->artwork->artwork_id,
+                'quantity' => $cartItem->quantity,
+                'price' => $cartItem->artwork->price,
+                'subtotal' => $cartItem->artwork->price * (float)$cartItem->quantity,
+            ];
         }
 
         // Complete the order data.
@@ -118,9 +119,11 @@ class OrdersController extends AppController
         $data['order_date']     = date('Y-m-d H:i:s');
 
         // Patch the order entity including associated artwork orders.
-        $order = $this->Orders->newEntity($data, [
-            'associated' => ['ArtworkOrders'],
-        ]);
+        $order = $this->Orders->patchEntity(
+            $order,
+            $data,
+            ['associated' => ['ArtworkOrders']],
+        );
 
         // Begin a transaction and save the order.
         $connection = $this->Orders->getConnection();
@@ -129,6 +132,10 @@ class OrdersController extends AppController
         if ($this->Orders->save($order, ['associated' => ['ArtworkOrders']])) {
             // Create a payment record.
             $paymentsTable = $this->fetchTable('Payments');
+            $existingPayment = $paymentsTable->find()
+                ->where(['order_id' => $order->order_id])
+                ->first();
+
             $paymentData = [
                 'order_id'       => $order->order_id,
                 'amount'         => $order->total_amount,
@@ -136,7 +143,14 @@ class OrdersController extends AppController
                 'payment_method' => 'stripe',
                 'status'         => 'pending',
             ];
-            $payment = $paymentsTable->newEntity($paymentData);
+
+            if ($existingPayment) {
+                // update the existing payment
+                $payment = $paymentsTable->patchEntity($existingPayment, $paymentData);
+            } else {
+                // create a fresh one
+                $payment = $paymentsTable->newEntity($paymentData);
+            }
 
             if (!$paymentsTable->save($payment)) {
                 $connection->rollback();
@@ -152,7 +166,6 @@ class OrdersController extends AppController
 
             try {
                 $url = $stripeService->createCheckoutUrl($order->order_id);
-                $this->request->getSession()->write('Checkout.cart_id', $cart->cart_id);
 
                 return $this->redirect($url);
             } catch (Exception $e) {
@@ -176,109 +189,36 @@ class OrdersController extends AppController
      * Displays the order confirmation page and handles cart cleanup after successful payment.
      * Also sends a confirmation email when payment is successful.
      *
-     * @param string|null $orderId Order id.
+     * @param string $orderId Order id.
      * @return \Cake\Http\Response|null Renders view.
+     * @throws \Exception
      */
-    public function confirmation(?string $orderId = null): ?Response
+    public function confirmation(string $orderId, StripeService $stripeService): ?Response
     {
-        if (!$orderId) {
-            $this->Flash->error(__('Invalid order.'));
+        $order = $this->Orders->get($orderId, [
+            'contain' => ['ArtworkOrders.Artworks', 'Payments'],
+        ]);
 
-            return $this->redirect(['action' => 'index']);
-        }
-
-        $order = $this->Orders->find()
-            ->contain(['ArtworkOrders' => ['Artworks'], 'Payments'])
-            ->where(['Orders.order_id' => $orderId])
-            ->first();
-
-        if (!$order) {
-            $this->Flash->error(__('Order not found.'));
-
-            return $this->redirect(['action' => 'index']);
-        }
-
-        // Check if we have a successful payment
-        $hasSuccessfulPayment = false;
-        if (!empty($order->payments)) {
-            foreach ($order->payments as $payment) {
-                if ($payment->status === 'completed' || $payment->status === 'succeeded') {
-                    $hasSuccessfulPayment = true;
-                    break;
-                }
-            }
-        }
-
-        // If we have a Stripe session ID in the query param, update payment status
+        // If Stripe just redirected back with a session_id, try to confirm payment
         $sessionId = $this->request->getQuery('session_id');
-        if ($sessionId && !$hasSuccessfulPayment) {
-            try {
-                Stripe::setApiKey(Configure::read('Stripe.secret'));
-                $session = Session::retrieve($sessionId);
+        if ($sessionId && $order->payment->status != 'confirmed') {
+            if ($stripeService->confirmCheckout($orderId, $sessionId)) {
+                $this->Flash->success(__('Payment confirmed!'));
 
-                if ($session && $session->payment_status === 'paid') {
-                    // Update payment status
-                    $paymentsTable = $this->fetchTable('Payments');
-                    $payment = $paymentsTable->find()
-                        ->where(['order_id' => $orderId])
-                        ->first();
-
-                    if ($payment) {
-                        $payment->status = 'completed';
-                        $payment->transaction_id = $sessionId;
-                        $paymentsTable->save($payment);
-                        $hasSuccessfulPayment = true;
-
-                        // Update order status
-                        $order->order_status = 'confirmed';
-                        $this->Orders->save($order);
-                    }
-                }
-            } catch (Exception $e) {
-                // Log the error but continue showing the confirmation page
-                $this->log('Stripe session verification error: ' . $e->getMessage(), 'error');
+                $order = $this->Orders->get($orderId, [
+                    'contain' => ['ArtworkOrders.Artworks', 'Payments'],
+                ]);
+            } else {
+                $this->Flash->error(__('Could not confirm payment.'));
             }
         }
 
-        // Now, clean up the cart if payment was successful
-        if ($hasSuccessfulPayment) {
-            // Get the cart ID from session if available
-            $cartId = $this->request->getSession()->read('Checkout.cart_id');
-
-            if ($cartId) {
-                try {
-                    $cartsTable = $this->fetchTable('Carts');
-                    $cart = $cartsTable->get($cartId);
-                    $cartsTable->delete($cart);
-
-                    // Clear the cart ID from session
-                    $this->request->getSession()->delete('Checkout.cart_id');
-                } catch (Exception $e) {
-                    // Just log the error but continue showing the confirmation page
-                    $this->log('Cart cleanup error: ' . $e->getMessage(), 'error');
-                }
-            }
-
-            // Send a confirmation email when payment is successful
-            $customerEmail = $order->billing_email ?? null;
-
-            if ($customerEmail) {
-                try {
-                    // Send order confirmation email
-                    $this->sendEmail(
-                        OrderMailer::class,
-                        'confirmation',
-                        [$order],
-                        $customerEmail,
-                    );
-                } catch (Exception $e) {
-                    // Log the error but continue with order confirmation
-                    $this->log('Failed to send order confirmation email: ' . $e->getMessage(), 'error');
-                }
-            }
+        if ($order->payment->status == 'confirmed') {
+            $this->cleanupCart();
+            $this->sendConfirmationEmail($order);
         }
 
-        $this->set(compact('order', 'hasSuccessfulPayment'));
+        $this->set(compact('order'));
 
         return null;
     }
@@ -419,5 +359,50 @@ class OrdersController extends AppController
             },
             0.0,
         );
+    }
+
+    /**
+     * Cleans up the cart after a successful order.
+     *
+     * @throws \Exception
+     */
+    private function cleanupCart(): void
+    {
+        $cart = $this->_getCart();
+        if (!$cart) {
+            return;
+        }
+
+        try {
+            $cartsTable = $this->fetchTable('Carts');
+            $cartsTable->delete($cart);
+        } catch (Exception $e) {
+            $this->log('Cart delete error: ' . $e->getMessage(), 'error');
+        }
+    }
+
+    /**
+     * Sends the order confirmation email (if a billing email is present).
+     *
+     * @param \App\Model\Entity\Order $order
+     * @throws \Exception
+     */
+    private function sendConfirmationEmail(Order $order): void
+    {
+        $email = $order->billing_email;
+        if (!$email) {
+            return;
+        }
+
+        try {
+            $this->sendEmail(
+                OrderMailer::class,
+                'confirmation',
+                [$order],
+                $email,
+            );
+        } catch (Exception $e) {
+            $this->log('Failed to send confirmation email: ' . $e->getMessage(), 'error');
+        }
     }
 }

@@ -5,6 +5,7 @@
  * @var \App\Model\Entity\Cart $cart
  * @var \App\Model\Entity\User|null $user
  * @var float $total
+ * @var string|null $pendingId
  */
 
 use Cake\Core\Configure;
@@ -22,6 +23,9 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
         'type' => 'post',
         'id' => 'checkout-form',
     ]) ?>
+    <?php if (!empty($pendingId)): ?>
+        <?= $this->Form->hidden('order_id', ['value' => $pendingId]) ?>
+    <?php endif; ?>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
         <!-- LEFT COLUMN: Checkout Fields -->
         <div class="lg:col-span-2 bg-white shadow-lg rounded-lg p-8 space-y-8">

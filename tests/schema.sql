@@ -117,7 +117,7 @@ CREATE TABLE payments (
     amount DECIMAL(10,2) NOT NULL,
     transaction_id VARCHAR(255) DEFAULT NULL,
     payment_date DATETIME NOT NULL,
-    payment_method ENUM('bank transfer','credit card') NOT NULL,
+    payment_method ENUM('bank transfer','stripe') NOT NULL,
     status ENUM('pending','confirmed') NOT NULL,
     is_deleted TINYINT NOT NULL DEFAULT 0,
     CONSTRAINT fk_payments_order FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
