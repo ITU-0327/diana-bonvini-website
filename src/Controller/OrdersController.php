@@ -3,9 +3,14 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Mailer\OrderMailer;
+use App\Model\Entity\ArtworkCart;
+use App\Model\Entity\ArtworkOrder;
+use App\Model\Entity\Cart;
+use App\Model\Entity\Order;
+use App\Service\StripeService;
 use Cake\Core\Configure;
 use Cake\Http\Response;
-use Cake\Routing\Router;
 use Exception;
 use Stripe\Checkout\Session;
 use Stripe\Stripe;
@@ -29,222 +34,34 @@ class OrdersController extends AppController
     {
         /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
-        $userId = $user?->user_id;
-        $sessionId = $this->request->getSession()->id();
 
-        // Build conditions based on whether the user is logged in or using a session.
-        $conditions = $userId !== null
-            ? ['user_id' => $userId]
-            : ['session_id' => $sessionId];
-
-        // Retrieve the cart with its artwork items.
-        /** @var \App\Model\Entity\Cart $cart */
-        $cart = $this->fetchTable('Carts')->find()
-            ->contain(['ArtworkCarts' => ['Artworks']])
-            ->where($conditions)
-            ->first();
-
+        $cart = $this->_getCart();
         if (!$cart) {
             $this->Flash->error('No items in your cart.');
 
             return $this->redirect(['controller' => 'Carts', 'action' => 'index']);
         }
 
-        // Calculate the total amount.
-        $total = 0.0;
-        foreach ($cart->artwork_carts as $item) {
-            if (isset($item->artwork)) {
-                $total += $item->artwork->price * (float)$item->quantity;
-            }
+        $resumeOrderId = $this->request->getQuery('OrderId');
+        if ($resumeOrderId) {
+            $this->Flash->info(__('Please review your information and try again.'));
+
+            $order = $this->Orders->get(
+                $resumeOrderId,
+                contain: ['ArtworkOrders' => ['Artworks'], 'Users'],
+            );
+            $total = $this->_calculateOrderTotal($order);
+        } else {
+            $order = $this->Orders->newEmptyEntity();
+            $total = $this->_calculateCartTotal($cart);
         }
 
-        // Create a new Order entity.
-        $order = $this->Orders->newEmptyEntity();
-
-        // Pass the cart, total, and order entity to the view.
         $this->set(compact('cart', 'total', 'order', 'user'));
 
         return null;
     }
 
     /**
-     * Handles return from Stripe payment page when a user cancels.
-     * This method serves as a landing point when returning from Stripe.
-     *
-     * @param string|null $orderId Order id to resume checkout for.
-     * @return \Cake\Http\Response|null Redirects or renders view.
-     */
-
-    /**
-     * Handles return from Stripe payment page when a user cancels.
-     * This method serves as a landing point when returning from Stripe.
-     *
-     * @param string|null $orderId Order id to resume checkout for.
-     * @return \Cake\Http\Response|null Redirects or renders view.
-     */
-
-    /**
-     * Handles return from Stripe payment page when a user cancels.
-     * This method serves as a landing point when returning from Stripe.
-     *
-     * @param string|null $orderId Order id to resume checkout for.
-     * @return \Cake\Http\Response|null Redirects or renders view.
-     */
-    public function resumeCheckout(?string $orderId = null): ?Response
-    {
-        // If an order ID is provided, try to load that specific order
-        if ($orderId) {
-            try {
-                $order = $this->Orders->get($orderId, [
-                    'contain' => [
-                        'ArtworkOrders' => ['Artworks'],
-                        'Users',
-                    ],
-                ]);
-
-                // We'll create a fresh order entity for the form submission
-                $newOrder = $this->Orders->newEmptyEntity();
-
-                // Pre-populate with billing details from the existing order
-                $newOrder->billing_first_name = $order->billing_first_name ?? null;
-                $newOrder->billing_last_name = $order->billing_last_name ?? null;
-                $newOrder->billing_company = $order->billing_company ?? null;
-                $newOrder->billing_email = $order->billing_email ?? null;
-                $newOrder->shipping_country = $order->shipping_country ?? null;
-                $newOrder->shipping_address1 = $order->shipping_address1 ?? null;
-                $newOrder->shipping_address2 = $order->shipping_address2 ?? null;
-                $newOrder->shipping_suburb = $order->shipping_suburb ?? null;
-                $newOrder->shipping_state = $order->shipping_state ?? null;
-                $newOrder->shipping_postcode = $order->shipping_postcode ?? null;
-                $newOrder->shipping_phone = $order->shipping_phone ?? null;
-                $newOrder->order_notes = $order->order_notes ?? null;
-
-                $this->Flash->info(__('Please review your information and try again.'));
-
-                // Calculate total for the view
-                $total = 0.0;
-                foreach ($order->artwork_orders as $item) {
-                    $total += $item->price * (float)$item->quantity;
-                }
-
-                /** @var \App\Model\Entity\User|null $user */
-                $user = $this->Authentication->getIdentity();
-
-                // First check if the cart_id is stored in the session
-                $cartId = $this->request->getSession()->read('Checkout.cart_id');
-
-                // If we have a cart ID, attempt to load that cart
-                $cartsTable = $this->fetchTable('Carts');
-                $cart = null;
-
-                if ($cartId) {
-                    try {
-                        $cart = $cartsTable->find()
-                            ->contain(['ArtworkCarts' => ['Artworks']])
-                            ->where(['cart_id' => $cartId])
-                            ->first();
-                    } catch (Exception $e) {
-                        // Log the error but continue with cart recreation
-                        $this->log('Error loading existing cart: ' . $e->getMessage(), 'error');
-                    }
-                }
-
-                // If no cart was found or loaded, we'll create a new one with items from the order
-                if (!$cart) {
-                    // We'll recreate a cart-like structure for the view
-                    // First, check if a cart already exists for this user/session
-                    $userId = $user?->user_id;
-                    $sessionId = $this->request->getSession()->id();
-
-                    // Build conditions based on whether the user is logged in or using a session.
-                    $conditions = $userId !== null
-                        ? ['user_id' => $userId]
-                        : ['session_id' => $sessionId];
-
-                    $cart = $cartsTable->find()
-                        ->where($conditions)
-                        ->first();
-
-                    // If no cart exists, create a new one with items from the order
-                    if (!$cart) {
-                        $cart = $cartsTable->newEntity([
-                            'user_id' => $userId,
-                            'session_id' => $sessionId,
-                            'created' => date('Y-m-d H:i:s'),
-                            'modified' => date('Y-m-d H:i:s'),
-                        ]);
-
-                        if ($cartsTable->save($cart)) {
-                            // Store the cart ID in session
-                            $this->request->getSession()->write('Checkout.cart_id', $cart->cart_id);
-
-                            // Now add the items from the order to the cart
-                            $artworkCartsTable = $this->fetchTable('ArtworkCarts');
-                            $cart->artwork_carts = [];
-
-                            foreach ($order->artwork_orders as $item) {
-                                $artworkCart = $artworkCartsTable->newEntity([
-                                    'cart_id' => $cart->cart_id,
-                                    'artwork_id' => $item->artwork_id,
-                                    'quantity' => $item->quantity,
-                                    'created' => date('Y-m-d H:i:s'),
-                                    'modified' => date('Y-m-d H:i:s'),
-                                ]);
-
-                                if ($artworkCartsTable->save($artworkCart)) {
-                                    $artworkCart->artwork = $item->artwork;
-                                    $cart->artwork_carts[] = $artworkCart;
-                                }
-                            }
-                        }
-                    } else {
-                        // Cart exists but we need to load its artwork items
-                        $cart = $cartsTable->get($cart->cart_id, [
-                            'contain' => ['ArtworkCarts' => ['Artworks']],
-                        ]);
-
-                        // If the cart is empty (no artwork_carts), add the items from the order
-                        if (empty($cart->artwork_carts)) {
-                            $artworkCartsTable = $this->fetchTable('ArtworkCarts');
-                            $cart->artwork_carts = [];
-
-                            foreach ($order->artwork_orders as $item) {
-                                $artworkCart = $artworkCartsTable->newEntity([
-                                    'cart_id' => $cart->cart_id,
-                                    'artwork_id' => $item->artwork_id,
-                                    'quantity' => $item->quantity,
-                                    'created' => date('Y-m-d H:i:s'),
-                                    'modified' => date('Y-m-d H:i:s'),
-                                ]);
-
-                                if ($artworkCartsTable->save($artworkCart)) {
-                                    $artworkCart->artwork = $item->artwork;
-                                    $cart->artwork_carts[] = $artworkCart;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Pass the data to the view
-                $this->set(compact('cart', 'total', 'order', 'user', 'newOrder'));
-
-                // Return the checkout view with our recreated data
-                return $this->render('checkout');
-            } catch (Exception $e) {
-                // If we couldn't load the order or there was another issue
-                $this->Flash->error(__('There was an error resuming your checkout. Please start again.'));
-                $this->log('Error in resumeCheckout: ' . $e->getMessage(), 'error');
-
-                return $this->redirect(['action' => 'checkout']);
-            }
-        }
-
-        // Otherwise, just redirect to the standard checkout page
-        return $this->redirect(['action' => 'checkout']);
-    }
-
-    /**
      * Place Order method
      *
      * Processes the order and saves it to the database.
@@ -253,17 +70,7 @@ class OrdersController extends AppController
      *
      * @return \Cake\Http\Response|null Redirects to Stripe's payment page.
      */
-
-    /**
-     * Place Order method
-     *
-     * Processes the order and saves it to the database.
-     * After a successful save, creates a Stripe Checkout session and immediately redirects the customer
-     * to Stripe's hosted payment page.
-     *
-     * @return \Cake\Http\Response|null Redirects to Stripe's payment page.
-     */
-    public function placeOrder(): ?Response
+    public function placeOrder(StripeService $stripeService): ?Response
     {
         $this->request->allowMethod(['post']);
 
@@ -341,18 +148,15 @@ class OrdersController extends AppController
 
             // Important: Don't delete the cart here!
             // We'll use the success webhook or confirmation to delete the cart after payment is confirmed
-
             $connection->commit();
 
             try {
-                // Create a Stripe Checkout session and immediately redirect the customer.
-                $stripeUrl = $this->_createStripeSessionUrl($order->order_id);
-                // Store the cart ID in the session so we can retrieve it if needed
+                $url = $stripeService->createCheckoutUrl($order->order_id);
                 $this->request->getSession()->write('Checkout.cart_id', $cart->cart_id);
 
-                return $this->redirect($stripeUrl);
+                return $this->redirect($url);
             } catch (Exception $e) {
-                $this->Flash->error(__('There was an error connecting to our payment processor. Please try again.'));
+                $this->Flash->error(__('Payment processor error: ') . $e->getMessage());
                 $this->set(compact('order', 'cart', 'user'));
 
                 return $this->render('checkout');
@@ -367,77 +171,10 @@ class OrdersController extends AppController
     }
 
     /**
-     * Private method to create a Stripe Checkout session URL based on the order details.
-     *
-     * @param string $orderId The ID of the order.
-     * @return string The URL of the Stripe Checkout session.
-     */
-    private function _createStripeSessionUrl(string $orderId): string
-    {
-        // Load the order with its associated artwork orders and artwork details.
-        $ordersTable = $this->getTableLocator()->get('Orders');
-        $order = $ordersTable->get($orderId, [
-            'contain' => ['ArtworkOrders' => ['Artworks']],
-        ]);
-
-        $lineItems = [];
-        if (!empty($order->artwork_orders)) {
-            foreach ($order->artwork_orders as $artworkOrder) {
-                // Convert price in dollars to cents.
-                $unitAmount = round((float)$artworkOrder->price * 100);
-                $lineItems[] = [
-                    'price_data' => [
-                        'currency' => 'aud',
-                        'product_data' => [
-                            'name' => $artworkOrder->artwork->title,
-                        ],
-                        'unit_amount' => $unitAmount,
-                    ],
-                    'quantity' => $artworkOrder->quantity,
-                ];
-            }
-        } else {
-            // Fallback if no artwork orders exist.
-            $amount = round((float)$order->total_amount * 100);
-            $lineItems[] = [
-                'price_data' => [
-                    'currency' => 'aud',
-                    'product_data' => [
-                        'name' => 'Order Payment - Order #' . $orderId,
-                    ],
-                    'unit_amount' => $amount,
-                ],
-                'quantity' => 1,
-            ];
-        }
-
-        // Set your Stripe secret key.
-        Stripe::setApiKey(Configure::read('Stripe.secret'));
-
-        // Create the Stripe Checkout session.
-        $session = Session::create([
-            'payment_method_types' => ['card'],
-            'line_items' => $lineItems,
-            'mode' => 'payment',
-            // On successful payment, redirect to your order confirmation page.
-            'success_url' => Router::url(
-                ['controller' => 'Orders', 'action' => 'confirmation', $orderId],
-                true,
-            ) . '?session_id={CHECKOUT_SESSION_ID}',
-            // On cancellation, redirect to resumeCheckout with the order ID
-            'cancel_url' => Router::url(
-                ['controller' => 'Orders', 'action' => 'resumeCheckout', $orderId],
-                true,
-            ),
-        ]);
-
-        return $session->url;
-    }
-
-    /**
      * Confirmation method
      *
      * Displays the order confirmation page and handles cart cleanup after successful payment.
+     * Also sends a confirmation email when payment is successful.
      *
      * @param string|null $orderId Order id.
      * @return \Cake\Http\Response|null Renders view.
@@ -521,6 +258,24 @@ class OrdersController extends AppController
                     $this->log('Cart cleanup error: ' . $e->getMessage(), 'error');
                 }
             }
+
+            // Send a confirmation email when payment is successful
+            $customerEmail = $order->billing_email ?? null;
+
+            if ($customerEmail) {
+                try {
+                    // Send order confirmation email
+                    $this->sendEmail(
+                        OrderMailer::class,
+                        'confirmation',
+                        [$order],
+                        $customerEmail,
+                    );
+                } catch (Exception $e) {
+                    // Log the error but continue with order confirmation
+                    $this->log('Failed to send order confirmation email: ' . $e->getMessage(), 'error');
+                }
+            }
         }
 
         $this->set(compact('order', 'hasSuccessfulPayment'));
@@ -595,5 +350,74 @@ class OrdersController extends AppController
         }
 
         return $this->redirect(['action' => 'index']);
+    }
+
+    /**
+     * Get the cart for the current user.
+     *
+     * @return \App\Model\Entity\Cart|null The cart entity or null if not found.
+     */
+    private function _getCart(): ?Cart
+    {
+        /** @var \App\Model\Entity\User|null $user */
+        $user = $this->Authentication->getIdentity();
+        $conditions = $user
+            ? ['user_id'    => $user->user_id]
+            : ['session_id' => $this->request->getSession()->id()];
+
+        return $this->fetchTable('Carts')->find()
+            ->contain(['ArtworkCarts.Artworks'])
+            ->where($conditions)
+            ->first();
+    }
+
+    /**
+     * Calculate the total for a Cart entity
+     *
+     * @param \App\Model\Entity\Cart $cart
+     * @return float
+     */
+    private function _calculateCartTotal(Cart $cart): float
+    {
+        return array_reduce(
+            $cart->artwork_carts,
+            /**
+             * @param float $sum
+             * @param \App\Model\Entity\ArtworkCart $item
+             * @return float
+             */
+            function (float $sum, ArtworkCart $item): float {
+                // artwork->price * quantity
+                $price    = $item->artwork->price ?? 0.0;
+                $quantity = (float)$item->quantity;
+
+                return $sum + ($price * $quantity);
+            },
+            0.0,
+        );
+    }
+
+    /**
+     * Calculate the total for an Order entity
+     *
+     * @param \App\Model\Entity\Order $order
+     * @return float
+     */
+    private function _calculateOrderTotal(Order $order): float
+    {
+        return array_reduce(
+            $order->artwork_orders,
+            /**
+             * @param float $sum
+             * @param \App\Model\Entity\ArtworkOrder $item
+             * @return float
+             */
+            function (float $sum, ArtworkOrder $item): float {
+                $line = $item->subtotal ?? $item->price * (float)$item->quantity;
+
+                return $sum + $line;
+            },
+            0.0,
+        );
     }
 }

@@ -5,11 +5,7 @@
  * @var \App\Model\Entity\Cart $cart
  * @var \App\Model\Entity\User|null $user
  * @var float $total
- * @var \App\Model\Entity\Order|null $newOrder Used when resuming checkout
  */
-
-// Use $newOrder if available, otherwise use $order
-$formEntity = $newOrder ?? $order;
 
 use Cake\Core\Configure;
 
@@ -20,7 +16,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
         <h1 class="text-3xl uppercase text-gray-800">Checkout</h1>
         <div class="mt-1 w-16 h-[2px] bg-gray-800"></div>
     </div>
-    <?= $this->Form->create($formEntity, [
+    <?= $this->Form->create($order, [
         'url' => ['action' => 'placeOrder'],
         'class' => 'space-y-8',
         'type' => 'post',
@@ -35,7 +31,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <?= $this->Form->control('billing_first_name', [
                         'label' => 'First Name *',
-                        'value' => $formEntity->billing_first_name ?? ($user ? $user->first_name : ''),
+                        'value' => $order->billing_first_name ?? ($user ? $user->first_name : ''),
                         'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                         'required' => true,
                         'pattern' => "^[a-zA-Z '\\-]+$",
@@ -43,7 +39,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                     ]) ?>
                     <?= $this->Form->control('billing_last_name', [
                         'label' => 'Last Name *',
-                        'value' => $formEntity->billing_last_name ?? ($user ? $user->last_name : ''),
+                        'value' => $order->billing_last_name ?? ($user ? $user->last_name : ''),
                         'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                         'required' => true,
                         'pattern' => "^[a-zA-Z '\\-]+$",
@@ -52,13 +48,13 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                 </div>
                 <?= $this->Form->control('billing_company', [
                     'label' => 'Company Name (optional)',
-                    'value' => $formEntity->billing_company ?? '',
+                    'value' => $order->billing_company ?? '',
                     'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                     'required' => false,
                 ]) ?>
                 <?= $this->Form->control('billing_email', [
                     'label' => 'Email Address *',
-                    'value' => $formEntity->billing_email ?? ($user ? $user->email : ''),
+                    'value' => $order->billing_email ?? ($user ? $user->email : ''),
                     'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                     'type' => 'email',
                     'required' => true,
@@ -77,7 +73,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                         '' => 'Select Country',
                         'AU' => 'Australia',
                     ],
-                    'value' => $formEntity->shipping_country ?? 'AU',
+                    'value' => $order->shipping_country ?? 'AU',
                 ]) ?>
 
                 <!-- Address Lookup - Raw HTML approach -->
@@ -97,7 +93,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                     'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                     'required' => true,
                     'placeholder' => 'House number and street name',
-                    'value' => $formEntity->shipping_address1 ?? '',
+                    'value' => $order->shipping_address1 ?? '',
                     'id' => 'shipping_address1',
                 ]) ?>
                 <?= $this->Form->control('shipping_address2', [
@@ -105,7 +101,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                     'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 mt-4 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                     'required' => false,
                     'placeholder' => 'Apartment, suite, unit, etc. (optional)',
-                    'value' => $formEntity->shipping_address2 ?? '',
+                    'value' => $order->shipping_address2 ?? '',
                     'id' => 'shipping_address2',
                 ]) ?>
                 <?= $this->Form->control('shipping_suburb', [
@@ -113,7 +109,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                     'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                     'required' => true,
                     'id' => 'shipping_suburb',
-                    'value' => $formEntity->shipping_suburb ?? '',
+                    'value' => $order->shipping_suburb ?? '',
                 ]) ?>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4">
                     <?= $this->Form->control('shipping_state', [
@@ -134,7 +130,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                             'WA' => 'Western Australia',
                         ],
                         'empty' => false,
-                        'value' => $formEntity->shipping_state ?? '',
+                        'value' => $order->shipping_state ?? '',
                     ]) ?>
                     <?= $this->Form->control('shipping_postcode', [
                         'label' => 'Postcode *',
@@ -143,12 +139,12 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                         'id' => 'shipping_postcode',
                         'pattern' => '^[0-9]{4}$',
                         'title' => 'Please enter a valid 4-digit postal code.',
-                        'value' => $formEntity->shipping_postcode ?? '',
+                        'value' => $order->shipping_postcode ?? '',
                     ]) ?>
                 </div>
                 <?= $this->Form->control('shipping_phone', [
                     'label' => 'Phone *',
-                    'value' => $formEntity->shipping_phone ?? ($user ? $user->phone_number : ''),
+                    'value' => $order->shipping_phone ?? ($user ? $user->phone_number : ''),
                     'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                     'required' => true,
                     'pattern' => '^[0-9\\-\\+\\(\\) ]+$',
@@ -171,7 +167,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                     'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                     'type' => 'textarea',
                     'placeholder' => 'Enter any special instructions or notes here...',
-                    'value' => $formEntity->order_notes ?? '',
+                    'value' => $order->order_notes ?? '',
                 ]) ?>
             </section>
         </div>
@@ -245,7 +241,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
 
 <!-- Initialize Google Places in a separate script tag -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function (callback) {
         // Wait for Google Maps API to load
         function checkGoogleMapsLoaded() {
             if (typeof google !== 'undefined' && typeof google.maps !== 'undefined' && typeof google.maps.places !== 'undefined') {
@@ -257,7 +253,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
 
         checkGoogleMapsLoaded();
 
-        function initPlacesAutocomplete() {
+        function initPlacesAutocomplete(callback) {
             var addressInput = document.getElementById('address-lookup');
             if (!addressInput) return;
 
@@ -280,7 +276,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                 var autocomplete = new google.maps.places.Autocomplete(addressInput, options);
 
                 // When an address is selected
-                autocomplete.addListener('place_changed', function() {
+                autocomplete.addListener('place_changed', function () {
                     var place = autocomplete.getPlace();
 
                     if (!place.address_components) {
