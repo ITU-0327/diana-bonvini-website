@@ -306,7 +306,7 @@ class ArtworksController extends AppController
             throw new Exception('Watermark text not found.');
         }
 
-        $font = WWW_ROOT . 'font/arial.ttf';
+        $font = WWW_ROOT . 'font/Arial.ttf';
         if (!is_readable($font)) {
             throw new Exception("Missing font at $font");
         }
