@@ -83,14 +83,39 @@ return function (RouteBuilder $routes): void {
 
     // Admin Routes – for CMS management and other admin functions.
     // These routes will be accessible via URLs like /admin/cms-blocks, /admin/users, etc.
+    // They provide administrative access to manage the system, content, users, orders, and other
+    // business operations for users with admin privileges.
     $routes->prefix('Admin', function (RouteBuilder $builder): void {
-        // Connect the base path for the admin area.
-        $builder->connect('/', ['controller' => 'Pages', 'action' => 'index']);
+        // Connect the base path for the admin area to the Admin dashboard
+        // This will be the first page an admin user sees after login
+        $builder->connect('/', ['controller' => 'Admin', 'action' => 'dashboard']);
 
-        // You could connect a specific route for your CMS admin dashboard here.
-        // For example: $builder->connect('/cms', ['controller' => 'CmsBlocks', 'action' => 'index']);
+        // Orders management routes for handling customer purchases
+        // Provides access to view, edit, and change status of all orders
+        $builder->connect('/orders', ['controller' => 'Orders', 'action' => 'index']);
+        $builder->connect('/orders/pending', ['controller' => 'Orders', 'action' => 'pending']);
+        $builder->connect('/orders/processing', ['controller' => 'Orders', 'action' => 'processing']);
+        $builder->connect('/orders/shipped', ['controller' => 'Orders', 'action' => 'shipped']);
+        $builder->connect('/orders/completed', ['controller' => 'Orders', 'action' => 'completed']);
+
+        // Content management routes for website content
+        // Allows admins to update and manage site content blocks
+        $builder->connect('/content-blocks', ['controller' => 'ContentBlocks', 'action' => 'index']);
+
+        // Writing service request management
+        // For handling and managing client writing and proofreading service requests
+        $builder->connect('/writing-service-requests', ['controller' => 'WritingServiceRequests', 'action' => 'index']);
+
+        // Artworks management for the art e-commerce section
+        // Allows adding, editing, and removing artwork products
+        $builder->connect('/artworks', ['controller' => 'Artworks', 'action' => 'index']);
+
+        // Users management for customer accounts
+        // For managing user accounts and permissions
+        $builder->connect('/users', ['controller' => 'Users', 'action' => 'index']);
 
         // Fallback routes for admin controllers.
+        // This will create standard routes for all admin controllers
         $builder->fallbacks(DashedRoute::class);
     });
 
