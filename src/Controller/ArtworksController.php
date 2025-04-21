@@ -78,8 +78,12 @@ class ArtworksController extends AppController
             } else {
                 $this->Flash->success(__('Artwork saved.'));
                 $file = $this->request->getData('image_path');
-                if ($file instanceof UploadedFileInterface && !$file->getError()) {
-                    $this->_processImageUpload($file, $artwork->artwork_id);
+                if ($file instanceof UploadedFileInterface) {
+                    if ($file->getError() !== UPLOAD_ERR_OK) {
+                        $this->Flash->error(__('Image upload failed with code {0}.', $file->getError()));
+                    } else {
+                        $this->_processImageUpload($file, $artwork->artwork_id);
+                    }
                 }
 
                 return $this->redirect(['action' => 'index']);
@@ -106,8 +110,12 @@ class ArtworksController extends AppController
             } else {
                 $this->Flash->success(__('Artwork updated.'));
                 $file = $this->request->getData('image_path');
-                if ($file instanceof UploadedFileInterface && !$file->getError()) {
-                    $this->_processImageUpload($file, $artwork->artwork_id);
+                if ($file instanceof UploadedFileInterface) {
+                    if ($file->getError() !== UPLOAD_ERR_OK) {
+                        $this->Flash->error(__('Image upload failed with code {0}.', $file->getError()));
+                    } else {
+                        $this->_processImageUpload($file, $artwork->artwork_id);
+                    }
                 }
 
                 return $this->redirect(['action' => 'index']);

@@ -59,6 +59,16 @@ class ArtworksTable extends Table
             ->allowEmptyString('description');
 
         $validator
+            ->add('image_path', 'fileSize', [
+                'rule'    => ['fileSize', '<=', '8MB'],
+                'message' => 'Image must be 8 MB or smaller.'
+            ])
+            ->add('image_path', 'mimeType', [
+                'rule'    => ['mimeType', ['image/jpeg']],
+                'message' => 'Only JPEG images allowed.'
+            ]);
+
+        $validator
             ->decimal('price')
             ->requirePresence('price', 'create')
             ->notEmptyString('price');
