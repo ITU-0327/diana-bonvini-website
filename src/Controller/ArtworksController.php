@@ -241,10 +241,28 @@ class ArtworksController extends AppController
         $client = $this->_getR2Client();
         $bucket = Configure::read('R2.bucket');
 
+        // Map only the types you care about:
+        $ext = strtolower(pathinfo($key, PATHINFO_EXTENSION));
+        $map = [
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'pdf' => 'application/pdf',
+            'txt' => 'text/plain',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ];
+
+        // Pick from the map or fall back
+        $contentType = $map[$ext] ?? 'application/octet-stream';
+
         $client->putObject([
             'Bucket' => $bucket,
-            'Key'    => $key,
-            'Body'   => $body,
+            'Key' => $key,
+            'Body' => $body,
+            'ContentType' => $contentType,
+            'ContentDisposition' => 'inline; filename="' . basename($key) . '"',
+            'CacheControl' => 'public, max-age=31536000',
         ]);
     }
 
