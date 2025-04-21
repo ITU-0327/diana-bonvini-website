@@ -60,12 +60,12 @@ class ArtworksTable extends Table
 
         $validator
             ->add('image_path', 'fileSize', [
-                'rule'    => ['fileSize', '<=', '8MB'],
-                'message' => 'Image must be 8 MB or smaller.'
+                'rule' => ['fileSize', '<=', '8MB'],
+                'message' => 'Image must be 8 MB or smaller.',
             ])
             ->add('image_path', 'mimeType', [
-                'rule'    => ['mimeType', ['image/jpeg']],
-                'message' => 'Only JPEG images allowed.'
+                'rule' => ['mimeType', ['image/jpeg']],
+                'message' => 'Only JPEG images allowed.',
             ]);
 
         $validator
