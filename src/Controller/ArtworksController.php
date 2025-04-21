@@ -165,12 +165,12 @@ class ArtworksController extends AppController
             throw new Exception("Failed to read saved file: {$localPath}");
         }
 
-        // Generate watermarked PNG in memory
-        $png = $this->_createWatermarkedPng($bytes);
-        $wmKey = "{$artworkId}_wm.png";
+        // Generate watermarked JPG in memory
+        $jpeg = $this->_createWatermarkedJpeg($bytes);
+        $wmKey = "{$artworkId}_wm.jpg";
 
         // Upload only the watermark to R2
-        $this->_putR2Object($wmKey, $png);
+        $this->_putR2Object($wmKey, $jpeg);
     }
 
     /**
@@ -274,7 +274,7 @@ class ArtworksController extends AppController
      * @return string           PNG‐encoded binary string with watermark.
      * @throws \Exception      On invalid image data or GD failures.
      */
-    private function _createWatermarkedPng(string $jpegBytes): string
+    private function _createWatermarkedJpeg(string $jpegBytes): string
     {
         $im = imagecreatefromstring($jpegBytes);
         if (!$im instanceof GdImage) {
@@ -283,33 +283,18 @@ class ArtworksController extends AppController
 
         $width = imagesx($im);
         $height = imagesy($im);
-        $canvas = imagecreatetruecolor($width, $height);
-        imagesavealpha($canvas, true);
-
-        $bg = imagecolorallocatealpha($canvas, 0, 0, 0, 127);
-        if ($bg === false) {
-            imagedestroy($canvas);
-            imagedestroy($im);
-            throw new Exception('Failed to allocate transparent background color.');
-        }
-        imagefill($canvas, 0, 0, $bg);
-
-        $this->_drawTiledText($canvas, $width, $height);
-        imagecopy($im, $canvas, 0, 0, 0, 0, $width, $height);
+        $this->_drawTiledText($im, $width, $height);
 
         ob_start();
-        imagepng($im);
-        $png = ob_get_clean();
-        if ($png === false) {
-            imagedestroy($canvas);
-            imagedestroy($im);
-            throw new Exception('Failed to capture PNG output.');
-        }
-
-        imagedestroy($canvas);
+        imagejpeg($im, null, 75);
+        $out = ob_get_clean();
         imagedestroy($im);
 
-        return $png;
+        if ($out === false) {
+            throw new Exception('Failed to capture JPEG output.');
+        }
+
+        return $out;
     }
 
     /**

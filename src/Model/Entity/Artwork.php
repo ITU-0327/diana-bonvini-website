@@ -49,7 +49,7 @@ class Artwork extends Entity
     protected function _getImageUrl(): string
     {
         $endpoint = 'https://artworks.dianabonvini.com';
-        $key = "{$this->artwork_id}_wm.png";
+        $key = "{$this->artwork_id}_wm.jpg";
 
         return "$endpoint/$key";
     }
