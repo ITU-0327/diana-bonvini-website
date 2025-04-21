@@ -3,44 +3,40 @@
 /* Main Layout */
 :root {
     --sidebar-width: 250px;
-    --sidebar-collapsed-width: 70px;
-    --primary-color: #4e73df;
-    --secondary-color: #1cc88a;
-    --danger-color: #e74a3b;
-    --warning-color: #f6c23e;
-    --info-color: #36b9cc;
-    --dark-color: #5a5c69;
+    --sidebar-collapsed-width: 80px;
+    --primary-color: #20B2AA; /* Light Sea Green (teal) */
+    --secondary-color: #858796;
+    --success-color: #2ecc71;
+    --info-color: #3498db;
+    --warning-color: #f39c12;
+    --danger-color: #e74c3c;
     --light-color: #f8f9fc;
-    --sidebar-bg: #4e73df;
-    --sidebar-color: #fff;
-    --transition-speed: 0.3s;
+    --dark-color: #5a5c69;
 }
 
 body {
-    font-family: 'Nunito', sans-serif;
     background-color: #f8f9fc;
-    overflow-x: hidden;
+    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 .admin-container {
     display: flex;
     min-height: 100vh;
-    width: 100%;
 }
 
-/* Sidebar Styles */
+/* Sidebar */
 .sidebar {
     width: var(--sidebar-width);
-    height: 100vh;
-    background: linear-gradient(180deg, var(--sidebar-bg) 10%, #224abe 100%);
-    color: var(--sidebar-color);
+    background: linear-gradient(180deg, #20B2AA 10%, #008B8B 100%); /* Teal gradient */
+    color: #fff;
+    min-height: 100vh;
     position: fixed;
-    top: 0;
     left: 0;
+    top: 0;
     z-index: 100;
-    transition: width var(--transition-speed);
-    overflow-y: auto;
+    transition: width 0.3s;
     box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    overflow-y: auto;
 }
 
 .sidebar.collapsed {

@@ -11,7 +11,7 @@
     <?= $this->Html->charset() ?>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>
-        Admin: <?= $this->fetch('title') ?>
+        Diana Bonvini | <?= $this->fetch('title') ?>
     </title>
     <?= $this->Html->meta('icon') ?>
 
@@ -19,30 +19,26 @@
     <?= $this->Html->css('bootstrap.min') ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <?= $this->fetch('meta') ?>
-    <?= $this->fetch('css') ?>
-    <?= $this->fetch('script') ?>
-
     <style>
         :root {
-            --sidebar-width: 250px;
-            --sidebar-collapsed-width: 80px;
-            --primary-color: #4e73df;
-            --secondary-color: #858796;
-            --success-color: #1cc88a;
-            --info-color: #36b9cc;
-            --warning-color: #f6c23e;
-            --danger-color: #e74a3b;
-            --light-color: #f8f9fc;
-            --dark-color: #5a5c69;
+            --primary-color: #2A9D8F;
+            --text-color: #333;
+            --bg-color: #f5f8fa;
+            --sidebar-width: 260px;
+            --topbar-height: 70px;
         }
 
         body {
-            background-color: #f8f9fc;
-            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 14px;
+            margin: 0;
+            padding: 0;
         }
 
-        .admin-container {
+        /* Layout */
+        .wrapper {
             display: flex;
             min-height: 100vh;
         }
@@ -50,328 +46,231 @@
         /* Sidebar */
         .sidebar {
             width: var(--sidebar-width);
-            background: linear-gradient(180deg, #4e73df 10%, #224abe 100%);
-            color: #fff;
+            background-color: #FFFFFF; /* White sidebar */
+            color: var(--text-color);
             min-height: 100vh;
             position: fixed;
             left: 0;
             top: 0;
             z-index: 100;
-            transition: width 0.3s;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-            overflow-y: auto;
-        }
-
-        .sidebar.collapsed {
-            width: var(--sidebar-collapsed-width);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
         }
 
         .sidebar-header {
-            padding: 1.5rem 1rem;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 15px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .sidebar-header h3 {
             margin: 0;
-            font-size: 1.5rem;
-            font-weight: 700;
-            white-space: nowrap;
-            overflow: hidden;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
         }
 
         .sidebar-menu {
-            padding: 1rem 0;
+            padding: 15px 0;
         }
 
-        .sidebar-menu a {
+        .menu-group {
+            margin-bottom: 15px;
+        }
+
+        .menu-title {
+            padding: 5px 15px;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #6c757d;
+        }
+
+        .menu-item {
+            padding: 10px 15px;
             display: flex;
             align-items: center;
-            padding: 0.75rem 1rem;
-            color: rgba(255, 255, 255, 0.8);
+            color: var(--text-color);
             text-decoration: none;
-            transition: all 0.3s;
-            border-left: 4px solid transparent;
+            transition: background-color 0.2s;
+            border-radius: 4px;
+            margin: 2px 8px;
         }
 
-        .sidebar-menu a:hover, .sidebar-menu a.active {
-            color: #fff;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-left-color: #fff;
+        .menu-item:hover {
+            background-color: rgba(42, 157, 143, 0.05);
+            color: var(--primary-color);
+            text-decoration: none;
         }
 
-        .sidebar-menu i {
+        .menu-item.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .menu-item i {
+            margin-right: 10px;
             width: 20px;
-            margin-right: 1rem;
-            font-size: 1rem;
             text-align: center;
         }
 
-        .sidebar-menu span {
-            white-space: nowrap;
-            overflow: hidden;
-        }
-
-        /* When sidebar is collapsed */
-        .sidebar.collapsed .sidebar-header h3 {
-            display: none;
-        }
-
-        .sidebar.collapsed .sidebar-menu span {
-            display: none;
-        }
-
-        .sidebar.collapsed .sidebar-menu a {
-            justify-content: center;
-            padding: 0.75rem 0;
-        }
-
-        .sidebar.collapsed .sidebar-menu i {
-            margin-right: 0;
-            font-size: 1.25rem;
-        }
-
         /* Main Content */
-        .main-content {
-            flex: 1;
+        .content {
             margin-left: var(--sidebar-width);
-            transition: margin-left 0.3s;
             width: calc(100% - var(--sidebar-width));
+            padding: 0;
+            background-color: #F7F9FC; /* Light tint for content area */
+            min-height: 100vh;
         }
 
-        .main-content.expanded {
-            margin-left: var(--sidebar-collapsed-width);
-            width: calc(100% - var(--sidebar-collapsed-width));
-        }
-
-        /* Top Nav */
-        .top-nav {
-            background-color: #fff;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-            height: 70px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 1.5rem;
+        /* Header */
+        .top-bar-container {
             position: sticky;
             top: 0;
-            z-index: 90;
+            z-index: 99;
+            background-color: #FFFFFF;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            width: 100%;
         }
 
-        .toggle-menu {
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            height: var(--topbar-height);
+        }
+
+        .search-form {
+            position: relative;
+            width: 300px;
+        }
+
+        .search-form input {
+            border-radius: 20px;
+            padding-left: 35px;
+            background-color: #f1f3f5;
+            border: 1px solid #e0e0e0;
+        }
+
+        .search-form i {
+            position: absolute;
+            left: 12px;
+            top: 10px;
+            color: #aaa;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+        }
+
+        .theme-toggle, .notifications, .apps-menu {
+            margin-right: 15px;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f1f3f5;
+            color: #666;
             cursor: pointer;
-            font-size: 1.5rem;
-            color: var(--dark-color);
         }
 
-        .top-nav-content {
-            padding: 1.5rem;
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background-color: #e0e0e0;
         }
 
-        /* Responsive */
-        @media (max-width: 991.98px) {
-            .sidebar {
-                width: var(--sidebar-collapsed-width);
-            }
-
-            .sidebar .sidebar-header h3,
-            .sidebar .sidebar-menu span {
-                display: none;
-            }
-
-            .sidebar .sidebar-menu a {
-                justify-content: center;
-                padding: 0.75rem 0;
-            }
-
-            .sidebar .sidebar-menu i {
-                margin-right: 0;
-                font-size: 1.25rem;
-            }
-
-            .main-content {
-                margin-left: var(--sidebar-collapsed-width);
-                width: calc(100% - var(--sidebar-collapsed-width));
-            }
-        }
-
-        /* Card Styles */
-        .card {
-            border: none;
-            border-radius: 0.35rem;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
-            margin-bottom: 1.5rem;
-        }
-
-        .card-header {
-            background-color: #f8f9fc;
-            border-bottom: 1px solid #e3e6f0;
-        }
-
-        .font-weight-bold {
-            font-weight: 700 !important;
-        }
-
-        .text-primary {
-            color: var(--primary-color) !important;
-        }
-
-        .text-success {
-            color: var(--success-color) !important;
-        }
-
-        .text-info {
-            color: var(--info-color) !important;
-        }
-
-        .text-warning {
-            color: var(--warning-color) !important;
-        }
-
-        .text-danger {
-            color: var(--danger-color) !important;
-        }
-
-        .text-gray-300 {
-            color: #dddfeb !important;
-        }
-
-        .text-gray-800 {
-            color: #5a5c69 !important;
-        }
-
-        .badge {
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 0.25rem 0.5rem;
+        /* Content wrapper */
+        .content-wrapper {
+            padding: 25px;
+            overflow-y: auto;
         }
     </style>
+
+    <?= $this->fetch('meta') ?>
+    <?= $this->fetch('css') ?>
 </head>
 <body>
-<div class="admin-container">
-    <!-- Sidebar Navigation -->
-    <div class="sidebar">
+<div class="wrapper">
+    <!-- Sidebar -->
+    <nav class="sidebar">
         <div class="sidebar-header">
-            <h3>Admin Panel</h3>
+            <h3>Diana Bonvini</h3>
         </div>
+
         <div class="sidebar-menu">
-            <?= $this->Html->link(
-                '<i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>',
-                ['prefix' => 'Admin', 'controller' => 'Admin', 'action' => 'dashboard'],
-                ['escape' => false, 'class' => $this->request->getParam('controller') === 'Admin' ? 'active' : ''],
-            ) ?>
-
-            <?= $this->Html->link(
-                '<i class="fas fa-paint-brush"></i> <span>Artworks</span>',
-                ['prefix' => 'Admin', 'controller' => 'Artworks', 'action' => 'index'],
-                ['escape' => false, 'class' => $this->request->getParam('controller') === 'Artworks' ? 'active' : ''],
-            ) ?>
-
-            <?= $this->Html->link(
-                '<i class="fas fa-shopping-cart"></i> <span>Orders</span>',
-                ['prefix' => 'Admin', 'controller' => 'Orders', 'action' => 'index'],
-                ['escape' => false, 'class' => $this->request->getParam('controller') === 'Orders' ? 'active' : ''],
-            ) ?>
-
-            <?= $this->Html->link(
-                '<i class="fas fa-pen"></i> <span>Writing Services</span>',
-                ['prefix' => 'Admin', 'controller' => 'WritingServiceRequests', 'action' => 'index'],
-                ['escape' => false, 'class' => $this->request->getParam('controller') === 'WritingServiceRequests' ? 'active' : ''],
-            ) ?>
-
-            <?= $this->Html->link(
-                '<i class="fas fa-users"></i> <span>Users</span>',
-                ['prefix' => 'Admin', 'controller' => 'Users', 'action' => 'index'],
-                ['escape' => false, 'class' => $this->request->getParam('controller') === 'Users' ? 'active' : ''],
-            ) ?>
-
-            <?= $this->Html->link(
-                '<i class="fas fa-file-alt"></i> <span>Content Blocks</span>',
-                ['prefix' => 'Admin', 'controller' => 'ContentBlocks', 'action' => 'index'],
-                ['escape' => false, 'class' => $this->request->getParam('controller') === 'ContentBlocks' ? 'active' : ''],
-            ) ?>
-
-            <div class="dropdown-divider"></div>
-
-            <?= $this->Html->link(
-                '<i class="fas fa-external-link-alt"></i> <span>View Website</span>',
-                ['prefix' => false, 'controller' => 'Pages', 'action' => 'display', 'landing'],
-                ['escape' => false, 'target' => '_blank'],
-            ) ?>
-
-            <?= $this->Html->link(
-                '<i class="fas fa-sign-out-alt"></i> <span>Logout</span>',
-                ['prefix' => false, 'controller' => 'Users', 'action' => 'logout'],
-                ['escape' => false],
-            ) ?>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="main-content">
-        <div class="top-nav">
-            <div class="toggle-menu">
-                <i class="fas fa-bars"></i>
+            <div class="menu-group">
+                <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Admin', 'action' => 'dashboard']) ?>" class="menu-item <?= $this->request->getParam('controller') === 'Admin' ? 'active' : '' ?>">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Artworks', 'action' => 'index']) ?>" class="menu-item <?= $this->request->getParam('controller') === 'Artworks' ? 'active' : '' ?>">
+                    <i class="fas fa-paint-brush"></i> Artworks
+                </a>
+                <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Orders', 'action' => 'index']) ?>" class="menu-item <?= $this->request->getParam('controller') === 'Orders' ? 'active' : '' ?>">
+                    <i class="fas fa-shopping-cart"></i> Orders
+                </a>
+                <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'WritingServiceRequests', 'action' => 'index']) ?>" class="menu-item <?= $this->request->getParam('controller') === 'WritingServiceRequests' ? 'active' : '' ?>">
+                    <i class="fas fa-pen"></i> Writing Services
+                </a>
+                <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Users', 'action' => 'index']) ?>" class="menu-item <?= $this->request->getParam('controller') === 'Users' ? 'active' : '' ?>">
+                    <i class="fas fa-users"></i> Users
+                </a>
+                <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'ContentBlocks', 'action' => 'index']) ?>" class="menu-item <?= $this->request->getParam('controller') === 'ContentBlocks' ? 'active' : '' ?>">
+                    <i class="fas fa-file-alt"></i> Content
+                </a>
             </div>
-            <div class="d-flex align-items-center">
-                <span class="mr-2">Welcome, <?= $this->request->getSession()->read('Auth.username') ?? 'Admin' ?></span>
-                <?= $this->Html->link(
-                    'Logout',
-                    ['prefix' => false, 'controller' => 'Users', 'action' => 'logout'],
-                    ['class' => 'btn btn-sm btn-outline-danger'],
-                ) ?>
+
+            <div class="menu-group">
+                <a href="<?= $this->Url->build(['prefix' => false, 'controller' => 'Pages', 'action' => 'display', 'landing']) ?>" class="menu-item" target="_blank">
+                    <i class="fas fa-external-link-alt"></i> View Website
+                </a>
+                <a href="<?= $this->Url->build(['prefix' => false, 'controller' => 'Users', 'action' => 'logout']) ?>" class="menu-item">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Content -->
+    <div class="content">
+        <!-- Top Bar - Sticky Header -->
+        <div class="top-bar-container">
+            <div class="top-bar">
+                <div class="search-form">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="form-control" placeholder="Search...">
+                </div>
+
+                <div class="user-menu">
+                    <div class="theme-toggle">
+                        <i class="fas fa-sun"></i>
+                    </div>
+                    <div class="notifications">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="apps-menu">
+                        <i class="fas fa-th"></i>
+                    </div>
+                    <img src="https://via.placeholder.com/35" class="user-avatar">
+                </div>
             </div>
         </div>
 
-        <div class="top-nav-content">
-            <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                <h1 class="h3 mb-0 text-gray-800"><?= $this->fetch('title') ?></h1>
-            </div>
-
+        <!-- Main Content with proper scrolling -->
+        <div class="content-wrapper">
             <?= $this->Flash->render() ?>
             <?= $this->fetch('content') ?>
         </div>
     </div>
 </div>
 
+<!-- Scripts -->
 <?= $this->Html->script('jquery-3.6.0.min') ?>
 <?= $this->Html->script('bootstrap.bundle.min') ?>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
 
-<script>
-    $(document).ready(function() {
-            // Toggle sidebar
-            $('.toggle-menu').on('click', function() {
-                $('.sidebar').toggleClass('collapsed');
-                $('.main-content').toggleClass('expanded');
-            });
-
-            // Responsive handling
-            function checkScreenSize() {
-                if (window.innerWidth < 992) {
-                    $('.sidebar').addClass('collapsed');
-                    $('.main-content').addClass('expanded');
-                }
-            }
-
-            // Check on load
-            checkScreenSize();
-
-            // Check on resize
-            $(window).resize(function() {
-                checkScreenSize();
-            });
-
-            // Initialize tooltips
-            $('[data-toggle="tooltip"]').tooltip();
-
-            // Initialize popovers
-            $('[data-toggle="popover"]').popover();
-
-            // Auto dismiss flash messages
-            setTimeout(function() {
-                $('.alert-dismissible').fadeOut(500);
-            }, 5000);
-        });
-</script>
+<?= $this->fetch('script') ?>
 </body>
 </html>
