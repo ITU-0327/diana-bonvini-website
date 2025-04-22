@@ -205,9 +205,16 @@
                 <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Admin', 'action' => 'dashboard']) ?>" class="menu-item <?= $this->request->getParam('controller') === 'Admin' ? 'active' : '' ?>">
                     <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
-                <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Artworks', 'action' => 'index']) ?>" class="menu-item <?= $this->request->getParam('controller') === 'Artworks' ? 'active' : '' ?>">
-                    <i class="fas fa-paint-brush"></i> Artworks
+                <a href="<?= $this->Url->build([
+                    'prefix'     => 'Admin',
+                    'controller' => 'Artworks',
+                    'action'     => 'add'
+                ]) ?>"
+                   class="menu-item <?= $this->request->getParam('controller') === 'Artworks'
+                   && $this->request->getParam('action') === 'add' ? 'active' : '' ?>">
+                    <i class="fas fa-paint-brush"></i> Add Artwork
                 </a>
+
                 <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Orders', 'action' => 'index']) ?>" class="menu-item <?= $this->request->getParam('controller') === 'Orders' ? 'active' : '' ?>">
                     <i class="fas fa-shopping-cart"></i> Orders
                 </a>
@@ -239,8 +246,6 @@
         <div class="top-bar-container">
             <div class="top-bar">
                 <div class="search-form">
-                    <i class="fas fa-search"></i>
-                    <input type="text" class="form-control" placeholder="Search...">
                 </div>
 
                 <div class="user-menu">
