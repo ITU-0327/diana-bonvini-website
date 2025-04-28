@@ -283,7 +283,7 @@ class ArtworksController extends AppController
 
         $width = imagesx($im);
         $height = imagesy($im);
-        $this->_drawDiagonalText($im, $width, $height);
+        $this->_drawCornerDiagonalText($im, $width, $height);
 
         ob_start();
         imagejpeg($im, null, 75);
@@ -297,83 +297,50 @@ class ArtworksController extends AppController
         return $out;
     }
 
+
     /**
-     * Draws the tiled watermark text onto the canvas.
-     *
-     * @param \GdImage $canvas The GD image resource to draw on.
-     * @param int      $width  Width of the canvas/image.
-     * @param int      $height Height of the canvas/image.
-     * @throws \Exception If the CMS block or font is missing, or GD fails.
+     * Two diagonal watermarks, the text rotates 30 degrees
      */
-    private function _drawTiledText(GdImage $canvas, int $width, int $height): void
+    private function _drawCornerDiagonalText(GdImage $canvas, int $width, int $height): void
     {
-        $block = TableRegistry::getTableLocator()
+        /* ---------- 1. Text, font, color ---------- */
+        $text = TableRegistry::getTableLocator()
             ->get('ContentBlocks')
             ->find()
             ->select(['value'])
             ->where(['slug' => 'watermark-text'])
-            ->first();
-        if (!$block) {
-            throw new Exception('Watermark text not found.');
-        }
-
-        $font = WWW_ROOT . 'font/Arial.ttf';
-        if (!is_readable($font)) {
-            throw new Exception("Missing font at $font");
-        }
-
-        $color = imagecolorallocatealpha($canvas, 225, 225, 225, 96);
-        if ($color === false) {
-            throw new Exception('Unable to allocate watermark color.');
-        }
-
-        $size  = 40;
-        $angle = -45;
-        for ($y = -100; $y < $height + 100; $y += 200) {
-            for ($x = -100; $x < $width + 100; $x += 400) {
-                imagettftext($canvas, $size, $angle, $x, $y, $color, $font, $block->value);
-            }
-        }
-    }
-
-    private function _drawDiagonalText(GdImage $canvas, int $width, int $height): void
-    {
-        /* 1. get text and font ---------------------------------------------------- */
-        $block = TableRegistry::getTableLocator()
-            ->get('ContentBlocks')
-            ->find()
-            ->select(['value'])
-            ->where(['slug' => 'watermark-text'])
-            ->firstOrFail();
+            ->firstOrFail()
+            ->value;
 
         $font = WWW_ROOT . 'font/Arial.ttf';
         if (!is_readable($font)) {
             throw new \Exception("Missing font at $font");
         }
 
-        /* 2. text color --------------------------------------------- */
-        $color = imagecolorallocatealpha($canvas, 225, 225, 225, 96);
+        $color = imagecolorallocatealpha($canvas, 225, 225, 225, 96); // 浅灰半透
         if ($color === false) {
             throw new \Exception('Unable to allocate watermark color.');
         }
 
-        /* 3. text details ------------------------------------------------------------- */
-        $size   = 80;
-        $step   = 300;
-        $margin = max($width, $height);
+        // text details
+        $size  = 40;
+        $step  = 320;
+        $angle = 30;
+        $diag  = sqrt($width * $width + $height * $height);
+        $margin = $step;
 
-        $c = $height / 2 - $width / 2;
-
-        for ($x = -$margin; $x < $width + $margin; $x += $step) {
-            $y = $x + $c;
-            imagettftext($canvas, $size, -45, (int)$x, (int)$y, $color, $font, $block->value);
+        for ($d = -$margin; $d < $diag + $margin; $d += $step) {
+            $t = $d / $diag;
+            $x = (int)($t * $width);
+            $y = (int)($t * $height);
+            imagettftext($canvas, $size, $angle, $x, $y, $color, $font, $text);
         }
 
-        $d = $height / 2 + $width / 2;
-
-        for ($x = -$margin; $x < $width + $margin; $x += $step) {
-            $y = -$x + $d;
-            imagettftext($canvas, $size, 45, (int)$x, (int)$y, $color, $font, $block->value);
+        for ($d = -$margin; $d < $diag + $margin; $d += $step) {
+            $t = $d / $diag;
+            $x = (int)($t * $width);
+            $y = (int)($height - $t * $height);
+            imagettftext($canvas, $size, $angle, $x, $y, $color, $font, $text);
         }
     }
 }
