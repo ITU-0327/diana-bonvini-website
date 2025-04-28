@@ -174,7 +174,7 @@ class WritingServiceRequestsTable extends Table
     public function delete(EntityInterface $entity, array $options = []): bool
     {
         $reqId = $entity->get('writing_service_request_id');
-        $hasMsgs = $this->RequestMessages->exists(['writing_service_request_id' => $reqId, 'is_deleted' => false]);
+        $hasMsgs = $this->RequestMessages->exists(['writing_service_request_id' => $reqId]);
 
         if ($hasMsgs) {
             $rows = $this->updateAll(['is_deleted' => true], ['writing_service_request_id' => $reqId]);

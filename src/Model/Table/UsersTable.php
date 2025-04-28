@@ -199,9 +199,9 @@ class UsersTable extends Table
     {
         $userId = $entity->get('user_id');
         $hasDeps =
-            $this->Orders->exists(['user_id' => $userId, 'is_deleted' => false]) ||
-            $this->Appointments->exists(['user_id' => $userId, 'is_deleted' => false]) ||
-            $this->WritingServiceRequests->exists(['user_id' => $userId, 'is_deleted' => false]);
+            $this->Orders->exists(['user_id' => $userId]) ||
+            $this->Appointments->exists(['user_id' => $userId]) ||
+            $this->WritingServiceRequests->exists(['user_id' => $userId]);
 
         if ($hasDeps) {
             $rows = $this->updateAll(['is_deleted' => true], ['user_id' => $userId]);
