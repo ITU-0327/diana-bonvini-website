@@ -75,6 +75,10 @@ class RequestMessagesTable extends Table
             ->notEmptyString('message');
 
         $validator
+            ->boolean('is_deleted')
+            ->notEmptyString('is_deleted');
+
+        $validator
             ->dateTime('created_at')
             ->notEmptyDateTime('created_at');
 

@@ -158,6 +158,7 @@ CREATE TABLE request_messages (
     writing_service_request_id CHAR(9) NOT NULL,
     user_id CHAR(36) NOT NULL,
     message TEXT NOT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_rm_request (writing_service_request_id),
