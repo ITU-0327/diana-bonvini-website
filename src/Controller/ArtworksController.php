@@ -283,7 +283,7 @@ class ArtworksController extends AppController
 
         $width = imagesx($im);
         $height = imagesy($im);
-        $this->_drawTiledText($im, $width, $height);
+        $this->_drawDiagonalText($im, $width, $height);
 
         ob_start();
         imagejpeg($im, null, 75);
@@ -333,6 +333,47 @@ class ArtworksController extends AppController
             for ($x = -100; $x < $width + 100; $x += 400) {
                 imagettftext($canvas, $size, $angle, $x, $y, $color, $font, $block->value);
             }
+        }
+    }
+
+    private function _drawDiagonalText(GdImage $canvas, int $width, int $height): void
+    {
+        /* 1. get text and font ---------------------------------------------------- */
+        $block = TableRegistry::getTableLocator()
+            ->get('ContentBlocks')
+            ->find()
+            ->select(['value'])
+            ->where(['slug' => 'watermark-text'])
+            ->firstOrFail();
+
+        $font = WWW_ROOT . 'font/Arial.ttf';
+        if (!is_readable($font)) {
+            throw new \Exception("Missing font at $font");
+        }
+
+        /* 2. text color --------------------------------------------- */
+        $color = imagecolorallocatealpha($canvas, 225, 225, 225, 96);
+        if ($color === false) {
+            throw new \Exception('Unable to allocate watermark color.');
+        }
+
+        /* 3. text details ------------------------------------------------------------- */
+        $size   = 80;
+        $step   = 300;
+        $margin = max($width, $height);
+
+        $c = $height / 2 - $width / 2;
+
+        for ($x = -$margin; $x < $width + $margin; $x += $step) {
+            $y = $x + $c;
+            imagettftext($canvas, $size, -45, (int)$x, (int)$y, $color, $font, $block->value);
+        }
+
+        $d = $height / 2 + $width / 2;
+
+        for ($x = -$margin; $x < $width + $margin; $x += $step) {
+            $y = -$x + $d;
+            imagettftext($canvas, $size, 45, (int)$x, (int)$y, $color, $font, $block->value);
         }
     }
 }
