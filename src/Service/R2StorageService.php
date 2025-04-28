@@ -10,7 +10,7 @@ use Cake\Core\Configure;
 
 class R2StorageService
 {
-    private S3Client $client;
+    private ?S3Client $client;
     private string $bucket;
 
     /**
@@ -19,6 +19,15 @@ class R2StorageService
     public function __construct()
     {
         $r2 = Configure::read('R2');
+        if (
+            empty($r2['accessKeyId']) ||
+            empty($r2['secretAccessKey']) ||
+            empty($r2['accountId']) ||
+            empty($r2['bucket'])
+        ) {
+            return;
+        }
+
         $creds = new Credentials($r2['accessKeyId'], $r2['secretAccessKey']);
         $this->bucket = $r2['bucket'];
 
@@ -40,6 +49,10 @@ class R2StorageService
      */
     public function put(string $key, string $body): bool
     {
+        if (!$this->client) {
+            return false;
+        }
+
         $ext = strtolower(pathinfo($key, PATHINFO_EXTENSION));
         $map = [
             'jpg' => 'image/jpeg',
@@ -78,6 +91,10 @@ class R2StorageService
      */
     public function delete(string $key): bool
     {
+        if (!$this->client) {
+            return false;
+        }
+
         try {
             $this->client->deleteObject([
                 'Bucket' => $this->bucket,
