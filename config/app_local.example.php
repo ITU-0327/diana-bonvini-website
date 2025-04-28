@@ -83,12 +83,13 @@ return [
      */
     'EmailTransport' => [
         'default' => [
-            'host' => 'localhost',
-            'port' => 25,
-            'username' => null,
-            'password' => null,
-            'client' => null,
-            'url' => env('EMAIL_TRANSPORT_DEFAULT_URL', null),
+            'className' => 'Smtp',
+            'host' => 'smtp.gmail.com',
+            'port' => 587,
+            'username' => env('SMTP_USERNAME', null),
+            'password' => env('SMTP_PASSWORD', null),
+            'tls' => true,
+            'timeout' => 30,
         ],
     ],
 
