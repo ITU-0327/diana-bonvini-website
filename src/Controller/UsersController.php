@@ -54,7 +54,7 @@ class UsersController extends AppController
             $user = $this->Authentication->getIdentity();
 
             // Check if the user is soft-deleted
-            if (!empty($user->is_deleted) && $user->is_deleted == 1) {
+            if ($user->is_deleted) {
                 $this->Flash->error(__('Account inactive'));
                 // Log the user out so the identity is not kept in session
                 $this->Authentication->logout();

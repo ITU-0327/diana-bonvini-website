@@ -11,25 +11,10 @@ CREATE TABLE users (
     password_reset_token VARCHAR(255) DEFAULT NULL,
     token_expiration DATETIME DEFAULT NULL,
     last_login DATETIME NULL,
-    is_deleted TINYINT NOT NULL DEFAULT 0,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
-
--- Table: user_oauths
-CREATE TABLE user_oauths (
-    oauth_id CHAR(36) NOT NULL PRIMARY KEY,
-    user_id CHAR(36) NOT NULL,
-    provider VARCHAR(50) NOT NULL,
-    provider_user_id VARCHAR(255) NOT NULL,
-    access_token TEXT,
-    refresh_token TEXT,
-    token_expires_at DATETIME,
-    is_deleted TINYINT NOT NULL DEFAULT 0,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_user_oauths_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    UNIQUE KEY uq_provider_user (provider, provider_user_id)
+    INDEX idx_users_type (user_type)
 ) ENGINE=InnoDB;
 
 -- Table: artworks
@@ -39,7 +24,7 @@ CREATE TABLE artworks (
     description TEXT,
     price DECIMAL(10,2) NOT NULL,
     availability_status ENUM('available','sold') NOT NULL,
-    is_deleted TINYINT NOT NULL DEFAULT 0,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
@@ -63,9 +48,11 @@ CREATE TABLE orders (
     shipping_postcode VARCHAR(20) NOT NULL,
     shipping_phone VARCHAR(50) NOT NULL,
     order_notes TEXT,
-    is_deleted TINYINT NOT NULL DEFAULT 0,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_orders_user (user_id),
+    INDEX idx_orders_status_date (order_status, order_date),
     CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 ) ENGINE=InnoDB;
 
@@ -77,7 +64,9 @@ CREATE TABLE artwork_orders (
     quantity INT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     subtotal DECIMAL(10,2) NOT NULL,
-    is_deleted TINYINT NOT NULL DEFAULT 0,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    INDEX idx_artwork_orders_order (order_id),
+    INDEX idx_artwork_orders_artwork (artwork_id),
     CONSTRAINT fk_artwork_orders_order FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
     CONSTRAINT fk_artwork_orders_artwork FOREIGN KEY (artwork_id) REFERENCES artworks(artwork_id)
 ) ENGINE=InnoDB;
@@ -92,45 +81,36 @@ CREATE TABLE appointments (
     duration INT NOT NULL,
     status ENUM('pending','confirmed','cancelled') NOT NULL,
     google_calendar_event_id VARCHAR(255),
-    is_deleted TINYINT NOT NULL DEFAULT 0,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_appointments_user (user_id),
+    INDEX idx_appointments_event (google_calendar_event_id),
     CONSTRAINT fk_appointments_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- Table: contact_messages
-CREATE TABLE contact_messages (
-    message_id CHAR(36) NOT NULL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    subject VARCHAR(255) NOT NULL,
-    message TEXT NOT NULL,
-    is_deleted TINYINT NOT NULL DEFAULT 0,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
 -- Table: payments
 CREATE TABLE payments (
     payment_id CHAR(36) NOT NULL PRIMARY KEY,
-    order_id CHAR(9) NOT NULL,
+    order_id CHAR(9) NOT NULL UNIQUE,
     amount DECIMAL(10,2) NOT NULL,
-    transaction_id VARCHAR(255) DEFAULT NULL,
+    transaction_id VARCHAR(255) DEFAULT NULL UNIQUE,
     payment_date DATETIME NOT NULL,
-    payment_method ENUM('bank transfer','stripe') NOT NULL,
+    payment_method ENUM('stripe') NOT NULL DEFAULT 'stripe',
     status ENUM('pending','confirmed') NOT NULL,
-    is_deleted TINYINT NOT NULL DEFAULT 0,
-    CONSTRAINT fk_payments_order FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE,
-    UNIQUE KEY unique_order (order_id),
-    UNIQUE KEY unique_transaction (transaction_id)
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    INDEX idx_payments_order (order_id),
+    CONSTRAINT fk_payments_order FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Table: carts
 CREATE TABLE carts (
     cart_id CHAR(36) NOT NULL PRIMARY KEY,
-    user_id CHAR(36) NULL,          -- Foreign key if the user is logged in
-    session_id VARCHAR(255) NULL,   -- For guest users
+    user_id CHAR(36) NULL UNIQUE,
+    session_id VARCHAR(255) NULL UNIQUE,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_carts_user (user_id),
     CONSTRAINT fk_carts_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -141,7 +121,9 @@ CREATE TABLE artwork_carts (
     artwork_id CHAR(36) NOT NULL,
     quantity INT NOT NULL DEFAULT 1,
     date_added DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    is_deleted TINYINT NOT NULL DEFAULT 0,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    INDEX idx_artwork_carts_cart (cart_id),
+    INDEX idx_artwork_carts_artwork (artwork_id),
     CONSTRAINT fk_artwork_carts_cart FOREIGN KEY (cart_id) REFERENCES carts(cart_id) ON DELETE CASCADE,
     CONSTRAINT fk_artwork_carts_artwork FOREIGN KEY (artwork_id) REFERENCES artworks(artwork_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
@@ -151,25 +133,29 @@ CREATE TABLE writing_service_requests (
     writing_service_request_id CHAR(9) NOT NULL PRIMARY KEY,
     user_id CHAR(36) NOT NULL,
     service_title VARCHAR(100) DEFAULT NULL,
-    service_type ENUM('creative_writing', 'editing', 'proofreading') NOT NULL,
+    service_type ENUM('creative_writing','editing','proofreading') NOT NULL,
     notes VARCHAR(1000) DEFAULT NULL,
     final_price DECIMAL(10,2) DEFAULT NULL,
-    request_status ENUM('pending', 'in_progress', 'expired') NOT NULL DEFAULT 'pending',
+    request_status ENUM('pending','in_progress','completed','canceled') NOT NULL DEFAULT 'pending',
     document VARCHAR(255) DEFAULT NULL,
-    is_deleted TINYINT NOT NULL DEFAULT 0,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_writing_service_requests_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+    INDEX idx_wsr_user (user_id),
+    INDEX idx_wsr_status (request_status),
+    CONSTRAINT fk_wsr_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 ) ENGINE=InnoDB;
 
 -- Table: request_messages
 CREATE TABLE request_messages (
     request_message_id CHAR(36) NOT NULL PRIMARY KEY,
-    writing_service_request_id CHAR(36) NOT NULL,
+    writing_service_request_id CHAR(9) NOT NULL,
     user_id CHAR(36) NOT NULL,
     message TEXT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_rm_request (writing_service_request_id),
+    INDEX idx_rm_user (user_id),
     CONSTRAINT fk_request_messages_request FOREIGN KEY (writing_service_request_id) REFERENCES writing_service_requests(writing_service_request_id) ON DELETE CASCADE,
     CONSTRAINT fk_request_messages_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 ) ENGINE=InnoDB;
@@ -185,5 +171,7 @@ CREATE TABLE content_blocks (
     value LONGTEXT,
     previous_value LONGTEXT,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_content_blocks_parent (parent),
+    INDEX idx_content_blocks_slug (slug)
 ) ENGINE=InnoDB;
