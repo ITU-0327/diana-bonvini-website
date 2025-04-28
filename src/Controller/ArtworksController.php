@@ -297,9 +297,14 @@ class ArtworksController extends AppController
         return $out;
     }
 
-
     /**
-     * Two diagonal watermarks, the text rotates 30 degrees
+     *
+     * Draws Two diagonal watermarks text onto the canvas.
+     *
+     * @param \GdImage $canvas The GD image resource to draw on.
+     * @param int $width Width of the canvas/image.
+     * @param int $height Height of the canvas/image.
+     * @throws \Exception If the CMS block or font is missing, or GD fails.
      */
     private function _drawCornerDiagonalText(GdImage $canvas, int $width, int $height): void
     {
@@ -317,16 +322,16 @@ class ArtworksController extends AppController
             throw new \Exception("Missing font at $font");
         }
 
-        $color = imagecolorallocatealpha($canvas, 225, 225, 225, 96); // 浅灰半透
+        $color = imagecolorallocatealpha($canvas, 225, 225, 225, 96);
         if ($color === false) {
-            throw new \Exception('Unable to allocate watermark color.');
+            throw new Exception('Unable to allocate watermark color.');
         }
 
         // text details
-        $size  = 40;
-        $step  = 320;
+        $size = 40;
+        $step = 320;
         $angle = 30;
-        $diag  = sqrt($width * $width + $height * $height);
+        $diag = sqrt($width * $width + $height * $height);
         $margin = $step;
 
         for ($d = -$margin; $d < $diag + $margin; $d += $step) {
