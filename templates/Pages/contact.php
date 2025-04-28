@@ -22,7 +22,7 @@ $this->assign('title', 'Contact Me');
                 ],
             ) ?>
             <?= $this->ContentBlock->url(
-                'instagram-link',
+                'linkedin-link',
                 [
                     'text' => '<i data-lucide="linkedin" class="w-5 h-5"></i>
                                <span class="sr-only">LinkedIn</span>',
