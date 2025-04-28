@@ -3,11 +3,9 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use App\Model\Entity\Artwork;
+use App\Service\R2StorageService;
 use ArrayObject;
-use Aws\Exception\AwsException;
-use Aws\S3\S3Client;
-use Aws\Credentials\Credentials;
-use Cake\Core\Configure;
 use Cake\Datasource\EntityInterface;
 use Cake\Event\EventInterface;
 use Cake\ORM\Table;
@@ -34,6 +32,8 @@ use Cake\Validation\Validator;
  */
 class ArtworksTable extends Table
 {
+    private R2StorageService $r2StorageService;
+
     /**
      * Initialize method
      *
@@ -43,6 +43,7 @@ class ArtworksTable extends Table
     public function initialize(array $config): void
     {
         parent::initialize($config);
+        $this->r2StorageService = new R2StorageService();
 
         $this->setTable('artworks');
         $this->setDisplayField('title');
@@ -136,49 +137,17 @@ class ArtworksTable extends Table
     }
 
     /**
-     * Delete an object from your Cloudflare R2 bucket.
-     *
-     * @param string $key    The object key to delete (e.g. "originals/123.jpg")
-     * @return bool True if deleted or not found; false on error.
-     */
-    private function _deleteR2Object(string $key): bool
-    {
-        $r2 = Configure::read('R2');
-        $creds = new Credentials($r2['accessKeyId'], $r2['secretAccessKey']);
-        $client = new S3Client([
-            'version' => 'latest',
-            'region' => 'auto',
-            'endpoint' => "https://{$r2['accountId']}.r2.cloudflarestorage.com",
-            'use_path_style_endpoint' => true,
-            'credentials' => $creds,
-        ]);
-        $bucket = Configure::read('R2.bucket');
-
-        try {
-            $client->deleteObject([
-                'Bucket' => $bucket,
-                'Key' => $key,
-            ]);
-
-            return true;
-        } catch (AwsException) {
-            return false;
-        }
-    }
-
-    /**
      * After a hard delete succeeds, remove the object from R2.
      *
-     * @param \Cake\Event\EventInterface $event The afterDelete event.
-     * @param \Cake\Datasource\EntityInterface $entity The deleted artwork entity.
+     * @param \Cake\Event\EventInterface<\App\Model\Entity\Artwork> $event The afterDelete event.
+     * @param \App\Model\Entity\Artwork $entity The deleted artwork entity.
      * @param \ArrayObject<string,mixed> $options Options passed to delete.
      * @return void
      */
-    public function afterDelete(EventInterface $event, EntityInterface $entity, ArrayObject $options): void
+    public function afterDelete(EventInterface $event, Artwork $entity, ArrayObject $options): void
     {
-        $artworkId = $entity->get('artwork_id');
-        $key = "{$artworkId}_wm.jpg";
+        $key = "{$entity->artwork_id}_wm.jpg";
 
-        $this->_deleteR2Object($key);
+        $this->r2StorageService->delete($key);
     }
 }

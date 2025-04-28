@@ -3,9 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use Aws\Credentials\Credentials;
-use Aws\S3\S3Client;
-use Cake\Core\Configure;
+use App\Service\R2StorageService;
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
 use Cake\ORM\TableRegistry;
@@ -66,7 +64,7 @@ class ArtworksController extends AppController
      * @return \Cake\Http\Response|null|void Redirects on successful add, renders view otherwise.
      * @throws \Exception
      */
-    public function add()
+    public function add(R2StorageService $r2StorageService)
     {
         $artwork = $this->Artworks->newEmptyEntity();
         if ($this->request->is('post')) {
@@ -82,7 +80,7 @@ class ArtworksController extends AppController
                     if ($file->getError() !== UPLOAD_ERR_OK) {
                         $this->Flash->error(__('Image upload failed with code {0}.', $file->getError()));
                     } else {
-                        $this->_processImageUpload($file, $artwork->artwork_id);
+                        $this->_processImageUpload($file, $artwork->artwork_id, $r2StorageService);
                     }
                 }
 
@@ -99,7 +97,7 @@ class ArtworksController extends AppController
      * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException|\Exception When record not found.
      */
-    public function edit(?string $id = null)
+    public function edit(R2StorageService $r2StorageService, ?string $id = null)
     {
         $artwork = $this->Artworks->get($id);
         if ($this->request->is(['patch','post','put'])) {
@@ -114,7 +112,7 @@ class ArtworksController extends AppController
                     if ($file->getError() !== UPLOAD_ERR_OK) {
                         $this->Flash->error(__('Image upload failed with code {0}.', $file->getError()));
                     } else {
-                        $this->_processImageUpload($file, $artwork->artwork_id);
+                        $this->_processImageUpload($file, $artwork->artwork_id, $r2StorageService);
                     }
                 }
 
@@ -150,9 +148,10 @@ class ArtworksController extends AppController
      *
      * @param \Psr\Http\Message\UploadedFileInterface $file The uploaded JPEG file.
      * @param string $artworkId The artwork ID used to name objects.
+     * @param \App\Service\R2StorageService $r2StorageService The R2 storage service instance.
      * @throws \Exception If the file is not JPEG or any imaging/S3 error occurs.
      */
-    private function _processImageUpload(UploadedFileInterface $file, string $artworkId): void
+    private function _processImageUpload(UploadedFileInterface $file, string $artworkId, R2StorageService $r2StorageService): void
     {
         $this->_assertJpeg($file);
 
@@ -169,8 +168,9 @@ class ArtworksController extends AppController
         $jpeg = $this->_createWatermarkedJpeg($bytes);
         $wmKey = "{$artworkId}_wm.jpg";
 
-        // Upload only the watermark to R2
-        $this->_putR2Object($wmKey, $jpeg);
+        if (!$r2StorageService->put($wmKey, $jpeg)) {
+            $this->Flash->error(__('Failed to upload watermark to storage.'));
+        }
     }
 
     /**
@@ -207,63 +207,6 @@ class ArtworksController extends AppController
         if ($file->getClientMediaType() !== 'image/jpeg') {
             throw new Exception('Only JPEG uploads are allowed.');
         }
-    }
-
-    /**
-     * Creates and returns a configured AWS S3 client pointed at your R2 endpoint.
-     *
-     * @return \Aws\S3\S3Client
-     */
-    private function _getR2Client(): S3Client
-    {
-        $r2 = Configure::read('R2');
-        $creds = new Credentials($r2['accessKeyId'], $r2['secretAccessKey']);
-
-        return new S3Client([
-            'version' => 'latest',
-            'region' => 'auto',
-            'endpoint' => "https://{$r2['accountId']}.r2.cloudflarestorage.com",
-            'use_path_style_endpoint' => true,
-            'credentials' => $creds,
-        ]);
-    }
-
-    /**
-     * Uploads a payload to R2 under the given key, with the given ACL.
-     *
-     * @param string $key  Object key (e.g. "originals/123.jpg")
-     * @param string $body Raw bytes or stream resource
-     * @return void
-     * @throws \Exception On any S3 error
-     */
-    private function _putR2Object(string $key, string $body): void
-    {
-        $client = $this->_getR2Client();
-        $bucket = Configure::read('R2.bucket');
-
-        // Map only the types you care about:
-        $ext = strtolower(pathinfo($key, PATHINFO_EXTENSION));
-        $map = [
-            'jpg' => 'image/jpeg',
-            'jpeg' => 'image/jpeg',
-            'png' => 'image/png',
-            'pdf' => 'application/pdf',
-            'txt' => 'text/plain',
-            'doc' => 'application/msword',
-            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        ];
-
-        // Pick from the map or fall back
-        $contentType = $map[$ext] ?? 'application/octet-stream';
-
-        $client->putObject([
-            'Bucket' => $bucket,
-            'Key' => $key,
-            'Body' => $body,
-            'ContentType' => $contentType,
-            'ContentDisposition' => 'inline; filename="' . basename($key) . '"',
-            'CacheControl' => 'public, max-age=31536000',
-        ]);
     }
 
     /**

@@ -16,6 +16,7 @@ declare(strict_types=1);
  */
 namespace App;
 
+use App\Service\R2StorageService;
 use App\Service\StripeService;
 use Authentication\AuthenticationService;
 use Authentication\AuthenticationServiceInterface;
@@ -115,6 +116,7 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
     {
         $container->add(StripeService::class)
             ->addArgument(Configure::read('Stripe.secret'));
+        $container->add(R2StorageService::class);
     }
 
     /**
