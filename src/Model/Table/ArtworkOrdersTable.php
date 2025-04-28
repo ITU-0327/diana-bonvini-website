@@ -61,7 +61,8 @@ class ArtworkOrdersTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
-            ->uuid('order_id')
+            ->scalar('order_id')
+            ->maxLength('order_id', 9)
             ->notEmptyString('order_id');
 
         $validator
@@ -84,6 +85,7 @@ class ArtworkOrdersTable extends Table
             ->notEmptyString('subtotal');
 
         $validator
+            ->boolean('is_deleted')
             ->notEmptyString('is_deleted');
 
         return $validator;

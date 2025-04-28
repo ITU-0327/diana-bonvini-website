@@ -220,6 +220,7 @@ class OrdersTable extends Table
             ->allowEmptyString('order_notes');
 
         $validator
+            ->boolean('is_deleted')
             ->notEmptyString('is_deleted');
 
         $validator

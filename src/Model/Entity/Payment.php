@@ -15,7 +15,7 @@ use Cake\ORM\Entity;
  * @property \Cake\I18n\DateTime $payment_date
  * @property string $payment_method
  * @property string $status
- * @property int $is_deleted
+ * @property bool $is_deleted
  *
  * @property \App\Model\Entity\Order $order
  */

@@ -22,12 +22,12 @@ use Cake\ORM\Entity;
  * @property string|null $postcode
  * @property string|null $country
  * @property string $user_type
- * @property \Cake\I18n\DateTime|null $last_login
- * @property int $is_deleted
- * @property \Cake\I18n\DateTime $created_at
- * @property \Cake\I18n\DateTime $updated_at
  * @property string|null $password_reset_token
  * @property \Cake\I18n\DateTime|null $token_expiration
+ * @property \Cake\I18n\DateTime|null $last_login
+ * @property bool $is_deleted
+ * @property \Cake\I18n\DateTime $created_at
+ * @property \Cake\I18n\DateTime $updated_at
  */
 class User extends Entity
 {
@@ -53,14 +53,14 @@ class User extends Entity
         'postcode' => true,
         'country' => true,
         'user_type' => true,
+        'password_reset_token' => true,
+        'token_expiration' => true,
         'last_login' => true,
         'is_deleted' => true,
         'created_at' => true,
         'updated_at' => true,
         // Allow oauth_provider for validation purposes only.
         'oauth_provider' => true,
-        'password_reset_token' => true,
-        'token_expiration' => true,
     ];
 
     /**

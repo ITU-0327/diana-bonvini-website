@@ -79,6 +79,7 @@ class ArtworksTable extends Table
             ->notEmptyString('availability_status');
 
         $validator
+            ->boolean('is_deleted')
             ->notEmptyString('is_deleted');
 
         $validator

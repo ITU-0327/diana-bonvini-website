@@ -14,7 +14,7 @@ use Cake\ORM\Entity;
  * @property string $image_url
  * @property float $price
  * @property string $availability_status
- * @property int $is_deleted
+ * @property bool $is_deleted
  * @property \Cake\I18n\DateTime $created_at
  * @property \Cake\I18n\DateTime $updated_at
  */

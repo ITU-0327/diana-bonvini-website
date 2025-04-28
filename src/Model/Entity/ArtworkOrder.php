@@ -14,7 +14,7 @@ use Cake\ORM\Entity;
  * @property int $quantity
  * @property float $price
  * @property float $subtotal
- * @property int $is_deleted
+ * @property bool $is_deleted
  *
  * @property \App\Model\Entity\Order $order
  * @property \App\Model\Entity\Artwork $artwork

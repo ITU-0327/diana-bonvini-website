@@ -39,7 +39,7 @@ class ArtworksControllerTest extends TestCase
         $this->assertNotEmpty($artworks, 'The artworks view variable should not be empty.');
 
         foreach ($artworks as $artwork) {
-            $this->assertSame(0, $artwork->is_deleted, "Artwork {$artwork->artwork_id} should not be marked as deleted.");
+            $this->assertSame(false, $artwork->is_deleted, "Artwork {$artwork->artwork_id} should not be marked as deleted.");
         }
     }
 

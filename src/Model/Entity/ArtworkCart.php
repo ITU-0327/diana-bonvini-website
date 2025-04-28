@@ -13,7 +13,7 @@ use Cake\ORM\Entity;
  * @property string $artwork_id
  * @property int $quantity
  * @property \Cake\I18n\DateTime $date_added
- * @property int $is_deleted
+ * @property bool $is_deleted
  *
  * @property \App\Model\Entity\Cart $cart
  * @property \App\Model\Entity\Artwork $artwork

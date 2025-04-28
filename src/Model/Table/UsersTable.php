@@ -123,28 +123,13 @@ class UsersTable extends Table
 
         $validator
             ->scalar('country')
-            ->maxLength('country', 255)
+            ->maxLength('country', 2)
             ->allowEmptyString('country');
 
         $validator
             ->scalar('user_type')
             ->requirePresence('user_type', 'create')
             ->notEmptyString('user_type');
-
-        $validator
-            ->dateTime('last_login')
-            ->allowEmptyDateTime('last_login');
-
-        $validator
-            ->notEmptyString('is_deleted');
-
-        $validator
-            ->dateTime('created_at')
-            ->notEmptyDateTime('created_at');
-
-        $validator
-            ->dateTime('updated_at')
-            ->notEmptyDateTime('updated_at');
 
         $validator
             ->scalar('password_reset_token')
@@ -154,6 +139,22 @@ class UsersTable extends Table
         $validator
             ->dateTime('token_expiration')
             ->allowEmptyDateTime('token_expiration');
+
+        $validator
+            ->dateTime('last_login')
+            ->allowEmptyDateTime('last_login');
+
+        $validator
+            ->boolean('is_deleted')
+            ->notEmptyString('is_deleted');
+
+        $validator
+            ->dateTime('created_at')
+            ->notEmptyDateTime('created_at');
+
+        $validator
+            ->dateTime('updated_at')
+            ->notEmptyDateTime('updated_at');
 
         return $validator;
     }

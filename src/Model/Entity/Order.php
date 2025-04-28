@@ -25,7 +25,7 @@ use Cake\ORM\Entity;
  * @property string $shipping_postcode
  * @property string $shipping_phone
  * @property string|null $order_notes
- * @property int $is_deleted
+ * @property bool $is_deleted
  * @property \Cake\I18n\DateTime $created_at
  * @property \Cake\I18n\DateTime $updated_at
  *

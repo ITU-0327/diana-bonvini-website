@@ -101,14 +101,14 @@ class WritingServiceRequestsTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
+            ->uuid('user_id')
+            ->notEmptyString('user_id');
+
+        $validator
             ->scalar('service_title')
             ->maxLength('service_title', 100, 'Title must be no more than 100 characters.')
             ->requirePresence('service_title', 'create')
             ->notEmptyString('service_title');
-
-        $validator
-            ->uuid('user_id')
-            ->notEmptyString('user_id');
 
         $validator
             ->scalar('service_type')
@@ -129,6 +129,12 @@ class WritingServiceRequestsTable extends Table
             ->notEmptyString('request_status');
 
         $validator
+            ->scalar('document')
+            ->maxLength('document', 255)
+            ->allowEmptyString('document');
+
+        $validator
+            ->boolean('is_deleted')
             ->notEmptyString('is_deleted');
 
         $validator
@@ -138,11 +144,6 @@ class WritingServiceRequestsTable extends Table
         $validator
             ->dateTime('updated_at')
             ->notEmptyDateTime('updated_at');
-
-        $validator
-            ->scalar('document')
-            ->maxLength('document', 255)
-            ->allowEmptyString('document');
 
         return $validator;
     }

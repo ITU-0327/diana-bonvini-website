@@ -37,6 +37,9 @@ class ContentBlock extends Entity
         'description' => true,
         'type' => true,
         'value' => true,
+        'previous_value' => true,
+        'created_at' => true,
+        'updated_at' => true,
     ];
 
     /**

@@ -6,18 +6,23 @@ namespace App\Model\Entity;
 use Cake\ORM\Entity;
 
 /**
- * Cart Entity
+ * Appointment Entity
  *
- * @property string $cart_id
- * @property string|null $user_id
- * @property string|null $session_id
+ * @property string $appointment_id
+ * @property string $user_id
+ * @property string $appointment_type
+ * @property \Cake\I18n\Date $appointment_date
+ * @property \Cake\I18n\Time $appointment_time
+ * @property int $duration
+ * @property string $status
+ * @property string|null $google_calendar_event_id
+ * @property bool $is_deleted
  * @property \Cake\I18n\DateTime $created_at
  * @property \Cake\I18n\DateTime $updated_at
  *
  * @property \App\Model\Entity\User $user
- * @property \App\Model\Entity\ArtworkCart[] $artwork_carts
  */
-class Cart extends Entity
+class Appointment extends Entity
 {
     /**
      * Fields that can be mass assigned using newEntity() or patchEntity().
@@ -30,10 +35,15 @@ class Cart extends Entity
      */
     protected array $_accessible = [
         'user_id' => true,
-        'session_id' => true,
+        'appointment_type' => true,
+        'appointment_date' => true,
+        'appointment_time' => true,
+        'duration' => true,
+        'status' => true,
+        'google_calendar_event_id' => true,
+        'is_deleted' => true,
         'created_at' => true,
         'updated_at' => true,
         'user' => true,
-        'artwork_carts' => true,
     ];
 }

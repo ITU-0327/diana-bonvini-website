@@ -61,7 +61,8 @@ class RequestMessagesTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
-            ->uuid('writing_service_request_id')
+            ->scalar('writing_service_request_id')
+            ->maxLength('writing_service_request_id', 9)
             ->notEmptyString('writing_service_request_id');
 
         $validator

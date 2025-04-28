@@ -61,12 +61,14 @@ class CartsTable extends Table
     {
         $validator
             ->uuid('user_id')
-            ->allowEmptyString('user_id');
+            ->allowEmptyString('user_id')
+            ->add('user_id', 'unique', ['rule' => 'validateUnique', 'provider' => 'table']);
 
         $validator
             ->scalar('session_id')
             ->maxLength('session_id', 255)
-            ->allowEmptyString('session_id');
+            ->allowEmptyString('session_id')
+            ->add('session_id', 'unique', ['rule' => 'validateUnique', 'provider' => 'table']);
 
         $validator
             ->dateTime('created_at')
@@ -88,6 +90,8 @@ class CartsTable extends Table
      */
     public function buildRules(RulesChecker $rules): RulesChecker
     {
+        $rules->add($rules->isUnique(['user_id'], ['allowMultipleNulls' => true]), ['errorField' => 'user_id']);
+        $rules->add($rules->isUnique(['session_id'], ['allowMultipleNulls' => true]), ['errorField' => 'session_id']);
         $rules->add($rules->existsIn(['user_id'], 'Users'), ['errorField' => 'user_id']);
 
         return $rules;

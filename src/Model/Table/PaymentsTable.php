@@ -79,7 +79,6 @@ class PaymentsTable extends Table
 
         $validator
             ->scalar('payment_method')
-            ->requirePresence('payment_method', 'create')
             ->notEmptyString('payment_method');
 
         $validator
@@ -88,6 +87,7 @@ class PaymentsTable extends Table
             ->notEmptyString('status');
 
         $validator
+            ->boolean('is_deleted')
             ->notEmptyString('is_deleted');
 
         return $validator;
