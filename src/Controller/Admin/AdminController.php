@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Controller\AppController;
+use DateTime;
 use Exception;
 
 /**
@@ -37,25 +38,37 @@ class AdminController extends AppController
      *
      * @return \Cake\Http\Response|null
      */
-
-    /**
-     * Dashboard method - Main admin landing page
-     *
-     * @return \Cake\Http\Response|null
-     */
     public function dashboard()
     {
-        // Set a simple title for the dashboard
-        $this->set('title', 'Dashboard Overview');
+        // Set a title for the dashboard
+        $this->set('title', 'Dashboard');
 
         // Initialize variables with default values
         $artworksCount = 0;
         $ordersCount = 0;
         $pendingOrdersCount = 0;
+        $processingOrdersCount = 0;
+        $completedOrdersCount = 0;
         $writingRequestsCount = 0;
         $usersCount = 0;
+        $adminCount = 0;
+        $customerCount = 0;
         $recentOrders = [];
         $recentRequests = [];
+        $recentUsers = [];
+        $totalRevenueToday = 0;
+        $totalRevenueWeek = 0;
+        $totalRevenueMonth = 0;
+        $lowStockCount = 0;
+        $pendingApprovalCount = 0;
+        $upcomingBookingsCount = 0;
+        $pendingQuotesCount = 0;
+        $completedServicesCount = 0;
+
+        // Helper to calculate date ranges
+        $today = new DateTime('today');
+        $weekStart = new DateTime('monday this week');
+        $monthStart = new DateTime('first day of this month');
 
         // Try to get statistics using getTableLocator
         try {
@@ -63,16 +76,38 @@ class AdminController extends AppController
             try {
                 $usersTable = $this->getTableLocator()->get('Users');
                 $usersCount = $usersTable->find()->count();
+
+                // Count by user type
+                $adminCount = $usersTable->find()->where(['user_type' => 'admin'])->count();
+                $customerCount = $usersTable->find()->where(['user_type' => 'customer'])->count();
+
+                // Recent users
+                $recentUsers = $usersTable->find()
+                    ->order(['created' => 'DESC'])
+                    ->limit(5)
+                    ->all();
             } catch (Exception $e) {
                 // Table might not exist
+                $this->log($e->getMessage(), 'error');
             }
 
             // Artworks data
             try {
                 $artworksTable = $this->getTableLocator()->get('Artworks');
                 $artworksCount = $artworksTable->find()->count();
+
+                // Low stock count (artwork count <= 2)
+                $lowStockCount = $artworksTable->find()
+                    ->where(['quantity <=' => 2, 'availability_status' => 'available'])
+                    ->count();
+
+                // Pending approval count - artworks that need admin review
+                $pendingApprovalCount = $artworksTable->find()
+                    ->where(['approval_status' => 'pending'])
+                    ->count();
             } catch (Exception $e) {
-                // Table might not exist
+                // Table might not exist or fields don't exist
+                $this->log($e->getMessage(), 'error');
             }
 
             // Orders data
@@ -81,28 +116,85 @@ class AdminController extends AppController
                 $ordersCount = $ordersTable->find()->count();
 
                 try {
+                    // Orders by status
                     $pendingOrdersCount = $ordersTable->find()->where(['status' => 'pending'])->count();
+                    $processingOrdersCount = $ordersTable->find()->where(['status' => 'processing'])->count();
+                    $completedOrdersCount = $ordersTable->find()->where(['status' => 'completed'])->count();
+
+                    // Revenue calculations
+                    $todayOrders = $ordersTable->find()
+                        ->where([
+                            'created >=' => $today->format('Y-m-d 00:00:00'),
+                            'status !=' => 'cancelled',
+                        ]);
+
+                    $weekOrders = $ordersTable->find()
+                        ->where([
+                            'created >=' => $weekStart->format('Y-m-d 00:00:00'),
+                            'status !=' => 'cancelled',
+                        ]);
+
+                    $monthOrders = $ordersTable->find()
+                        ->where([
+                            'created >=' => $monthStart->format('Y-m-d 00:00:00'),
+                            'status !=' => 'cancelled',
+                        ]);
+
+                    // Calculate revenue
+                    foreach ($todayOrders as $order) {
+                        $totalRevenueToday += $order->total_amount;
+                    }
+
+                    foreach ($weekOrders as $order) {
+                        $totalRevenueWeek += $order->total_amount;
+                    }
+
+                    foreach ($monthOrders as $order) {
+                        $totalRevenueMonth += $order->total_amount;
+                    }
+
+                    // Recent orders
                     $recentOrders = $ordersTable->find()
-                        ->order(['created' => 'DESC'])
+                        ->contain(['Users'])
+                        ->order(['Orders.created' => 'DESC'])
                         ->limit(5)
                         ->all();
                 } catch (Exception $e) {
                     // Status field might not exist
+                    $this->log($e->getMessage(), 'error');
                 }
             } catch (Exception $e) {
                 // Table might not exist
+                $this->log($e->getMessage(), 'error');
             }
 
             // Writing Service Requests
             try {
                 $writingTable = $this->getTableLocator()->get('WritingServiceRequests');
                 $writingRequestsCount = $writingTable->find()->count();
+
+                // Service counts by status
+                $upcomingBookingsCount = $writingTable->find()
+                    ->where(['status' => 'scheduled'])
+                    ->count();
+
+                $pendingQuotesCount = $writingTable->find()
+                    ->where(['status' => 'pending_quote'])
+                    ->count();
+
+                $completedServicesCount = $writingTable->find()
+                    ->where(['status' => 'completed'])
+                    ->count();
+
+                // Recent requests
                 $recentRequests = $writingTable->find()
-                    ->order(['created' => 'DESC'])
+                    ->contain(['Users'])
+                    ->order(['WritingServiceRequests.created' => 'DESC'])
                     ->limit(5)
                     ->all();
             } catch (Exception $e) {
                 // Table might not exist
+                $this->log($e->getMessage(), 'error');
             }
         } catch (Exception $e) {
             // Log the error
@@ -114,10 +206,23 @@ class AdminController extends AppController
             'artworksCount',
             'ordersCount',
             'pendingOrdersCount',
+            'processingOrdersCount',
+            'completedOrdersCount',
             'writingRequestsCount',
             'usersCount',
+            'adminCount',
+            'customerCount',
             'recentOrders',
             'recentRequests',
+            'recentUsers',
+            'totalRevenueToday',
+            'totalRevenueWeek',
+            'totalRevenueMonth',
+            'lowStockCount',
+            'pendingApprovalCount',
+            'upcomingBookingsCount',
+            'pendingQuotesCount',
+            'completedServicesCount',
         ));
     }
 
