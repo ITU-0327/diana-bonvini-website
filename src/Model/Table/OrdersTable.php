@@ -5,6 +5,7 @@ namespace App\Model\Table;
 
 use App\Model\Entity\Order;
 use ArrayObject;
+use Cake\Datasource\EntityInterface;
 use Cake\Event\EventInterface;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
@@ -63,40 +64,6 @@ class OrdersTable extends Table
             'dependent' => true,
             'cascadeCallbacks' => true,
         ]);
-    }
-
-    /**
-     * @param \Cake\Event\EventInterface<\App\Model\Entity\Order> $event
-     * @param \App\Model\Entity\Order $entity
-     * @param \ArrayObject<string, mixed> $options
-     * @return void
-     * @throws \Random\RandomException
-     */
-    public function beforeSave(EventInterface $event, Order $entity, ArrayObject $options): void
-    {
-        if ($entity->isNew() && empty($entity->order_id)) {
-            $entity->order_id = $this->generateOrderId();
-        }
-    }
-
-    /**
-     * Generates an Order ID in the format "O-AB12345".
-     *
-     * @return string
-     * @throws \Random\RandomException
-     */
-    private function generateOrderId(): string
-    {
-        do {
-            $letters = '';
-            for ($i = 0; $i < 2; $i++) {
-                $letters .= chr(random_int(65, 90));
-            }
-            $digits = str_pad((string)random_int(0, 99999), 5, '0', STR_PAD_LEFT);
-            $orderId = 'O-' . $letters . $digits;
-        } while ($this->exists(['order_id' => $orderId]));
-
-        return $orderId;
     }
 
     /**
@@ -246,5 +213,61 @@ class OrdersTable extends Table
         $rules->add($rules->existsIn(['user_id'], 'Users'), ['errorField' => 'user_id']);
 
         return $rules;
+    }
+
+    /**
+     * @param \Cake\Event\EventInterface<\App\Model\Entity\Order> $event
+     * @param \App\Model\Entity\Order $entity
+     * @param \ArrayObject<string, mixed> $options
+     * @return void
+     * @throws \Random\RandomException
+     */
+    public function beforeSave(EventInterface $event, Order $entity, ArrayObject $options): void
+    {
+        if ($entity->isNew() && empty($entity->order_id)) {
+            $entity->order_id = $this->_generateOrderId();
+        }
+    }
+
+    /**
+     * Override delete() to always soft-delete orders,
+     * cascading to artwork_orders and payments.
+     *
+     * @param \Cake\Datasource\EntityInterface $entity The order entity.
+     * @param array<string,mixed> $options Options passed from controller.
+     * @return bool True on success, false on failure.
+     */
+    public function delete(EntityInterface $entity, array $options = []): bool
+    {
+        $orderId = $entity->get('order_id');
+        $rows = $this->updateAll(['is_deleted' => true], ['order_id' => $orderId]);
+        if ($rows < 1) {
+            return false;
+        }
+
+        $this->ArtworkOrders->updateAll(['is_deleted' => true], ['order_id' => $orderId]);
+        $this->Payments->updateAll(['is_deleted' => true], ['order_id' => $orderId]);
+
+        return true;
+    }
+
+    /**
+     * Generates an Order ID in the format "O-AB12345".
+     *
+     * @return string
+     * @throws \Random\RandomException
+     */
+    private function _generateOrderId(): string
+    {
+        do {
+            $letters = '';
+            for ($i = 0; $i < 2; $i++) {
+                $letters .= chr(random_int(65, 90));
+            }
+            $digits = str_pad((string)random_int(0, 99999), 5, '0', STR_PAD_LEFT);
+            $orderId = 'O-' . $letters . $digits;
+        } while ($this->exists(['order_id' => $orderId]));
+
+        return $orderId;
     }
 }

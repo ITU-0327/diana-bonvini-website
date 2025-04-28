@@ -3,12 +3,15 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use Cake\Datasource\EntityInterface;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 
 /**
  * Artworks Model
  *
+ * @property \App\Model\Table\ArtworkOrdersTable&\Cake\ORM\Association\HasMany $ArtworkOrders
+ * @property \App\Model\Table\ArtworkCartsTable&\Cake\ORM\Association\HasMany $ArtworkCarts
  * @method \App\Model\Entity\Artwork newEmptyEntity()
  * @method \App\Model\Entity\Artwork newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\Artwork> newEntities(array $data, array $options = [])
@@ -38,6 +41,13 @@ class ArtworksTable extends Table
         $this->setTable('artworks');
         $this->setDisplayField('title');
         $this->setPrimaryKey('artwork_id');
+
+        $this->hasMany('ArtworkOrders', [
+            'foreignKey' => 'artwork_id',
+        ]);
+        $this->hasMany('ArtworkCarts', [
+            'foreignKey' => 'artwork_id',
+        ]);
     }
 
     /**
@@ -91,5 +101,31 @@ class ArtworksTable extends Table
             ->notEmptyDateTime('updated_at');
 
         return $validator;
+    }
+
+    /**
+     * Override delete() to implement soft-delete with clear success/failure.
+     *
+     * @param \Cake\Datasource\EntityInterface $entity The entity to delete.
+     * @param array<string, mixed> $options Options passed from controller (e.g. ['atomic' => true]).
+     * @return bool True on success (soft- or hard-delete), false on failure.
+     */
+    public function delete(EntityInterface $entity, array $options = []): bool
+    {
+        $artworkId = $entity->get('artwork_id');
+        $hasDeps = $this->ArtworkOrders->exists(['artwork_id' => $artworkId, 'is_deleted' => false]);
+
+        if ($hasDeps) {
+            $rows = $this->updateAll(['is_deleted' => true], ['artwork_id' => $artworkId]);
+            if ($rows < 1) {
+                return false;
+            }
+            $this->ArtworkOrders->updateAll(['is_deleted' => true], ['artwork_id' => $artworkId]);
+            $this->ArtworkCarts->deleteAll(['artwork_id' => $artworkId]);
+
+            return true;
+        }
+
+        return parent::delete($entity, $options);
     }
 }

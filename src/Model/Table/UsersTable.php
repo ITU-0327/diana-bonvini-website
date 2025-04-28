@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use Cake\Datasource\EntityInterface;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
@@ -10,6 +11,9 @@ use Cake\Validation\Validator;
 /**
  * Users Model
  *
+ * @property \App\Model\Table\OrdersTable&\Cake\ORM\Association\HasMany $Orders
+ * @property \App\Model\Table\AppointmentsTable&\Cake\ORM\Association\HasMany $Appointments
+ * @property \App\Model\Table\WritingServiceRequestsTable&\Cake\ORM\Association\HasMany $WritingServiceRequests
  * @method \App\Model\Entity\User newEmptyEntity()
  * @method \App\Model\Entity\User newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\User> newEntities(array $data, array $options = [])
@@ -39,6 +43,16 @@ class UsersTable extends Table
         $this->setTable('users');
         $this->setDisplayField('first_name');
         $this->setPrimaryKey('user_id');
+
+        $this->hasMany('Orders', [
+            'foreignKey' => 'user_id',
+        ]);
+        $this->hasMany('Appointments', [
+            'foreignKey' => 'user_id',
+        ]);
+        $this->hasMany('WritingServiceRequests', [
+            'foreignKey' => 'user_id',
+        ]);
     }
 
     /**
@@ -171,5 +185,37 @@ class UsersTable extends Table
         $rules->add($rules->isUnique(['email']), ['errorField' => 'email']);
 
         return $rules;
+    }
+
+    /**
+     * Override delete() to conditionally soft-delete users with dependencies,
+     * cascading to orders, appointments, and service requests.
+     *
+     * @param \Cake\Datasource\EntityInterface $entity The user entity.
+     * @param array<string,mixed> $options Options passed from controller.
+     * @return bool True on success, false on failure.
+     */
+    public function delete(EntityInterface $entity, array $options = []): bool
+    {
+        $userId = $entity->get('user_id');
+        $hasDeps =
+            $this->Orders->exists(['user_id' => $userId, 'is_deleted' => false]) ||
+            $this->Appointments->exists(['user_id' => $userId, 'is_deleted' => false]) ||
+            $this->WritingServiceRequests->exists(['user_id' => $userId, 'is_deleted' => false]);
+
+        if ($hasDeps) {
+            $rows = $this->updateAll(['is_deleted' => true], ['user_id' => $userId]);
+            if ($rows < 1) {
+                return false;
+            }
+
+            $this->Orders->updateAll(['is_deleted' => true], ['user_id' => $userId]);
+            $this->Appointments->updateAll(['is_deleted' => true], ['user_id' => $userId]);
+            $this->WritingServiceRequests->updateAll(['is_deleted' => true], ['user_id' => $userId]);
+
+            return true;
+        }
+
+        return parent::delete($entity, $options);
     }
 }

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use Cake\Datasource\EntityInterface;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
@@ -116,5 +117,20 @@ class AppointmentsTable extends Table
         $rules->add($rules->existsIn(['user_id'], 'Users'), ['errorField' => 'user_id']);
 
         return $rules;
+    }
+
+    /**
+     * Override delete() to perform a soft-delete on appointments.
+     *
+     * @param \Cake\Datasource\EntityInterface $entity The appointment entity.
+     * @param array<string,mixed> $options Options passed from controller.
+     * @return bool True if the record was soft-deleted, false otherwise.
+     */
+    public function delete(EntityInterface $entity, array $options = []): bool
+    {
+        $appointmentId = $entity->get('appointment_id');
+        $rows = $this->updateAll(['is_deleted' => true], ['appointment_id' => $appointmentId]);
+
+        return $rows > 0;
     }
 }

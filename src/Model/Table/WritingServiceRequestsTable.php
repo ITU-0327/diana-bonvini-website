@@ -5,6 +5,7 @@ namespace App\Model\Table;
 
 use App\Model\Entity\WritingServiceRequest;
 use ArrayObject;
+use Cake\Datasource\EntityInterface;
 use Cake\Event\EventInterface;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
@@ -160,5 +161,32 @@ class WritingServiceRequestsTable extends Table
         $rules->add($rules->existsIn(['user_id'], 'Users'), ['errorField' => 'user_id']);
 
         return $rules;
+    }
+
+    /**
+     * Override delete() to conditionally soft-delete service requests,
+     * cascading to request_messages when needed.
+     *
+     * @param \Cake\Datasource\EntityInterface $entity The service request entity.
+     * @param array<string,mixed> $options Options passed from controller.
+     * @return bool True on success, false on failure.
+     */
+    public function delete(EntityInterface $entity, array $options = []): bool
+    {
+        $reqId = $entity->get('writing_service_request_id');
+        $hasMsgs = $this->RequestMessages->exists(['writing_service_request_id' => $reqId, 'is_deleted' => false]);
+
+        if ($hasMsgs) {
+            $rows = $this->updateAll(['is_deleted' => true], ['writing_service_request_id' => $reqId]);
+            if ($rows < 1) {
+                return false;
+            }
+
+            $this->RequestMessages->updateAll(['is_deleted' => true], ['writing_service_request_id' => $reqId]);
+
+            return true;
+        }
+
+        return parent::delete($entity, $options);
     }
 }
