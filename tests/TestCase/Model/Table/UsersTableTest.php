@@ -76,8 +76,10 @@ class UsersTableTest extends TestCase
         $this->assertEmpty($user->getErrors(), 'There should be no validation errors.');
         $result = $this->Users->save($user);
         $this->assertNotFalse($result, 'User should be saved successfully.');
-        $this->assertNotEmpty($result->user_id, 'User ID should be generated.');
-        $this->assertEquals(0, $result->is_deleted, 'is_deleted should default to 0.');
+
+        $savedUser = $this->Users->get($result->user_id);
+        $this->assertNotEmpty($savedUser->user_id, 'User ID should be generated.');
+        $this->assertFalse($savedUser->is_deleted, 'Newly created user should have is_deleted set to false by default.');
     }
 
     /**
@@ -190,11 +192,16 @@ class UsersTableTest extends TestCase
             'user_type'    => 'customer',
         ];
         $user = $this->Users->newEntity($data);
-        $this->Users->save($user);
-        $user->is_deleted = 1;
-        $this->Users->save($user);
+        $result = $this->Users->save($user);
+        $this->assertNotFalse($result, 'User should be saved successfully.');
+        $savedUser = $this->Users->get($result->user_id);
+        $this->assertFalse($savedUser->is_deleted, 'User should not be soft-deleted initially.');
 
-        $this->assertEquals(1, $user->is_deleted, 'Soft-deleted user should have is_deleted set to 1.');
+        $user->is_deleted = true;
+        $result = $this->Users->save($user);
+        $this->assertNotFalse($result, 'User should be saved successfully.');
+        $savedUser = $this->Users->get($result->user_id);
+        $this->assertTrue($savedUser->is_deleted, 'Soft-deleted user should have is_deleted set to 1.');
     }
 
     /**
