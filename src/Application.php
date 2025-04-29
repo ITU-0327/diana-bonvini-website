@@ -117,6 +117,7 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
         $container->add(StripeService::class)
             ->addArgument(Configure::read('Stripe.secret'));
         $container->add(R2StorageService::class);
+        $container->add(\App\Service\FirebaseService::class);
     }
 
     /**

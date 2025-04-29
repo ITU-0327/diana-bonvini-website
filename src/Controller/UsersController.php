@@ -58,13 +58,55 @@ class UsersController extends AppController
                 $this->Flash->error(__('Account inactive'));
                 // Log the user out so the identity is not kept in session
                 $this->Authentication->logout();
+                return null;
+            } 
+            
+            // Load Firebase service for 2FA check
+            $firebaseService = new \App\Service\FirebaseService();
+            
+            // Get request data for risk assessment
+            $requestData = [
+                'ip' => $this->request->clientIp(),
+                'time' => time(),
+                'deviceId' => $this->request->getCookie('trusted_device'),
+            ];
+            
+            // Check if 2FA is required based on risk assessment
+            if ($firebaseService->shouldRequire2FA($user->email, $requestData)) {
+                // Log the user out (we'll set the identity after 2FA verification)
+                $this->Authentication->logout();
+                
+                // Store email in session for the 2FA verification process
+                $session = $this->request->getSession();
+                $session->write('Auth.2FA.email', $user->email);
+                
+                // Store intended redirect destination
+                $redirect = $this->request->getQuery('redirect', [
+                    'controller' => 'Artworks',
+                    'action' => 'index',
+                ]);
+                $session->write('Auth.redirect', $redirect);
+                
+                // Generate and send verification code
+                $code = $firebaseService->sendVerificationCode($user->email);
+                
+                // Send email with verification code
+                $mailer = new UserMailer('default');
+                $mailer->twoFactorAuth($user, $code);
+                $mailer->deliver();
+                
+                // Redirect to verification page
+                return $this->redirect(['controller' => 'TwoFactorAuth', 'action' => 'verify']);
             } else {
-                // Retrieve the full user entity from the Users table
-                $usersTable = $this->getTableLocator()->get('Users');
+                // No 2FA needed, update last login time
+                $usersTable = $this->fetchTable('Users');
                 /** @var \App\Model\Entity\User $userEntity */
                 $userEntity = $usersTable->get($user->user_id);
                 $userEntity->last_login = DateTime::now();
                 $usersTable->save($userEntity);
+                
+                // Update login metadata for risk assessment
+                $firebaseService->updateLoginMetadata($user->email, $requestData);
 
                 $redirect = $this->request->getQuery('redirect', [
                     'controller' => 'Artworks',
@@ -98,44 +140,14 @@ class UsersController extends AppController
     }
 
     /**
-     * Register method
+     * Register method - now redirects to the verification flow
      *
-     * @return \Cake\Http\Response|null|void Redirects on successful register, renders view otherwise.
+     * @return \Cake\Http\Response|null|void Redirects to the registration verification flow
      */
     public function register()
     {
-        $user = $this->Users->newEmptyEntity();
-        $data = $this->request->getData();
-
-        // If someone tries to include an oauth_provider in the normal registration,
-        // treat it as an invalid registration.
-        if (!empty($data['oauth_provider'])) {
-            $this->Flash->error(__('The user could not be saved. Please, try again.'));
-
-            return $this->redirect(['action' => 'register']);
-        }
-
-        // Set the default user_type to 'customer'
-        $data['user_type'] = 'customer';
-
-        if ($this->request->is('post')) {
-            // Check if password and confirmation match
-            if ($data['password'] !== $data['password_confirm']) {
-                $this->Flash->error('Password and confirm password do not match');
-                $this->set(compact('user'));
-
-                return;
-            }
-
-            $user = $this->Users->patchEntity($user, $data);
-            if ($this->Users->save($user)) {
-                $this->Flash->success(__('User registered successfully'));
-
-                return $this->redirect(['controller' => 'Users', 'action' => 'login']);
-            }
-            $this->Flash->error(__('The user could not be saved. Please, try again.'));
-        }
-        $this->set(compact('user'));
+        // Redirect to the new registration verification flow
+        return $this->redirect(['controller' => 'RegistrationVerify', 'action' => 'index']);
     }
 
     /**
