@@ -62,9 +62,9 @@ class WritingServiceRequestsController extends BaseWritingServiceRequestsControl
     {
         $this->set('title', 'Writing Service Requests');
 
-        // Look for admin_index.php in WritingServiceRequests folder until we create a dedicated admin template
-        $this->viewBuilder()->setTemplate('admin_index');
-        $this->viewBuilder()->setTemplatePath('WritingServiceRequests');
+        // Use index.php in Admin/WritingServiceRequests folder
+        $this->viewBuilder()->setTemplate('index');
+        $this->viewBuilder()->setTemplatePath('Admin/WritingServiceRequests');
 
         $query = $this->WritingServiceRequests->find()
             ->contain(['Users']);
@@ -85,9 +85,9 @@ class WritingServiceRequestsController extends BaseWritingServiceRequestsControl
     {
         $this->set('title', 'View Service Request');
 
-        // Look for admin_view.php in WritingServiceRequests folder until we create a dedicated admin template
-        $this->viewBuilder()->setTemplate('admin_view');
-        $this->viewBuilder()->setTemplatePath('WritingServiceRequests');
+        // Use view.php in Admin/WritingServiceRequests folder
+        $this->viewBuilder()->setTemplate('view');
+        $this->viewBuilder()->setTemplatePath('Admin/WritingServiceRequests');
 
         $writingServiceRequest = $this->WritingServiceRequests->get($id, [
             'contain' => ['Users', 'RequestMessages'],

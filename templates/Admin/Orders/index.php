@@ -9,26 +9,23 @@
  */
 ?>
 
-<div class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1 class="m-0"><i class="fas fa-shopping-cart me-2"></i><?= __('Order Management') ?></h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-end">
-                    <li class="breadcrumb-item"><?= $this->Html->link(__('Dashboard'), ['controller' => 'Admin', 'action' => 'dashboard']) ?></li>
-                    <li class="breadcrumb-item active"><?= __('Orders') ?></li>
-                </ol>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-shopping-cart mr-2"></i><?= __('Order Management') ?></h6>
+                    <ol class="breadcrumb m-0 bg-transparent p-0">
+                        <li class="breadcrumb-item"><?= $this->Html->link(__('Dashboard'), ['controller' => 'Admin', 'action' => 'dashboard']) ?></li>
+                        <li class="breadcrumb-item active"><?= __('Orders') ?></li>
+                    </ol>
+                </div>
             </div>
         </div>
     </div>
-</div>
-
-<section class="content">
-    <div class="container-fluid">
-        <!-- Order Stats Cards -->
-        <div class="row">
+    
+    <!-- Order Stats Cards -->
+    <div class="row">
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-info">
                     <div class="inner">
@@ -79,54 +76,57 @@
         </div>
 
         <!-- Filter Controls -->
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-filter mr-1"></i>
-                    Filter Orders
-                </h3>
-                <div class="card-tools">
-                    <div class="dropdown">
-                        <button class="btn btn-tool dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-download"></i> Export
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-file-csv me-2"></i>CSV</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-file-excel me-2"></i>Excel</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-file-pdf me-2"></i>PDF</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <select id="status-filter" class="form-select">
-                            <option value="all">All Status</option>
-                            <option value="pending">Pending</option>
-                            <option value="confirmed">Confirmed</option>
-                            <option value="processing">Processing</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <input type="date" id="date-filter" class="form-control" placeholder="Filter by date">
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <select id="sort-order" class="form-select">
-                            <option value="newest">Newest First</option>
-                            <option value="oldest">Oldest First</option>
-                            <option value="amount_high">Total (High to Low)</option>
-                            <option value="amount_low">Total (Low to High)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="input-group">
-                            <input type="text" id="search-input" class="form-control" placeholder="Search orders...">
-                            <button class="btn btn-primary" type="button">
-                                <i class="fas fa-search"></i>
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-filter mr-1"></i> Filter Orders
+                        </h6>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-download"></i> Export
                             </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-file-csv mr-2"></i>CSV</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-file-excel mr-2"></i>Excel</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-file-pdf mr-2"></i>PDF</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <select id="status-filter" class="form-control">
+                                    <option value="all">All Status</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="confirmed">Confirmed</option>
+                                    <option value="processing">Processing</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <input type="date" id="date-filter" class="form-control" placeholder="Filter by date">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <select id="sort-order" class="form-control">
+                                    <option value="newest">Newest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                    <option value="amount_high">Total (High to Low)</option>
+                                    <option value="amount_low">Total (Low to High)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="input-group">
+                                    <input type="text" id="search-input" class="form-control" placeholder="Search orders...">
+                                    <div class="input-group-append">
+                                        <button class="btn btn-primary" type="button">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -134,11 +134,13 @@
         </div>
 
         <!-- Orders Table -->
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">All Orders</h3>
-            </div>
-            <div class="card-body">
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">All Orders</h6>
+                    </div>
+                    <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped" id="ordersTable">
                         <thead>
@@ -229,10 +231,12 @@
                         <?= $this->Paginator->counter('Page {{page}} of {{pages}}, showing {{current}} record(s) out of {{count}} total') ?>
                     </p>
                 </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</section>
+</div>
 
 <!-- Update Status Modal -->
 <div class="modal fade" id="updateStatusModal" tabindex="-1" aria-labelledby="updateStatusModalLabel" aria-hidden="true">

@@ -9,26 +9,22 @@
  */
 ?>
 
-<div class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1 class="m-0"><i class="fas fa-users me-2"></i><?= __('User Management') ?></h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-end">
-                    <li class="breadcrumb-item"><?= $this->Html->link(__('Dashboard'), ['controller' => 'Admin', 'action' => 'dashboard']) ?></li>
-                    <li class="breadcrumb-item active"><?= __('Users') ?></li>
-                </ol>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-users mr-2"></i><?= __('User Management') ?></h6>
+                    <ol class="breadcrumb m-0 bg-transparent p-0">
+                        <li class="breadcrumb-item"><?= $this->Html->link(__('Dashboard'), ['controller' => 'Admin', 'action' => 'dashboard']) ?></li>
+                        <li class="breadcrumb-item active"><?= __('Users') ?></li>
+                    </ol>
+                </div>
             </div>
         </div>
     </div>
-</div>
-
-<section class="content">
-    <div class="container-fluid">
-        <!-- User Stats Cards -->
-        <div class="row">
+    <!-- User Stats Cards -->
+    <div class="row">
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-info">
                     <div class="inner">
@@ -79,48 +75,51 @@
         </div>
 
         <!-- Filter Controls -->
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fas fa-filter me-1"></i>
-                    Filter Users
-                </h3>
-                <div class="card-tools">
-                    <a href="<?= $this->Url->build(['action' => 'add']) ?>" class="btn btn-primary btn-sm">
-                        <i class="fas fa-user-plus me-1"></i>Add New User
-                    </a>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <select id="role-filter" class="form-select">
-                            <option value="all">All Roles</option>
-                            <option value="customer">Customers</option>
-                            <option value="admin">Administrators</option>
-                        </select>
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-filter mr-1"></i> Filter Users
+                        </h6>
+                        <a href="<?= $this->Url->build(['action' => 'add']) ?>" class="btn btn-primary btn-sm">
+                            <i class="fas fa-user-plus mr-1"></i>Add New User
+                        </a>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <select id="status-filter" class="form-select">
-                            <option value="all">All Status</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <select id="sort-order" class="form-select">
-                            <option value="newest">Newest First</option>
-                            <option value="oldest">Oldest First</option>
-                            <option value="name_asc">Name (A-Z)</option>
-                            <option value="name_desc">Name (Z-A)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="input-group">
-                            <input type="text" id="search-input" class="form-control" placeholder="Search users...">
-                            <button class="btn btn-primary" type="button">
-                                <i class="fas fa-search"></i>
-                            </button>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <select id="role-filter" class="form-control">
+                                    <option value="all">All Roles</option>
+                                    <option value="customer">Customers</option>
+                                    <option value="admin">Administrators</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <select id="status-filter" class="form-control">
+                                    <option value="all">All Status</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <select id="sort-order" class="form-control">
+                                    <option value="newest">Newest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                    <option value="name_asc">Name (A-Z)</option>
+                                    <option value="name_desc">Name (Z-A)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="input-group">
+                                    <input type="text" id="search-input" class="form-control" placeholder="Search users...">
+                                    <div class="input-group-append">
+                                        <button class="btn btn-primary" type="button">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -128,11 +127,13 @@
         </div>
 
         <!-- Users Table -->
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">All Users</h3>
-            </div>
-            <div class="card-body">
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">All Users</h6>
+                    </div>
+                    <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped" id="usersTable">
                         <thead>
@@ -248,10 +249,12 @@
                         <?= $this->Paginator->counter('Page {{page}} of {{pages}}, showing {{current}} record(s) out of {{count}} total') ?>
                     </p>
                 </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</section>
+</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {

@@ -5,33 +5,29 @@
  * @var array $categories
  */
 ?>
-<div class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1 class="m-0"><i class="fas fa-palette me-2"></i><?= __('Add New Artwork') ?></h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-end">
-                    <li class="breadcrumb-item"><?= $this->Html->link(__('Dashboard'), ['controller' => 'Admin', 'action' => 'dashboard']) ?></li>
-                    <li class="breadcrumb-item"><?= $this->Html->link(__('Artworks'), ['action' => 'index']) ?></li>
-                    <li class="breadcrumb-item active"><?= __('Add') ?></li>
-                </ol>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-palette mr-2"></i><?= __('Add New Artwork') ?></h6>
+                    <ol class="breadcrumb m-0 bg-transparent p-0">
+                        <li class="breadcrumb-item"><?= $this->Html->link(__('Dashboard'), ['controller' => 'Admin', 'action' => 'dashboard']) ?></li>
+                        <li class="breadcrumb-item"><?= $this->Html->link(__('Artworks'), ['action' => 'index']) ?></li>
+                        <li class="breadcrumb-item active"><?= __('Add') ?></li>
+                    </ol>
+                </div>
             </div>
         </div>
     </div>
-</div>
-
-<section class="content">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12 col-md-8">
-                <div class="card card-primary card-outline">
-                    <div class="card-header">
-                        <h3 class="card-title">Artwork Details</h3>
-                    </div>
-                    <?= $this->Form->create($artwork, ['type' => 'file', 'class' => 'artwork-form']) ?>
-                    <div class="card-body">
+    <div class="row">
+        <div class="col-12 col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Artwork Details</h6>
+                </div>
+                <?= $this->Form->create($artwork, ['type' => 'file', 'class' => 'artwork-form']) ?>
+                <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
@@ -145,9 +141,9 @@
             </div>
             
             <div class="col-12 col-md-4">
-                <div class="card card-success card-outline">
-                    <div class="card-header">
-                        <h3 class="card-title">Artwork Image</h3>
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Artwork Image</h6>
                     </div>
                     <div class="card-body">
                         <div class="image-upload-container mb-3">
@@ -198,7 +194,7 @@
             <?= $this->Form->end() ?>
         </div>
     </div>
-</section>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

@@ -7,12 +7,19 @@ use Cake\Utility\Inflector;
 ?>
 
 <div class="container-fluid">
-    <!-- Page Heading -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 text-gray-800">Service Request Details</h1>
-        <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-secondary">
-            <i class="fas fa-arrow-left mr-2"></i>Back to List
-        </a>
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-pen mr-2"></i><?= __('Writing Service Request Details') ?></h6>
+                    <ol class="breadcrumb m-0 bg-transparent p-0">
+                        <li class="breadcrumb-item"><?= $this->Html->link(__('Dashboard'), ['controller' => 'Admin', 'action' => 'dashboard']) ?></li>
+                        <li class="breadcrumb-item"><?= $this->Html->link(__('Writing Requests'), ['action' => 'index']) ?></li>
+                        <li class="breadcrumb-item active"><?= __('Request Details') ?></li>
+                    </ol>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="row">
@@ -21,7 +28,7 @@ use Cake\Utility\Inflector;
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary">Request Information</h6>
-                    <span class="badge badge-<?= getStatusClass($writingServiceRequest->status) ?> py-2 px-3">
+                    <span class="badge bg-<?= getStatusClass($writingServiceRequest->status) ?> py-2 px-3">
                         <?= ucfirst(str_replace('_', ' ', h($writingServiceRequest->status))) ?>
                     </span>
                 </div>
@@ -83,7 +90,7 @@ use Cake\Utility\Inflector;
                         <div class="col-12">
                             <h6 class="font-weight-bold mb-3">Request Details</h6>
                             <div class="table-responsive">
-                                <table class="table table-bordered">
+                                <table class="table table-bordered table-striped">
                                     <tbody>
                                         <tr>
                                             <th class="bg-light w-25">Word Count</th>
@@ -104,13 +111,13 @@ use Cake\Utility\Inflector;
                                                     $isPast = $now > $deadline;
 
                                                     if ($isPast) : ?>
-                                                        <span class="badge badge-danger ml-2">Past Due</span>
+                                                        <span class="badge bg-danger ml-2">Past Due</span>
                                                     <?php else :
                                                         $interval = $now->diff($deadline);
                                                         $daysRemaining = $interval->days;
                                                         $badgeClass = $daysRemaining < 2 ? 'danger' : ($daysRemaining < 5 ? 'warning' : 'success');
                                                         ?>
-                                                        <span class="badge badge-<?= $badgeClass ?> ml-2">
+                                                        <span class="badge bg-<?= $badgeClass ?> ml-2">
                                                             <?= $daysRemaining ?> days remaining
                                                         </span>
                                                     <?php endif; ?>
@@ -123,9 +130,9 @@ use Cake\Utility\Inflector;
                                             <th class="bg-light">Price</th>
                                             <td>
                                                 <?php if ($writingServiceRequest->final_price) : ?>
-                                                    $<?= number_format($writingServiceRequest->final_price, 2) ?>
+                                                    <span class="font-weight-bold">$<?= number_format($writingServiceRequest->final_price, 2) ?></span>
                                                 <?php else : ?>
-                                                    <span class="badge badge-warning">Pending Quote</span>
+                                                    <span class="badge bg-warning">Pending Quote</span>
                                                 <?php endif; ?>
                                             </td>
                                         </tr>
@@ -161,7 +168,7 @@ use Cake\Utility\Inflector;
             </div>
 
             <!-- Messages and Communication Log -->
-            <div class="card shadow mb-4">
+            <div class="card shadow mb-4" id="messages">
                 <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-primary">Messages</h6>
                 </div>
@@ -210,35 +217,27 @@ use Cake\Utility\Inflector;
                             'type' => 'file',
                         ]) ?>
                         
-                        <div class="form-group">
-                            <?= $this->Form->control('message_text', [
-                                'type' => 'textarea',
+                        <div class="form-group mb-3">
+                            <?= $this->Form->label('message_text', 'Message', ['class' => 'form-label']) ?>
+                            <?= $this->Form->textarea('message_text', [
                                 'rows' => 4,
                                 'class' => 'form-control',
-                                'label' => false,
                                 'placeholder' => 'Type your message here...',
                                 'required' => true,
                             ]) ?>
                         </div>
                         
-                        <div class="form-group">
-                            <div class="custom-file">
-                                <?= $this->Form->control('attachment', [
-                                    'type' => 'file',
-                                    'class' => 'custom-file-input',
+                        <div class="form-group mb-3">
+                            <?= $this->Form->label('attachment', 'Attachment (optional)', ['class' => 'form-label']) ?>
+                            <div class="input-group">
+                                <?= $this->Form->file('attachment', [
+                                    'class' => 'form-control',
                                     'id' => 'customFile',
-                                    'label' => [
-                                        'class' => 'custom-file-label',
-                                        'text' => 'Attach file (optional)',
-                                    ],
-                                    'templates' => [
-                                        'inputContainer' => '{{content}}',
-                                    ],
                                 ]) ?>
                             </div>
                         </div>
                         
-                        <div class="form-group mb-0 text-right">
+                        <div class="form-group mb-0 text-end">
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-paper-plane mr-1"></i>
                                 Send Message
@@ -267,19 +266,27 @@ use Cake\Utility\Inflector;
                             'id' => 'statusForm',
                         ]) ?>
                         
-                        <div class="form-group">
-                            <?= $this->Form->control('status', [
-                                'options' => [
-                                    'pending' => 'Pending',
-                                    'pending_quote' => 'Pending Quote',
-                                    'scheduled' => 'Scheduled',
-                                    'in_progress' => 'In Progress',
-                                    'completed' => 'Completed',
-                                    'cancelled' => 'Cancelled',
-                                ],
+                        <div class="form-group mb-3">
+                            <?= $this->Form->label('status', 'Status', ['class' => 'form-label']) ?>
+                            <?= $this->Form->select('status', [
+                                'pending' => 'Pending',
+                                'pending_quote' => 'Pending Quote',
+                                'scheduled' => 'Scheduled',
+                                'in_progress' => 'In Progress',
+                                'completed' => 'Completed',
+                                'cancelled' => 'Cancelled',
+                            ], [
                                 'default' => $writingServiceRequest->status,
+                                'class' => 'form-select form-control',
+                            ]) ?>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <?= $this->Form->label('admin_notes', 'Notes (optional)', ['class' => 'form-label']) ?>
+                            <?= $this->Form->textarea('admin_notes', [
                                 'class' => 'form-control',
-                                'label' => false,
+                                'rows' => 3,
+                                'placeholder' => 'Add notes about this status change',
                             ]) ?>
                         </div>
                         
@@ -300,18 +307,15 @@ use Cake\Utility\Inflector;
                             'id' => 'priceForm',
                         ]) ?>
                         
-                        <div class="form-group">
+                        <div class="form-group mb-3">
+                            <?= $this->Form->label('final_price', 'Price Amount', ['class' => 'form-label']) ?>
                             <div class="input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text">$</span>
-                                </div>
-                                <?= $this->Form->control('final_price', [
-                                    'type' => 'number',
+                                <span class="input-group-text">$</span>
+                                <?= $this->Form->number('final_price', [
                                     'step' => '0.01',
                                     'min' => '0',
                                     'default' => $writingServiceRequest->final_price,
                                     'class' => 'form-control',
-                                    'label' => false,
                                     'placeholder' => 'Enter amount',
                                 ]) ?>
                             </div>
@@ -334,25 +338,24 @@ use Cake\Utility\Inflector;
                             'id' => 'scheduleForm',
                         ]) ?>
                         
-                        <div class="form-group">
-                            <?= $this->Form->control('meeting_date', [
+                        <div class="form-group mb-3">
+                            <?= $this->Form->label('meeting_date', 'Meeting Date & Time', ['class' => 'form-label']) ?>
+                            <?= $this->Form->dateTime('meeting_date', [
                                 'type' => 'datetime-local',
                                 'class' => 'form-control',
-                                'label' => false,
                                 'placeholder' => 'Select meeting date & time',
                             ]) ?>
                         </div>
                         
-                        <div class="form-group">
-                            <?= $this->Form->control('meeting_type', [
-                                'options' => [
-                                    'in_person' => 'In Person',
-                                    'zoom' => 'Zoom Meeting',
-                                    'phone' => 'Phone Call',
-                                ],
-                                'class' => 'form-control',
+                        <div class="form-group mb-3">
+                            <?= $this->Form->label('meeting_type', 'Meeting Type', ['class' => 'form-label']) ?>
+                            <?= $this->Form->select('meeting_type', [
+                                'in_person' => 'In Person',
+                                'zoom' => 'Zoom Meeting',
+                                'phone' => 'Phone Call',
+                            ], [
+                                'class' => 'form-select form-control',
                                 'empty' => 'Select meeting type',
-                                'label' => false,
                             ]) ?>
                         </div>
                         
@@ -422,6 +425,15 @@ use Cake\Utility\Inflector;
                     </div>
                 </div>
             </div>
+            
+            <!-- Back Button Card -->
+            <div class="card shadow mb-4">
+                <div class="card-body p-3">
+                    <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-secondary btn-block">
+                        <i class="fas fa-arrow-left mr-1"></i> Back to Writing Requests
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -461,7 +473,62 @@ use Cake\Utility\Inflector;
     .timeline-content {
         padding-left: 5px;
     }
+    
+    /* Message styles */
+    .messages-container {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 0.35em 0.65em;
+        font-size: 0.75em;
+        font-weight: 700;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-radius: 0.25rem;
+    }
+    
+    .badge.bg-warning {
+        color: #212529;
+    }
+    
+    .btn-block {
+        display: block;
+        width: 100%;
+    }
+    
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(0,0,0,.05);
+    }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Scroll to messages section if URL has #messages anchor
+        if (window.location.hash === "#messages") {
+            const messagesElement = document.getElementById('messages');
+            if (messagesElement) {
+                messagesElement.scrollIntoView();
+            }
+        }
+        
+        // Initialize file input with custom behavior
+        const fileInput = document.getElementById('customFile');
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                const fileName = this.files[0]?.name;
+                const fileLabel = document.querySelector('label[for="customFile"]');
+                if (fileLabel && fileName) {
+                    fileLabel.textContent = fileName;
+                }
+            });
+        }
+    });
+</script>
 
 <?php
 // Helper function for determining badge colors
