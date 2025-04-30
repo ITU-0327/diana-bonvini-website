@@ -1,8 +1,9 @@
 # CakePHP specific files #
 ##########################
-/config/app_local.php
+# Uncomment these after setting up environment variables:
+# /config/app_local.php
+# /config/firebase-credentials.json
 /config/.env
-/config/firebase-credentials.json
 /logs/*
 /tmp/*
 /vendor/*

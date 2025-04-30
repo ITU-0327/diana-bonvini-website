@@ -48,18 +48,30 @@ Other environment agnostic settings can be changed in `config/app.php`.
 
 ### Security Configuration
 
-This project uses sensitive credentials that should NEVER be committed to the repository:
+This project contains sensitive credentials in the following files:
 
-1. Copy `config/app_local.example.php` to `config/app_local.php` and update with your actual credentials
-2. Copy `config/firebase-credentials.example.json` to `config/firebase-credentials.json` and add your actual Firebase credentials
-3. Use environment variables for sensitive information when possible
+- `config/app_local.php` - Contains database, SMTP, and API key credentials
+- `config/firebase-credentials.json` - Contains Firebase Admin SDK private key
+- `config/.env` - Environment variables file
 
-The following files contain sensitive information and are included in `.gitignore`:
-- `config/app_local.php`
-- `config/firebase-credentials.json`
-- `config/.env`
+**IMPORTANT SECURITY NOTES:**
 
-**IMPORTANT: Never commit these files to the repository!**
+1. For deployment/production:
+   - Set up environment variables on your server instead of hardcoding credentials
+   - Use the commented lines in `.gitignore` to exclude credential files once environment variables are set up
+   - Never commit actual credentials to public repositories
+
+2. For development:
+   - The credentials are currently committed for development purposes
+   - If forking or making this repository public, immediately remove sensitive files:
+     ```bash
+     git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch config/app_local.php config/firebase-credentials.json' --prune-empty --tag-name-filter cat -- --all
+     ```
+
+3. Long-term security plan:
+   - Update code to use environment variables exclusively
+   - Store sample configuration files with placeholders
+   - Document all required environment variables
 
 ## Layout
 
