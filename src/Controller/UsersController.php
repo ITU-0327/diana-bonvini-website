@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Mailer\UserMailer;
+use App\Service\FirebaseService;
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
 use Cake\I18n\DateTime;
@@ -29,7 +30,7 @@ class UsersController extends AppController
     {
         parent::beforeFilter($event);
 
-        // Allow unauthenticated access to login, register, forgotPassword, and resetPassword
+        // Allow unauthenticated access to Log, register, forgotPassword, and resetPassword
         $this->Authentication->addUnauthenticatedActions([
             'login',
             'register',
@@ -58,43 +59,45 @@ class UsersController extends AppController
                 $this->Flash->error(__('Account inactive'));
                 // Log the user out so the identity is not kept in session
                 $this->Authentication->logout();
+
                 return null;
-            } 
-            
+            }
+
             // Load Firebase service for 2FA check
-            $firebaseService = new \App\Service\FirebaseService();
-            
+            $firebaseService = new FirebaseService();
+
             // Get request data for risk assessment
             $requestData = [
                 'ip' => $this->request->clientIp(),
                 'time' => time(),
                 'deviceId' => $this->request->getCookie('trusted_device'),
             ];
-            
+
             // Check if 2FA is required based on risk assessment
             if ($firebaseService->shouldRequire2FA($user->email, $requestData)) {
                 // Log the user out (we'll set the identity after 2FA verification)
                 $this->Authentication->logout();
-                
+
                 // Store email in session for the 2FA verification process
                 $session = $this->request->getSession();
                 $session->write('Auth.2FA.email', $user->email);
-                
+
                 // Store intended redirect destination
-                $redirect = $this->request->getQuery('redirect', [
-                    'controller' => 'Artworks',
-                    'action' => 'index',
-                ]);
+                $redirect = $this->request->getQuery('redirect', ['_name' => 'home']); // Route to landing page
                 $session->write('Auth.redirect', $redirect);
-                
+
                 // Generate and send verification code
                 $code = $firebaseService->sendVerificationCode($user->email);
-                
+
+                // We need to get the actual User entity for the mailer
+                $usersTable = $this->fetchTable('Users');
+                $userEntity = $usersTable->findByEmail($user->email)->first();
+
                 // Send email with verification code
                 $mailer = new UserMailer('default');
-                $mailer->twoFactorAuth($user, $code);
+                $mailer->twoFactorAuth($userEntity, $code);
                 $mailer->deliver();
-                
+
                 // Redirect to verification page
                 return $this->redirect(['controller' => 'TwoFactorAuth', 'action' => 'verify']);
             } else {
@@ -104,14 +107,11 @@ class UsersController extends AppController
                 $userEntity = $usersTable->get($user->user_id);
                 $userEntity->last_login = DateTime::now();
                 $usersTable->save($userEntity);
-                
+
                 // Update login metadata for risk assessment
                 $firebaseService->updateLoginMetadata($user->email, $requestData);
 
-                $redirect = $this->request->getQuery('redirect', [
-                    'controller' => 'Artworks',
-                    'action' => 'index',
-                ]);
+                $redirect = $this->request->getQuery('redirect', ['_name' => 'home']); // Route to landing page
 
                 return $this->redirect($redirect);
             }
@@ -135,7 +135,7 @@ class UsersController extends AppController
         if ($result && $result->isValid()) {
             $this->Authentication->logout();
 
-            return $this->redirect(['controller' => 'Pages', 'action' => 'display', 'landing']);
+            return $this->redirect(['_name' => 'home']);
         }
     }
 

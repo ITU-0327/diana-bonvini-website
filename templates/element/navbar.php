@@ -6,7 +6,19 @@
  */
 
 $user = $this->getRequest()->getAttribute('identity');
-$userType = $user?->get('user_type');
+$userType = $user ? $user->get('user_type') : null;
+
+// Check if we're in 2FA verification process (user not fully authenticated yet)
+$request = $this->getRequest();
+$currentController = $request ? $request->getParam('controller') : null;
+$currentAction = $request ? $request->getParam('action') : null;
+
+// Hide user profile during 2FA verification
+if ($currentController === 'TwoFactorAuth' && $currentAction === 'verify') {
+    // Override $user to null during 2FA verification to hide profile dropdown
+    $user = null;
+    $userType = null;
+}
 ?>
 <nav class="bg-white shadow">
     <div class="container mx-auto px-4">

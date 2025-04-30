@@ -55,7 +55,7 @@ return function (RouteBuilder $routes): void {
          * its action called 'display', and we pass a param to select the view file
          * to use (in this case, templates/Pages/landing.php)...
          */
-        $builder->connect('/', ['controller' => 'Pages', 'action' => 'display', 'landing']);
+        $builder->connect('/', ['controller' => 'Pages', 'action' => 'display', 'landing'], ['_name' => 'home']);
 
         // Connect static pages
         $builder->connect('/about', ['controller' => 'Pages', 'action' => 'display', 'about']);
