@@ -100,12 +100,12 @@
                             </thead>
                             <tbody>
                                 <?php foreach ($artworks as $artwork) : ?>
-                                <tr class="artwork-row" data-status="<?= h($artwork->availability_status) ?>" data-category="<?= h($artwork->category) ?>">
+                                <tr class="artwork-row" data-status="<?= h($artwork->availability_status) ?>" data-category="painting">
                                     <td class="align-middle text-center">
                                         <img src="<?= h($artwork->image_url) ?>" alt="<?= h($artwork->title) ?>" class="img-thumbnail" style="width: 80px; height: 60px; object-fit: cover;">
                                     </td>
                                     <td class="align-middle"><?= h($artwork->title) ?></td>
-                                    <td class="align-middle"><?= h($artwork->category) ?></td>
+                                    <td class="align-middle">Painting</td>
                                     <td class="align-middle">$<?= $this->Number->format($artwork->price) ?></td>
                                     <td class="align-middle">
                                         <?php if ($artwork->availability_status === 'available') : ?>
@@ -114,7 +114,7 @@
                                             <span class="badge badge-secondary">Sold</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="align-middle"><?= $artwork->created->format('M d, Y') ?></td>
+                                    <td class="align-middle"><?= $artwork->created_at ? $artwork->created_at->format('M d, Y') : 'N/A' ?></td>
                                     <td class="align-middle">
                                         <div class="btn-group">
                                             <a href="<?= $this->Url->build(['action' => 'view', $artwork->artwork_id]) ?>" class="btn btn-sm btn-info">

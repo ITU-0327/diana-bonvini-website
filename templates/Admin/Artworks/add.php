@@ -2,7 +2,6 @@
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Artwork $artwork
- * @var array $categories
  */
 ?>
 <div class="container-fluid">
@@ -20,180 +19,114 @@
             </div>
         </div>
     </div>
+    
+    <?= $this->Form->create($artwork, ['type' => 'file', 'class' => 'artwork-form']) ?>
     <div class="row">
         <div class="col-12 col-md-8">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-primary">Artwork Details</h6>
                 </div>
-                <?= $this->Form->create($artwork, ['type' => 'file', 'class' => 'artwork-form']) ?>
                 <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <?= $this->Form->label('title', 'Title', ['class' => 'form-label']) ?>
-                                    <?= $this->Form->control('title', [
-                                        'label' => false,
-                                        'class' => 'form-control',
-                                        'placeholder' => 'Enter artwork title',
-                                        'required' => true,
-                                    ]) ?>
-                                </div>
-                                
-                                <div class="form-group mb-3">
-                                    <?= $this->Form->label('price', 'Price ($)', ['class' => 'form-label']) ?>
-                                    <div class="input-group">
-                                        <span class="input-group-text">$</span>
-                                        <?= $this->Form->control('price', [
-                                            'label' => false,
-                                            'class' => 'form-control',
-                                            'placeholder' => '0.00',
-                                            'step' => '0.01',
-                                            'min' => '0',
-                                            'required' => true,
-                                        ]) ?>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-group mb-3">
-                                    <?= $this->Form->label('category', 'Category', ['class' => 'form-label']) ?>
-                                    <?= $this->Form->select('category', $categories, [
-                                        'empty' => '-- Select Category --',
-                                        'class' => 'form-select',
-                                        'required' => true,
-                                    ]) ?>
-                                </div>
-                                
-                                <div class="form-group mb-3">
-                                    <?= $this->Form->label('artist_name', 'Artist Name', ['class' => 'form-label']) ?>
-                                    <?= $this->Form->control('artist_name', [
-                                        'label' => false,
-                                        'class' => 'form-control',
-                                        'placeholder' => 'Enter artist name',
-                                    ]) ?>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <?= $this->Form->label('availability_status', 'Availability Status', ['class' => 'form-label']) ?>
-                                    <?= $this->Form->select(
-                                        'availability_status',
-                                        ['available' => 'Available', 'sold' => 'Sold', 'on_hold' => 'On Hold'],
-                                        ['class' => 'form-select', 'value' => 'available'],
-                                    )
-?>
-                                </div>
-                                
-                                <div class="form-group mb-3">
-                                    <?= $this->Form->label('medium', 'Medium', ['class' => 'form-label']) ?>
-                                    <?= $this->Form->control('medium', [
-                                        'label' => false,
-                                        'class' => 'form-control',
-                                        'placeholder' => 'E.g., Oil on canvas, Digital print',
-                                    ]) ?>
-                                </div>
-                                
-                                <div class="form-group mb-3">
-                                    <?= $this->Form->label('dimensions', 'Dimensions', ['class' => 'form-label']) ?>
-                                    <?= $this->Form->control('dimensions', [
-                                        'label' => false,
-                                        'class' => 'form-control',
-                                        'placeholder' => 'E.g., 24 x 36 inches',
-                                    ]) ?>
-                                </div>
-                                
-                                <div class="form-group mb-3">
-                                    <?= $this->Form->label('quantity', 'Quantity in Stock', ['class' => 'form-label']) ?>
-                                    <?= $this->Form->control('quantity', [
-                                        'label' => false,
-                                        'class' => 'form-control',
-                                        'type' => 'number',
-                                        'min' => '1',
-                                        'value' => '1',
-                                    ]) ?>
-                                </div>
-                            </div>
-                            
-                            <div class="col-12">
-                                <div class="form-group mb-3">
-                                    <?= $this->Form->label('description', 'Description', ['class' => 'form-label']) ?>
-                                    <?= $this->Form->textarea('description', [
-                                        'class' => 'form-control',
-                                        'rows' => '4',
-                                        'placeholder' => 'Describe the artwork in detail...',
-                                        'required' => true,
-                                    ]) ?>
-                                </div>
-                                
-                                <div class="form-group mb-3">
-                                    <?= $this->Form->label('additional_notes', 'Additional Notes', ['class' => 'form-label']) ?>
-                                    <?= $this->Form->textarea('additional_notes', [
-                                        'class' => 'form-control',
-                                        'rows' => '3',
-                                        'placeholder' => 'Any additional information about this artwork',
-                                    ]) ?>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-12 col-md-4">
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Artwork Image</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="image-upload-container mb-3">
-                            <div class="image-preview" id="imagePreview">
-                                <img src="/img/no-image.png" alt="Image Preview" class="img-fluid rounded shadow-sm d-block mx-auto" id="preview">
-                                <div class="text-center mt-2 text-muted small">Preview will appear here</div>
-                            </div>
-                            
-                            <div class="form-group mt-4">
-                                <?= $this->Form->label('image_path', 'Upload Image', ['class' => 'form-label']) ?>
-                                <?= $this->Form->file('image_path', [
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <?= $this->Form->label('title', 'Title', ['class' => 'form-label']) ?>
+                                <?= $this->Form->control('title', [
+                                    'label' => false,
                                     'class' => 'form-control',
-                                    'accept' => 'image/jpeg,image/png,image/gif',
+                                    'placeholder' => 'Enter artwork title',
                                     'required' => true,
-                                    'id' => 'imageUpload',
                                 ]) ?>
-                                <div class="text-muted small mt-1">Recommended size: 1200x800px, Max 5MB</div>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <?= $this->Form->label('price', 'Price ($)', ['class' => 'form-label']) ?>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <?= $this->Form->control('price', [
+                                        'label' => false,
+                                        'class' => 'form-control',
+                                        'placeholder' => '0.00',
+                                        'step' => '0.01',
+                                        'min' => '0',
+                                        'required' => true,
+                                    ]) ?>
+                                </div>
                             </div>
                         </div>
-                        
-                        <div class="form-group mb-3">
-                            <?= $this->Form->label('featured', 'Featured Artwork', ['class' => 'form-label']) ?>
-                            <div class="form-check form-switch">
-                                <?= $this->Form->checkbox('featured', [
-                                    'class' => 'form-check-input',
-                                    'id' => 'featuredCheckbox',
-                                ]) ?>
-                                <label class="form-check-label" for="featuredCheckbox">Show on homepage</label>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <?= $this->Form->label('availability_status', 'Availability Status', ['class' => 'form-label']) ?>
+                                <?= $this->Form->select(
+                                    'availability_status',
+                                    ['available' => 'Available', 'sold' => 'Sold'],
+                                    ['class' => 'form-select', 'value' => 'available']
+                                ) ?>
                             </div>
                         </div>
-                        
-                        <div class="form-group mt-4">
-                            <div class="d-grid gap-2">
-                                <?= $this->Form->button(__('Save Artwork'), [
-                                    'class' => 'btn btn-success btn-lg',
-                                    'type' => 'submit',
-                                ]) ?>
-                            </div>
-                            <div class="d-grid gap-2 mt-2">
-                                <?= $this->Html->link(__('Cancel'), ['action' => 'index'], [
-                                    'class' => 'btn btn-outline-secondary',
+
+                        <div class="col-12">
+                            <div class="form-group mb-3">
+                                <?= $this->Form->label('description', 'Description', ['class' => 'form-label']) ?>
+                                <?= $this->Form->textarea('description', [
+                                    'class' => 'form-control',
+                                    'rows' => '4',
+                                    'placeholder' => 'Describe the artwork in detail...',
+                                    'required' => true,
                                 ]) ?>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <?= $this->Form->end() ?>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Artwork Image</h6>
+                </div>
+                <div class="card-body">
+                    <div class="image-upload-container mb-3">
+                        <div class="image-preview" id="imagePreview">
+                            <img src="/img/cake-logo.png" alt="Image Preview" class="img-fluid rounded shadow-sm d-block mx-auto" id="preview">
+                            <div class="text-center mt-2 text-muted small">Preview will appear here</div>
+                        </div>
+
+                        <div class="form-group mt-4">
+                            <?= $this->Form->label('image_path', 'Upload Image', ['class' => 'form-label']) ?>
+                            <?= $this->Form->file('image_path', [
+                                'class' => 'form-control',
+                                'accept' => 'image/jpeg,image/png',
+                                'required' => true,
+                                'id' => 'imageUpload',
+                            ]) ?>
+                            <div class="text-muted small mt-1">JPEG or PNG format, Recommended size: 1200x800px, Max 5MB</div>
+                        </div>
+                    </div>
+
+                    <!-- Featured field removed as it's not in the database schema -->
+
+                    <div class="form-group mt-4">
+                        <div class="d-grid gap-2">
+                            <?= $this->Form->button(__('Save Artwork'), [
+                                'class' => 'btn btn-success btn-lg',
+                                'type' => 'submit',
+                            ]) ?>
+                        </div>
+                        <div class="d-grid gap-2 mt-2">
+                            <?= $this->Html->link(__('Cancel'), ['action' => 'index'], [
+                                'class' => 'btn btn-outline-secondary',
+                            ]) ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+    <?= $this->Form->end() ?>
 </div>
 
 <script>
@@ -201,52 +134,68 @@ document.addEventListener('DOMContentLoaded', function() {
     // Image preview functionality
     const imageUpload = document.getElementById('imageUpload');
     const preview = document.getElementById('preview');
-    
+
     imageUpload.addEventListener('change', function() {
         const file = this.files[0];
         if (file) {
             const reader = new FileReader();
-            
+
             reader.addEventListener('load', function() {
                 preview.src = reader.result;
                 document.querySelector('#imagePreview .text-muted').style.display = 'none';
             });
-            
+
             reader.readAsDataURL(file);
         }
     });
-    
+
     // Form validation
     const form = document.querySelector('.artwork-form');
     form.addEventListener('submit', function(event) {
         let isValid = true;
-        
+
         // Basic validation
         const title = document.querySelector('input[name="title"]');
         const price = document.querySelector('input[name="price"]');
         const description = document.querySelector('textarea[name="description"]');
-        
+        const imageUpload = document.getElementById('imageUpload');
+
         if (!title.value.trim()) {
             isValid = false;
             title.classList.add('is-invalid');
         } else {
             title.classList.remove('is-invalid');
         }
-        
+
         if (!price.value || isNaN(parseFloat(price.value)) || parseFloat(price.value) < 0) {
             isValid = false;
             price.classList.add('is-invalid');
         } else {
             price.classList.remove('is-invalid');
         }
-        
+
         if (!description.value.trim()) {
             isValid = false;
             description.classList.add('is-invalid');
         } else {
             description.classList.remove('is-invalid');
         }
-        
+
+        if (imageUpload.files.length === 0) {
+            isValid = false;
+            imageUpload.classList.add('is-invalid');
+        } else {
+            const file = imageUpload.files[0];
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+            if (!allowedTypes.includes(file.type)) {
+                isValid = false;
+                imageUpload.classList.add('is-invalid');
+                alert('Please upload a JPEG or PNG image only.');
+            } else {
+                imageUpload.classList.remove('is-invalid');
+            }
+        }
+
         if (!isValid) {
             event.preventDefault();
         }

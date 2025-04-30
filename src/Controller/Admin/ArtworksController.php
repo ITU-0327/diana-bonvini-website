@@ -79,23 +79,56 @@ class ArtworksController extends BaseArtworksController
 
         $artwork = $this->Artworks->newEmptyEntity();
         if ($this->request->is('post')) {
-            $artwork = $this->Artworks->patchEntity($artwork, $this->request->getData());
-            $artwork->availability_status = 'available';
-
-            if (!$this->Artworks->save($artwork)) {
-                $this->Flash->error(__('Unable to save artwork. Please check the form and try again.'));
-            } else {
-                $this->Flash->success(__('Artwork has been saved successfully.'));
-                $file = $this->request->getData('image_path');
-                if ($file instanceof UploadedFileInterface) {
-                    if ($file->getError() !== UPLOAD_ERR_OK) {
-                        $this->Flash->error(__('Image upload failed with code {0}.', $file->getError()));
-                    } else {
-                        $this->_processImageUpload($file, $artwork->artwork_id);
-                    }
+            try {
+                // Get the data before we modify it
+                $data = $this->request->getData();
+                $file = $data['image_path'] ?? null;
+                
+                // Check if we have an image
+                if (!$file instanceof UploadedFileInterface || $file->getError() !== UPLOAD_ERR_OK) {
+                    $this->Flash->error(__('Please upload a valid image file.'));
+                    return;
                 }
-
+                
+                // Prepare the artwork data
+                unset($data['image_path']);
+                
+                // Remove featured field as it doesn't exist in the database
+                unset($data['featured']);
+                $data['availability_status'] = $data['availability_status'] ?? 'available';
+                $data['is_deleted'] = 0;
+                
+                // Let CakePHP handle timestamps automatically
+                
+                // Create the entity
+                $artwork = $this->Artworks->patchEntity($artwork, $data);
+                
+                // Debug information
+                $this->log('Attempting to save artwork with data: ' . json_encode($data), 'debug');
+                $this->log('Validation errors (if any): ' . json_encode($artwork->getErrors()), 'debug');
+                
+                // Save the artwork
+                if (!$this->Artworks->save($artwork)) {
+                    $this->log('Failed to save artwork. Errors: ' . json_encode($artwork->getErrors()), 'error');
+                    $this->Flash->error(__('Unable to save artwork. Please check the form and try again.'));
+                    $this->set('errors', $artwork->getErrors());
+                    return;
+                }
+                
+                // Process the image
+                try {
+                    $this->_processImageUpload($file, $artwork->artwork_id);
+                    $this->Flash->success(__('Artwork has been saved successfully with image.'));
+                } catch (\Exception $e) {
+                    $this->log('Image processing failed: ' . $e->getMessage(), 'error');
+                    $this->Flash->error(__('Artwork saved but image processing failed: {0}', $e->getMessage()));
+                }
+                
                 return $this->redirect(['action' => 'index']);
+                
+            } catch (\Exception $e) {
+                $this->log('Unexpected error in add artwork: ' . $e->getMessage(), 'error');
+                $this->Flash->error(__('An unexpected error occurred: {0}', $e->getMessage()));
             }
         }
 
