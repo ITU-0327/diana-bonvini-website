@@ -46,6 +46,21 @@ Read and edit the environment specific `config/app_local.php` and set up the
 `'Datasources'` and any other configuration relevant for your application.
 Other environment agnostic settings can be changed in `config/app.php`.
 
+### Security Configuration
+
+This project uses sensitive credentials that should NEVER be committed to the repository:
+
+1. Copy `config/app_local.example.php` to `config/app_local.php` and update with your actual credentials
+2. Copy `config/firebase-credentials.example.json` to `config/firebase-credentials.json` and add your actual Firebase credentials
+3. Use environment variables for sensitive information when possible
+
+The following files contain sensitive information and are included in `.gitignore`:
+- `config/app_local.php`
+- `config/firebase-credentials.json`
+- `config/.env`
+
+**IMPORTANT: Never commit these files to the repository!**
+
 ## Layout
 
 The app skeleton uses [Milligram](https://milligram.io/) (v1.3) minimalist CSS
