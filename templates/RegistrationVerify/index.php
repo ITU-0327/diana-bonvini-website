@@ -12,7 +12,7 @@ $this->assign('title', 'Register');
             <h2 class="text-center mb-4"><?= __('Create an Account') ?></h2>
             <p class="text-center mb-4"><?= __('Join Diana Bonvini\'s Art Community. A verification code will be sent to your email.') ?></p>
             
-            <?= $this->Form->create($user, ['class' => 'registration-form', 'autocomplete' => 'off']) ?>
+            <?= $this->Form->create($user, ['url' => ['controller' => 'RegistrationVerify', 'action' => 'index'], 'class' => 'registration-form', 'autocomplete' => 'off']) ?>
             
             <?php if (!empty($user->getErrors())): ?>
                 <div class="error-container mb-4">

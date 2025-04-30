@@ -20,7 +20,7 @@ $this->assign('title', __('Email Verification'));
                 </div>
             </div>
             
-            <?= $this->Form->create(null, ['class' => 'code-verification-form']) ?>
+            <?= $this->Form->create(null, ['url' => ['controller' => 'RegistrationVerify', 'action' => 'verify'], 'class' => 'code-verification-form']) ?>
             <div class="verification-code-container">
                 <?= $this->Form->control('verification_code', [
                     'label' => __('Enter Verification Code'),
@@ -56,7 +56,7 @@ $this->assign('title', __('Email Verification'));
             <div class="verification-options">
                 <div class="option-section">
                     <h4><?= __("Didn't receive a code?") ?></h4>
-                    <?= $this->Form->create(null, ['url' => ['action' => 'resendCode'], 'class' => 'resend-form']) ?>
+                    <?= $this->Form->create(null, ['url' => ['controller' => 'RegistrationVerify', 'action' => 'resendCode'], 'class' => 'resend-form']) ?>
                     <?= $this->Form->button(__('Resend Code'), ['class' => 'button secondary-button']) ?>
                     <?= $this->Form->end() ?>
                     <p class="hint"><?= __('Please check your spam folder if you don\'t see it in your inbox') ?></p>

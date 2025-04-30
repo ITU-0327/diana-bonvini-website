@@ -10,7 +10,10 @@
             <h1 class="text-4xl font-bold text-indigo-600">Diana Bonvini</h1>
         </div>
         <?= $this->Flash->render() ?>
-        <?= $this->Form->create() ?>
+        <?= $this->Form->create(null, [
+            'url' => ['controller' => 'Users', 'action' => 'login'],
+            'type' => 'post',
+        ]) ?>
         <!-- Email Field -->
         <div class="mb-4">
             <?= $this->Form->control('email', [
