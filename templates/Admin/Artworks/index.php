@@ -34,24 +34,17 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Status</label>
                             <select id="status-filter" class="form-control">
                                 <option value="all">All Status</option>
                                 <option value="available">Available</option>
                                 <option value="sold">Sold</option>
+                                <option value="pending">Pending</option>
+                                <option value="reserved">Reserved</option>
                             </select>
                         </div>
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label">Category</label>
-                            <select id="category-filter" class="form-control">
-                                <option value="all">All Categories</option>
-                                <option value="painting">Paintings</option>
-                                <option value="photography">Photography</option>
-                                <option value="digital">Digital Art</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Sort By</label>
                             <select id="sort-order" class="form-control">
                                 <option value="newest">Newest First</option>
@@ -60,7 +53,7 @@
                                 <option value="price_low">Price (Low to High)</option>
                             </select>
                         </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Search</label>
                             <div class="input-group">
                                 <input type="text" id="search-input" class="form-control" placeholder="Search artworks...">
@@ -91,7 +84,6 @@
                                 <tr>
                                     <th>Preview</th>
                                     <th>Title</th>
-                                    <th>Category</th>
                                     <th>Price</th>
                                     <th>Status</th>
                                     <th>Created</th>
@@ -100,19 +92,30 @@
                             </thead>
                             <tbody>
                                 <?php foreach ($artworks as $artwork) : ?>
-                                <tr class="artwork-row" data-status="<?= h($artwork->availability_status) ?>" data-category="painting">
+                                <tr class="artwork-row" data-status="<?= h($artwork->availability_status) ?>">
                                     <td class="align-middle text-center">
-                                        <img src="<?= h($artwork->image_url) ?>" alt="<?= h($artwork->title) ?>" class="img-thumbnail" style="width: 80px; height: 60px; object-fit: cover;">
+                                        <?php
+                                            // Add a random query parameter to prevent caching
+                                            $imageUrl = h($artwork->image_url) . '?v=' . time();
+                                        ?>
+                                        <img src="<?= $imageUrl ?>" alt="<?= h($artwork->title) ?>" class="img-thumbnail" style="width: 80px; height: 60px; object-fit: cover;">
+                                        <?php if (empty($artwork->image_url)): ?>
+                                            <div class="text-danger small mt-1">No image found</div>
+                                        <?php endif; ?>
                                     </td>
                                     <td class="align-middle"><?= h($artwork->title) ?></td>
-                                    <td class="align-middle">Painting</td>
                                     <td class="align-middle">$<?= $this->Number->format($artwork->price) ?></td>
                                     <td class="align-middle">
-                                        <?php if ($artwork->availability_status === 'available') : ?>
-                                            <span class="badge badge-success">Available</span>
-                                        <?php else : ?>
-                                            <span class="badge badge-secondary">Sold</span>
-                                        <?php endif; ?>
+                                        <?php 
+                                            $statusClass = match ($artwork->availability_status) {
+                                                'available' => 'success',
+                                                'sold' => 'danger',
+                                                'pending' => 'warning',
+                                                'reserved' => 'info',
+                                                default => 'secondary'
+                                            };
+                                        ?>
+                                        <span class="badge badge-<?= $statusClass ?>"><?= ucfirst(h($artwork->availability_status)) ?></span>
                                     </td>
                                     <td class="align-middle"><?= $artwork->created_at ? $artwork->created_at->format('M d, Y') : 'N/A' ?></td>
                                     <td class="align-middle">
@@ -164,11 +167,6 @@
             filterArtworks();
         });
 
-        // Category filter
-        document.getElementById('category-filter').addEventListener('change', function() {
-            filterArtworks();
-        });
-
         // Search functionality
         document.getElementById('search-input').addEventListener('keyup', function() {
             filterArtworks();
@@ -177,7 +175,6 @@
         // Function to filter artworks
         function filterArtworks() {
             const statusFilter = document.getElementById('status-filter').value;
-            const categoryFilter = document.getElementById('category-filter').value;
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
 
             document.querySelectorAll('.artwork-row').forEach(function(row) {
@@ -185,11 +182,6 @@
 
                 // Status filtering
                 if (statusFilter !== 'all' && row.getAttribute('data-status') !== statusFilter) {
-                    display = false;
-                }
-
-                // Category filtering
-                if (categoryFilter !== 'all' && row.getAttribute('data-category') !== categoryFilter) {
                     display = false;
                 }
 
@@ -207,3 +199,42 @@
         }
     });
 </script>
+
+<style>
+.badge {
+    display: inline-block;
+    padding: 0.35em 0.65em;
+    font-size: 0.75em;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+}
+
+.badge-success {
+    background-color: #28a745 !important;
+    color: white !important;
+}
+
+.badge-danger {
+    background-color: #dc3545 !important;
+    color: white !important;
+}
+
+.badge-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.badge-info {
+    background-color: #17a2b8 !important;
+    color: white !important;
+}
+
+.badge-secondary {
+    background-color: #6c757d !important;
+    color: white !important;
+}
+</style>

@@ -12,21 +12,14 @@
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                     <h6 class="m-0 font-weight-bold text-primary">Content Blocks Management</h6>
-                    <div class="dropdown no-arrow">
-                        <?= $this->Html->link(
-                            '<i class="fas fa-plus fa-sm"></i> Add New Content Block',
-                            ['action' => 'add'],
-                            ['class' => 'btn btn-primary btn-sm', 'escape' => false]
-                        ) ?>
-                    </div>
                 </div>
-                
+
                 <div class="card-body">
                     <!-- Filter Buttons -->
                     <div class="mb-4">
                         <div class="btn-group" role="group" aria-label="Filter content blocks">
                             <button type="button" class="filter-btn btn btn-primary" data-filter="all">All</button>
-                            
+
                             <?php
                             // Separate out the global (empty) parent from the rest.
                             $globalExists = false;
@@ -56,7 +49,7 @@
                             <?php endforeach; ?>
                         </div>
                     </div>
-                    
+
                     <!-- Grid Display of Cards -->
                     <div class="row">
                         <?php foreach ($contentBlocks as $block) : ?>
@@ -77,7 +70,7 @@
                                     </div>
                                     <div class="card-body">
                                         <p class="card-text small text-muted mb-3"><?= h($block->description) ?></p>
-                                        
+
                                         <!-- Block Value Preview -->
                                         <div class="content-preview">
                                             <?php if ($block->type === 'image') : ?>
@@ -146,7 +139,7 @@
                         btn.classList.add("btn-outline-secondary");
                     }
                 });
-                
+
                 // Add active class to clicked button
                 this.classList.remove("btn-outline-secondary");
                 this.classList.add("btn-primary");
@@ -156,7 +149,7 @@
                 contentBlocks.forEach(block => {
                     const blockParent = block.getAttribute("data-parent");
                     const parentElement = block.closest('.col-lg-4');
-                    
+
                     // Show block if filter is "all" or matches
                     if (filterValue === "all" || blockParent === filterValue) {
                         parentElement.style.display = "";
@@ -166,7 +159,7 @@
                 });
             });
         });
-        
+
         // Set "All" filter as active by default
         document.querySelector('.filter-btn[data-filter="all"]').click();
     });

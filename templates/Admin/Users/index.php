@@ -278,20 +278,20 @@
             const roleFilter = document.getElementById('role-filter').value;
             const statusFilter = document.getElementById('status-filter').value;
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
-            
+
             document.querySelectorAll('.user-row').forEach(function(row) {
                 let display = true;
-                
+
                 // Role filtering
                 if (roleFilter !== 'all' && row.getAttribute('data-role') !== roleFilter) {
                     display = false;
                 }
-                
+
                 // Status filtering
                 if (statusFilter !== 'all' && row.getAttribute('data-status') !== statusFilter) {
                     display = false;
                 }
-                
+
                 // Search filtering
                 if (searchTerm !== '') {
                     const nameCell = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
@@ -300,7 +300,7 @@
                         display = false;
                     }
                 }
-                
+
                 // Show/hide row
                 row.style.display = display ? '' : 'none';
             });
@@ -316,11 +316,11 @@
         margin-bottom: 20px;
         position: relative;
     }
-    
+
     .small-box .inner {
         padding: 10px;
     }
-    
+
     .small-box h3 {
         font-size: 2.2rem;
         font-weight: 700;
@@ -328,11 +328,11 @@
         padding: 0;
         white-space: nowrap;
     }
-    
+
     .small-box p {
         font-size: 1rem;
     }
-    
+
     .small-box .icon {
         color: rgba(0,0,0,.15);
         font-size: 70px;
@@ -341,27 +341,27 @@
         top: 15px;
         z-index: 0;
     }
-    
+
     .bg-info {
         background-color: #17a2b8!important;
         color: #fff;
     }
-    
+
     .bg-success {
         background-color: #28a745!important;
         color: #fff;
     }
-    
+
     .bg-warning {
         background-color: #ffc107!important;
         color: #1f2d3d;
     }
-    
+
     .bg-danger {
         background-color: #dc3545!important;
         color: #fff;
     }
-    
+
     .badge {
         display: inline-block;
         padding: 0.35em 0.65em;
@@ -373,11 +373,11 @@
         vertical-align: baseline;
         border-radius: 0.25rem;
     }
-    
+
     .badge.bg-warning {
         color: #212529;
     }
-    
+
     .float-sm-end {
         float: right !important;
     }

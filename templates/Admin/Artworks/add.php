@@ -61,7 +61,12 @@
                                 <?= $this->Form->label('availability_status', 'Availability Status', ['class' => 'form-label']) ?>
                                 <?= $this->Form->select(
                                     'availability_status',
-                                    ['available' => 'Available', 'sold' => 'Sold'],
+                                    [
+                                        'available' => 'Available', 
+                                        'sold' => 'Sold',
+                                        'pending' => 'Pending',
+                                        'reserved' => 'Reserved'
+                                    ],
                                     ['class' => 'form-select', 'value' => 'available']
                                 ) ?>
                             </div>
@@ -106,8 +111,6 @@
                             <div class="text-muted small mt-1">JPEG or PNG format, Recommended size: 1200x800px, Max 5MB</div>
                         </div>
                     </div>
-
-                    <!-- Featured field removed as it's not in the database schema -->
 
                     <div class="form-group mt-4">
                         <div class="d-grid gap-2">
@@ -249,5 +252,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .float-sm-end {
     float: right !important;
+}
+
+.d-grid {
+    display: grid !important;
+}
+
+.gap-2 {
+    gap: 0.5rem !important;
 }
 </style>
