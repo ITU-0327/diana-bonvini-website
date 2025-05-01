@@ -4,8 +4,12 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Controller\ArtworksController as BaseArtworksController;
+use App\Service\R2StorageService;
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
+use Cake\ORM\TableRegistry;
+use Exception;
+use GdImage;
 use Psr\Http\Message\UploadedFileInterface;
 
 /**
@@ -70,10 +74,11 @@ class ArtworksController extends BaseArtworksController
     /**
      * Add method - Customized for admin interface
      *
+     * @param \App\Service\R2StorageService $r2StorageService The R2 storage service instance.
      * @return \Cake\Http\Response|null|void Redirects on successful add, renders view otherwise.
      * @throws \Exception
      */
-    public function add()
+    public function add(R2StorageService $r2StorageService)
     {
         $this->set('title', 'Add New Artwork');
 
@@ -117,8 +122,18 @@ class ArtworksController extends BaseArtworksController
                 
                 // Process the image
                 try {
-                    $this->_processImageUpload($file, $artwork->artwork_id);
-                    $this->Flash->success(__('Artwork has been saved successfully with image.'));
+                    // Save the image locally first (this will always work)
+                    $localPath = $this->_saveOriginalLocal($file, $artwork->artwork_id);
+                    $this->log('Image saved locally to: ' . $localPath, 'debug');
+                    
+                    // Try to process with R2 but continue if it fails
+                    try {
+                        $this->_processImageUpload($file, $artwork->artwork_id, $r2StorageService);
+                        $this->Flash->success(__('Artwork has been saved successfully with image.'));
+                    } catch (\Exception $e) {
+                        $this->log('R2 storage processing failed: ' . $e->getMessage(), 'error');
+                        $this->Flash->success(__('Artwork has been saved successfully. Note: Cloud storage of the image failed, but the image was saved locally.'));
+                    }
                 } catch (\Exception $e) {
                     $this->log('Image processing failed: ' . $e->getMessage(), 'error');
                     $this->Flash->error(__('Artwork saved but image processing failed: {0}', $e->getMessage()));
@@ -148,11 +163,12 @@ class ArtworksController extends BaseArtworksController
     /**
      * Edit method - Customized for admin interface
      *
+     * @param \App\Service\R2StorageService $r2StorageService The R2 storage service instance.
      * @param string|null $id Artwork id.
      * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
      * @throws \Cake\Datasource\Exception\RecordNotFoundException|\Exception When record not found.
      */
-    public function edit(?string $id = null)
+    public function edit(R2StorageService $r2StorageService, ?string $id = null)
     {
         $this->set('title', 'Edit Artwork');
 
@@ -169,7 +185,22 @@ class ArtworksController extends BaseArtworksController
                     if ($file->getError() !== UPLOAD_ERR_OK) {
                         $this->Flash->error(__('Image upload failed with code {0}.', $file->getError()));
                     } else {
-                        $this->_processImageUpload($file, $artwork->artwork_id);
+                        // Save the image locally first (this will always work)
+                        try {
+                            $localPath = $this->_saveOriginalLocal($file, $artwork->artwork_id);
+                            $this->log('Image saved locally to: ' . $localPath, 'debug');
+                            
+                            // Try to process with R2 but continue if it fails
+                            try {
+                                $this->_processImageUpload($file, $artwork->artwork_id, $r2StorageService);
+                            } catch (\Exception $e) {
+                                $this->log('R2 storage processing failed: ' . $e->getMessage(), 'error');
+                                $this->Flash->warning(__('Artwork updated but cloud storage of the image failed. The image was saved locally.'));
+                            }
+                        } catch (\Exception $e) {
+                            $this->log('Image processing failed: ' . $e->getMessage(), 'error');
+                            $this->Flash->error(__('Image processing failed: {0}', $e->getMessage()));
+                        }
                     }
                 }
 
@@ -212,5 +243,158 @@ class ArtworksController extends BaseArtworksController
         }
 
         return $this->redirect(['action' => 'index']);
+    }
+    
+    /**
+     * Handles moving the uploaded file, validating it, adding a tiled watermark,
+     * and returning the relative path for storage (or null on failure).
+     *
+     * @param \Psr\Http\Message\UploadedFileInterface $file The uploaded JPEG file.
+     * @param string $artworkId The artwork ID used to name objects.
+     * @param \App\Service\R2StorageService $r2StorageService The R2 storage service instance.
+     * @throws \Exception If the file is not JPEG or any imaging/S3 error occurs.
+     */
+    protected function _processImageUpload(UploadedFileInterface $file, string $artworkId, R2StorageService $r2StorageService): void
+    {
+        $this->_assertJpeg($file);
+
+        // We'll reuse a file that's already saved by _saveOriginalLocal
+        $localPath = WWW_ROOT . 'img' . DS . 'Artworks' . DS . "{$artworkId}.jpg";
+        
+        if (!file_exists($localPath)) {
+            throw new Exception("Original file not found at: {$localPath}");
+        }
+
+        // Read it into memory for watermarking
+        $bytes = file_get_contents($localPath);
+        if ($bytes === false) {
+            throw new Exception("Failed to read saved file: {$localPath}");
+        }
+
+        // Generate watermarked JPG in memory
+        $jpeg = $this->_createWatermarkedJpeg($bytes);
+        $wmKey = "{$artworkId}_wm.jpg";
+
+        // Save watermarked version locally too
+        $watermarkedPath = WWW_ROOT . 'img' . DS . 'watermarked' . DS;
+        if (!is_dir($watermarkedPath) && !mkdir($watermarkedPath, 0755, true)) {
+            throw new Exception("Unable to create watermarked directory: {$watermarkedPath}");
+        }
+        
+        $watermarkedFilePath = $watermarkedPath . "{$artworkId}.jpg";
+        if (file_put_contents($watermarkedFilePath, $jpeg) === false) {
+            throw new Exception("Failed to save watermarked image locally");
+        }
+        
+        // Try to upload to R2, but if it fails we already have local copies
+        if (!$r2StorageService->put($wmKey, $jpeg)) {
+            throw new Exception("Failed to upload watermark to R2 storage");
+        }
+    }
+
+    /**
+     * Moves the uploaded JPEG into webroot/img/Artworks/{artworkId}.jpg.
+     *
+     * @param \Psr\Http\Message\UploadedFileInterface $file
+     * @param string $artworkId
+     * @return string Full filesystem path to the saved file.
+     * @throws \Exception On any filesystem error.
+     */
+    protected function _saveOriginalLocal(UploadedFileInterface $file, string $artworkId): string
+    {
+        $dir = WWW_ROOT . 'img' . DS . 'Artworks';
+        if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
+            throw new Exception("Unable to create directory: {$dir}");
+        }
+
+        $target = $dir . DS . "{$artworkId}.jpg";
+        // moveTo will overwrite if file exists
+        $file->moveTo($target);
+
+        return $target;
+    }
+
+    /**
+     * Ensures that the uploaded file is a JPEG image.
+     *
+     * @param \Psr\Http\Message\UploadedFileInterface $file The upload to check.
+     * @return void
+     * @throws \Exception If the media type is not "image/jpeg".
+     */
+    protected function _assertJpeg(UploadedFileInterface $file): void
+    {
+        if ($file->getClientMediaType() !== 'image/jpeg') {
+            throw new Exception('Only JPEG uploads are allowed.');
+        }
+    }
+
+    /**
+     * Applies a tiled text watermark to the given JPEG bytes and
+     * returns the resulting image as a JPEG binary string.
+     *
+     * @param string $jpegBytes Raw JPEG file contents.
+     * @return string JPEG-encoded binary string with watermark.
+     * @throws \Exception On invalid image data or GD failures.
+     */
+    protected function _createWatermarkedJpeg(string $jpegBytes): string
+    {
+        $im = imagecreatefromstring($jpegBytes);
+        if (!$im instanceof GdImage) {
+            throw new Exception('Invalid JPEG data.');
+        }
+
+        $width = imagesx($im);
+        $height = imagesy($im);
+        $this->_drawTiledText($im, $width, $height);
+
+        ob_start();
+        imagejpeg($im, null, 75);
+        $out = ob_get_clean();
+        imagedestroy($im);
+
+        if ($out === false) {
+            throw new Exception('Failed to capture JPEG output.');
+        }
+
+        return $out;
+    }
+
+    /**
+     * Draws the tiled watermark text onto the canvas.
+     *
+     * @param \GdImage $canvas The GD image resource to draw on.
+     * @param int $width Width of the canvas/image.
+     * @param int $height Height of the canvas/image.
+     * @throws \Exception If the CMS block or font is missing, or GD fails.
+     */
+    protected function _drawTiledText(GdImage $canvas, int $width, int $height): void
+    {
+        $block = TableRegistry::getTableLocator()
+            ->get('ContentBlocks')
+            ->find()
+            ->select(['value'])
+            ->where(['slug' => 'watermark-text'])
+            ->first();
+        if (!$block) {
+            throw new Exception('Watermark text not found.');
+        }
+
+        $font = WWW_ROOT . 'font/Arial.ttf';
+        if (!is_readable($font)) {
+            throw new Exception("Missing font at $font");
+        }
+
+        $color = imagecolorallocatealpha($canvas, 225, 225, 225, 96);
+        if ($color === false) {
+            throw new Exception('Unable to allocate watermark color.');
+        }
+
+        $size = 40;
+        $angle = -45;
+        for ($y = -100; $y < $height + 100; $y += 200) {
+            for ($x = -100; $x < $width + 100; $x += 400) {
+                imagettftext($canvas, $size, $angle, $x, $y, $color, $font, $block->value);
+            }
+        }
     }
 }
