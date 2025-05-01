@@ -164,10 +164,21 @@ class UsersController extends BaseUsersController
 
         // Get the current logged in user
         $identity = $this->Authentication->getIdentity();
-        $userId = $identity->getIdentifier();
-
-        $user = $this->Users->get($userId);
-        $this->set(compact('user'));
+        
+        try {
+            // Use direct property access which is more reliable in this codebase
+            $userId = $identity->user_id;
+            
+            if (!$userId) {
+                throw new \Exception("User ID not found in identity");
+            }
+            
+            $user = $this->Users->get($userId);
+            $this->set(compact('user'));
+        } catch (\Exception $e) {
+            $this->Flash->error('Could not load user profile. Please try again.');
+            $this->redirect(['controller' => 'Admin', 'action' => 'dashboard']);
+        }
     }
 
     /**
@@ -181,16 +192,24 @@ class UsersController extends BaseUsersController
 
         // Get the current logged in user
         $identity = $this->Authentication->getIdentity();
-        $userId = $identity->getIdentifier();
+        $userId = $identity->user_id;
+        
+        try {
+            if (!$userId) {
+                throw new \Exception("User ID not found in identity");
+            }
+            
+            $user = $this->Users->get($userId);
+            $user = $this->Users->patchEntity($user, $this->request->getData(), [
+                'fields' => ['first_name', 'last_name', 'email', 'phone_number'],
+            ]);
 
-        $user = $this->Users->get($userId);
-        $user = $this->Users->patchEntity($user, $this->request->getData(), [
-            'fields' => ['first_name', 'last_name', 'email', 'phone_number'],
-        ]);
-
-        if ($this->Users->save($user)) {
-            $this->Flash->success(__('Your profile has been updated.'));
-        } else {
+            if ($this->Users->save($user)) {
+                $this->Flash->success(__('Your profile has been updated.'));
+            } else {
+                $this->Flash->error(__('Unable to update your profile. Please, try again.'));
+            }
+        } catch (\Exception $e) {
             $this->Flash->error(__('Unable to update your profile. Please, try again.'));
         }
 
@@ -206,40 +225,45 @@ class UsersController extends BaseUsersController
     {
         $this->request->allowMethod(['post', 'put']);
 
-        // Get the current logged in user
-        $identity = $this->Authentication->getIdentity();
-        $userId = $identity->getIdentifier();
+        try {
+            // Get the current logged in user
+            $identity = $this->Authentication->getIdentity();
+            $userId = $identity->user_id;
+            
+            if (!$userId) {
+                throw new \Exception("User ID not found in identity");
+            }
 
-        $user = $this->Users->get($userId);
+            $user = $this->Users->get($userId);
+            $data = $this->request->getData();
 
-        $data = $this->request->getData();
+            // Verify current password
+            $currentPassword = $data['current_password'] ?? '';
+            $hasher = new DefaultPasswordHasher();
 
-        // Verify current password
-        $currentPassword = $data['current_password'] ?? '';
-        $hasher = new DefaultPasswordHasher();
+            if (!$hasher->check($currentPassword, $user->password)) {
+                $this->Flash->error(__('Current password is incorrect.'));
+                return $this->redirect(['action' => 'profile']);
+            }
 
-        if (!$hasher->check($currentPassword, $user->password)) {
-            $this->Flash->error(__('Current password is incorrect.'));
+            // Verify new password and confirmation match
+            $newPassword = $data['new_password'] ?? '';
+            $confirmPassword = $data['confirm_password'] ?? '';
 
-            return $this->redirect(['action' => 'profile']);
-        }
+            if ($newPassword !== $confirmPassword) {
+                $this->Flash->error(__('New password and confirmation do not match.'));
+                return $this->redirect(['action' => 'profile']);
+            }
 
-        // Verify new password and confirmation match
-        $newPassword = $data['new_password'] ?? '';
-        $confirmPassword = $data['confirm_password'] ?? '';
+            // Update password
+            $user = $this->Users->patchEntity($user, ['password' => $newPassword]);
 
-        if ($newPassword !== $confirmPassword) {
-            $this->Flash->error(__('New password and confirmation do not match.'));
-
-            return $this->redirect(['action' => 'profile']);
-        }
-
-        // Update password
-        $user = $this->Users->patchEntity($user, ['password' => $newPassword]);
-
-        if ($this->Users->save($user)) {
-            $this->Flash->success(__('Your password has been changed successfully.'));
-        } else {
+            if ($this->Users->save($user)) {
+                $this->Flash->success(__('Your password has been changed successfully.'));
+            } else {
+                $this->Flash->error(__('Unable to change your password. Please, try again.'));
+            }
+        } catch (\Exception $e) {
             $this->Flash->error(__('Unable to change your password. Please, try again.'));
         }
 

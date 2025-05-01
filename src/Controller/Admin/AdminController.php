@@ -46,13 +46,13 @@ class AdminController extends AppController
         // Initialize variables with default values
         $artworksCount = 0;
         $ordersCount = 0;
-        $pendingOrdersCount = 0;
         $processingOrdersCount = 0;
         $completedOrdersCount = 0;
         $writingRequestsCount = 0;
         $usersCount = 0;
         $adminCount = 0;
         $customerCount = 0;
+        $activeServicesCount = 0;
         $recentOrders = [];
         $recentRequests = [];
         $recentUsers = [];
@@ -117,7 +117,6 @@ class AdminController extends AppController
 
                 try {
                     // Orders by status
-                    $pendingOrdersCount = $ordersTable->find()->where(['status' => 'pending'])->count();
                     $processingOrdersCount = $ordersTable->find()->where(['status' => 'processing'])->count();
                     $completedOrdersCount = $ordersTable->find()->where(['status' => 'completed'])->count();
 
@@ -185,6 +184,11 @@ class AdminController extends AppController
                 $completedServicesCount = $writingTable->find()
                     ->where(['status' => 'completed'])
                     ->count();
+                    
+                // Count active services (pending_quote, scheduled, in_progress)
+                $activeServicesCount = $writingTable->find()
+                    ->where(['status IN' => ['pending_quote', 'scheduled', 'in_progress']])
+                    ->count();
 
                 // Recent requests
                 $recentRequests = $writingTable->find()
@@ -205,13 +209,13 @@ class AdminController extends AppController
         $this->set(compact(
             'artworksCount',
             'ordersCount',
-            'pendingOrdersCount',
             'processingOrdersCount',
             'completedOrdersCount',
             'writingRequestsCount',
             'usersCount',
             'adminCount',
             'customerCount',
+            'activeServicesCount',
             'recentOrders',
             'recentRequests',
             'recentUsers',

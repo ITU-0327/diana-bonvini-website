@@ -30,16 +30,16 @@
                         <p><?= h($user->email) ?></p>
                     </div>
 
-                    <?php if (!empty($user->phone)) : ?>
+                    <?php if (!empty($user->phone_number)) : ?>
                         <div class="mb-3">
                             <h6 class="font-weight-bold">Phone</h6>
-                            <p><?= h($user->phone) ?></p>
+                            <p><?= h($user->phone_number) ?></p>
                         </div>
                     <?php endif; ?>
 
                     <div class="mb-3">
                         <h6 class="font-weight-bold">Account Created</h6>
-                        <p><?= $user->created->format('F j, Y') ?></p>
+                        <p><?= $user->created_at ? $user->created_at->format('F j, Y') : 'N/A' ?></p>
                     </div>
 
                     <div class="mb-3">
@@ -131,8 +131,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="phone" class="font-weight-bold">Phone Number</label>
-                        <?= $this->Form->control('phone', [
+                        <label for="phone_number" class="font-weight-bold">Phone Number</label>
+                        <?= $this->Form->control('phone_number', [
                             'class' => 'form-control',
                             'label' => false,
                             'placeholder' => 'Enter your phone number',
@@ -214,20 +214,22 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Show/hide password functionality
         const showPasswordCheckbox = document.getElementById('showPassword');
-        const passwordFields = document.querySelectorAll('input[type="password"]');
-        
-        showPasswordCheckbox.addEventListener('change', function() {
-            passwordFields.forEach(function(field) {
-                field.type = this.checked ? 'text' : 'password';
-            }, this);
-        });
+        if (showPasswordCheckbox) {
+            const passwordFields = document.querySelectorAll('input[type="password"]');
+            
+            showPasswordCheckbox.addEventListener('change', function() {
+                passwordFields.forEach(function(field) {
+                    field.type = this.checked ? 'text' : 'password';
+                }, this);
+            });
+        }
         
         // Form validation
         const passwordForm = document.getElementById('passwordForm');
         if (passwordForm) {
             passwordForm.addEventListener('submit', function(event) {
-                const newPassword = document.getElementById('new-password').value;
-                const confirmPassword = document.getElementById('confirm-password').value;
+                const newPassword = document.querySelector('input[name="new_password"]').value;
+                const confirmPassword = document.querySelector('input[name="confirm_password"]').value;
                 
                 if (newPassword !== confirmPassword) {
                     event.preventDefault();
@@ -235,7 +237,7 @@
                     return false;
                 }
                 
-                if (newPassword.length < 8) {
+                if (newPassword && newPassword.length < 8) {
                     event.preventDefault();
                     alert('New password must be at least 8 characters long.');
                     return false;

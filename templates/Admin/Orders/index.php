@@ -4,8 +4,6 @@
  * @var iterable<\App\Model\Entity\Order> $orders
  * @var int $totalOrders
  * @var float $totalRevenue
- * @var int $pendingOrders
- * @var float $avgOrderValue
  */
 ?>
 
@@ -23,7 +21,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Order Stats Cards -->
     <div class="row">
             <div class="col-lg-3 col-6">
@@ -50,29 +48,6 @@
                 </div>
             </div>
 
-            <div class="col-lg-3 col-6">
-                <div class="small-box bg-warning">
-                    <div class="inner">
-                        <h3><?= $pendingOrders ?></h3>
-                        <p>Pending Orders</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-6">
-                <div class="small-box bg-danger">
-                    <div class="inner">
-                        <h3>$<?= $this->Number->format($avgOrderValue, ['precision' => 2]) ?></h3>
-                        <p>Avg. Order Value</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Filter Controls -->
@@ -84,9 +59,6 @@
                             <i class="fas fa-filter mr-1"></i> Filter Orders
                         </h6>
                         <div class="dropdown">
-                            <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-download"></i> Export
-                            </button>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
                                 <li><a class="dropdown-item" href="#"><i class="fas fa-file-csv mr-2"></i>CSV</a></li>
                                 <li><a class="dropdown-item" href="#"><i class="fas fa-file-excel mr-2"></i>Excel</a></li>
@@ -99,7 +71,6 @@
                             <div class="col-md-3 mb-3">
                                 <select id="status-filter" class="form-control">
                                     <option value="all">All Status</option>
-                                    <option value="pending">Pending</option>
                                     <option value="confirmed">Confirmed</option>
                                     <option value="processing">Processing</option>
                                     <option value="completed">Completed</option>
@@ -181,9 +152,8 @@
                                     <td class="align-middle">$<?= $this->Number->format($order->total_amount) ?></td>
                                     <td class="align-middle">
                                         <?php
-                                        $status = $order->order_status ?? 'pending';
+                                        $status = $order->order_status ?? 'confirmed';
                                         $statusClass = match ($status) {
-                                            'pending' => 'warning',
                                             'processing' => 'info',
                                             'completed' => 'success',
                                             'cancelled' => 'danger',
@@ -198,16 +168,6 @@
                                             <a href="<?= $this->Url->build(['action' => 'view', $order->order_id]) ?>" class="btn btn-sm btn-info">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="<?= $this->Url->build(['action' => 'edit', $order->order_id]) ?>" class="btn btn-sm btn-primary">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <button type="button" class="btn btn-sm btn-success update-status" 
-                                                    data-order-id="<?= h($order->order_id) ?>" 
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#updateStatusModal">
-                                                <i class="fas fa-check-circle"></i>
-                                            </button>
-                                        </div>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -252,7 +212,6 @@
                 <div class="form-group mb-3">
                     <?= $this->Form->label('status', 'Status', ['class' => 'form-label']) ?>
                     <?= $this->Form->select('status', [
-                        'pending' => 'Pending',
                         'confirmed' => 'Confirmed',
                         'processing' => 'Processing',
                         'completed' => 'Completed',
@@ -315,15 +274,15 @@
             const statusFilter = document.getElementById('status-filter').value;
             const dateFilter = document.getElementById('date-filter').value;
             const searchTerm = document.getElementById('search-input').value.toLowerCase();
-            
+
             document.querySelectorAll('.order-row').forEach(function(row) {
                 let display = true;
-                
+
                 // Status filtering
                 if (statusFilter !== 'all' && row.getAttribute('data-status') !== statusFilter) {
                     display = false;
                 }
-                
+
                 // Date filtering (this would need to be enhanced for real date comparison)
                 if (dateFilter !== '') {
                     // Simplified example - would need more comprehensive date comparison
@@ -332,7 +291,7 @@
                         display = false;
                     }
                 }
-                
+
                 // Search filtering
                 if (searchTerm !== '') {
                     const orderID = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
@@ -341,7 +300,7 @@
                         display = false;
                     }
                 }
-                
+
                 // Show/hide row
                 row.style.display = display ? '' : 'none';
             });
@@ -357,11 +316,11 @@
         margin-bottom: 20px;
         position: relative;
     }
-    
+
     .small-box .inner {
         padding: 10px;
     }
-    
+
     .small-box h3 {
         font-size: 2.2rem;
         font-weight: 700;
@@ -369,11 +328,11 @@
         padding: 0;
         white-space: nowrap;
     }
-    
+
     .small-box p {
         font-size: 1rem;
     }
-    
+
     .small-box .icon {
         color: rgba(0,0,0,.15);
         font-size: 70px;
@@ -382,27 +341,27 @@
         top: 15px;
         z-index: 0;
     }
-    
+
     .bg-info {
         background-color: #17a2b8!important;
         color: #fff;
     }
-    
+
     .bg-success {
         background-color: #28a745!important;
         color: #fff;
     }
-    
+
     .bg-warning {
         background-color: #ffc107!important;
         color: #1f2d3d;
     }
-    
+
     .bg-danger {
         background-color: #dc3545!important;
         color: #fff;
     }
-    
+
     .badge {
         display: inline-block;
         padding: 0.35em 0.65em;
@@ -414,11 +373,11 @@
         vertical-align: baseline;
         border-radius: 0.25rem;
     }
-    
+
     .badge.bg-warning {
         color: #212529;
     }
-    
+
     .float-sm-end {
         float: right !important;
     }

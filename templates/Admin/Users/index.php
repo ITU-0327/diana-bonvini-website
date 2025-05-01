@@ -82,9 +82,6 @@
                         <h6 class="m-0 font-weight-bold text-primary">
                             <i class="fas fa-filter mr-1"></i> Filter Users
                         </h6>
-                        <a href="<?= $this->Url->build(['action' => 'add']) ?>" class="btn btn-primary btn-sm">
-                            <i class="fas fa-user-plus mr-1"></i>Add New User
-                        </a>
                     </div>
                     <div class="card-body">
                         <div class="row">

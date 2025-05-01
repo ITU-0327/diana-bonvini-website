@@ -81,15 +81,7 @@ class OrdersController extends BaseOrdersController
             $totalRevenue += (float)$order->total_amount;
         }
 
-        // Count pending orders
-        $pendingOrders = $this->Orders->find()
-            ->where(['order_status' => 'pending'])
-            ->count();
-
-        // Calculate average order value
-        $avgOrderValue = $totalOrders > 0 ? $totalRevenue / $totalOrders : 0;
-
-        $this->set(compact('orders', 'totalOrders', 'totalRevenue', 'pendingOrders', 'avgOrderValue'));
+        $this->set(compact('orders', 'totalOrders', 'totalRevenue'));
     }
 
     /**
@@ -152,7 +144,6 @@ class OrdersController extends BaseOrdersController
             }
 
             $statuses = [
-                'pending' => 'Pending',
                 'processing' => 'Processing',
                 'completed' => 'Completed',
                 'cancelled' => 'Cancelled',
