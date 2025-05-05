@@ -441,13 +441,4 @@ return [
         'safeTld' => env('DEBUG_KIT_SAFE_TLD', null),
         'ignoreAuthorization' => env('DEBUG_KIT_IGNORE_AUTHORIZATION', false),
     ],
-    
-    /**
-     * Firebase configuration
-     * 
-     * Configuration for Firebase Authentication used for 2FA
-     */
-    'Firebase' => [
-        'databaseUrl' => env('FIREBASE_DATABASE_URL', 'https://diana-art-website.firebaseio.com'),
-    ],
 ];
