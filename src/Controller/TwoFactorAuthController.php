@@ -9,6 +9,7 @@ use Cake\Core\Configure;
 use Cake\Event\EventInterface;
 use Cake\Http\Cookie\Cookie;
 use Cake\Http\Exception\BadRequestException;
+use Cake\Http\Response;
 use Cake\I18n\DateTime;
 use Cake\Utility\Text;
 
@@ -28,6 +29,7 @@ class TwoFactorAuthController extends AppController
      * Initialize controller
      *
      * @return void
+     * @throws \Exception
      */
     public function initialize(): void
     {
@@ -58,7 +60,7 @@ class TwoFactorAuthController extends AppController
      *
      * @return \Cake\Http\Response|null
      */
-    public function verify()
+    public function verify(): ?Response
     {
         // For development, disable CSRF validation and add extra bypass
         // This is a TEMPORARY solution for development only
@@ -164,6 +166,8 @@ class TwoFactorAuthController extends AppController
 
         // Just display the verification form
         $this->set('email', $email);
+
+        return null;
     }
 
     /**
@@ -171,7 +175,7 @@ class TwoFactorAuthController extends AppController
      *
      * @return \Cake\Http\Response|null
      */
-    public function resendCode()
+    public function resendCode(): ?Response
     {
         // Only handle POST requests
         $this->request->allowMethod(['post']);

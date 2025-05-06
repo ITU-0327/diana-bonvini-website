@@ -97,31 +97,15 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
             // Authentication Middleware
             ->add(new AuthenticationMiddleware($this))
 
-            // CSRF is completely removed for debug mode and replaced with a pass-through middleware
-            // This is a temporary fix only for development! MUST BE RESTORED before production!
-            ->add(function ($request, $handler) {
-                // Check if it's a debug environment
-                if (Configure::read('debug')) {
-                    // Mock the CSRF token to prevent issues
-                    if ($request->is('post')) {
-                        $request = $request->withData('_csrfToken', 'debug-bypass-token');
-                        $request = $request->withAttribute('csrfToken', 'debug-bypass-token');
-                    }
-                    // Pass the request through without CSRF validation
-                    return $handler->handle($request);
-                } else {
-                    // Production environment - use normal CSRF protection
-                    $middleware = new CsrfProtectionMiddleware([
-                        'httponly' => true,
-                        'secure' => false,
-                        'cookieName' => 'csrfToken',
-                        'expiry' => '+1 hour',
-                        'samesite' => 'Lax',
-                    ]);
-
-                    return $middleware->process($request, $handler);
-                }
-            });
+            // Cross Site Request Forgery (CSRF) Protection Middleware
+            // https://book.cakephp.org/5/en/security/csrf.html#cross-site-request-forgery-csrf-middleware
+            ->add(new CsrfProtectionMiddleware([
+                'httponly' => true,
+                'secure' => true,
+                'cookieName' => 'csrfToken',
+                'expiry' => '+1 hour',
+                'samesite' => 'Lax',
+            ]));
 
         return $middlewareQueue;
     }
