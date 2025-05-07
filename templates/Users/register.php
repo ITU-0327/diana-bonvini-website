@@ -12,8 +12,7 @@
         </div>
         <h3 class="text-xl font-semibold mb-4 text-center">Register</h3>
         <?= $this->Flash->render() ?>
-        <?= $this->Form->create($user, ['url' => ['controller' => 'Users', 'action' => 'register']]) ?>
-        <?= $this->Form->hidden('_csrfToken', ['value' => $this->request->getAttribute('csrfToken')]) ?>
+        <?= $this->Form->create($user) ?>
         <!-- First Name Field -->
         <div class="mb-4">
             <?= $this->Form->control('first_name', [
