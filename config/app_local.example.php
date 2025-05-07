@@ -124,13 +124,4 @@ return [
         'secretAccessKey' => env('CF_R2_SECRET_ACCESS_KEY', null),
         'bucket' => env('CF_R2_BUCKET', null),
     ],
-
-    /**
-     * Firebase configuration
-     *
-     * Configuration for Firebase Authentication used for 2FA
-     */
-    'Firebase' => [
-        'databaseUrl' => env('FIREBASE_DATABASE_URL', null),
-    ],
 ];

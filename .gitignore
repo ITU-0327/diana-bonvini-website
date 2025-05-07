@@ -1,7 +1,6 @@
 # CakePHP specific files #
 ##########################
 /config/app_local.php
-/config/firebase-credentials.json
 /config/.env
 /logs/*
 /tmp/*
