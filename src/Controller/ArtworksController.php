@@ -12,6 +12,7 @@ use Cake\ORM\TableRegistry;
 use Exception;
 use GdImage;
 use Psr\Http\Message\UploadedFileInterface;
+use RuntimeException;
 
 /**
  * Artworks Controller
@@ -162,7 +163,7 @@ class ArtworksController extends AppController
         // Read it into memory for watermarking (or you could re‑use $file->getStream())
         $bytes = file_get_contents($localPath);
         if ($bytes === false) {
-            throw new Exception("Failed to read saved file: {$localPath}");
+            throw new Exception("Failed to read saved file: $localPath");
         }
 
         // Generate watermarked JPG in memory
@@ -185,10 +186,10 @@ class ArtworksController extends AppController
     {
         $dir  = WWW_ROOT . 'img' . DS . 'Artworks';
         if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
-            throw new Exception("Unable to create directory: {$dir}");
+            throw new Exception("Unable to create directory: $dir");
         }
 
-        $target = $dir . DS . "{$artworkId}.jpg";
+        $target = $dir . DS . "$artworkId.jpg";
         // moveTo will overwrite if file exists
         $file->moveTo($target);
 
@@ -304,14 +305,13 @@ class ArtworksController extends AppController
      * ten blank “letter slots” so the watermark has obvious gaps.
      *
      * @param \GdImage $canvas Destination GD image.
-     * @param int      $width  Image width  (pixels).
+     * @param int      $width  Image width (pixels).
      * @param int      $height Image height (pixels).
-     *
      * @throws \Exception If the font file is missing or GD cannot allocate colours.
      */
     private function _drawCornerDiagonalText(GdImage $canvas, int $width, int $height): void
     {
-        /* 1. Retrieve watermark text -------------------------------------------- */
+        // Retrieve watermark text
         $rawText = TableRegistry::getTableLocator()
             ->get('ContentBlocks')
             ->find()
@@ -320,67 +320,95 @@ class ArtworksController extends AppController
             ->firstOrFail()
             ->value;
 
-        /* 2. Pad the string:
-         *    – add five spaces at both ends
-         *    – replace every internal space with ten spaces                  */
+        // Pad the string
         $displayText = str_repeat(' ', 10)
             . str_replace(' ', str_repeat(' ', 25), $rawText)
             . str_repeat(' ', 10);
 
-        /* 3. Font and colour (single fill) -------------------------------------- */
         $font = WWW_ROOT . 'font/MPLUSRounded1c-Medium.ttf';
         if (!is_readable($font)) {
-            throw new \Exception("Missing font at $font");
+            throw new Exception("Missing font at $font");
         }
 
-        // Mid-grey, highly transparent (α = 90 → ≈ 71 % transparent)
-        $wmColor = imagecolorallocatealpha($canvas, 200, 200, 200,  90);
+        $wmColor = imagecolorallocatealpha($canvas, 200, 200, 200, 90);
         if ($wmColor === false) {
-            throw new \Exception('Unable to allocate watermark colour.');
+            throw new Exception('Unable to allocate watermark colour.');
         }
 
-        /* 4. Diagonal geometry --------------------------------------------------- */
-        $diagLen    = hypot($width, $height);
-        $thetaRad   = atan2($height, $width);
-        $thetaDeg   = rad2deg($thetaRad);
-        $targetProj = $diagLen * 0.88;              // leave 12 % margin
+        // Diagonal geometry
+        $diagLen = hypot($width, $height);
+        $thetaRad = atan2($height, $width);
+        $thetaDeg = rad2deg($thetaRad);
+        $targetProj = $diagLen * 0.88;
 
-        /* 5. Binary-search the largest font size that fits ----------------------- */
+        // Binary-search the largest font size that fits
         $lo = 10;
         $hi = 400;
         while ($lo < $hi) {
-            $mid  = intdiv($lo + $hi + 1, 2);
-            $bb   = imagettfbbox($mid, 0, $font, $displayText);
+            $mid = intdiv($lo + $hi + 1, 2);
+
+            $bbRaw = imagettfbbox($mid, 0, $font, $displayText);
+            if ($bbRaw === false) {
+                throw new RuntimeException(
+                    "Unable to calculate bounding box for watermark text at size $mid",
+                );
+            }
+            $bb = $bbRaw;
+
             $proj = hypot($bb[2] - $bb[0], $bb[1] - $bb[7]);
-            ($proj <= $targetProj) ? $lo = $mid : $hi = $mid - 1;
+            $proj <= $targetProj ? $lo = $mid : $hi = $mid - 1;
         }
         $fontSize = $lo;
 
-        /* 6. Helper: compute baseline so bbox centre == image centre ------------- */
-        $baseFor = function (float $angleDeg)
-        use ($font, $displayText, $fontSize, $width, $height): array {
-            $bb = imagettfbbox($fontSize, $angleDeg, $font, $displayText);
-            $minX = min($bb[0], $bb[2], $bb[4], $bb[6]);
-            $maxX = max($bb[0], $bb[2], $bb[4], $bb[6]);
-            $minY = min($bb[1], $bb[3], $bb[5], $bb[7]);
-            $maxY = max($bb[1], $bb[3], $bb[5], $bb[7]);
+        // Compute positions for each diagonal
+        [$x1, $y1] = $this->_calculateCenteredTextPosition(-$thetaDeg, $font, $fontSize, $displayText, $width, $height);
+        [$x2, $y2] = $this->_calculateCenteredTextPosition(+$thetaDeg, $font, $fontSize, $displayText, $width, $height);
 
-            $imgCX = $width  / 2;
-            $imgCY = $height / 2;
+        // Draw each diagonal exactly once
+        imagettftext($canvas, $fontSize, -$thetaDeg, $x1, $y1, $wmColor, $font, $displayText);
+        imagettftext($canvas, $fontSize, +$thetaDeg, $x2, $y2, $wmColor, $font, $displayText);
+    }
 
-            return [
-                (int)round($imgCX - ($minX + $maxX) / 2),   // x
-                (int)round($imgCY - ($minY + $maxY) / 2),   // y
-            ];
-        };
+    /**
+     * Calculate the [x,y] starting point to center a rotated text string
+     * on an image of given dimensions.
+     *
+     * @param float  $angleDeg Angle to rotate text by (degrees).
+     * @param string $font     Path to TTF font.
+     * @param int    $fontSize Font size in points.
+     * @param string $text     The text string.
+     * @param int    $width    Canvas width.
+     * @param int    $height   Canvas height.
+     * @return array<int> [x, y] coordinates to pass to imagettftext().
+     */
+    private function _calculateCenteredTextPosition(
+        float $angleDeg,
+        string $font,
+        int $fontSize,
+        string $text,
+        int $width,
+        int $height,
+    ): array {
+        $bbRaw = imagettfbbox($fontSize, $angleDeg, $font, $text);
+        if ($bbRaw === false) {
+            throw new RuntimeException('Failed to compute rotated text bounding box');
+        }
+        $bb = $bbRaw;
 
-        [$x1, $y1] = $baseFor(-$thetaDeg);  // “＼” diagonal
-        [$x2, $y2] = $baseFor(+$thetaDeg);  // “／” diagonal
+        // find the bounding box extents
+        $minX = min($bb[0], $bb[2], $bb[4], $bb[6]);
+        $maxX = max($bb[0], $bb[2], $bb[4], $bb[6]);
+        $minY = min($bb[1], $bb[3], $bb[5], $bb[7]);
+        $maxY = max($bb[1], $bb[3], $bb[5], $bb[7]);
 
-        /* 7. Draw each diagonal exactly once ------------------------------------ */
-        imagettftext($canvas, $fontSize, -$thetaDeg, $x1, $y1,
-            $wmColor, $font, $displayText);
-        imagettftext($canvas, $fontSize, +$thetaDeg, $x2, $y2,
-            $wmColor, $font, $displayText);
+        // center of our canvas
+        $imgCX = $width  / 2;
+        $imgCY = $height / 2;
+
+        // shift text so its center aligns with image center
+        $x = (int)round($imgCX - ($minX + $maxX) / 2);
+        $y = (int)round($imgCY - ($minY + $maxY) / 2);
+
+        return [$x, $y];
     }
 }
