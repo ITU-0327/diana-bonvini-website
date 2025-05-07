@@ -4,8 +4,6 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Mailer\UserMailer;
-use App\Service\TwoFactorService;
-use Authentication\Authenticator\ResultInterface;
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
 use Cake\I18n\DateTime;
