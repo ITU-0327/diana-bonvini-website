@@ -147,9 +147,6 @@ class TwoFactorAuthController extends AppController
         // Create a new 32-byte hex string (64 chars)
         $deviceId = bin2hex(random_bytes(32));
 
-        // Persist to DB: your authenticator or verify() action should do:
-        // $twoFaService->addTrustedDevice($userId, $deviceId);
-
         // And set a secure, HttpOnly, SameSite=Lax cookie for 30 days
         $expiry = new DateTime('+30 days');
         $cookie = new Cookie(

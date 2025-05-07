@@ -94,9 +94,9 @@ class UsersController extends AppController
     /**
      * Register method - now redirects to the verification flow
      *
-     * @return \Cake\Http\Response|null|void Redirects to the registration verification flow
+     * @return \Cake\Http\Response|null Redirects to the registration verification flow
      */
-    public function register()
+    public function register(): ?Response
     {
         // Redirect to the new registration verification flow
         return $this->redirect(['controller' => 'RegistrationVerify', 'action' => 'index']);
