@@ -43,14 +43,12 @@ class UsersController extends AppController
     /**
      * Login method
      *
-     * @param \App\Service\TwoFactorService $firebaseService Firebase service for 2FA
      * @return \Cake\Http\Response|null
      */
-    public function login(TwoFactorService $firebaseService): ?Response
+    public function login(): ?Response
     {
         $this->request->allowMethod(['get', 'post']);
         $result = $this->Authentication->getResult();
-        $session = $this->request->getSession();
 
         // If the user is authenticated successfully...
         if ($result && $result->isValid()) {
@@ -69,15 +67,8 @@ class UsersController extends AppController
 
         // If it's a POST request and authentication failed, show an error.
         if ($this->request->is('post') && $result) {
-            $status = $result->getStatus();
-            if (
-                $status === ResultInterface::FAILURE_CREDENTIALS_MISSING
-                && $session->check('TwoFactor.code')
-            ) {
-                return $this->redirect([
-                    'controller' => 'TwoFactorAuth',
-                    'action'     => 'verify',
-                ]);
+            if ($result->getStatus() === '2FA_REQUIRED') {
+                return $this->redirect(['controller' => 'TwoFactorAuth', 'action' => 'verify']);
             }
 
             $this->Flash->error(__('Invalid username or password'));

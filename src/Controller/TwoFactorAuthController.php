@@ -82,13 +82,15 @@ class TwoFactorAuthController extends AppController
         }
         // Get email from the session
         $session = $this->request->getSession();
-        $email = $session->read('TwoFactor.email');
+        $userId = $session->read('TwoFactorUser')['id'] ?? null;
 
-        if (!$email) {
+        if (!$userId) {
             $this->Flash->error(__('Invalid 2FA verification attempt.'));
 
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
+        $user = $this->Users->get($userId);
+        $email = $user->email;
 
         $this->set('email', $email);
 

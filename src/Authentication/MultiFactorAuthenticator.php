@@ -10,7 +10,6 @@ use Authentication\Authenticator\FormAuthenticator;
 use Authentication\Authenticator\Result;
 use Authentication\Authenticator\ResultInterface;
 use Authentication\Identifier\IdentifierInterface;
-use Cake\Log\Log;
 use Cake\ORM\TableRegistry;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -129,6 +128,6 @@ class MultiFactorAuthenticator extends AbstractAuthenticator
         $mailer->deliver();
 
         // signal middleware to redirect to verify
-        return new Result(null, ResultInterface::FAILURE_CREDENTIALS_MISSING);
+        return new Result(null, '2FA_REQUIRED');
     }
 }
