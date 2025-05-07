@@ -46,33 +46,6 @@ Read and edit the environment specific `config/app_local.php` and set up the
 `'Datasources'` and any other configuration relevant for your application.
 Other environment agnostic settings can be changed in `config/app.php`.
 
-### Security Configuration
-
-This project contains sensitive credentials in the following files:
-
-- `config/app_local.php` - Contains database, SMTP, and API key credentials
-- `config/firebase-credentials.json` - Contains Firebase Admin SDK private key
-- `config/.env` - Environment variables file
-
-**IMPORTANT SECURITY NOTES:**
-
-1. For deployment/production:
-   - Set up environment variables on your server instead of hardcoding credentials
-   - Use the commented lines in `.gitignore` to exclude credential files once environment variables are set up
-   - Never commit actual credentials to public repositories
-
-2. For development:
-   - The credentials are currently committed for development purposes
-   - If forking or making this repository public, immediately remove sensitive files:
-     ```bash
-     git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch config/app_local.php config/firebase-credentials.json' --prune-empty --tag-name-filter cat -- --all
-     ```
-
-3. Long-term security plan:
-   - Update code to use environment variables exclusively
-   - Store sample configuration files with placeholders
-   - Document all required environment variables
-
 ## Layout
 
 The app skeleton uses [Milligram](https://milligram.io/) (v1.3) minimalist CSS
