@@ -5,7 +5,7 @@ namespace App\Controller;
 
 use App\Mailer\UserMailer;
 use App\Model\Table\UsersTable;
-use App\Service\FirebaseService;
+use App\Service\TwoFactorService;
 use Cake\Event\EventInterface;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Response;
@@ -87,10 +87,10 @@ class TwoFactorAuthController extends AppController
     /**
      * Resend verification code
      *
-     * @param \App\Service\FirebaseService $firebaseService
+     * @param \App\Service\TwoFactorService $firebaseService
      * @return \Cake\Http\Response|null
      */
-    public function resendCode(FirebaseService $firebaseService): ?Response
+    public function resendCode(TwoFactorService $firebaseService): ?Response
     {
         // Only handle POST requests
         $this->request->allowMethod(['post']);

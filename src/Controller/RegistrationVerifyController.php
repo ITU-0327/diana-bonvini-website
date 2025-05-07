@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Mailer\UserMailer;
-use App\Service\FirebaseService;
+use App\Service\TwoFactorService;
 use Cake\Core\Configure;
 use Cake\Event\EventInterface;
 use Exception;
@@ -17,9 +17,9 @@ use Exception;
 class RegistrationVerifyController extends AppController
 {
     /**
-     * @var \App\Service\FirebaseService
+     * @var \App\Service\TwoFactorService
      */
-    private FirebaseService $firebaseService;
+    private TwoFactorService $firebaseService;
 
     /**
      * Initialize controller
@@ -29,7 +29,7 @@ class RegistrationVerifyController extends AppController
     public function initialize(): void
     {
         parent::initialize();
-        $this->firebaseService = new FirebaseService();
+        $this->firebaseService = new TwoFactorService();
         // Correctly load the Users model
         $this->fetchTable('Users');
     }

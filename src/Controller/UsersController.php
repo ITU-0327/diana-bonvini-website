@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Mailer\UserMailer;
-use App\Service\FirebaseService;
+use App\Service\TwoFactorService;
 use Authentication\Authenticator\ResultInterface;
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
@@ -43,10 +43,10 @@ class UsersController extends AppController
     /**
      * Login method
      *
-     * @param \App\Service\FirebaseService $firebaseService Firebase service for 2FA
+     * @param \App\Service\TwoFactorService $firebaseService Firebase service for 2FA
      * @return \Cake\Http\Response|null
      */
-    public function login(FirebaseService $firebaseService): ?Response
+    public function login(TwoFactorService $firebaseService): ?Response
     {
         $this->request->allowMethod(['get', 'post']);
         $result = $this->Authentication->getResult();

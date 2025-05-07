@@ -4,12 +4,13 @@ declare(strict_types=1);
 namespace App\Authentication;
 
 use App\Mailer\UserMailer;
-use App\Service\FirebaseService;
+use App\Service\TwoFactorService;
 use Authentication\Authenticator\AbstractAuthenticator;
 use Authentication\Authenticator\FormAuthenticator;
 use Authentication\Authenticator\Result;
 use Authentication\Authenticator\ResultInterface;
 use Authentication\Identifier\IdentifierInterface;
+use Cake\Log\Log;
 use Cake\ORM\TableRegistry;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -28,7 +29,7 @@ class MultiFactorAuthenticator extends AbstractAuthenticator
     protected array $_defaultConfig = [
         'loginUrl' => '/users/login',
         'verifyUrl' => '/two-factor-auth/verify',
-        'sessionKey' => 'TwoFactor.code',
+        'sessionKey' => 'TwoFactorUser',
         'fields' => [
             'username' => 'email',
             'password' => 'password',
@@ -62,10 +63,11 @@ class MultiFactorAuthenticator extends AbstractAuthenticator
      * Set the Firebase service.
      *
      * @param \Psr\Http\Message\ServerRequestInterface $request
-     * @param \App\Service\FirebaseService $firebaseService
+     * @param \App\Service\TwoFactorService $twoFactorService
      * @return \Authentication\Authenticator\ResultInterface
+     * @throws \Random\RandomException
      */
-    public function authenticate(ServerRequestInterface $request, FirebaseService $firebaseService = new FirebaseService()): ResultInterface
+    public function authenticate(ServerRequestInterface $request, TwoFactorService $twoFactorService = new TwoFactorService()): ResultInterface
     {
         $session = $request->getAttribute('session');
         $path = $request->getUri()->getPath();
@@ -73,29 +75,21 @@ class MultiFactorAuthenticator extends AbstractAuthenticator
 
         // ————————————— VERIFY STAGE —————————————
         if (str_ends_with($verifyUrl, $path)) {
-            // Pull email & code from the session
-            $email = $session->read('TwoFactor.email');
-            /** @var array<string,mixed> $body */
-            $body = $request->getParsedBody();
-            $postedCode = $body['verification_code'] ?? null;
+            $data = $session->read($this->_config['sessionKey']);
+            $userId = $data['id'] ?? null;
+            $body = (array)$request->getParsedBody();
+            $code = $body['verification_code'] ?? null;
 
-            if (!$email || !$postedCode || !$firebaseService->verifyCode($email, $postedCode)) {
+            if (!$userId || !$code || !$twoFactorService->verifyCode($userId, $code)) {
                 return new Result(null, ResultInterface::FAILURE_CREDENTIALS_INVALID);
             }
 
-            // Code is correct — load the User
-            $session->delete($this->_config['sessionKey']);
-            $session->delete('TwoFactor.email');
-
             $user = TableRegistry::getTableLocator()
-                ->get('Users')->find()
-                ->where(['email' => $email])
-                ->firstOrFail();
+                ->get('Users')
+                ->get($userId);
 
-            $firebaseService->updateLoginMetadata($email, [
-                'ip' => $request->getServerParams()['REMOTE_ADDR'] ?? null,
-                'time' => time(),
-            ]);
+            // clear session state
+            $session->delete($this->_config['sessionKey']);
 
             return new Result($user, ResultInterface::SUCCESS);
         }
@@ -116,36 +110,22 @@ class MultiFactorAuthenticator extends AbstractAuthenticator
             );
         }
 
-        // Risk payload
-        $serverParams = $request->getServerParams();
-        $cookies = $request->getCookieParams();
-        $requestData = [
-            'ip' => $serverParams['REMOTE_ADDR'] ?? null,
-            'time' => time(),
-            'deviceId' => $cookies['trusted_device'] ?? null,
-        ];
+        $cookieParams = $request->getCookieParams();
+        $deviceId = $cookieParams['trusted_device'] ?? null;
 
-        // No 2FA needed → update metadata & succeed
-        if (!$firebaseService->shouldRequire2FA($user->email, $requestData)) {
-            $firebaseService->updateLoginMetadata($user->email, $requestData);
-
+        if (!$twoFactorService->shouldRequire2FA($user->user_id, $deviceId)) {
             return new Result($user, ResultInterface::SUCCESS);
         }
 
         // 2FA required → generate & email code, stash in session
-        $newCode = $firebaseService->sendVerificationCode($user->email);
-        $session->write($this->_config['sessionKey'], $newCode);
-        $session->write('TwoFactor.email', $user->email);
-        $session->write('TwoFactor.redirect', $request->getQueryParams()['redirect'] ?? ['_name' => 'home']);
-
-        // send mail
-        $userEntity = TableRegistry::getTableLocator()
-            ->get('Users')->find()
-            ->where(['email' => $user->email])
-            ->firstOrFail();
+        $code = $twoFactorService->generateCode($user->user_id);
+        $session->write($this->_config['sessionKey'], [
+            'id' => $user->user_id,
+            'redirect' => $request->getQueryParams()['redirect'] ?? ['_name' => 'home'],
+        ]);
 
         $mailer = new UserMailer('default');
-        $mailer->twoFactorAuth($userEntity, $newCode);
+        $mailer->twoFactorAuth($user, $code);
         $mailer->deliver();
 
         // signal middleware to redirect to verify

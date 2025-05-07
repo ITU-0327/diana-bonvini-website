@@ -17,7 +17,7 @@ declare(strict_types=1);
 namespace App;
 
 use App\Authentication\MultiFactorAuthenticator;
-use App\Service\FirebaseService;
+use App\Service\TwoFactorService;
 use App\Service\R2StorageService;
 use App\Service\StripeService;
 use Authentication\AuthenticationService;
@@ -123,7 +123,7 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
         $container->add(StripeService::class)
             ->addArgument(Configure::read('Stripe.secret'));
         $container->add(R2StorageService::class);
-        $container->add(FirebaseService::class);
+        $container->add(TwoFactorService::class);
     }
 
     /**
@@ -158,7 +158,7 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
             ],
             'loginUrl' => Router::url('/users/login'),
             'verifyUrl' => Router::url('/two-factor-auth/verify'),
-            'sessionKey' => 'TwoFactor.code',
+            'sessionKey' => 'TwoFactorUser',
         ]);
 
         return $authenticationService;

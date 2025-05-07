@@ -5,7 +5,7 @@
     "type": "project",
     "homepage": "https://cakephp.org",
     "require": {
-        "php": ">=8.1",
+        "php": ">=8.2",
         "ext-gd": "*",
         "aws/aws-sdk-php": "^3.342",
         "cakephp/authentication": "^3.2",
