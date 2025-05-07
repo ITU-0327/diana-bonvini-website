@@ -19,7 +19,7 @@ $this->assign('title', __('Verification Required'));
                     </div>
                 </div>
             </div>
-            
+
             <?= $this->Form->create(null, ['url' => ['controller' => 'TwoFactorAuth', 'action' => 'verify'], 'class' => 'code-verification-form']) ?>
             <div class="verification-code-container">
                 <?= $this->Form->control('verification_code', [
@@ -33,21 +33,8 @@ $this->assign('title', __('Verification Required'));
                 ]) ?>
                 <div class="code-hint">
                     <small><?= __('Enter the 6-digit code we sent to your email') ?></small>
-                    <?php if (\Cake\Core\Configure::read('debug')): ?>
-                        <?php 
-                            $session = $this->request->getSession();
-                            $lastCode = $session ? $session->read('LastVerificationCode') : null;
-                            if ($lastCode && isset($lastCode['email']) && $lastCode['email'] === $email):
-                        ?>
-                            <div class="debug-hint">
-                                <small style="color: #666; background: #f9f9f9; padding: 5px; display: block; margin-top: 5px; border-left: 3px solid #4a90e2;">
-                                    Development mode: The last code sent was <strong><?= h($lastCode['code']) ?></strong> at <?= h($lastCode['time']) ?>
-                                </small>
-                            </div>
-                        <?php endif; ?>
-                    <?php endif; ?>
                 </div>
-                
+
                 <div class="trust-device-option">
                     <?= $this->Form->control('trust_device', [
                         'label' => __('Trust this device for 30 days'),
@@ -55,12 +42,12 @@ $this->assign('title', __('Verification Required'));
                     ]) ?>
                 </div>
             </div>
-            
+
             <div class="verification-actions">
                 <?= $this->Form->button(__('Verify & Sign In'), ['class' => 'button primary-button']) ?>
                 <?= $this->Form->end() ?>
             </div>
-            
+
             <div class="verification-options">
                 <div class="option-section">
                     <h4><?= __("Didn't receive a code?") ?></h4>
@@ -69,9 +56,9 @@ $this->assign('title', __('Verification Required'));
                     <?= $this->Form->end() ?>
                     <p class="hint"><?= __('Please check your spam folder if you don\'t see it in your inbox') ?></p>
                 </div>
-                
+
                 <div class="option-section">
-                    <h4><?= __("Having trouble?") ?></h4>
+                    <h4><?= __('Having trouble?') ?></h4>
                     <p><?= $this->Html->link(__('Return to login'), ['controller' => 'Users', 'action' => 'login'], ['class' => 'back-link']) ?></p>
                 </div>
             </div>
