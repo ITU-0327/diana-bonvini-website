@@ -35,10 +35,6 @@ class FirebaseService
         try {
             $credentialsFile = CONFIG . 'firebase-credentials.json';
 
-            // Debug information
-            Log::debug('Firebase credentials path: ' . $credentialsFile);
-            Log::debug('Firebase database URL: ' . Configure::read('Firebase.databaseUrl'));
-
             // Verify file
             if (!file_exists($credentialsFile)) {
                 throw new RuntimeException('Firebase credentials file not found. Please ensure it exists at: ' . $credentialsFile);
@@ -66,41 +62,10 @@ class FirebaseService
                 ->withDatabaseUri(Configure::read('Firebase.databaseUrl'));
 
             $this->auth = $factory->createAuth();
-            Log::debug('Firebase Auth initialized successfully');
         } catch (Exception $e) {
             // Log the error with detailed information
             Log::error('Firebase initialization error: ' . $e->getMessage());
             Log::error('Error details: ' . $e->getTraceAsString());
-
-            // For development purposes, we'll create a dummy implementation
-            // In production, you would want to rethrow the exception
-            if (Configure::read('debug')) {
-                Log::warning('Using dummy Firebase Auth implementation for development');
-                // We'll provide a mock implementation for development
-                $this->auth = new class {
-                    public function getUserByEmail($email)
-                    {
-                        return (object)['uid' => 'mock-uid-' . md5($email), 'customAttributes' => []];
-                    }
-
-                    public function setCustomUserAttributes($uid, $attributes)
-                    {
-                        Log::debug('Mock: Setting attributes for user ' . $uid);
-
-                        return true;
-                    }
-
-                    public function createUser($userData)
-                    {
-                        Log::debug('Mock: Creating user ' . $userData['email']);
-
-                        return (object)['uid' => 'mock-uid-' . md5($userData['email'])];
-                    }
-                };
-            } else {
-                // In production, rethrow the exception
-                throw $e;
-            }
         }
     }
 
@@ -113,7 +78,7 @@ class FirebaseService
     public function sendVerificationCode(string $email): string
     {
         // Generate a 6-digit verification code
-        $code = sprintf('%06d', mt_rand(100000, 999999));
+        $code = sprintf('%06d', mt_rand(0, 999999));
 
         // Always store the code in session for development mode and as backup
         try {
@@ -216,57 +181,6 @@ class FirebaseService
         Log::debug("Verification attempt for email: $email with code: $code");
 
         try {
-            // Accept any code in debug mode for easy testing
-            if (Configure::read('debug')) {
-                // Store the verification attempt in session for debugging
-                try {
-                    $request = Router::getRequest();
-                    if ($request) {
-                        $session = $request->getSession();
-                        $session->write('VerificationDebug.lastAttempt', [
-                            'email' => $email,
-                            'code' => $code,
-                            'time' => date('Y-m-d H:i:s'),
-                        ]);
-                    }
-                } catch (Exception $ex) {
-                    // Ignore session errors
-                }
-
-                // Check for hardcoded test codes in development
-                if ($code === '123456' || $code === '111111' || $code === '000000') {
-                    Log::debug("Development mode: accepting test code $code for $email");
-
-                    return true;
-                }
-
-                // Check for exact match with the last sent code
-                try {
-                    $request = Router::getRequest();
-                    if ($request) {
-                        $session = $request->getSession();
-                        // Try to get the code from the session
-                        if ($session->check("VerificationCodes.$email")) {
-                            $sessionData = $session->read("VerificationCodes.$email");
-                            Log::debug('Found code in session: ' . json_encode($sessionData));
-
-                            // Check if codes match
-                            if ($sessionData['code'] === $code) {
-                                Log::debug('Verification successful: code matches session stored code');
-
-                                return true;
-                            } else {
-                                Log::debug("Code mismatch: expected {$sessionData['code']}, got $code");
-                            }
-                        } else {
-                            Log::debug("No verification code found in session for $email");
-                        }
-                    }
-                } catch (Exception $ex) {
-                    Log::error('Error accessing session: ' . $ex->getMessage());
-                }
-            }
-
             // Try to use Firebase
             try {
                 $user = $this->auth->getUserByEmail($email);

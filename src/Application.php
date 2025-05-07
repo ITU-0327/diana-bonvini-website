@@ -16,6 +16,7 @@ declare(strict_types=1);
  */
 namespace App;
 
+use App\Authentication\MultiFactorAuthenticator;
 use App\Service\FirebaseService;
 use App\Service\R2StorageService;
 use App\Service\StripeService;
@@ -148,13 +149,16 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
 
         // Load the authenticators, you want session first
         $authenticationService->loadAuthenticator('Authentication.Session');
+
         // Configure form data check to pick email and password
-        $authenticationService->loadAuthenticator('Authentication.Form', [
+        $authenticationService->loadAuthenticator(MultiFactorAuthenticator::class, [
             'fields' => [
                 'username' => 'email',
                 'password' => 'password',
             ],
             'loginUrl' => Router::url('/users/login'),
+            'verifyUrl' => Router::url('/two-factor-auth/verify'),
+            'sessionKey' => 'TwoFactor.code',
         ]);
 
         return $authenticationService;

@@ -5,6 +5,7 @@ namespace App\Controller;
 
 use App\Mailer\UserMailer;
 use App\Service\FirebaseService;
+use Authentication\Authenticator\ResultInterface;
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
 use Cake\I18n\DateTime;
@@ -49,73 +50,36 @@ class UsersController extends AppController
     {
         $this->request->allowMethod(['get', 'post']);
         $result = $this->Authentication->getResult();
+        $session = $this->request->getSession();
 
         // If the user is authenticated successfully...
         if ($result && $result->isValid()) {
             /** @var \App\Model\Entity\User $user */
             $user = $this->Authentication->getIdentity();
 
-            // Check if the user is soft-deleted
-            if ($user->is_deleted) {
-                $this->Flash->error(__('Account inactive'));
-                // Log the user out so the identity is not kept in session
-                $this->Authentication->logout();
+            // No 2FA needed, update last login time
+            $userEntity = $this->Users->get($user->user_id);
+            $userEntity->last_login = DateTime::now();
+            $this->Users->save($userEntity);
 
-                return null;
-            }
+            $redirect = $this->request->getQuery('redirect', ['_name' => 'home']);
 
-            // Get request data for risk assessment
-            $requestData = [
-                'ip' => $this->request->clientIp(),
-                'time' => time(),
-                'deviceId' => $this->request->getCookie('trusted_device'),
-            ];
-
-            // Check if 2FA is required based on risk assessment
-            if ($firebaseService->shouldRequire2FA($user->email, $requestData)) {
-                // Log the user out (we'll set the identity after 2FA verification)
-                $this->Authentication->logout();
-
-                // Store email in session for the 2FA verification process
-                $session = $this->request->getSession();
-                $session->write('Auth.2FA.email', $user->email);
-
-                // Store intended redirect destination
-                $redirect = $this->request->getQuery('redirect', ['_name' => 'home']);
-                $session->write('Auth.redirect', $redirect);
-
-                // Generate and send verification code
-                $code = $firebaseService->sendVerificationCode($user->email);
-
-                // We need to get the actual User entity for the mailer
-                $userEntity = $this->Users->find()
-                    ->where(['email' => $user->email])
-                    ->first();
-
-                // Send email with verification code
-                $mailer = new UserMailer('default');
-                $mailer->twoFactorAuth($userEntity, $code);
-                $mailer->deliver();
-
-                // Redirect to verification page
-                return $this->redirect(['controller' => 'TwoFactorAuth', 'action' => 'verify']);
-            } else {
-                // No 2FA needed, update last login time
-                $userEntity = $this->Users->get($user->user_id);
-                $userEntity->last_login = DateTime::now();
-                $this->Users->save($userEntity);
-
-                // Update login metadata for risk assessment
-                $firebaseService->updateLoginMetadata($user->email, $requestData);
-
-                $redirect = $this->request->getQuery('redirect', ['_name' => 'home']); // Route to landing page
-
-                return $this->redirect($redirect);
-            }
+            return $this->redirect($redirect);
         }
 
         // If it's a POST request and authentication failed, show an error.
-        if ($this->request->is('post') && (!$result || !$result->isValid())) {
+        if ($this->request->is('post') && $result) {
+            $status = $result->getStatus();
+            if (
+                $status === ResultInterface::FAILURE_CREDENTIALS_MISSING
+                && $session->check('TwoFactor.code')
+            ) {
+                return $this->redirect([
+                    'controller' => 'TwoFactorAuth',
+                    'action'     => 'verify',
+                ]);
+            }
+
             $this->Flash->error(__('Invalid username or password'));
         }
 
