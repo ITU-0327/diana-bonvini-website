@@ -55,7 +55,7 @@ class FirebaseService
             }
 
             // Verify JSON structure
-            $jsonData = json_decode($credentials, true);
+            json_decode($credentials, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new RuntimeException('Firebase credentials file contains invalid JSON: ' . json_last_error_msg());
             }
@@ -286,7 +286,7 @@ class FirebaseService
 
                 $storedCode = $customAttributes['verificationCode'] ?? null;
                 $expiry = $customAttributes['verificationCodeExpiry'] ?? 0;
-                
+
                 // Convert expiry to int to avoid type errors with date()
                 $expiryTimestamp = is_numeric($expiry) ? (int)$expiry : 0;
 
@@ -384,7 +384,7 @@ class FirebaseService
                 if (is_array($device) && isset($device['id'])) {
                     // Get expiration time and ensure it's an integer
                     $deviceExpires = isset($device['expires']) ? (is_numeric($device['expires']) ? (int)$device['expires'] : 0) : 0;
-                    
+
                     // New format with expiration
                     if ($device['id'] === $deviceId && (!isset($device['expires']) || $deviceExpires > $currentTime)) {
                         $trusted = true;
@@ -617,7 +617,7 @@ class FirebaseService
                 $currentTime = is_numeric($requestData['time']) ? (int)$requestData['time'] : time();
                 $lastLoginTime = !empty($customAttributes['lastLoginTime'])
                     ? (int)$customAttributes['lastLoginTime'] : 0;
-                
+
                 // Compare hours using integer timestamps
                 $hourDiff = abs((int)date('H', $currentTime) - (int)date('H', $lastLoginTime));
                 if ($hourDiff > 6) { // If logging in more than 6 hours different than usual

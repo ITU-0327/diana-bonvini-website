@@ -41,16 +41,5 @@ class AppView extends View
         parent::initialize();
         // Load the ContentBlock helper.
         $this->loadHelper('ContentBlock');
-
-        // Configure the Form helper with automatic CSRF token inclusion
-        $this->loadHelper('Form', [
-            'templates' => [
-                'inputContainer' => '<div class="input {{type}}{{required}}">{{content}}</div>',
-                'formStart' => '<form{{attrs}}>{{csrf}}',
-            ],
-            'inputDefaults' => [
-                'autocomplete' => 'off',
-            ],
-        ]);
     }
 }

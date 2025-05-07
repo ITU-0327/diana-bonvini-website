@@ -15,29 +15,13 @@ use Cake\Utility\Text;
 
 /**
  * TwoFactorAuth Controller
- *
  * Handles 2FA workflows including verification code sending and validation
+ *
+ * @property \App\Model\Table\UsersTable $Users
+ * @property \Authentication\Controller\Component\AuthenticationComponent $Authentication
  */
 class TwoFactorAuthController extends AppController
 {
-    /**
-     * @var \App\Service\FirebaseService
-     */
-    private FirebaseService $firebaseService;
-
-    /**
-     * Initialize controller
-     *
-     * @return void
-     * @throws \Exception
-     */
-    public function initialize(): void
-    {
-        parent::initialize();
-        $this->firebaseService = new FirebaseService();
-        $this->fetchTable('Users');
-    }
-
     /**
      * Before filter method.
      *
@@ -58,27 +42,11 @@ class TwoFactorAuthController extends AppController
     /**
      * Verify 2FA code
      *
+     * @param \App\Service\FirebaseService $firebaseService
      * @return \Cake\Http\Response|null
      */
-    public function verify(): ?Response
+    public function verify(FirebaseService $firebaseService): ?Response
     {
-        // For development, disable CSRF validation and add extra bypass
-        // This is a TEMPORARY solution for development only
-        if (Configure::read('debug')) {
-            // Only try to disable FormProtection if it exists
-            if (isset($this->FormProtection)) {
-                $this->getEventManager()->off($this->FormProtection);
-            }
-
-            // For extreme cases, manually bypass CSRF token check
-            $request = $this->request;
-            if ($request->is('post')) {
-                $request = $request->withData('_csrfToken', 'debug-bypass-token');
-                $request = $request->withAttribute('csrfToken', true);
-                $this->setRequest($request);
-            }
-        }
-
         // Get email from session
         $session = $this->request->getSession();
         $email = $session->read('Auth.2FA.email');
@@ -99,10 +67,11 @@ class TwoFactorAuthController extends AppController
             }
 
             // Verify the code
-            if ($this->firebaseService->verifyCode($email, $code)) {
-                // Get user from database
-                $usersTable = $this->fetchTable('Users');
-                $user = $usersTable->findByEmail($email)->first();
+            if ($firebaseService->verifyCode($email, $code)) {
+                /** @var \App\Model\Entity\User $user */
+                $user = $this->Users->find()
+                    ->where(['email' => $email])
+                    ->first();
 
                 if (!$user) {
                     $this->Flash->error(__('User not found.'));
@@ -112,7 +81,7 @@ class TwoFactorAuthController extends AppController
 
                 // Update last login time
                 $user->last_login = DateTime::now();
-                $usersTable->save($user);
+                $this->Users->save($user);
 
                 // Set auth identity
                 $this->Authentication->setIdentity($user);
@@ -121,17 +90,17 @@ class TwoFactorAuthController extends AppController
                 if ($this->request->getData('trust_device')) {
                     // Generate device ID if not present
                     $deviceId = $this->getDeviceId(true);
-                    $this->firebaseService->addTrustedDevice($email, $deviceId);
+                    $firebaseService->addTrustedDevice($email, $deviceId);
 
                     // Set a persistent cookie for this trusted device
                     $cookie = new Cookie(
                         'trusted_device',
                         $deviceId,
-                        new DateTime('+30 days'), // 30-day cookie
+                        new DateTime('+30 days'),
                         '/',
                         '',
-                        true, // secure
-                        true,  // httpOnly
+                        true,
+                        true,
                     );
 
                     // Add SameSite attribute
@@ -149,7 +118,7 @@ class TwoFactorAuthController extends AppController
                 $session->delete('Auth.2FA');
 
                 // Update login metadata for risk assessment
-                $this->firebaseService->updateLoginMetadata($email, [
+                $firebaseService->updateLoginMetadata($email, [
                     'ip' => $this->request->clientIp(),
                     'time' => time(),
                 ]);
@@ -173,29 +142,13 @@ class TwoFactorAuthController extends AppController
     /**
      * Resend verification code
      *
+     * @param \App\Service\FirebaseService $firebaseService
      * @return \Cake\Http\Response|null
      */
-    public function resendCode(): ?Response
+    public function resendCode(FirebaseService $firebaseService): ?Response
     {
         // Only handle POST requests
         $this->request->allowMethod(['post']);
-
-        // For development, disable CSRF validation and add extra bypass
-        // This is a TEMPORARY solution for development only
-        if (Configure::read('debug')) {
-            // Only try to disable FormProtection if it exists
-            if (isset($this->FormProtection)) {
-                $this->getEventManager()->off($this->FormProtection);
-            }
-
-            // For extreme cases, manually bypass CSRF token check
-            $request = $this->request;
-            if ($request->is('post')) {
-                $request = $request->withData('_csrfToken', 'debug-bypass-token');
-                $request = $request->withAttribute('csrfToken', true);
-                $this->setRequest($request);
-            }
-        }
 
         $session = $this->request->getSession();
         $email = $session->read('Auth.2FA.email');
@@ -205,7 +158,7 @@ class TwoFactorAuthController extends AppController
         }
 
         // Generate a new verification code
-        $code = $this->firebaseService->sendVerificationCode($email);
+        $code = $firebaseService->sendVerificationCode($email);
 
         // Send the code via email
         $mailer = new UserMailer('default');

@@ -5,7 +5,6 @@ namespace App\Controller;
 
 use App\Mailer\UserMailer;
 use App\Service\FirebaseService;
-use Cake\Core\Configure;
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
 use Cake\I18n\DateTime;
@@ -31,7 +30,7 @@ class UsersController extends AppController
     {
         parent::beforeFilter($event);
 
-        // Allow unauthenticated access to Log, register, forgotPassword, and resetPassword
+        // Allow unauthenticated access to log in, register, forgotPassword, and resetPassword
         $this->Authentication->addUnauthenticatedActions([
             'login',
             'register',
@@ -43,29 +42,12 @@ class UsersController extends AppController
     /**
      * Login method
      *
-     * @return \Cake\Http\Response|null|void
+     * @param \App\Service\FirebaseService $firebaseService Firebase service for 2FA
+     * @return \Cake\Http\Response|null
      */
-    public function login()
+    public function login(FirebaseService $firebaseService): ?Response
     {
         $this->request->allowMethod(['get', 'post']);
-
-        // For a temporary fix, disable all form protection and CSRF validation
-        // This section should be removed after debugging is complete
-        if (Configure::read('debug')) {
-            // Only try to disable FormProtection if it exists
-            if (isset($this->FormProtection)) {
-                $this->getEventManager()->off($this->FormProtection);
-            }
-
-            // For extreme cases, you can bypass the CSRF token check at the controller level
-            $request = $this->request;
-            if ($request->is('post')) {
-                $request = $request->withData('_csrfToken', 'debug-bypass-token');
-                $request = $request->withAttribute('csrfToken', true);
-                $this->setRequest($request);
-            }
-        }
-
         $result = $this->Authentication->getResult();
 
         // If the user is authenticated successfully...
@@ -81,9 +63,6 @@ class UsersController extends AppController
 
                 return null;
             }
-
-            // Load Firebase service for 2FA check
-            $firebaseService = new FirebaseService();
 
             // Get request data for risk assessment
             $requestData = [
@@ -102,15 +81,16 @@ class UsersController extends AppController
                 $session->write('Auth.2FA.email', $user->email);
 
                 // Store intended redirect destination
-                $redirect = $this->request->getQuery('redirect', ['_name' => 'home']); // Route to landing page
+                $redirect = $this->request->getQuery('redirect', ['_name' => 'home']);
                 $session->write('Auth.redirect', $redirect);
 
                 // Generate and send verification code
                 $code = $firebaseService->sendVerificationCode($user->email);
 
                 // We need to get the actual User entity for the mailer
-                $usersTable = $this->fetchTable('Users');
-                $userEntity = $usersTable->findByEmail($user->email)->first();
+                $userEntity = $this->Users->find()
+                    ->where(['email' => $user->email])
+                    ->first();
 
                 // Send email with verification code
                 $mailer = new UserMailer('default');
@@ -121,11 +101,9 @@ class UsersController extends AppController
                 return $this->redirect(['controller' => 'TwoFactorAuth', 'action' => 'verify']);
             } else {
                 // No 2FA needed, update last login time
-                $usersTable = $this->fetchTable('Users');
-                /** @var \App\Model\Entity\User $userEntity */
-                $userEntity = $usersTable->get($user->user_id);
+                $userEntity = $this->Users->get($user->user_id);
                 $userEntity->last_login = DateTime::now();
-                $usersTable->save($userEntity);
+                $this->Users->save($userEntity);
 
                 // Update login metadata for risk assessment
                 $firebaseService->updateLoginMetadata($user->email, $requestData);
@@ -140,6 +118,8 @@ class UsersController extends AppController
         if ($this->request->is('post') && (!$result || !$result->isValid())) {
             $this->Flash->error(__('Invalid username or password'));
         }
+
+        return null;
     }
 
     /**
@@ -172,9 +152,9 @@ class UsersController extends AppController
     /**
      * Index method
      *
-     * @return \Cake\Http\Response|null|void Renders view
+     * @return void Renders view
      */
-    public function index()
+    public function index(): void
     {
         $query = $this->Users->find();
         $users = $this->paginate($query);
@@ -185,10 +165,10 @@ class UsersController extends AppController
      * View method
      *
      * @param string|null $id User id.
-     * @return \Cake\Http\Response|null|void Renders view
+     * @return void Renders view
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function view(?string $id = null)
+    public function view(?string $id = null): void
     {
         $user = $this->Users->get($id, contain: []);
         $this->set(compact('user'));
@@ -296,7 +276,10 @@ class UsersController extends AppController
 
         if ($this->request->is('post')) {
             $email = $this->request->getData('email');
-            $user = $this->Users->find()->where(['email' => $email])->first();
+            /** @var \App\Model\Entity\User $user */
+            $user = $this->Users->find()
+                ->where(['email' => $email])
+                ->first();
 
             if (!$user) {
                 $this->Flash->error('No user found with that email address.');

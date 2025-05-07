@@ -17,7 +17,6 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use Cake\Controller\Controller;
-use Cake\Core\Configure;
 
 /**
  * Application Controller
@@ -48,14 +47,9 @@ class AppController extends Controller
         $this->loadComponent('Authentication.Authentication');
 
         /*
-         * FormProtection component for CSRF and form tampering protection
-         * Disabled for development to troubleshoot CSRF issues
+         * Enable the following component for recommended CakePHP form protection settings.
          * see https://book.cakephp.org/5/en/controllers/components/form-protection.html
          */
-        if (!Configure::read('debug')) {
-            $this->loadComponent('FormProtection', [
-                'unlockedActions' => ['login', 'register', 'forgotPassword', 'resetPassword', 'verify', 'resendCode'],
-            ]);
-        }
+        $this->loadComponent('FormProtection');
     }
 }
