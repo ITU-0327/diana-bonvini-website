@@ -298,19 +298,21 @@ class ArtworksController extends AppController
     }
 
     /**
-     * Draw one watermark string on each diagonal (“＼” and “／”) using a
-     * single pass per diagonal.  No outline is generated, so transparency
-     * remains exactly as specified in the colour definition.
+     * Draw one watermark string on each diagonal (“＼” and “／”) using
+     * a single pass per diagonal.  Five blank “letter slots” are added
+     * before and after the text, and every internal space is expanded to
+     * ten blank “letter slots” so the watermark has obvious gaps.
      *
      * @param \GdImage $canvas Destination GD image.
-     * @param int     $width  Image width  (px).
-     * @param int     $height Image height (px).
-     * @throws \Exception If the font is missing or GD cannot allocate colours.
+     * @param int      $width  Image width  (pixels).
+     * @param int      $height Image height (pixels).
+     *
+     * @throws \Exception If the font file is missing or GD cannot allocate colours.
      */
     private function _drawCornerDiagonalText(GdImage $canvas, int $width, int $height): void
     {
         /* 1. Retrieve watermark text -------------------------------------------- */
-        $text = TableRegistry::getTableLocator()
+        $rawText = TableRegistry::getTableLocator()
             ->get('ContentBlocks')
             ->find()
             ->select(['value'])
@@ -318,57 +320,67 @@ class ArtworksController extends AppController
             ->firstOrFail()
             ->value;
 
-        /* 2. Font and colour (single fill) -------------------------------------- */
+        /* 2. Pad the string:
+         *    – add five spaces at both ends
+         *    – replace every internal space with ten spaces                  */
+        $displayText = str_repeat(' ', 10)
+            . str_replace(' ', str_repeat(' ', 25), $rawText)
+            . str_repeat(' ', 10);
+
+        /* 3. Font and colour (single fill) -------------------------------------- */
         $font = WWW_ROOT . 'font/MPLUSRounded1c-Medium.ttf';
         if (!is_readable($font)) {
-            throw new Exception("Missing font at $font");
+            throw new \Exception("Missing font at $font");
         }
 
-        // Mid‑grey, highly transparent
-        $wmColor = imagecolorallocatealpha($canvas, 190, 190, 190, 90);
+        // Mid-grey, highly transparent (α = 90 → ≈ 71 % transparent)
+        $wmColor = imagecolorallocatealpha($canvas, 200, 200, 200,  90);
         if ($wmColor === false) {
-            throw new Exception('Unable to allocate watermark colour.');
+            throw new \Exception('Unable to allocate watermark colour.');
         }
 
-        /* 3. Diagonal geometry --------------------------------------------------- */
+        /* 4. Diagonal geometry --------------------------------------------------- */
         $diagLen    = hypot($width, $height);
         $thetaRad   = atan2($height, $width);
         $thetaDeg   = rad2deg($thetaRad);
-        $targetProj = $diagLen * 0.88;
+        $targetProj = $diagLen * 0.88;              // leave 12 % margin
 
-        /* 4. Choose the largest font that fits ---------------------------------- */
+        /* 5. Binary-search the largest font size that fits ----------------------- */
         $lo = 10;
         $hi = 400;
         while ($lo < $hi) {
             $mid  = intdiv($lo + $hi + 1, 2);
-            $bb   = imagettfbbox($mid, 0, $font, $text);
+            $bb   = imagettfbbox($mid, 0, $font, $displayText);
             $proj = hypot($bb[2] - $bb[0], $bb[1] - $bb[7]);
-            $proj <= $targetProj ? $lo = $mid : $hi = $mid - 1;
+            ($proj <= $targetProj) ? $lo = $mid : $hi = $mid - 1;
         }
         $fontSize = $lo;
 
-        /* 5. Helper to centre rotated text -------------------------------------- */
+        /* 6. Helper: compute baseline so bbox centre == image centre ------------- */
         $baseFor = function (float $angleDeg)
- use ($font, $text, $fontSize, $width, $height): array {
-            $bb = imagettfbbox($fontSize, $angleDeg, $font, $text);
+        use ($font, $displayText, $fontSize, $width, $height): array {
+            $bb = imagettfbbox($fontSize, $angleDeg, $font, $displayText);
             $minX = min($bb[0], $bb[2], $bb[4], $bb[6]);
             $maxX = max($bb[0], $bb[2], $bb[4], $bb[6]);
             $minY = min($bb[1], $bb[3], $bb[5], $bb[7]);
             $maxY = max($bb[1], $bb[3], $bb[5], $bb[7]);
+
             $imgCX = $width  / 2;
             $imgCY = $height / 2;
 
             return [
-                (int)round($imgCX - ($minX + $maxX) / 2),
-                (int)round($imgCY - ($minY + $maxY) / 2),
+                (int)round($imgCX - ($minX + $maxX) / 2),   // x
+                (int)round($imgCY - ($minY + $maxY) / 2),   // y
             ];
         };
 
-        [$x1, $y1] = $baseFor(-$thetaDeg);   // “＼”
-        [$x2, $y2] = $baseFor(+$thetaDeg);   // “／”
+        [$x1, $y1] = $baseFor(-$thetaDeg);  // “＼” diagonal
+        [$x2, $y2] = $baseFor(+$thetaDeg);  // “／” diagonal
 
-        /* 6. Draw each diagonal exactly once ------------------------------------ */
-        imagettftext($canvas, $fontSize, -$thetaDeg, $x1, $y1, $wmColor, $font, $text);
-        imagettftext($canvas, $fontSize, +$thetaDeg, $x2, $y2, $wmColor, $font, $text);
+        /* 7. Draw each diagonal exactly once ------------------------------------ */
+        imagettftext($canvas, $fontSize, -$thetaDeg, $x1, $y1,
+            $wmColor, $font, $displayText);
+        imagettftext($canvas, $fontSize, +$thetaDeg, $x2, $y2,
+            $wmColor, $font, $displayText);
     }
 }
