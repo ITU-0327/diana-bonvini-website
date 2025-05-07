@@ -14,16 +14,18 @@ $completedRequests = 0;
 $totalRevenue = 0;
 
 foreach ($writingServiceRequests as $request) {
-    if ($request->status === 'pending_quote') {
+    $status = $request->request_status ?? 'pending';
+
+    if ($status === 'pending_quote') {
         $pendingQuotes++;
-    } elseif ($request->status === 'in_progress') {
+    } elseif ($status === 'in_progress') {
         $inProgressRequests++;
-    } elseif ($request->status === 'completed') {
+    } elseif ($status === 'completed') {
         $completedRequests++;
     }
-    
+
     if (!empty($request->final_price)) {
-        $totalRevenue += $request->final_price;
+        $totalRevenue += (float)$request->final_price;
     }
 }
 ?>
@@ -33,7 +35,12 @@ foreach ($writingServiceRequests as $request) {
         <div class="col-12">
             <div class="card shadow">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-pen mr-2"></i><?= __('Writing Service Management') ?></h6>
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-pen mr-2"></i><?= __('Writing Service Management') ?>
+                        <?php if (isset($totalUnreadCount) && $totalUnreadCount > 0) : ?>
+                            <span class="badge badge-danger ml-2"><?= $totalUnreadCount ?> unread</span>
+                        <?php endif; ?>
+                    </h6>
                     <ol class="breadcrumb m-0 bg-transparent p-0">
                         <li class="breadcrumb-item"><?= $this->Html->link(__('Dashboard'), ['controller' => 'Admin', 'action' => 'dashboard']) ?></li>
                         <li class="breadcrumb-item active"><?= __('Writing Requests') ?></li>
@@ -42,7 +49,7 @@ foreach ($writingServiceRequests as $request) {
             </div>
         </div>
     </div>
-    
+
     <!-- Service Stats Cards -->
     <div class="row">
         <div class="col-lg-3 col-md-6 col-6">
@@ -102,23 +109,13 @@ foreach ($writingServiceRequests as $request) {
                     <h6 class="m-0 font-weight-bold text-primary">
                         <i class="fas fa-filter mr-1"></i> Filter Requests
                     </h6>
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-download fa-sm mr-1"></i> Export
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportDropdown">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-file-csv mr-2"></i>CSV</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-file-excel mr-2"></i>Excel</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-file-pdf mr-2"></i>PDF</a></li>
-                        </ul>
-                    </div>
                 </div>
                 <div class="card-body">
                     <?= $this->Form->create(null, ['type' => 'get']) ?>
                     <div class="row">
                         <div class="col-md-3 mb-3">
                             <label class="form-label">Search Keywords</label>
-                            <input type="text" name="q" id="q" class="form-control" 
+                            <input type="text" name="q" id="q" class="form-control"
                                 value="<?= h($this->request->getQuery('q')) ?>"
                                 placeholder="Search by title, content, etc.">
                         </div>
@@ -197,7 +194,7 @@ foreach ($writingServiceRequests as $request) {
                             <tbody>
                                 <?php if (count($writingServiceRequests) > 0) : ?>
                                     <?php foreach ($writingServiceRequests as $request) : ?>
-                                        <tr class="request-row" data-status="<?= h($request->status) ?>">
+                                        <tr class="request-row" data-status="<?= h($request->request_status ?? '') ?>">
                                             <td class="align-middle"><?= h(substr($request->writing_service_request_id, 0, 8)) ?></td>
                                             <td class="align-middle font-weight-bold"><?= h($request->service_title) ?></td>
                                             <td class="align-middle">
@@ -207,17 +204,18 @@ foreach ($writingServiceRequests as $request) {
                                                     <?= h($request->client_name ?? 'Unknown') ?>
                                                 <?php endif; ?>
                                             </td>
-                                            <td class="align-middle"><?= h(Inflector::humanize($request->service_type)) ?></td>
+                                            <td class="align-middle"><?= h(Inflector::humanize($request->service_type ?? 'Other')) ?></td>
                                             <td class="align-middle">
-                                                <?php if ($request->final_price) : ?>
-                                                    <span class="font-weight-bold">$<?= number_format($request->final_price, 2) ?></span>
+                                                <?php if (isset($request->final_price) && $request->final_price) : ?>
+                                                    <span class="font-weight-bold">$<?= number_format((float)$request->final_price, 2) ?></span>
                                                 <?php else : ?>
                                                     <span class="badge bg-warning">Pending Quote</span>
                                                 <?php endif; ?>
                                             </td>
                                             <td class="align-middle">
                                                 <?php
-                                                $statusClass = match ($request->status) {
+                                                $status = $request->request_status ?? 'pending';
+                                                $statusClass = match ($status) {
                                                     'pending', 'pending_quote' => 'warning',
                                                     'scheduled' => 'info',
                                                     'in_progress' => 'primary',
@@ -225,24 +223,25 @@ foreach ($writingServiceRequests as $request) {
                                                     'cancelled' => 'danger',
                                                     default => 'secondary'
                                                 };
-                                                $statusLabel = str_replace('_', ' ', $request->status);
-                                                ?>
+                                                $statusLabel = str_replace('_', ' ', $status);
+    ?>
                                                 <span class="badge bg-<?= $statusClass ?>">
                                                     <?= ucfirst(h($statusLabel)) ?>
                                                 </span>
                                             </td>
-                                            <td class="align-middle"><?= $request->created->format('M d, Y') ?></td>
+                                            <td class="align-middle">
+                                                <?php if (isset($request->created_at) && $request->created_at) : ?>
+                                                    <?= $request->created_at->format('M d, Y') ?>
+                                                <?php else : ?>
+                                                    -
+                                                <?php endif; ?>
+                                            </td>
                                             <td class="align-middle text-center">
                                                 <div class="btn-group">
                                                     <a href="<?= $this->Url->build(['action' => 'view', $request->writing_service_request_id]) ?>" class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="View Details">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
-                                                    <button type="button" class="btn btn-sm btn-primary update-status" data-bs-toggle="modal" data-bs-target="#updateStatusModal" data-id="<?= h($request->writing_service_request_id) ?>" data-status="<?= h($request->status) ?>" data-bs-toggle="tooltip" title="Update Status">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <a href="<?= $this->Url->build(['action' => 'view', $request->writing_service_request_id, '#' => 'messages']) ?>" class="btn btn-sm btn-success" data-bs-toggle="tooltip" title="Send Message">
-                                                        <i class="fas fa-comment"></i>
-                                                    </a>
+
                                                 </div>
                                             </td>
                                         </tr>
@@ -331,11 +330,11 @@ foreach ($writingServiceRequests as $request) {
         margin-bottom: 20px;
         position: relative;
     }
-    
+
     .small-box .inner {
         padding: 10px;
     }
-    
+
     .small-box h3 {
         font-size: 2.2rem;
         font-weight: 700;
@@ -343,11 +342,11 @@ foreach ($writingServiceRequests as $request) {
         padding: 0;
         white-space: nowrap;
     }
-    
+
     .small-box p {
         font-size: 1rem;
     }
-    
+
     .small-box .icon {
         color: rgba(0,0,0,.15);
         font-size: 70px;
@@ -356,27 +355,27 @@ foreach ($writingServiceRequests as $request) {
         top: 15px;
         z-index: 0;
     }
-    
+
     .bg-info {
         background-color: #17a2b8!important;
         color: #fff;
     }
-    
+
     .bg-success {
         background-color: #28a745!important;
         color: #fff;
     }
-    
+
     .bg-warning {
         background-color: #ffc107!important;
         color: #1f2d3d;
     }
-    
+
     .bg-primary {
         background-color: #007bff!important;
         color: #fff;
     }
-    
+
     .badge {
         display: inline-block;
         padding: 0.35em 0.65em;
@@ -388,11 +387,11 @@ foreach ($writingServiceRequests as $request) {
         vertical-align: baseline;
         border-radius: 0.25rem;
     }
-    
+
     .badge.bg-warning {
         color: #212529;
     }
-    
+
     .table-striped tbody tr:nth-of-type(odd) {
         background-color: rgba(0,0,0,.05);
     }
@@ -405,7 +404,7 @@ foreach ($writingServiceRequests as $request) {
         tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
-        
+
         // Sort the table by created date (column 6) by default
         const table = document.getElementById('requestsTable');
         if (table && typeof $.fn.DataTable !== 'undefined') {
@@ -417,63 +416,63 @@ foreach ($writingServiceRequests as $request) {
                 order: [[6, 'desc']]
             });
         }
-        
+
         // Update status modal handling
         document.querySelectorAll('.update-status').forEach(function(button) {
             button.addEventListener('click', function() {
                 const requestId = this.getAttribute('data-id');
                 const currentStatus = this.getAttribute('data-status');
-                
+
                 document.getElementById('modal-request-id').value = requestId;
                 document.getElementById('modal-status').value = currentStatus;
             });
         });
-        
+
         // Submit status update
         document.getElementById('updateStatusSubmit').addEventListener('click', function() {
             document.getElementById('updateStatusForm').submit();
         });
-        
+
         // Filter by status
         document.querySelector('select[name="status"]').addEventListener('change', function() {
             filterRequests();
         });
-        
+
         // Filter by service type
         document.querySelector('select[name="service_type"]').addEventListener('change', function() {
             filterRequests();
         });
-        
+
         // Search functionality
         document.getElementById('q').addEventListener('keyup', function() {
             filterRequests();
         });
-        
+
         // Function to filter requests
         function filterRequests() {
             const statusFilter = document.querySelector('select[name="status"]').value;
             const serviceTypeFilter = document.querySelector('select[name="service_type"]').value;
             const searchTerm = document.getElementById('q').value.toLowerCase();
-            
+
             document.querySelectorAll('.request-row').forEach(function(row) {
                 let display = true;
-                
+
                 // Status filtering
                 if (statusFilter !== '' && row.getAttribute('data-status') !== statusFilter) {
                     display = false;
                 }
-                
+
                 // Search filtering
                 if (searchTerm !== '') {
                     const title = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
                     const client = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
                     const serviceType = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
-                    
+
                     if (!title.includes(searchTerm) && !client.includes(searchTerm) && !serviceType.includes(searchTerm)) {
                         display = false;
                     }
                 }
-                
+
                 // Show/hide row
                 row.style.display = display ? '' : 'none';
             });

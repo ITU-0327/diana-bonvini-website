@@ -65,6 +65,15 @@ return function (RouteBuilder $routes): void {
         // Connect any additional page requests to the Pages controller.
         $builder->connect('/pages/*', ['controller' => 'Pages', 'action' => 'display']);
 
+        // API routes for AJAX functionality
+        $builder->connect('/writing-service-requests/fetch-messages/*', ['controller' => 'WritingServiceRequests', 'action' => 'fetchMessages']);
+        $builder->connect('/writing-service-requests/fetch-messages/:id', ['controller' => 'WritingServiceRequests', 'action' => 'fetchMessages'])
+            ->setPatterns(['id' => '[a-zA-Z0-9-]+'])
+            ->setPass(['id']);
+        $builder->connect('/writing-service-requests/fetch-messages/:id/:lastMessageId', ['controller' => 'WritingServiceRequests', 'action' => 'fetchMessages'])
+            ->setPatterns(['id' => '[a-zA-Z0-9-]+', 'lastMessageId' => '[a-zA-Z0-9-]+'])
+            ->setPass(['id', 'lastMessageId']);
+
         /*
          * Connect catchall routes for all controllers.
          *
@@ -105,6 +114,14 @@ return function (RouteBuilder $routes): void {
         // Writing service request management
         // For handling and managing client writing and proofreading service requests
         $builder->connect('/writing-service-requests', ['controller' => 'WritingServiceRequests', 'action' => 'index']);
+
+        // AJAX endpoint for fetching new messages in chat
+        $builder->connect('/writing-service-requests/fetch-messages/:id', ['controller' => 'WritingServiceRequests', 'action' => 'fetchMessages'])
+            ->setPatterns(['id' => '[a-zA-Z0-9-]+'])
+            ->setPass(['id']);
+        $builder->connect('/writing-service-requests/fetch-messages/:id/:lastMessageId', ['controller' => 'WritingServiceRequests', 'action' => 'fetchMessages'])
+            ->setPatterns(['id' => '[a-zA-Z0-9-]+', 'lastMessageId' => '[a-zA-Z0-9-]+'])
+            ->setPass(['id', 'lastMessageId']);
 
         // Artworks management for the art e-commerce section
         // Allows adding, editing, and removing artwork products

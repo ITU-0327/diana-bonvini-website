@@ -33,11 +33,35 @@
 
         <!-- Writing Service Requests -->
         <li class="nav-item">
-            <?= $this->Html->link(
-                '<i class="fas fa-pen"></i> <span>Writing Services</span>',
+            <?php
+            // Access RequestMessages table directly in the view
+            try {
+                $unreadCount = 0;
+                if (class_exists('\Cake\ORM\TableRegistry')) {
+                    $requestMessagesTable = \Cake\ORM\TableRegistry::getTableLocator()->get('RequestMessages');
+                    $usersTable = \Cake\ORM\TableRegistry::getTableLocator()->get('Users');
+                    
+                    // Count all unread messages from non-admin users
+                    $unreadCount = $requestMessagesTable->find()
+                        ->where([
+                            'RequestMessages.is_read' => false,
+                            'RequestMessages.user_id NOT IN' => $usersTable->find()
+                                ->select(['user_id'])
+                                ->where(['user_type' => 'admin'])
+                        ])
+                        ->count();
+                }
+            } catch (Exception $e) {
+                $unreadCount = 0;
+            }
+            
+            echo $this->Html->link(
+                '<i class="fas fa-pen"></i> <span>Writing Services</span>' . 
+                ($unreadCount > 0 ? '<span class="badge badge-danger ml-1">' . $unreadCount . '</span>' : ''),
                 ['controller' => 'WritingServiceRequests', 'action' => 'index', 'prefix' => 'Admin'],
-                ['escape' => false, 'class' => $this->request->getParam('controller') === 'WritingServiceRequests' ? 'active' : ''],
-            ) ?>
+                ['escape' => false, 'class' => $this->request->getParam('controller') === 'WritingServiceRequests' ? 'active' : '']
+            );
+            ?>
         </li>
 
         <!-- Content Management -->

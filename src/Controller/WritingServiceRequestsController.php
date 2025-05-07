@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Model\Entity\WritingServiceRequest;
 use Cake\Http\Response;
+use Exception;
 use Psr\Http\Message\UploadedFileInterface;
 
 /**
@@ -64,8 +66,14 @@ class WritingServiceRequestsController extends AppController
 
         $writingServiceRequest = $this->WritingServiceRequests->get(
             $id,
-            contain: ['Users', 'RequestMessages.Users'],
+            contain: ['Users', 'RequestMessages' => function ($q) {
+                return $q->contain(['Users'])
+                    ->order(['RequestMessages.created_at' => 'ASC']);
+            }],
         );
+
+        // Mark messages from admin as read when customer views them
+        $this->markMessagesAsRead($writingServiceRequest, $user->user_id);
 
         if ($this->request->is(['post', 'put', 'patch'])) {
             $data = $this->request->getData();
@@ -73,7 +81,8 @@ class WritingServiceRequestsController extends AppController
             if (!empty($data['reply_message'])) {
                 $data['request_messages'][] = [
                     'user_id' => $user->user_id,
-                    'message'   => $data['reply_message'],
+                    'message' => $data['reply_message'],
+                    'is_read' => false, // Initially not read by the admin
                 ];
 
                 $writingServiceRequest = $this->WritingServiceRequests->patchEntity(
@@ -84,6 +93,12 @@ class WritingServiceRequestsController extends AppController
                 if ($this->WritingServiceRequests->save($writingServiceRequest)) {
                     $this->Flash->success(__('Message sent successfully.'));
 
+                    // If the request status is pending, update it to in_progress
+                    if ($writingServiceRequest->request_status === 'pending') {
+                        $writingServiceRequest->request_status = 'in_progress';
+                        $this->WritingServiceRequests->save($writingServiceRequest);
+                    }
+
                     return $this->redirect(['action' => 'view', $id]);
                 } else {
                     $this->Flash->error(__('Failed to send message. Please try again.'));
@@ -92,6 +107,135 @@ class WritingServiceRequestsController extends AppController
         }
 
         $this->set(compact('writingServiceRequest'));
+    }
+
+    /**
+     * Marks messages as read for the given user
+     *
+     * @param \App\Model\Entity\WritingServiceRequest $writingServiceRequest The writing service request
+     * @param string $userId The ID of the current user
+     * @return void
+     */
+    private function markMessagesAsRead(WritingServiceRequest $writingServiceRequest, string $userId): void
+    {
+        if (empty($writingServiceRequest->request_messages)) {
+            return;
+        }
+
+        $requestMessagesTable = $this->fetchTable('RequestMessages');
+        $updatedCount = 0;
+
+        foreach ($writingServiceRequest->request_messages as $message) {
+            // Only mark messages from other users (admin) as read
+            if ($message->user_id !== $userId && !$message->is_read) {
+                $message->is_read = true;
+                $requestMessagesTable->save($message);
+                $updatedCount++;
+            }
+        }
+
+        // Log how many messages were marked as read for debugging
+        if ($updatedCount > 0) {
+            $this->log("Marked $updatedCount messages as read for user $userId", 'info');
+        }
+    }
+
+    /**
+     * AJAX endpoint to fetch new messages
+     *
+     * @param string|null $id Writing Service Request id
+     * @param string|null $lastMessageId The ID of the last message the client has
+     * @return \Cake\Http\Response|null The JSON response with new messages
+     */
+    public function fetchMessages(?string $id = null, ?string $lastMessageId = null)
+    {
+        $this->request->allowMethod(['get', 'ajax']);
+
+        if ($this->request->is('ajax')) {
+            $this->disableAutoRender();
+            $this->response = $this->response->withType('application/json');
+
+            if (empty($id)) {
+                return $this->response->withStringBody(json_encode([
+                    'success' => false,
+                    'message' => 'Request ID is required',
+                ]));
+            }
+
+            /** @var \App\Model\Entity\User|null $user */
+            $user = $this->Authentication->getIdentity();
+
+            if (!$user) {
+                return $this->response->withStringBody(json_encode([
+                    'success' => false,
+                    'message' => 'Authentication required',
+                ]));
+            }
+
+            // Get the lastMessageId from query parameter if not provided as route parameter
+            if (empty($lastMessageId)) {
+                $lastMessageId = $this->request->getQuery('lastMessageId');
+            }
+
+            try {
+                $writingServiceRequest = $this->WritingServiceRequests->get($id, [
+                    'contain' => [
+                        'RequestMessages' => function ($q) use ($lastMessageId) {
+                            $query = $q->contain(['Users'])
+                                ->order(['RequestMessages.created_at' => 'ASC']);
+
+                            if (!empty($lastMessageId)) {
+                                // Only get messages newer than the lastMessageId
+                                $query->where(['RequestMessages.request_message_id >' => $lastMessageId]);
+                            }
+
+                            return $query;
+                        },
+                    ],
+                ]);
+
+                // Format messages for JSON response
+                $messages = [];
+                if (!empty($writingServiceRequest->request_messages)) {
+                    foreach ($writingServiceRequest->request_messages as $message) {
+                        $isAdmin = isset($message->user) && $message->user->user_type === 'admin';
+                        $timeFormatted = $message->created_at->format('M j, Y g:i A');
+
+                        $messages[] = [
+                            'id' => $message->request_message_id,
+                            'content' => $message->message,
+                            'sender' => $isAdmin ? 'admin' : 'client',
+                            'senderName' => $isAdmin ? 'Admin' : ($message->user->first_name . ' ' . $message->user->last_name),
+                            'timestamp' => $timeFormatted,
+                            'is_read' => (bool)$message->is_read,
+                            'created_at' => $message->created_at->format('c'),
+                        ];
+
+                        // Mark the message as read if it's not from the current user
+                        if ($message->user_id !== $user->user_id && !$message->is_read) {
+                            $message->is_read = true;
+                            $this->WritingServiceRequests->RequestMessages->save($message);
+                        }
+                    }
+                }
+
+                return $this->response->withStringBody(json_encode([
+                    'success' => true,
+                    'messages' => $messages,
+                    'count' => count($messages),
+                ]));
+            } catch (Exception $e) {
+                return $this->response->withStringBody(json_encode([
+                    'success' => false,
+                    'message' => 'Error: ' . $e->getMessage(),
+                ]));
+            }
+        }
+
+        return $this->response->withStringBody(json_encode([
+            'success' => false,
+            'message' => 'Invalid request',
+        ]));
     }
 
     /**

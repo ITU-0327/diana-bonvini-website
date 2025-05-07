@@ -12,6 +12,7 @@ use Cake\ORM\Entity;
  * @property string $writing_service_request_id
  * @property string $user_id
  * @property string $message
+ * @property bool $is_read
  * @property bool $is_deleted
  * @property \Cake\I18n\DateTime $created_at
  * @property \Cake\I18n\DateTime $updated_at
@@ -34,6 +35,7 @@ class RequestMessage extends Entity
         'writing_service_request_id' => true,
         'user_id' => true,
         'message' => true,
+        'is_read' => true,
         'is_deleted' => true,
         'created_at' => true,
         'updated_at' => true,

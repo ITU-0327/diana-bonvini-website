@@ -75,6 +75,10 @@ class RequestMessagesTable extends Table
             ->notEmptyString('message');
 
         $validator
+            ->boolean('is_read')
+            ->notEmptyString('is_read');
+
+        $validator
             ->boolean('is_deleted')
             ->notEmptyString('is_deleted');
 

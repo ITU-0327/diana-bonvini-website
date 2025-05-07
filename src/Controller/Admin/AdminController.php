@@ -31,6 +31,9 @@ class AdminController extends AppController
 
         // Check for authentication
         $this->checkAdminAuth();
+
+        // Load common data for admin section
+        $this->loadCommonData();
     }
 
     /**
@@ -184,7 +187,7 @@ class AdminController extends AppController
                 $completedServicesCount = $writingTable->find()
                     ->where(['status' => 'completed'])
                     ->count();
-                    
+
                 // Count active services (pending_quote, scheduled, in_progress)
                 $activeServicesCount = $writingTable->find()
                     ->where(['status IN' => ['pending_quote', 'scheduled', 'in_progress']])
@@ -248,5 +251,44 @@ class AdminController extends AppController
         }
 
         return null;
+    }
+
+    /**
+     * Load common data used across admin pages
+     *
+     * @return void
+     */
+    private function loadCommonData(): void
+    {
+        try {
+            // Get unread message count for writing service requests
+            $writingServiceUnreadCount = 0;
+
+            // Get the RequestMessages table
+            try {
+                $requestMessagesTable = $this->getTableLocator()->get('RequestMessages');
+                $usersTable = $this->getTableLocator()->get('Users');
+
+                // Count all unread messages from non-admin users
+                $writingServiceUnreadCount = $requestMessagesTable->find()
+                    ->where([
+                        'RequestMessages.is_read' => false,
+                        'RequestMessages.user_id IN' => $usersTable->find()
+                            ->select(['user_id'])
+                            ->where(['user_type !=' => 'admin']),
+                    ])
+                    ->count();
+            } catch (Exception $e) {
+                // Table might not exist
+                $this->log($e->getMessage(), 'error');
+                $writingServiceUnreadCount = 0;
+            }
+
+            // Set common view variables
+            $this->set('writingServiceUnreadCount', $writingServiceUnreadCount);
+        } catch (Exception $e) {
+            // Log the error
+            $this->log('Error loading common data: ' . $e->getMessage(), 'error');
+        }
     }
 }
