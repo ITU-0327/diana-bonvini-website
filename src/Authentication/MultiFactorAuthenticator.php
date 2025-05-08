@@ -24,7 +24,7 @@ class MultiFactorAuthenticator extends AbstractAuthenticator
      * - `sessionKey`: Session key for storing the 2FA code.
      * - `fields`: Fields used for authentication.
      *
-     * @var array<string, mixed>
+     * @var array<array-key, mixed>
      */
     protected array $_defaultConfig = [
         'loginUrl' => '/users/login',
