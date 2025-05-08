@@ -11,6 +11,7 @@ use Authentication\Authenticator\Result;
 use Authentication\Authenticator\ResultInterface;
 use Authentication\Identifier\IdentifierInterface;
 use Cake\ORM\TableRegistry;
+use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface;
 
 class MultiFactorAuthenticator extends AbstractAuthenticator
@@ -43,6 +44,13 @@ class MultiFactorAuthenticator extends AbstractAuthenticator
     protected FormAuthenticator $formAuth;
 
     /**
+     * TwoFactorService instance.
+     *
+     * @var \App\Service\TwoFactorService
+     */
+    protected TwoFactorService $twoFactorService;
+
+    /**
      * Constructor
      *
      * @param \Authentication\Identifier\IdentifierInterface $identifier Identifier or identifiers collection.
@@ -56,17 +64,20 @@ class MultiFactorAuthenticator extends AbstractAuthenticator
             'fields' => $this->_config['fields'],
             'loginUrl' => $this->_config['loginUrl'],
         ]);
+        if (empty($config['twoFactorService']) || !$config['twoFactorService'] instanceof TwoFactorService) {
+            throw new InvalidArgumentException('MultiFactorAuthenticator requires a TwoFactorService');
+        }
+        $this->twoFactorService = $config['twoFactorService'];
     }
 
     /**
      * Set the Firebase service.
      *
      * @param \Psr\Http\Message\ServerRequestInterface $request
-     * @param \App\Service\TwoFactorService $twoFactorService
      * @return \Authentication\Authenticator\ResultInterface
      * @throws \Random\RandomException
      */
-    public function authenticate(ServerRequestInterface $request, TwoFactorService $twoFactorService = new TwoFactorService()): ResultInterface
+    public function authenticate(ServerRequestInterface $request): ResultInterface
     {
         $session = $request->getAttribute('session');
         $path = $request->getUri()->getPath();
@@ -79,7 +90,7 @@ class MultiFactorAuthenticator extends AbstractAuthenticator
             $body = (array)$request->getParsedBody();
             $code = $body['verification_code'] ?? null;
 
-            if (!$userId || !$code || !$twoFactorService->verifyCode($userId, $code)) {
+            if (!$userId || !$code || !$this->twoFactorService->verifyCode($userId, $code)) {
                 return new Result(null, ResultInterface::FAILURE_CREDENTIALS_INVALID);
             }
 
@@ -112,12 +123,12 @@ class MultiFactorAuthenticator extends AbstractAuthenticator
         $cookieParams = $request->getCookieParams();
         $deviceId = $cookieParams['trusted_device'] ?? null;
 
-        if (!$twoFactorService->shouldRequire2FA($user->user_id, $deviceId)) {
+        if (!$this->twoFactorService->shouldRequire2FA($user->user_id, $deviceId)) {
             return new Result($user, ResultInterface::SUCCESS);
         }
 
         // 2FA required → generate & email code, stash in session
-        $code = $twoFactorService->generateCode($user->user_id);
+        $code = $this->twoFactorService->generateCode($user->user_id);
         $session->write($this->_config['sessionKey'], [
             'id' => $user->user_id,
             'redirect' => $request->getQueryParams()['redirect'] ?? ['_name' => 'home'],

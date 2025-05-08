@@ -17,9 +17,9 @@ declare(strict_types=1);
 namespace App;
 
 use App\Authentication\MultiFactorAuthenticator;
-use App\Service\TwoFactorService;
 use App\Service\R2StorageService;
 use App\Service\StripeService;
+use App\Service\TwoFactorService;
 use Authentication\AuthenticationService;
 use Authentication\AuthenticationServiceInterface;
 use Authentication\AuthenticationServiceProviderInterface;
@@ -33,10 +33,14 @@ use Cake\Http\Middleware\BodyParserMiddleware;
 use Cake\Http\Middleware\CsrfProtectionMiddleware;
 use Cake\Http\MiddlewareQueue;
 use Cake\ORM\Locator\TableLocator;
+use Cake\ORM\TableRegistry;
 use Cake\Routing\Middleware\AssetMiddleware;
 use Cake\Routing\Middleware\RoutingMiddleware;
 use Cake\Routing\Router;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use RuntimeException;
 
 /**
  * Application setup class.
@@ -120,10 +124,25 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
      */
     public function services(ContainerInterface $container): void
     {
-        $container->add(StripeService::class)
+        // Tables
+        $container->addShared('Table.TwoFactorCodes', function () {
+            return TableRegistry::getTableLocator()->get('TwoFactorCodes');
+        });
+        $container->addShared('Table.TrustedDevices', function () {
+            return TableRegistry::getTableLocator()->get('TrustedDevices');
+        });
+
+        // Two-Factor
+        $container->addShared(TwoFactorService::class)
+            ->addArgument('Table.TwoFactorCodes')
+            ->addArgument('Table.TrustedDevices');
+
+        // Stripe
+        $container->addShared(StripeService::class)
             ->addArgument(Configure::read('Stripe.secret'));
-        $container->add(R2StorageService::class);
-        $container->add(TwoFactorService::class);
+
+        // Cloudflare R2
+        $container->addShared(R2StorageService::class);
     }
 
     /**
@@ -150,6 +169,15 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
         // Load the authenticators, you want session first
         $authenticationService->loadAuthenticator('Authentication.Session');
 
+        try {
+            $twoFactorService = $this->getContainer()->get(TwoFactorService::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException(
+                'Unable to retrieve TwoFactorService from container',
+                0,
+                $e
+            );
+        }
         // Configure form data check to pick email and password
         $authenticationService->loadAuthenticator(MultiFactorAuthenticator::class, [
             'fields' => [
@@ -159,6 +187,7 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
             'loginUrl' => Router::url('/users/login'),
             'verifyUrl' => Router::url('/two-factor-auth/verify'),
             'sessionKey' => 'TwoFactorUser',
+            'twoFactorService' => $twoFactorService,
         ]);
 
         return $authenticationService;

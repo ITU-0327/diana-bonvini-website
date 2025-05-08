@@ -5,7 +5,7 @@ namespace App\Service;
 
 use App\Model\Table\TrustedDevicesTable;
 use App\Model\Table\TwoFactorCodesTable;
-use Cake\ORM\TableRegistry;
+use Cake\Log\Log;
 use DateTime;
 
 /**
@@ -31,14 +31,9 @@ class TwoFactorService
      *
      * Initializes the table locators for two-factor codes and trusted devices.
      */
-    public function __construct()
+    public function __construct(TwoFactorCodesTable $codesTable, TrustedDevicesTable $devicesTable)
     {
-        /** @var \App\Model\Table\TwoFactorCodesTable $codesTable */
-        $codesTable = TableRegistry::getTableLocator()->get('TwoFactorCodes');
         $this->CodesTable = $codesTable;
-
-        /** @var \App\Model\Table\TrustedDevicesTable $devicesTable */
-        $devicesTable = TableRegistry::getTableLocator()->get('TrustedDevices');
         $this->DevicesTable = $devicesTable;
     }
 
