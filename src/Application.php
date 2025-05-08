@@ -171,11 +171,11 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
 
         try {
             $twoFactorService = $this->getContainer()->get(TwoFactorService::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+        } catch (NotFoundExceptionInterface | ContainerExceptionInterface $e) {
             throw new RuntimeException(
                 'Unable to retrieve TwoFactorService from container',
                 0,
-                $e
+                $e,
             );
         }
         // Configure form data check to pick email and password

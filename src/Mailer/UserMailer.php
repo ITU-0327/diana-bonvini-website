@@ -39,7 +39,7 @@ class UserMailer extends Mailer
             ->setTemplate('reset_password')
             ->setLayout('default');
     }
-    
+
     /**
      * Sends a 2FA verification code email.
      *

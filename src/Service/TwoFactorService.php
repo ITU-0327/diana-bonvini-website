@@ -5,7 +5,6 @@ namespace App\Service;
 
 use App\Model\Table\TrustedDevicesTable;
 use App\Model\Table\TwoFactorCodesTable;
-use Cake\Log\Log;
 use DateTime;
 
 /**
