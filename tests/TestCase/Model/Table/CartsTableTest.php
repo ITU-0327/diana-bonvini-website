@@ -16,7 +16,7 @@ class CartsTableTest extends TestCase
      *
      * @var \App\Model\Table\CartsTable
      */
-    protected $Carts;
+    protected CartsTable $Carts;
 
     /**
      * Fixtures
@@ -48,7 +48,7 @@ class CartsTableTest extends TestCase
      */
     protected function tearDown(): void
     {
-        unset($this->Carts);
+        $this->getTableLocator()->clear();
 
         parent::tearDown();
     }

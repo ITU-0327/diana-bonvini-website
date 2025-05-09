@@ -31,14 +31,22 @@
         </div>
         <!-- Remember Me & Forgot Password -->
         <div class="flex items-center justify-between mb-4">
-            <label class="inline-flex items-center text-sm text-gray-600">
-                <input type="checkbox" class="form-checkbox h-4 w-4 text-indigo-500" name="remember" />
-                <span class="ml-2">Remember me</span>
-            </label>
+            <?= $this->Form->control('remember', [
+                'type' => 'checkbox',
+                'label' => [
+                    'text' => '<span class="ml-2">Remember me</span>',
+                    'class' => 'inline-flex items-center text-sm text-gray-600',
+                    'escape' => false,
+                ],
+                'templates' => [
+                    'inputContainer' => '{{content}}',
+                    'checkbox' => '<input type="checkbox" name="{{name}}" value="{{value}}" class="form-checkbox h-4 w-4 text-indigo-500"{{attrs}}>',
+                ],
+            ]) ?>
             <?= $this->Html->link(
                 'Forgot password?',
                 ['controller' => 'Users', 'action' => 'forgotPassword'],
-                ['class' => 'text-sm text-indigo-600 hover:text-indigo-500']
+                ['class' => 'text-sm text-indigo-600 hover:text-indigo-500'],
             ) ?>
         </div>
         <!-- Submit Button -->

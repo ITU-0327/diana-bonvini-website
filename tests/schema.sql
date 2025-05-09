@@ -14,6 +14,7 @@ CREATE TABLE users (
     country CHAR(2) DEFAULT NULL,
     user_type ENUM('customer','admin') NOT NULL,
     password_reset_token VARCHAR(255) DEFAULT NULL,
+    is_verified BOOLEAN NOT NULL DEFAULT FALSE,
     token_expiration DATETIME DEFAULT NULL,
     last_login DATETIME DEFAULT NULL,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
@@ -181,4 +182,28 @@ CREATE TABLE content_blocks (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_content_blocks_parent (parent),
     UNIQUE INDEX idx_content_blocks_slug (slug)
+) ENGINE=InnoDB;
+
+-- Table: two_factor_codes
+CREATE TABLE two_factor_codes (
+    two_factor_code_id CHAR(36) NOT NULL PRIMARY KEY,
+    user_id CHAR(36) NOT NULL,
+    code CHAR(6) NOT NULL,
+    expires DATETIME NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_tfc_user (user_id),
+    INDEX idx_tfc_user_code (user_id, code, expires),
+    CONSTRAINT fk_tfc_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Table: trusted_devices
+CREATE TABLE trusted_devices (
+    trusted_device_id CHAR(36) NOT NULL PRIMARY KEY,
+    user_id CHAR(36) NOT NULL,
+    device_id VARCHAR(64) NOT NULL,
+    expires DATETIME NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_td_user (user_id),
+    UNIQUE INDEX idx_td_user_device (user_id, device_id),
+    CONSTRAINT fk_td_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

@@ -328,7 +328,7 @@ class OrdersController extends AppController
              */
             function (float $sum, ArtworkCart $item): float {
                 // artwork->price * quantity
-                $price    = $item->artwork->price ?? 0.0;
+                $price = $item->artwork->price ?? 0.0;
                 $quantity = (float)$item->quantity;
 
                 return $sum + ($price * $quantity);

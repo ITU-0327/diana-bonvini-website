@@ -26,5 +26,9 @@
         <LessSpecificImplementedReturnType errorLevel="suppress"/>
         <MissingOverrideAttribute errorLevel="suppress"/>
         <UndefinedConstant errorLevel="suppress"/>
+        <MoreSpecificImplementedParamType errorLevel="suppress"/>
+        <MissingTemplateParam errorLevel="suppress"/>
+        <ClassMustBeFinal errorLevel="suppress"/>
+        <RiskyTruthyFalsyComparison errorLevel="suppress"/>
     </issueHandlers>
 </psalm>

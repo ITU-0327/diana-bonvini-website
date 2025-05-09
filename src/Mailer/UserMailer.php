@@ -39,4 +39,26 @@ class UserMailer extends Mailer
             ->setTemplate('reset_password')
             ->setLayout('default');
     }
+
+    /**
+     * Sends a 2FA verification code email.
+     *
+     * @param \App\Model\Entity\User $user The user entity.
+     * @param string $code The verification code.
+     * @return void
+     */
+    public function twoFactorAuth(User $user, string $code): void
+    {
+        $this
+            ->setTo($user->email)
+            ->setSubject('Your Verification Code')
+            ->setEmailFormat('html')
+            ->setViewVars([
+                'user' => $user,
+                'code' => $code,
+            ])
+            ->viewBuilder()
+            ->setTemplate('two_factor_auth')
+            ->setLayout('default');
+    }
 }

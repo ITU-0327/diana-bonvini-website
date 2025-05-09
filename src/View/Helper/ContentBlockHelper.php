@@ -209,7 +209,7 @@ class ContentBlockHelper extends Helper
      *
      * @param int  $limit  Maximum number of tokens to display per type
      * @return array<string, list<array{slug:string,label:string,type:string}>>
-     *         Keys are token‐types (`text`, `html`, `url`, `system`), values are lists of
+     *         Keys are token-types (`text`, `html`, `url`, `system`), values are lists of
      *         arrays each with `slug`, `label`, and `type` strings.
      */
     public function getAvailableTokens(int $limit = 10): array
@@ -223,11 +223,13 @@ class ContentBlockHelper extends Helper
                 ->limit($limit)
                 ->enableHydration(false)
                 ->toArray();
+            // Ensure numeric indexing for list compatibility
+            $rows = array_values($rows);
             if ($rows) {
                 $tokens[$type] = $rows;
             }
         }
-        // built‐in
+        // built‑in system tokens
         $tokens['system'] = [
             ['slug' => 'currentYear', 'label' => 'Current Year', 'type' => 'system'],
         ];

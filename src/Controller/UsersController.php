@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Mailer\UserMailer;
+use App\Service\TwoFactorService;
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
 use Cake\I18n\DateTime;
@@ -29,7 +30,7 @@ class UsersController extends AppController
     {
         parent::beforeFilter($event);
 
-        // Allow unauthenticated access to login, register, forgotPassword, and resetPassword
+        // Allow unauthenticated access to log in, register, forgotPassword, and resetPassword
         $this->Authentication->addUnauthenticatedActions([
             'login',
             'register',
@@ -41,9 +42,9 @@ class UsersController extends AppController
     /**
      * Login method
      *
-     * @return \Cake\Http\Response|null|void
+     * @return \Cake\Http\Response|null
      */
-    public function login()
+    public function login(): ?Response
     {
         $this->request->allowMethod(['get', 'post']);
         $result = $this->Authentication->getResult();
@@ -53,32 +54,28 @@ class UsersController extends AppController
             /** @var \App\Model\Entity\User $user */
             $user = $this->Authentication->getIdentity();
 
-            // Check if the user is soft-deleted
-            if ($user->is_deleted) {
-                $this->Flash->error(__('Account inactive'));
-                // Log the user out so the identity is not kept in session
-                $this->Authentication->logout();
-            } else {
-                // Retrieve the full user entity from the Users table
-                $usersTable = $this->getTableLocator()->get('Users');
-                /** @var \App\Model\Entity\User $userEntity */
-                $userEntity = $usersTable->get($user->user_id);
-                $userEntity->last_login = DateTime::now();
-                $usersTable->save($userEntity);
+            // No 2FA needed, update last login time
+            $userEntity = $this->Users->get($user->user_id);
+            $userEntity->last_login = DateTime::now();
+            $this->Users->save($userEntity);
 
-                $redirect = $this->request->getQuery('redirect', [
-                    'controller' => 'Artworks',
-                    'action' => 'index',
-                ]);
+            $redirect = $this->request->getQuery('redirect', ['_name' => 'home']);
 
-                return $this->redirect($redirect);
-            }
+            return $this->redirect($redirect);
         }
 
         // If it's a POST request and authentication failed, show an error.
-        if ($this->request->is('post') && (!$result || !$result->isValid())) {
-            $this->Flash->error(__('Invalid username or password'));
+        if ($this->request->is('post') && $result) {
+            if ($result->getStatus() === '2FA_REQUIRED') {
+                return $this->redirect(['controller' => 'TwoFactorAuth', 'action' => 'verify']);
+            } elseif ($result->getStatus() === 'ACCOUNT_INACTIVE') {
+                $this->Flash->error(__('Your account is inactive. Please contact support.'));
+            } else {
+                $this->Flash->error(__('Invalid username or password'));
+            }
         }
+
+        return null;
     }
 
     /**
@@ -93,30 +90,33 @@ class UsersController extends AppController
         if ($result && $result->isValid()) {
             $this->Authentication->logout();
 
-            return $this->redirect(['controller' => 'Pages', 'action' => 'display', 'landing']);
+            return $this->redirect(['_name' => 'home']);
         }
     }
 
     /**
-     * Register method
+     * Register method - now redirects to the verification flow
      *
-     * @return \Cake\Http\Response|null|void Redirects on successful register, renders view otherwise.
+     * @param \App\Service\TwoFactorService $twoFactorService
+     * @return \Cake\Http\Response|null Redirects to the registration verification flow
+     * @throws \Random\RandomException
      */
-    public function register()
+    public function register(TwoFactorService $twoFactorService): ?Response
     {
+        $this->request->allowMethod(['get', 'post']);
         $user = $this->Users->newEmptyEntity();
         $data = $this->request->getData();
 
-        // If someone tries to include an oauth_provider in the normal registration,
-        // treat it as an invalid registration.
+        // Prevent oauth_provider injection
         if (!empty($data['oauth_provider'])) {
             $this->Flash->error(__('The user could not be saved. Please, try again.'));
 
             return $this->redirect(['action' => 'register']);
         }
 
-        // Set the default user_type to 'customer'
+        // Defaults
         $data['user_type'] = 'customer';
+        $data['is_verified'] = false;
 
         if ($this->request->is('post')) {
             // Check if password and confirmation match
@@ -124,26 +124,37 @@ class UsersController extends AppController
                 $this->Flash->error('Password and confirm password do not match');
                 $this->set(compact('user'));
 
-                return;
+                return null;
             }
 
             $user = $this->Users->patchEntity($user, $data);
             if ($this->Users->save($user)) {
-                $this->Flash->success(__('User registered successfully'));
+                $this->request->getSession()
+                    ->write('TwoFactorUser', [
+                        'id' => $user->user_id,
+                        'redirect' => ['_name' => 'home'],
+                    ]);
 
-                return $this->redirect(['controller' => 'Users', 'action' => 'login']);
+                // Generate & email the code
+                $twoFactorService->generateCode($user->user_id);
+
+                $this->Flash->success(__('User registered successfully, a verification code has been sent to your email.'));
+
+                return $this->redirect(['controller' => 'TwoFactorAuth','action' => 'verify']);
             }
             $this->Flash->error(__('The user could not be saved. Please, try again.'));
         }
         $this->set(compact('user'));
+
+        return null;
     }
 
     /**
      * Index method
      *
-     * @return \Cake\Http\Response|null|void Renders view
+     * @return void Renders view
      */
-    public function index()
+    public function index(): void
     {
         $query = $this->Users->find();
         $users = $this->paginate($query);
@@ -154,10 +165,10 @@ class UsersController extends AppController
      * View method
      *
      * @param string|null $id User id.
-     * @return \Cake\Http\Response|null|void Renders view
+     * @return void Renders view
      * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function view(?string $id = null)
+    public function view(?string $id = null): void
     {
         $user = $this->Users->get($id, contain: []);
         $this->set(compact('user'));
@@ -265,7 +276,10 @@ class UsersController extends AppController
 
         if ($this->request->is('post')) {
             $email = $this->request->getData('email');
-            $user = $this->Users->find()->where(['email' => $email])->first();
+            /** @var \App\Model\Entity\User $user */
+            $user = $this->Users->find()
+                ->where(['email' => $email])
+                ->first();
 
             if (!$user) {
                 $this->Flash->error('No user found with that email address.');

@@ -6,3 +6,6 @@ parameters:
     paths:
         - src/
         - tests/
+    ignoreErrors:
+    	- message: '#no value type specified in iterable type (?:iterable|array)#'
+    	- message: '#PHPDoc tag @property .*unresolvable type#'

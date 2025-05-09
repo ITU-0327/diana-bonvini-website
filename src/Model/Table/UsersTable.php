@@ -151,6 +151,10 @@ class UsersTable extends Table
             ->allowEmptyString('password_reset_token');
 
         $validator
+            ->boolean('is_verified')
+            ->notEmptyString('is_verified');
+
+        $validator
             ->dateTime('token_expiration')
             ->allowEmptyDateTime('token_expiration');
 

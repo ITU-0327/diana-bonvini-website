@@ -23,11 +23,16 @@ use Cake\ORM\Entity;
  * @property string|null $country
  * @property string $user_type
  * @property string|null $password_reset_token
+ * @property bool $is_verified
  * @property \Cake\I18n\DateTime|null $token_expiration
  * @property \Cake\I18n\DateTime|null $last_login
  * @property bool $is_deleted
  * @property \Cake\I18n\DateTime $created_at
  * @property \Cake\I18n\DateTime $updated_at
+ *
+ * @property \App\Model\Entity\Order[] $orders
+ * @property \App\Model\Entity\Appointment[] $appointments
+ * @property \App\Model\Entity\WritingServiceRequest[] $writing_service_requests
  */
 class User extends Entity
 {
@@ -54,11 +59,15 @@ class User extends Entity
         'country' => true,
         'user_type' => true,
         'password_reset_token' => true,
+        'is_verified' => true,
         'token_expiration' => true,
         'last_login' => true,
         'is_deleted' => true,
         'created_at' => true,
         'updated_at' => true,
+        'orders' => true,
+        'appointments' => true,
+        'writing_service_requests' => true,
         // Allow oauth_provider for validation purposes only.
         'oauth_provider' => true,
     ];

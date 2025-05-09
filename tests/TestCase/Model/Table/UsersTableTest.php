@@ -18,7 +18,7 @@ class UsersTableTest extends TestCase
      *
      * @var \App\Model\Table\UsersTable
      */
-    protected $Users;
+    protected UsersTable $Users;
 
     /**
      * Fixtures
@@ -51,7 +51,7 @@ class UsersTableTest extends TestCase
      */
     protected function tearDown(): void
     {
-        unset($this->Users);
+        $this->getTableLocator()->clear();
 
         parent::tearDown();
     }
