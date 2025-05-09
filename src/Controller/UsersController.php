@@ -68,9 +68,11 @@ class UsersController extends AppController
         if ($this->request->is('post') && $result) {
             if ($result->getStatus() === '2FA_REQUIRED') {
                 return $this->redirect(['controller' => 'TwoFactorAuth', 'action' => 'verify']);
+            } elseif ($result->getStatus() === 'ACCOUNT_INACTIVE') {
+                $this->Flash->error(__('Your account is inactive. Please contact support.'));
+            } else {
+                $this->Flash->error(__('Invalid username or password'));
             }
-
-            $this->Flash->error(__('Invalid username or password'));
         }
 
         return null;
@@ -136,7 +138,7 @@ class UsersController extends AppController
                 // Generate & email the code
                 $twoFactorService->generateCode($user->user_id);
 
-                $this->Flash->success(__('A verification code has been sent to your email.'));
+                $this->Flash->success(__('User registered successfully, a verification code has been sent to your email.'));
 
                 return $this->redirect(['controller' => 'TwoFactorAuth','action' => 'verify']);
             }

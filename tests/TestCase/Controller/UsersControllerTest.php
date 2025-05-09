@@ -23,6 +23,7 @@ class UsersControllerTest extends TestCase
     protected array $fixtures = [
         'app.Users',
         'app.ContentBlocks',
+        'app.TrustedDevices',
     ];
 
     /**
@@ -45,9 +46,9 @@ class UsersControllerTest extends TestCase
         ];
         $this->post('/users/register', $data);
         $this->assertResponseSuccess();
-        $this->assertFlashMessage('User registered successfully');
+        $this->assertFlashMessage('User registered successfully, a verification code has been sent to your email.');
         // Check redirection
-        $this->assertRedirect('/users/login');
+        $this->assertRedirect('/two-factor-auth/verify');
     }
 
     /**
@@ -79,6 +80,7 @@ class UsersControllerTest extends TestCase
     public function testLoginSuccess(): void
     {
         $this->enableCsrfToken();
+        $this->cookie('trusted_device', 'test-device-xyz');
 
         $data = [
             'email' => 'tony.hsieh@example.com',
@@ -143,7 +145,7 @@ class UsersControllerTest extends TestCase
             'password' => 'SecureP@ssw0rd',
         ];
         $this->post('/users/login', $data);
-        $this->assertResponseContains('Account inactive');
+        $this->assertResponseContains('Your account is inactive. Please contact support.');
     }
 
     /**
@@ -182,6 +184,7 @@ class UsersControllerTest extends TestCase
     public function testLastLoginFieldUpdated(): void
     {
         $this->enableCsrfToken();
+        $this->cookie('trusted_device', 'test-device-xyz');
 
         $usersTable = $this->getTableLocator()->get('Users');
         $userBefore = $usersTable->find()->where(['email' => 'tony.hsieh@example.com'])->first();
@@ -196,8 +199,8 @@ class UsersControllerTest extends TestCase
 
         $userAfter = $usersTable->find()->where(['email' => 'tony.hsieh@example.com'])->first();
         $this->assertNotEquals(
-            $oldLastLogin->i18nFormat(),
-            $userAfter->last_login->i18nFormat(),
+            $oldLastLogin,
+            $userAfter->last_login,
             'The last_login value should have been updated.',
         );
     }
@@ -223,7 +226,7 @@ class UsersControllerTest extends TestCase
         $this->post('/users/register', $data);
         // Expect normal registration flow: the injection should be treated as a normal string
         $this->assertResponseSuccess();
-        $this->assertRedirect('/users/login');
+        $this->assertRedirect('/two-factor-auth/verify');
     }
 
     /**
@@ -247,7 +250,7 @@ class UsersControllerTest extends TestCase
         $this->post('/users/register', $data);
         // Expect registration to succeed normally with input sanitized on output
         $this->assertResponseSuccess();
-        $this->assertRedirect('/users/login');
+        $this->assertRedirect('/two-factor-auth/verify');
     }
 
     /**

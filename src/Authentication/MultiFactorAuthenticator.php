@@ -112,11 +112,7 @@ class MultiFactorAuthenticator extends AbstractAuthenticator
         /** @var \App\Model\Entity\User $user */
         $user = $formResult->getData();
         if ($user->is_deleted) {
-            return new Result(
-                null,
-                ResultInterface::FAILURE_CREDENTIALS_INVALID,
-                ['Account inactive'],
-            );
+            return new Result(null, 'ACCOUNT_INACTIVE');
         }
 
         $cookieParams = $request->getCookieParams();
