@@ -8,8 +8,6 @@ use Cake\TestSuite\TestCase;
 
 /**
  * App\Controller\CartsController Test Case
- *
- * @uses \App\Controller\CartsController
  */
 class CartsControllerTest extends TestCase
 {
@@ -169,7 +167,7 @@ class CartsControllerTest extends TestCase
         $this->enableSecurityToken();
 
         // Post with no artwork_id in data.
-        $this->post('/carts/add', []);
+        $this->post('/carts/add');
         $this->assertResponseSuccess();
         $this->assertFlashMessage('No artwork specified.');
     }
