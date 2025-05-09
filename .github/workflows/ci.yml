@@ -16,6 +16,8 @@ permissions:
 jobs:
   testsuite:
     runs-on: ubuntu-24.04
+    env:
+      DEBUG: 'true'
     services:
       mysql:
         image: mysql:8.0
@@ -63,6 +65,7 @@ jobs:
           DATABASE_TEST_URL: mysql://root:root@127.0.0.1/cakephp
           SECURITY_SALT: ${{ secrets.SECURITY_SALT }}
           EMAIL_TRANSPORT_CLASS: Debug
+          DEBUG: ${{ env.DEBUG }}
         run: vendor/bin/phpunit
 
   cs-stan:
@@ -77,7 +80,7 @@ jobs:
           php-version: '8.4'
           extensions: mbstring, intl
           coverage: none
-          tools: cs2pr, phpstan:1.12
+          tools: cs2pr, phpstan:2.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
