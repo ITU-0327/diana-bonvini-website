@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Mailer\UserMailer;
 use App\Model\Table\TrustedDevicesTable;
 use App\Model\Table\TwoFactorCodesTable;
 use DateTime;
@@ -37,7 +38,7 @@ class TwoFactorService
     }
 
     /**
-     * Generates a 6-digit verification code for a user and stores it with a 10-minute expiry.
+     * Generates a 6-digit verification code for a user and sends it via email.
      *
      * @param string $userId The ID of the user.
      * @return string The generated 6-digit verification code.
@@ -54,6 +55,13 @@ class TwoFactorService
             'expires' => $expires,
         ]);
         $this->CodesTable->save($entity);
+
+        // Send the code to the user via email
+        $user = $this->CodesTable->Users->get($userId);
+
+        $mailer = new UserMailer('default');
+        $mailer->twoFactorAuth($user, $code);
+        $mailer->deliver();
 
         return $code;
     }

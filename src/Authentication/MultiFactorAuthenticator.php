@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Authentication;
 
-use App\Mailer\UserMailer;
 use App\Service\TwoFactorService;
 use Authentication\Authenticator\AbstractAuthenticator;
 use Authentication\Authenticator\FormAuthenticator;
@@ -128,15 +127,11 @@ class MultiFactorAuthenticator extends AbstractAuthenticator
         }
 
         // 2FA required → generate & email code, stash in session
-        $code = $this->twoFactorService->generateCode($user->user_id);
+        $this->twoFactorService->generateCode($user->user_id);
         $session->write($this->_config['sessionKey'], [
             'id' => $user->user_id,
             'redirect' => $request->getQueryParams()['redirect'] ?? ['_name' => 'home'],
         ]);
-
-        $mailer = new UserMailer('default');
-        $mailer->twoFactorAuth($user, $code);
-        $mailer->deliver();
 
         // signal middleware to redirect to verify
         return new Result(null, '2FA_REQUIRED');

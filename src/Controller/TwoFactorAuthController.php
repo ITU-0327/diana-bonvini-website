@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Mailer\UserMailer;
 use App\Model\Table\UsersTable;
 use App\Service\TwoFactorService;
 use Cake\Core\Configure;
@@ -68,29 +67,36 @@ class TwoFactorAuthController extends AppController
     {
         $this->request->allowMethod(['get', 'post']);
         $result = $this->Authentication->getResult();
-        if ($result && $result->isValid()) {
-            if ($this->request->getData('trust_device')) {
-                /** @var \App\Model\Entity\User $user */
-                $user = $this->Authentication->getIdentity();
+        $session = $this->request->getSession();
 
+        if ($result && $result->isValid()) {
+            /** @var \Authentication\Identity $identity */
+            $identity = $this->Authentication->getIdentity();
+            $user = $this->Users->get($identity->get('user_id'));
+
+            // If they're registering, mark them verified
+            if ($user->is_verified === false) {
+                $user->is_verified = true;
+                $this->Users->save($user);
+            }
+
+            if ($this->request->getData('trust_device')) {
                 $deviceId = $this->getDeviceId(true);
                 $twoFactorService->addTrustedDevice($user->user_id, $deviceId);
             }
-            $redirect = $this->request->getQuery('redirect', ['_name' => 'home']);
+            $redirect = $session->consume('TwoFactorUser.redirect') ?? ['_name' => 'home'];
 
             return $this->redirect($redirect);
         }
         // Get email from the session
-        $session = $this->request->getSession();
-        $userId = $session->read('TwoFactorUser')['id'] ?? null;
+        $userId = $session->read('TwoFactorUser.id') ?? null;
 
         if (!$userId) {
             $this->Flash->error(__('Invalid 2FA verification attempt.'));
 
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
-        $user = $this->Users->get($userId);
-        $email = $user->email;
+        $email = $this->Users->get($userId)->email;
 
         $this->set('email', $email);
 
@@ -109,7 +115,6 @@ class TwoFactorAuthController extends AppController
         $this->request->allowMethod(['post']);
         $session = $this->request->getSession();
 
-        // We stored ['id' => userId, 'redirect'=>...] in sessionKey 'TwoFactorUser'
         $data = $session->read('TwoFactorUser');
         $userId = $data['id'] ?? null;
         if (!$userId) {
@@ -117,13 +122,7 @@ class TwoFactorAuthController extends AppController
         }
 
         // Generate a new verification code
-        $code = $twoFactorService->generateCode($userId);
-
-        // Send the code via email
-        $user = $this->Users->get($userId);
-        $mailer = new UserMailer('default');
-        $mailer->twoFactorAuth($user, $code);
-        $mailer->deliver();
+        $twoFactorService->generateCode($userId);
 
         $this->Flash->success(__('A new verification code has been sent to your email.'));
 

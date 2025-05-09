@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Mailer\UserMailer;
+use App\Service\TwoFactorService;
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
 use Cake\I18n\DateTime;
@@ -94,12 +95,56 @@ class UsersController extends AppController
     /**
      * Register method - now redirects to the verification flow
      *
+     * @param \App\Service\TwoFactorService $twoFactorService
      * @return \Cake\Http\Response|null Redirects to the registration verification flow
+     * @throws \Random\RandomException
      */
-    public function register(): ?Response
+    public function register(TwoFactorService $twoFactorService): ?Response
     {
-        // Redirect to the new registration verification flow
-        return $this->redirect(['controller' => 'RegistrationVerify', 'action' => 'index']);
+        $this->request->allowMethod(['get', 'post']);
+        $user = $this->Users->newEmptyEntity();
+        $data = $this->request->getData();
+
+        // Prevent oauth_provider injection
+        if (!empty($data['oauth_provider'])) {
+            $this->Flash->error(__('The user could not be saved. Please, try again.'));
+
+            return $this->redirect(['action' => 'register']);
+        }
+
+        // Defaults
+        $data['user_type'] = 'customer';
+        $data['is_verified'] = false;
+
+        if ($this->request->is('post')) {
+            // Check if password and confirmation match
+            if ($data['password'] !== $data['password_confirm']) {
+                $this->Flash->error('Password and confirm password do not match');
+                $this->set(compact('user'));
+
+                return null;
+            }
+
+            $user = $this->Users->patchEntity($user, $data);
+            if ($this->Users->save($user)) {
+                $this->request->getSession()
+                    ->write('TwoFactorUser', [
+                        'id' => $user->user_id,
+                        'redirect' => ['_name' => 'home'],
+                    ]);
+
+                // Generate & email the code
+                $twoFactorService->generateCode($user->user_id);
+
+                $this->Flash->success(__('A verification code has been sent to your email.'));
+
+                return $this->redirect(['controller' => 'TwoFactorAuth','action' => 'verify']);
+            }
+            $this->Flash->error(__('The user could not be saved. Please, try again.'));
+        }
+        $this->set(compact('user'));
+
+        return null;
     }
 
     /**

@@ -14,6 +14,7 @@ CREATE TABLE users (
     country CHAR(2) DEFAULT NULL,
     user_type ENUM('customer','admin') NOT NULL,
     password_reset_token VARCHAR(255) DEFAULT NULL,
+    is_verified BOOLEAN NOT NULL DEFAULT FALSE,
     token_expiration DATETIME DEFAULT NULL,
     last_login DATETIME DEFAULT NULL,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,

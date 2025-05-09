@@ -25,6 +25,9 @@ class R2StorageService
             empty($r2['accountId']) ||
             empty($r2['bucket'])
         ) {
+            $this->client = null;
+            $this->bucket = '';
+
             return;
         }
 
