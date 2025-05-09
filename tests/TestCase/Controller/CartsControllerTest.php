@@ -36,6 +36,7 @@ class CartsControllerTest extends TestCase
     public function testAddItemToCartLoggedInWithoutView(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         // Simulate logged-in user and initialize an empty cart in session.
         $this->session([
@@ -66,6 +67,7 @@ class CartsControllerTest extends TestCase
     public function testAddItemToCartNonLoggedIn(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         // No session set, simulate non-logged in user.
         $artworkId = '8424e85e-f1b2-41f5-85cb-bfbe115b45bc';
@@ -87,6 +89,7 @@ class CartsControllerTest extends TestCase
     public function testPreventDuplicateItems(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $artworkId = '5492e85e-f1b2-41f5-85cb-bfbe115b69ea';
         $data = ['artwork_id' => $artworkId];
@@ -109,6 +112,7 @@ class CartsControllerTest extends TestCase
     public function testAddSoldItemToCart(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $artworkId = 'artwork-sold';
 
@@ -135,6 +139,7 @@ class CartsControllerTest extends TestCase
     public function testAddDeletedItemToCart(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $artworkId = 'artwork-deleted';
 
@@ -161,6 +166,7 @@ class CartsControllerTest extends TestCase
     public function testAddItemWithoutArtworkId(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         // Post with no artwork_id in data.
         $this->post('/carts/add', []);
@@ -187,6 +193,7 @@ class CartsControllerTest extends TestCase
     public function testRemoveItemFromCart(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $artworkId = '5492e85e-f1b2-41f5-85cb-bfbe115b69ea';
         $data = ['artwork_id' => $artworkId];
@@ -223,6 +230,7 @@ class CartsControllerTest extends TestCase
     public function testRemoveNonExistentCartItem(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         // Simulate a logged-in user.
         $this->session([
@@ -252,6 +260,7 @@ class CartsControllerTest extends TestCase
     public function testCartPersistenceDuringSession(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $artworkId = '5492e85e-f1b2-41f5-85cb-bfbe115b69ea';
         $data = ['artwork_id' => $artworkId];
@@ -275,6 +284,7 @@ class CartsControllerTest extends TestCase
     public function testCartPersistenceAfterLogout(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         // Assume business rule: cart is cleared after logout.
         $artworkId = '5492e85e-f1b2-41f5-85cb-bfbe115b69ea';

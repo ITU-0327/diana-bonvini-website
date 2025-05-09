@@ -34,6 +34,7 @@ class UsersControllerTest extends TestCase
     public function testRegistrationSuccess(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $data = [
             'first_name' => 'Grace',
@@ -59,6 +60,7 @@ class UsersControllerTest extends TestCase
     public function testRegistrationMissingFields(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $data = [
             // Missing first_name and email.
@@ -80,6 +82,7 @@ class UsersControllerTest extends TestCase
     public function testLoginSuccess(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
         $this->cookie('trusted_device', 'test-device-xyz');
 
         $data = [
@@ -105,6 +108,7 @@ class UsersControllerTest extends TestCase
     public function testLoginInvalidPassword(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $data = [
             'email' => 'tony.hsieh@example.com',
@@ -122,6 +126,7 @@ class UsersControllerTest extends TestCase
     public function testLoginNonExistentEmail(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $data = [
             'email' => 'nonexistent@example.com',
@@ -139,6 +144,7 @@ class UsersControllerTest extends TestCase
     public function testLoginSoftDeletedUser(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $data = [
             'email' => 'soft.deleted@example.com',
@@ -156,6 +162,7 @@ class UsersControllerTest extends TestCase
     public function testFailedLoginDoesNotUpdateLastLogin(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $usersTable = $this->getTableLocator()->get('Users');
         $userBefore = $usersTable->find()->where(['email' => 'tony.hsieh@example.com'])->first();
@@ -184,6 +191,7 @@ class UsersControllerTest extends TestCase
     public function testLastLoginFieldUpdated(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
         $this->cookie('trusted_device', 'test-device-xyz');
 
         $usersTable = $this->getTableLocator()->get('Users');
@@ -213,6 +221,7 @@ class UsersControllerTest extends TestCase
     public function testRegistrationSqlInjectionAttempt(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $data = [
             'first_name'   => "Robert'); DROP TABLE users; --",
@@ -237,6 +246,7 @@ class UsersControllerTest extends TestCase
     public function testRegistrationXssAttempt(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $data = [
             'first_name'   => '<script>alert("XSS")</script>',
@@ -261,6 +271,7 @@ class UsersControllerTest extends TestCase
     public function testTraditionalRegistrationRejectsOAuthProvider(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $data = [
             'first_name'       => 'Malicious',
@@ -290,6 +301,7 @@ class UsersControllerTest extends TestCase
     public function testLogout(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         // Set up a dummy session for a logged-in user.
         $this->session([
@@ -322,6 +334,7 @@ class UsersControllerTest extends TestCase
     public function testForgotPasswordValidEmail(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $data = ['email' => 'tony.hsieh@example.com'];
         $this->post('/users/forgot-password', $data);
@@ -343,6 +356,7 @@ class UsersControllerTest extends TestCase
     public function testForgotPasswordInvalidEmail(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $data = ['email' => 'invalid.user@example.com'];
         $this->post('/users/forgot-password', $data);
@@ -359,6 +373,7 @@ class UsersControllerTest extends TestCase
     public function testForgotPasswordEmptyEmail(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $data = ['email' => ''];
         $this->post('/users/forgot-password', $data);
@@ -398,6 +413,7 @@ class UsersControllerTest extends TestCase
     public function testResetPasswordValidMatch(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $usersTable = TableRegistry::getTableLocator()->get('Users');
         $user = $usersTable->find()->where(['email' => 'valid.user@example.com'])->first();
@@ -426,6 +442,7 @@ class UsersControllerTest extends TestCase
     public function testResetPasswordMismatch(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $data = [
             'password' => 'NewSecurePassword123',
@@ -446,6 +463,7 @@ class UsersControllerTest extends TestCase
     public function testResetPasswordEmptyPassword(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $data = [
             'password' => '',
@@ -466,6 +484,7 @@ class UsersControllerTest extends TestCase
     public function testResetPasswordOauthProvider(): void
     {
         $this->enableCsrfToken();
+        $this->enableSecurityToken();
 
         $usersTable = TableRegistry::getTableLocator()->get('Users');
         $user = $usersTable->find()->where(['email' => 'valid.user@example.com'])->first();
