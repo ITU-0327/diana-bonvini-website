@@ -84,12 +84,11 @@ return [
     'EmailTransport' => [
         'default' => [
             'className' => 'Smtp',
-            'host' => 'smtp.gmail.com',
+            'host' => 'smtp-relay.gmail.com',
             'port' => 587,
-            'username' => env('SMTP_USERNAME', null),
-            'password' => env('SMTP_PASSWORD', null),
             'tls' => true,
             'timeout' => 30,
+            'client' => 'dianabonvini.com',
         ],
     ],
 
