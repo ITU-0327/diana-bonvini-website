@@ -13,7 +13,8 @@ $siteTitle = 'Diana Bonvini Art & Writing';
     <?= $this->Html->charset() ?>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= $siteTitle ?>: <?= $this->fetch('title') ?></title>
-    <?= $this->Html->meta('icon') ?>
+    <?= $this->Html->meta('icon', '/favicon-16x16.ico', ['sizes' => '16x16']) ?>
+    <?= $this->Html->meta('icon', '/favicon-32x32.ico', ['sizes' => '32x32']) ?>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
