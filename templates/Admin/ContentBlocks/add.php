@@ -60,10 +60,10 @@
                 <!-- Text -->
                 <div data-type="text" class="hidden">
                     <?= $this->Form->control('value', [
-                        'label'    => 'Text Value',
-                        'type'     => 'textarea',
-                        'rows'     => 6,
-                        'class'    => 'w-full border-gray-300 rounded p-2 token-input',
+                        'label' => 'Text Value',
+                        'type' => 'textarea',
+                        'rows' => 6,
+                        'class' => 'w-full border-gray-300 rounded p-2 token-input',
                         'disabled' => true,
                     ]) ?>
                 </div>
@@ -71,10 +71,10 @@
                 <!-- HTML -->
                 <div data-type="html" class="hidden">
                     <?= $this->Form->control('value', [
-                        'label'    => 'HTML Content',
-                        'type'     => 'textarea',
-                        'rows'     => 8,
-                        'class'    => 'w-full border-gray-300 rounded p-2 ckeditor token-input',
+                        'label' => 'HTML Content',
+                        'type' => 'textarea',
+                        'rows' => 8,
+                        'class' => 'w-full border-gray-300 rounded p-2 ckeditor token-input',
                         'disabled' => true,
                     ]) ?>
                 </div>
@@ -82,9 +82,9 @@
                 <!-- URL -->
                 <div data-type="url" class="hidden">
                     <?= $this->Form->control('value', [
-                        'label'    => 'URL',
-                        'type'     => 'url',
-                        'class'    => 'w-full border-gray-300 rounded p-2',
+                        'label' => 'URL',
+                        'type' => 'url',
+                        'class' => 'w-full border-gray-300 rounded p-2',
                         'disabled' => true,
                     ]) ?>
                 </div>
@@ -92,9 +92,9 @@
                 <!-- Image -->
                 <div data-type="image" class="hidden">
                     <?= $this->Form->control('value', [
-                        'label'    => 'Upload Image',
-                        'type'     => 'file',
-                        'class'    => '...your file‑input classes...',
+                        'label' => 'Upload Image',
+                        'type' => 'file',
+                        'class' => '...your file‑input classes...',
                         'disabled' => true,
                     ]) ?>
                 </div>

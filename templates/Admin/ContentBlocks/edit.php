@@ -93,7 +93,7 @@ $allTypes = TableRegistry::getTableLocator()
                 case 'url':
                     echo $this->Form->control('value', [
                         'label' => 'URL',
-                        'type' => 'url',
+                        'type' => 'text',
                         'class' => 'w-full border border-gray-300 rounded p-3',
                     ]);
                     break;
