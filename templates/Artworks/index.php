@@ -3,6 +3,9 @@
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\Artwork> $artworks
  */
+
+use Cake\Collection\Collection;
+
 ?>
 
 <?php
@@ -28,12 +31,15 @@ $userType = $user?->get('user_type');
                 ➕ Add New Artwork
             </a>
         <?php endif; ?>
-
     </div>
 
     <!-- Artworks Grid -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-        <?php foreach ($artworks as $artwork) : ?>
+        <?php foreach ($artworks as $artwork) :
+            /** @var \App\Model\Entity\ArtworkVariant $cheapest */
+            $cheapest = (new Collection($artwork->artwork_variants))
+                ->sortBy('price')
+                ->last(); ?>
             <div
                 class="relative group artwork-card cursor-pointer aspect-[4/3]"
                 data-status="<?= h($artwork->availability_status) ?>"
@@ -50,24 +56,14 @@ $userType = $user?->get('user_type');
                     <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-70 transition
                             flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100">
                         <h2 class="text-xl font-bold mb-2"><?= h($artwork->title) ?></h2>
-                        <p class="mb-4">$<?= $this->Number->format($artwork->price) ?></p>
-
-                        <?= $this->Form->create(null, [
-                            'url' => ['controller' => 'Carts', 'action' => 'add', $artwork->artwork_id],
-                            'class' => 'no-detail',
-                        ]) ?>
-                        <?= $this->Form->button('Add to Cart', [
-                            'class' => 'px-4 py-2 bg-white text-black rounded-full hover:bg-gray-200 transition no-detail',
-                            'onclick' => 'event.stopPropagation();',
-                        ]) ?>
-                        <?= $this->Form->end() ?>
+                        <p class="mb-4">From $<?= $this->Number->format($cheapest->price) ?></p>
                     </div>
                 <?php else : ?>
                     <!-- Sold Overlay with Price -->
                     <div class="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center
                             text-white text-2xl font-bold">
                         <div>Sold</div>
-                        <div class="mt-2 text-xl">$<?= $this->Number->format($artwork->price) ?></div>
+                        <div class="mt-2 text-xl">$<?= $this->Number->format($cheapest->price) ?></div>
                     </div>
                 <?php endif; ?>
             </div>

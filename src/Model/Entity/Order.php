@@ -30,7 +30,7 @@ use Cake\ORM\Entity;
  * @property \Cake\I18n\DateTime $updated_at
  *
  * @property \App\Model\Entity\User $user
- * @property \App\Model\Entity\ArtworkOrder[] $artwork_orders
+ * @property \App\Model\Entity\ArtworkVariantOrder[] $artwork_variant_orders
  * @property \App\Model\Entity\Payment $payment
  */
 class Order extends Entity
@@ -65,7 +65,7 @@ class Order extends Entity
         'created_at' => true,
         'updated_at' => true,
         'user' => true,
-        'artwork_orders' => true,
+        'artwork_variant_orders' => true,
         'payment' => true,
     ];
 }

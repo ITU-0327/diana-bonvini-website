@@ -28,11 +28,22 @@ CREATE TABLE artworks (
     artwork_id CHAR(36) NOT NULL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    price DECIMAL(10,2) NOT NULL,
     availability_status ENUM('available','sold') NOT NULL,
+    max_copies INT NOT NULL DEFAULT 5,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Table: artwork_variants
+CREATE TABLE artwork_variants (
+    artwork_variant_id CHAR(36) NOT NULL PRIMARY KEY,
+    artwork_id CHAR(36) NOT NULL,
+    dimension ENUM('A3','A2','A1') NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    INDEX idx_av_artwork (artwork_id),
+    CONSTRAINT fk_av_artwork FOREIGN KEY (artwork_id) REFERENCES artworks(artwork_id)
 ) ENGINE=InnoDB;
 
 -- Table: orders
@@ -62,19 +73,21 @@ CREATE TABLE orders (
     CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 ) ENGINE=InnoDB;
 
--- Table: artwork_orders
-CREATE TABLE artwork_orders (
-    artwork_order_id CHAR(36) NOT NULL PRIMARY KEY,
+-- Table: artwork_variant_orders
+CREATE TABLE artwork_variant_orders (
+    artwork_variant_order_id CHAR(36) NOT NULL PRIMARY KEY,
+    artwork_variant_id CHAR(36) NOT NULL,
     order_id CHAR(9) NOT NULL,
-    artwork_id CHAR(36) NOT NULL,
     quantity INT NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     subtotal DECIMAL(10,2) NOT NULL,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
-    INDEX idx_artwork_orders_order (order_id),
-    INDEX idx_artwork_orders_artwork (artwork_id),
-    CONSTRAINT fk_artwork_orders_order FOREIGN KEY (order_id) REFERENCES orders(order_id),
-    CONSTRAINT fk_artwork_orders_artwork FOREIGN KEY (artwork_id) REFERENCES artworks(artwork_id)
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_av_orders_variant (artwork_variant_id),
+    INDEX idx_av_orders_order (order_id),
+    CONSTRAINT fk_av_orders_variant FOREIGN KEY (artwork_variant_id) REFERENCES artwork_variants(artwork_variant_id),
+    CONSTRAINT fk_av_orders_order FOREIGN KEY (order_id) REFERENCES orders(order_id)
 ) ENGINE=InnoDB;
 
 -- Table: appointments
@@ -121,18 +134,19 @@ CREATE TABLE carts (
     CONSTRAINT fk_carts_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Table: artwork_carts
-CREATE TABLE artwork_carts (
-    artwork_cart_id CHAR(36) NOT NULL PRIMARY KEY,
+-- Table: artwork_variant_carts
+CREATE TABLE artwork_variant_carts (
+    artwork_variant_cart_id CHAR(36) NOT NULL PRIMARY KEY,
+    artwork_variant_id CHAR(36) NOT NULL,
     cart_id CHAR(36) NOT NULL,
-    artwork_id CHAR(36) NOT NULL,
     quantity INT NOT NULL DEFAULT 1,
     date_added DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
-    INDEX idx_artwork_carts_cart (cart_id),
-    INDEX idx_artwork_carts_artwork (artwork_id),
-    CONSTRAINT fk_artwork_carts_cart FOREIGN KEY (cart_id) REFERENCES carts(cart_id) ON DELETE CASCADE,
-    CONSTRAINT fk_artwork_carts_artwork FOREIGN KEY (artwork_id) REFERENCES artworks(artwork_id) ON DELETE CASCADE
+    INDEX idx_artwork_variant_carts_cart (cart_id),
+    INDEX idx_artwork_variant_carts_variant (artwork_variant_id),
+    UNIQUE INDEX ux_cart_variant (cart_id, artwork_variant_id),
+    CONSTRAINT fk_av_carts_cart FOREIGN KEY (cart_id) REFERENCES carts(cart_id) ON DELETE CASCADE,
+    CONSTRAINT fk_av_carts_variant FOREIGN KEY (artwork_variant_id) REFERENCES artwork_variants(artwork_variant_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Table: writing_service_requests

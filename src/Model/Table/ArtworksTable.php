@@ -9,13 +9,13 @@ use ArrayObject;
 use Cake\Datasource\EntityInterface;
 use Cake\Event\EventInterface;
 use Cake\ORM\Table;
+use Cake\ORM\TableRegistry;
 use Cake\Validation\Validator;
 
 /**
  * Artworks Model
  *
- * @property \App\Model\Table\ArtworkOrdersTable&\Cake\ORM\Association\HasMany $ArtworkOrders
- * @property \App\Model\Table\ArtworkCartsTable&\Cake\ORM\Association\HasMany $ArtworkCarts
+ * @property \App\Model\Table\ArtworkVariantsTable&\Cake\ORM\Association\HasMany $ArtworkVariants
  * @method \App\Model\Entity\Artwork newEmptyEntity()
  * @method \App\Model\Entity\Artwork newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\Artwork> newEntities(array $data, array $options = [])
@@ -49,11 +49,10 @@ class ArtworksTable extends Table
         $this->setDisplayField('title');
         $this->setPrimaryKey('artwork_id');
 
-        $this->hasMany('ArtworkOrders', [
+        $this->hasMany('ArtworkVariants', [
             'foreignKey' => 'artwork_id',
-        ]);
-        $this->hasMany('ArtworkCarts', [
-            'foreignKey' => 'artwork_id',
+            'dependent' => true,
+            'cascadeCallbacks' => true,
         ]);
     }
 
@@ -86,14 +85,13 @@ class ArtworksTable extends Table
             ]);
 
         $validator
-            ->decimal('price')
-            ->requirePresence('price', 'create')
-            ->notEmptyString('price');
-
-        $validator
             ->scalar('availability_status')
             ->requirePresence('availability_status', 'create')
             ->notEmptyString('availability_status');
+
+        $validator
+            ->integer('max_copies')
+            ->notEmptyString('max_copies');
 
         $validator
             ->boolean('is_deleted')
@@ -120,19 +118,49 @@ class ArtworksTable extends Table
     public function delete(EntityInterface $entity, array $options = []): bool
     {
         $artworkId = $entity->get('artwork_id');
-        $hasDeps = $this->ArtworkOrders->exists(['artwork_id' => $artworkId]);
+        // Fetch all variant IDs for this artwork
+        $variantIds = $this->ArtworkVariants->find('list', [
+            'keyField' => 'artwork_variant_id',
+            'valueField' => 'artwork_variant_id',
+        ])
+        ->where(['artwork_id' => $artworkId])
+        ->toArray();
 
-        if ($hasDeps) {
-            $rows = $this->updateAll(['is_deleted' => true], ['artwork_id' => $artworkId]);
+        $ArtworkVariantCartsTable = TableRegistry::getTableLocator()->get('ArtworkVariantCarts');
+        $ArtworkVariantOrdersTable = TableRegistry::getTableLocator()->get('ArtworkVariantOrders');
+
+        // Remove any variant entries in carts
+        if (!empty($variantIds)) {
+            $ArtworkVariantCartsTable->deleteAll([
+                'artwork_variant_id IN' => $variantIds,
+            ]);
+        }
+
+        // Check if any orders exist for these variants
+        $hasOrders = !empty($variantIds) && $ArtworkVariantOrdersTable->exists([
+                'artwork_variant_id IN' => $variantIds,
+            ]);
+
+        if ($hasOrders) {
+            // Soft-delete the artwork
+            $rows = $this->updateAll(
+                ['is_deleted' => true],
+                ['artwork_id' => $artworkId],
+            );
             if ($rows < 1) {
                 return false;
             }
-            $this->ArtworkOrders->updateAll(['is_deleted' => true], ['artwork_id' => $artworkId]);
-            $this->ArtworkCarts->deleteAll(['artwork_id' => $artworkId]);
+
+            // Soft-delete its variants
+            $this->ArtworkVariants->updateAll(
+                ['is_deleted' => true],
+                ['artwork_id' => $artworkId],
+            );
 
             return true;
         }
 
+        // No dependent orders: proceed with hard delete
         return parent::delete($entity, $options);
     }
 

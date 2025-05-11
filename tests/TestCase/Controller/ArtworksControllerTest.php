@@ -8,8 +8,6 @@ use Cake\TestSuite\TestCase;
 
 /**
  * App\Controller\ArtworksController Test Case
- *
- * @uses \App\Controller\ArtworksController
  */
 class ArtworksControllerTest extends TestCase
 {
@@ -22,6 +20,7 @@ class ArtworksControllerTest extends TestCase
      */
     protected array $fixtures = [
         'app.Artworks',
+        'app.ArtworkVariants',
         'app.ContentBlocks',
     ];
 
@@ -39,7 +38,7 @@ class ArtworksControllerTest extends TestCase
         $this->assertNotEmpty($artworks, 'The artworks view variable should not be empty.');
 
         foreach ($artworks as $artwork) {
-            $this->assertSame(false, $artwork->is_deleted, "Artwork {$artwork->artwork_id} should not be marked as deleted.");
+            $this->assertSame(false, $artwork->is_deleted, "Artwork $artwork->artwork_id should not be marked as deleted.");
         }
     }
 
@@ -87,7 +86,7 @@ class ArtworksControllerTest extends TestCase
         $artworkId = '5492e85e-f1b2-41f5-85cb-bfbe115b69ea';
 
         // Test the view action using the valid artwork id.
-        $this->get("/artworks/view/{$artworkId}");
+        $this->get("/artworks/view/$artworkId");
         $this->assertResponseOk();
 
         $this->assertResponseContains('Sunset Over the Ocean');

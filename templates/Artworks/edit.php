@@ -12,7 +12,7 @@
         <?= $this->Html->link(
             '← Back to Artworks',
             ['action' => 'view', $artwork->artwork_id],
-            ['class' => 'text-blue-500 hover:text-blue-700']
+            ['class' => 'text-blue-500 hover:text-blue-700'],
         ) ?>
     </div>
 
@@ -70,13 +70,13 @@
             [
                 'confirm' => 'Are you sure you want to delete this artwork?',
                 'class'   => 'bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600',
-            ]
+            ],
         ) ?>
 
         <!-- Submit button -->
         <?= $this->Form->button(
             'Submit',
-            ['class' => 'bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600']
+            ['class' => 'bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600'],
         ) ?>
     </div>
 

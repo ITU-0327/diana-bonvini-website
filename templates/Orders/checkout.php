@@ -21,7 +21,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
         'type' => 'post',
         'id' => 'checkout-form',
     ]) ?>
-    <?php if (!empty($pendingId)): ?>
+    <?php if (!empty($pendingId)) : ?>
         <?= $this->Form->hidden('order_id', ['value' => $pendingId]) ?>
     <?php endif; ?>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -154,14 +154,6 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                 ]) ?>
             </section>
 
-            <!-- Payment Method -->
-            <section>
-                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Payment Method</h2>
-                <p class="text-gray-600 mb-4">
-                    Your payment will be processed securely through Stripe. You'll be redirected to complete payment after reviewing your order.
-                </p>
-            </section>
-
             <!-- Order Notes -->
             <section>
                 <?= $this->Form->control('order_notes', [
@@ -175,7 +167,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
         </div>
 
         <!-- RIGHT COLUMN: Order Summary -->
-        <div class="bg-white shadow-lg rounded-lg p-6 max-w-md w-full mx-auto lg:mx-0 flex flex-col max-h-[600px]">
+        <div class="self-start bg-white shadow-lg rounded-lg p-6 max-w-md w-full mx-auto lg:mx-0">
             <!-- Header with Order Summary Title and Edit Link -->
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-semibold text-gray-800">Order Summary</h2>
@@ -184,38 +176,44 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                 ]) ?>
             </div>
             <!-- Order Items & Totals -->
-            <div class="flex-1 overflow-y-auto">
-                <?php if (!empty($cart->artwork_carts)) : ?>
+            <div>
+                <?php if (!empty($cart->artwork_variant_carts)) : ?>
                     <div class="space-y-4">
-                        <?php foreach ($cart->artwork_carts as $item) : ?>
-                            <?php if (isset($item->artwork)) : ?>
-                                <div class="flex items-center space-x-4 border-b pb-4">
-                                    <?= $this->Html->image($item->artwork->image_url, [
-                                        'alt' => $item->artwork->title,
-                                        'class' => 'w-16 h-16 object-cover rounded',
-                                    ]) ?>
-                                    <div class="flex-1">
-                                        <p class="font-semibold text-lg text-gray-900"><?= h($item->artwork->title) ?></p>
-                                        <p class="text-sm text-gray-500">Quantity: <?= h($item->quantity) ?></p>
-                                    </div>
-                                    <div class="font-semibold text-lg text-gray-900">
-                                        $<?= number_format($item->artwork->price * $item->quantity, 2) ?>
-                                    </div>
+                        <?php foreach ($cart->artwork_variant_carts as $item) :
+                            $variant = $item->artwork_variant;
+                            $artwork = $variant->artwork;
+                            $lineTotal = $variant->price * $item->quantity;
+                            ?>
+                            <div class="flex items-center space-x-4 border-b pb-4">
+                                <?= $this->Html->image($artwork->image_url, [
+                                    'alt' => $artwork->title,
+                                    'class' => 'w-16 h-16 object-cover rounded',
+                                ]) ?>
+                                <div class="flex-1">
+                                    <p class="font-semibold text-lg text-gray-900">
+                                        <?= h($artwork->title) ?>
+                                        <span class="text-sm text-gray-500"> (<?= h($variant->dimension) ?>)</span>
+                                    </p>
+                                    <p class="text-sm text-gray-500">
+                                        Quantity: <?= h($item->quantity) ?>
+                                    </p>
                                 </div>
-                            <?php endif; ?>
+                                <div class="font-semibold text-lg text-gray-900">
+                                    $<?= number_format($lineTotal, 2) ?>
+                                </div>
+                            </div>
                         <?php endforeach; ?>
                     </div>
                     <!-- Totals -->
                     <div class="mt-6 border-t pt-4">
                         <?php
-                        $subtotal = 0;
-                        foreach ($cart->artwork_carts as $ci) {
-                            if (isset($ci->artwork)) {
-                                $subtotal += $ci->artwork->price * $ci->quantity;
-                            }
-                        }
+                        $subtotal = array_reduce(
+                            $cart->artwork_variant_carts,
+                            fn($sum, $ci) => $sum + ($ci->artwork_variant->price * $ci->quantity),
+                            0,
+                        );
                         $shippingCost = 0.00;
-                        $totalCost = (float)$subtotal + $shippingCost;
+                        $totalCost = $subtotal + $shippingCost;
                         ?>
                         <p class="text-gray-700 text-lg">Subtotal: $<?= number_format($subtotal, 2) ?></p>
                         <p class="text-gray-700 text-lg">Shipping: $<?= number_format($shippingCost, 2) ?></p>

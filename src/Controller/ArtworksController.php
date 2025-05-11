@@ -40,7 +40,15 @@ class ArtworksController extends AppController
      */
     public function index(): void
     {
-        $query = $this->Artworks->find()->where(['is_deleted' => 0]);
+        $query = $this->Artworks->find()
+            ->where(['Artworks.is_deleted' => 0])
+            ->contain([
+                'ArtworkVariants' => function ($q) {
+                    return $q->where([
+                        'ArtworkVariants.is_deleted' => 0,
+                    ]);
+                },
+            ]);
         $artworks = $this->paginate($query);
 
         $this->set(compact('artworks'));
@@ -55,8 +63,56 @@ class ArtworksController extends AppController
      */
     public function view(?string $id = null): void
     {
-        $artwork = $this->Artworks->get($id);
-        $this->set(compact('artwork'));
+        $artwork = $this->Artworks->get($id, contain: [
+            'ArtworkVariants' => function ($q) {
+                return $q->where([
+                    'ArtworkVariants.is_deleted' => 0,
+                ]);
+            },
+        ]);
+
+        /** @var \App\Model\Entity\User|null $user */
+        $user = $this->Authentication->getIdentity();
+        $userId = $user?->user_id;
+        $sessionId = $this->request->getSession()->id();
+
+        $conditions = $userId !== null ? ['user_id' => $userId] : ['session_id' => $sessionId];
+        $cartsTable = TableRegistry::getTableLocator()->get('Carts');
+        /** @var \App\Model\Entity\Cart $cart */
+        $cart = $cartsTable->find()
+            ->contain(['ArtworkVariantCarts.ArtworkVariants'])
+            ->where($conditions)
+            ->first();
+
+        // Sum in-cart quantities for this artwork
+        $inCart = 0;
+        if ($cart) {
+            foreach ($cart->artwork_variant_carts as $line) {
+                if ($line->artwork_variant->artwork_id === $artwork->artwork_id) {
+                    $inCart += $line->quantity;
+                }
+            }
+        }
+
+        // Sum sold quantities across all confirmed/completed orders
+        $ArtworkVariantOrdersTable = TableRegistry::getTableLocator()->get('ArtworkVariantOrders');
+        $soldCountQuery = $ArtworkVariantOrdersTable->find();
+        $soldCountQuery->select(['sum' => 'SUM(ArtworkVariantOrders.quantity)'])
+            ->matching('ArtworkVariants', function ($q) use ($artwork) {
+                return $q->where(['ArtworkVariants.artwork_id' => $artwork->artwork_id]);
+            })
+            ->innerJoinWith('Orders', function ($q) {
+                return $q->where([
+                    'Orders.order_status IN' => ['confirmed','completed'],
+                    'Orders.is_deleted' => false,
+                ]);
+            });
+        $soldCount = (int)($soldCountQuery->first()->get('sum') ?? 0);
+
+        $max = $artwork->max_copies;
+        $remaining = max(0, $max - $soldCount - $inCart);
+
+        $this->set(compact('artwork', 'remaining'));
     }
 
     /**
@@ -68,11 +124,31 @@ class ArtworksController extends AppController
     public function add(R2StorageService $r2StorageService)
     {
         $artwork = $this->Artworks->newEmptyEntity();
-        if ($this->request->is('post')) {
-            $artwork = $this->Artworks->patchEntity($artwork, $this->request->getData());
-            $artwork->availability_status = 'available';
+        $artwork->set('artwork_variants', []);
+        // initialize empty variants (one for each size) for the form
+        $sizes = ['A3','A2','A1'];
+        foreach ($sizes as $dim) {
+            $variant = $this->Artworks->ArtworkVariants->newEmptyEntity();
+            $variant->dimension = $dim;
+            $artwork->artwork_variants[] = $variant;
+        }
 
-            if (!$this->Artworks->save($artwork)) {
+        if ($this->request->is('post')) {
+            $data = $this->request->getData();
+            $data['availability_status'] = 'available';
+            // only keep variants where price is provided
+            $data['artwork_variants'] = array_filter(
+                $data['artwork_variants'],
+                fn($v) => isset($v['price']) && $v['price'] !== '',
+            );
+
+            $artwork = $this->Artworks->patchEntity(
+                $artwork,
+                $data,
+                ['associated' => ['ArtworkVariants']],
+            );
+
+            if (!$this->Artworks->save($artwork, ['associated' => ['ArtworkVariants']])) {
                 $this->Flash->error(__('Unable to save artwork.'));
             } else {
                 $this->Flash->success(__('Artwork saved.'));
@@ -255,9 +331,7 @@ class ArtworksController extends AppController
     private function _drawCornerDiagonalText(GdImage $canvas, int $width, int $height): void
     {
         // Retrieve watermark text
-        $rawText = TableRegistry::getTableLocator()
-            ->get('ContentBlocks')
-            ->find()
+        $rawText = TableRegistry::getTableLocator()->get('ContentBlocks')->find()
             ->select(['value'])
             ->where(['slug' => 'watermark-text'])
             ->firstOrFail()

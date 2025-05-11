@@ -21,8 +21,9 @@ class CartsControllerTest extends TestCase
     protected array $fixtures = [
         'app.Users',
         'app.Artworks',
-        'app.ArtworkCarts',
+        'app.ArtworkVariants',
         'app.Carts',
+        'app.ArtworkVariantCarts',
         'app.ContentBlocks',
     ];
 
@@ -46,15 +47,27 @@ class CartsControllerTest extends TestCase
         ]);
 
         // artwork ID from fixtures.
-        $artworkId = '5492e85e-f1b2-41f5-85cb-bfbe115b69ea';
-        $data = ['artwork_id' => $artworkId];
+        $variantId = '5492e85e-f1b2-41f5-0000-000000000000';
+        $data = [
+            'artwork_variant_id' => $variantId,
+            'quantity' => 1,
+        ];
 
         // POST request to add the item.
         $this->post('/carts/add', $data);
         $this->assertResponseSuccess();
         $this->assertFlashMessage('Item added to cart.');
 
-        $this->assertSession($artworkId, 'Cart.items.0.artwork_id', 'The artwork should be added to the cart in the session.');
+        $this->assertSession(
+            $variantId,
+            'Cart.items.0.artwork_variant_id',
+            'The variant should be added to the cart key in session',
+        );
+        $this->assertSession(
+            1,
+            'Cart.items.0.quantity',
+            'Quantity should be saved too',
+        );
     }
 
     /**
@@ -68,38 +81,27 @@ class CartsControllerTest extends TestCase
         $this->enableSecurityToken();
 
         // No session set, simulate non-logged in user.
-        $artworkId = '8424e85e-f1b2-41f5-85cb-bfbe115b45bc';
-        $data = ['artwork_id' => $artworkId];
+        $variantId = '8424e85e-f1b2-41f5-0000-000000000000';
+        $data = [
+            'artwork_variant_id' => $variantId,
+            'quantity' => 1,
+        ];
 
         $this->post('/carts/add', $data);
         $this->assertResponseSuccess();
 
         $this->assertFlashMessage('Item added to cart.');
 
-        $this->assertSession($artworkId, 'Cart.items.0.artwork_id', 'The artwork should be added to the cart in the session.');
-    }
-
-    /**
-     * Test Case 1.3: Preventing Duplicate Items in Cart
-     *
-     * @return void
-     */
-    public function testPreventDuplicateItems(): void
-    {
-        $this->enableCsrfToken();
-        $this->enableSecurityToken();
-
-        $artworkId = '5492e85e-f1b2-41f5-85cb-bfbe115b69ea';
-        $data = ['artwork_id' => $artworkId];
-
-        // First addition should succeed.
-        $this->post('/carts/add', $data);
-        $this->assertResponseSuccess();
-
-        // Attempt to add the same item again.
-        $this->post('/carts/add', $data);
-        // Expect a message that the item is already in the cart.
-        $this->assertFlashMessage('Item already in cart.');
+        $this->assertSession(
+            $variantId,
+            'Cart.items.0.artwork_variant_id',
+            'The variant should be added to the cart key in session',
+        );
+        $this->assertSession(
+            1,
+            'Cart.items.0.quantity',
+            'Quantity should be saved too',
+        );
     }
 
     /**
@@ -112,7 +114,7 @@ class CartsControllerTest extends TestCase
         $this->enableCsrfToken();
         $this->enableSecurityToken();
 
-        $artworkId = 'artwork-sold';
+        $variantId = 'artwork-sold-0000000000000000';
 
         // Simulate logged-in user.
         $this->session([
@@ -123,10 +125,10 @@ class CartsControllerTest extends TestCase
         ]);
 
         // Try to add a sold artwork.
-        $this->post('/carts/add', ['artwork_id' => $artworkId]);
+        $this->post('/carts/add', ['artwork_variant_id' => $variantId]);
         $this->assertResponseSuccess();
         // Verify that the response contains the error message.
-        $this->assertFlashMessage('Artwork is not available.');
+        $this->assertFlashMessage('That artwork/size is not available.');
     }
 
     /**
@@ -139,7 +141,7 @@ class CartsControllerTest extends TestCase
         $this->enableCsrfToken();
         $this->enableSecurityToken();
 
-        $artworkId = 'artwork-deleted';
+        $variantId = 'artwork-deleted-0000000000000000';
 
         // Simulate logged-in user.
         $this->session([
@@ -150,10 +152,10 @@ class CartsControllerTest extends TestCase
         ]);
 
         // Try to add a deleted artwork.
-        $this->post('/carts/add', ['artwork_id' => $artworkId]);
+        $this->post('/carts/add', ['artwork_variant_id' => $variantId]);
         $this->assertResponseSuccess();
 
-        $this->assertFlashMessage('Artwork is not available.');
+        $this->assertFlashMessage('That artwork/size is not available.');
     }
 
     /**
@@ -166,10 +168,10 @@ class CartsControllerTest extends TestCase
         $this->enableCsrfToken();
         $this->enableSecurityToken();
 
-        // Post with no artwork_id in data.
+        // Post with no artwork_variant_id in data.
         $this->post('/carts/add');
         $this->assertResponseSuccess();
-        $this->assertFlashMessage('No artwork specified.');
+        $this->assertFlashMessage('No size selected.');
     }
 
     /**
@@ -179,7 +181,7 @@ class CartsControllerTest extends TestCase
      */
     public function testAddItemInvalidMethod(): void
     {
-        $this->get('/carts/add?artwork_id=some-artwork-id');
+        $this->get('/carts/add');
         $this->assertResponseCode(404);
     }
 
@@ -193,8 +195,8 @@ class CartsControllerTest extends TestCase
         $this->enableCsrfToken();
         $this->enableSecurityToken();
 
-        $artworkId = '5492e85e-f1b2-41f5-85cb-bfbe115b69ea';
-        $data = ['artwork_id' => $artworkId];
+        $variantId  = '5492e85e-f1b2-41f5-0000-000000000000';
+        $data = ['artwork_variant_id' => $variantId ];
 
         // Add item to cart.
         $this->post('/carts/add', $data);
@@ -216,7 +218,7 @@ class CartsControllerTest extends TestCase
      */
     public function testRemoveItemInvalidMethod(): void
     {
-        $this->get('/carts/remove?artwork_id=some-artwork-id');
+        $this->get('/carts/remove?artwork_variant_id=some-artwork-id');
         $this->assertResponseCode(404);
     }
 
@@ -243,11 +245,11 @@ class CartsControllerTest extends TestCase
         // or relying on fixture data where no cart item exists for this user.
         // For this example, we'll assume the user already has an empty cart.
         // Now attempt to remove an artwork not present.
-        $data = ['artwork_id' => 'non-existent-artwork-id'];
+        $data = ['artwork_variant_id' => 'non-existent-artwork-id'];
         $this->post('/carts/remove', $data);
         $this->assertResponseSuccess();
 
-        $this->assertFlashMessage('Cart item not found.');
+        $this->assertFlashMessage('Item not in cart.');
     }
 
     /**
@@ -260,8 +262,8 @@ class CartsControllerTest extends TestCase
         $this->enableCsrfToken();
         $this->enableSecurityToken();
 
-        $artworkId = '5492e85e-f1b2-41f5-85cb-bfbe115b69ea';
-        $data = ['artwork_id' => $artworkId];
+        $variantId = '5492e85e-f1b2-41f5-0000-000000000000';
+        $data = ['artwork_variant_id' => $variantId];
 
         // Add an item to the cart.
         $this->post('/carts/add', $data);
@@ -285,7 +287,7 @@ class CartsControllerTest extends TestCase
         $this->enableSecurityToken();
 
         // Assume business rule: cart is cleared after logout.
-        $artworkId = '5492e85e-f1b2-41f5-85cb-bfbe115b69ea';
+        $variantId = '5492e85e-f1b2-41f5-0000-000000000000';
         $this->session([
             'Auth' => [
                 'user_id' => 'user-uuid',
@@ -294,7 +296,7 @@ class CartsControllerTest extends TestCase
         ]);
 
         // Add an item to the cart.
-        $data = ['artwork_id' => $artworkId];
+        $data = ['artwork_variant_id' => $variantId];
         $this->post('/carts/add', $data);
         $this->assertResponseSuccess();
 

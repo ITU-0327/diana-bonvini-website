@@ -15,7 +15,7 @@ use Cake\Validation\Validator;
  * Orders Model
  *
  * @property \App\Model\Table\UsersTable&\Cake\ORM\Association\BelongsTo $Users
- * @property \App\Model\Table\ArtworkOrdersTable&\Cake\ORM\Association\HasMany $ArtworkOrders
+ * @property \App\Model\Table\ArtworkVariantOrdersTable&\Cake\ORM\Association\HasMany $ArtworkVariantOrders
  * @property \App\Model\Table\PaymentsTable&\Cake\ORM\Association\HasOne $Payments
  * @method \App\Model\Entity\Order newEmptyEntity()
  * @method \App\Model\Entity\Order newEntity(array $data, array $options = [])
@@ -52,17 +52,15 @@ class OrdersTable extends Table
             'joinType' => 'INNER',
         ]);
 
-        $this->hasMany('ArtworkOrders', [
-            'foreignKey' => 'order_id',
-            'dependent' => true,
-            'cascadeCallbacks' => true,
-            'saveStrategy' => 'replace',
-        ]);
-
         $this->hasOne('Payments', [
             'foreignKey' => 'order_id',
             'dependent' => true,
             'cascadeCallbacks' => true,
+        ]);
+
+        $this->hasMany('ArtworkVariantOrders', [
+            'foreignKey' => 'order_id',
+            'dependent' => true,
         ]);
     }
 
@@ -245,7 +243,7 @@ class OrdersTable extends Table
             return false;
         }
 
-        $this->ArtworkOrders->updateAll(['is_deleted' => true], ['order_id' => $orderId]);
+        $this->ArtworkVariantOrders->updateAll(['is_deleted' => true], ['order_id' => $orderId]);
         $this->Payments->updateAll(['is_deleted' => true], ['order_id' => $orderId]);
 
         return true;
