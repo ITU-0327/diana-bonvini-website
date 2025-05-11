@@ -70,7 +70,49 @@ class ArtworksController extends AppController
                 ]);
             },
         ]);
-        $this->set(compact('artwork'));
+
+        /** @var \App\Model\Entity\User|null $user */
+        $user = $this->Authentication->getIdentity();
+        $userId = $user?->user_id;
+        $sessionId = $this->request->getSession()->id();
+
+        $conditions = $userId !== null ? ['user_id' => $userId] : ['session_id' => $sessionId];
+        $cartsTable = TableRegistry::getTableLocator()->get('Carts');
+        /** @var \App\Model\Entity\Cart $cart */
+        $cart = $cartsTable->find()
+            ->contain(['ArtworkVariantCarts.ArtworkVariants'])
+            ->where($conditions)
+            ->first();
+
+        // Sum in-cart quantities for this artwork
+        $inCart = 0;
+        if ($cart) {
+            foreach ($cart->artwork_variant_carts as $line) {
+                if ($line->artwork_variant->artwork_id === $artwork->artwork_id) {
+                    $inCart += $line->quantity;
+                }
+            }
+        }
+
+        // Sum sold quantities across all confirmed/completed orders
+        $ArtworkVariantOrdersTable = TableRegistry::getTableLocator()->get('ArtworkVariantOrders');
+        $soldCountQuery = $ArtworkVariantOrdersTable->find();
+        $soldCountQuery->select(['sum' => 'SUM(ArtworkVariantOrders.quantity)'])
+            ->matching('ArtworkVariants', function($q) use ($artwork) {
+                return $q->where(['ArtworkVariants.artwork_id' => $artwork->artwork_id]);
+            })
+            ->innerJoinWith('Orders', function($q) {
+                return $q->where([
+                    'Orders.order_status IN' => ['confirmed','completed'],
+                    'Orders.is_deleted' => false
+                ]);
+            });
+        $soldCount = (int)($soldCountQuery->first()->get('sum') ?? 0);
+
+        $max = $artwork->max_copies;
+        $remaining = max(0, $max - $soldCount - $inCart);
+
+        $this->set(compact('artwork', 'remaining'));
     }
 
     /**

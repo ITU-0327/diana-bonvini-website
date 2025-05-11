@@ -2,6 +2,7 @@
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Artwork $artwork
+ * @var int $remaining
  */
 
 use Cake\Collection\Collection;
@@ -80,7 +81,7 @@ $options = $sortedBySize->combine(
                 <p class="text-gray-500">Estimated to ship in 3–7 days within Australia</p>
             </div>
 
-            <?php if ($artwork->availability_status === 'sold') : ?>
+            <?php if ($artwork->availability_status === 'sold' || $remaining == 0) : ?>
                 <!-- Sold display -->
                 <div class="text-red-500 font-semibold">Sold</div>
             <?php else : ?>
@@ -96,6 +97,7 @@ $options = $sortedBySize->combine(
                         <?= $this->Form->control('artwork_variant_id', [
                             'type' => 'select',
                             'options' => $options,
+                            'required' => true,
                             'empty' => 'Select size',
                             'label' => 'Size',
                             'class' => 'border rounded p-2 w-full',
@@ -107,11 +109,14 @@ $options = $sortedBySize->combine(
                         <?= $this->Form->control('quantity', [
                             'type' => 'number',
                             'min' => 1,
-                            'max' => $artwork->max_copies,
+                            'max' => $remaining,
                             'value' => 1,
                             'label' => 'Quantity',
                             'class' => 'border rounded p-2 w-full',
                         ]) ?>
+                        <p class="text-sm text-gray-500">
+                            You can add up to <?= h($remaining) ?> more copy<?= $remaining === 1 ? '' : 'ies' ?>.
+                        </p>
                     </div>
 
                     <?= $this->Form->button('<i class="fa fa-shopping-cart mr-2"></i>Add to Cart', [

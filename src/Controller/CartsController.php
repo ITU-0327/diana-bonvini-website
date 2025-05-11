@@ -92,16 +92,33 @@ class CartsController extends AppController
         if (!$variant) {
             return $this->redirect($this->referer());
         }
+        $artwork = $variant->artwork;
+        $maxCopies = $artwork->max_copies;
 
         // find-or-make the cart
         [$userId, $sessionId] = array_values($this->_getUserAndSession());
         $conditions = $this->_buildCartConditions($userId, $sessionId);
-        $cart = $this->_findOrCreateCart($conditions, $userId, $sessionId, $artworkVariantId);
+        $cart = $this->_findOrCreateCart($conditions, $userId, $sessionId);
         if (!$cart) {
             $this->Flash->error('Unable to create cart.');
 
             return $this->redirect($this->referer());
         }
+
+        $currentTotal = $this->Carts->ArtworkVariantCarts->find()
+            ->select(['sum' => 'SUM(quantity)'])
+            ->matching('ArtworkVariants', function ($q) use ($artwork) {
+                return $q->where([
+                    'ArtworkVariants.artwork_id' => $artwork->artwork_id,
+                    'ArtworkVariants.is_deleted' => false,
+                ]);
+            })
+            ->where([
+                'ArtworkVariantCarts.cart_id'    => $cart->cart_id,
+                'ArtworkVariantCarts.is_deleted' => false,
+            ])
+            ->first()
+            ->get('sum') ?? 0;
 
         // look for an existing line for this variant
         /** @var \App\Model\Entity\ArtworkVariantCart|null $existing */
@@ -113,19 +130,25 @@ class CartsController extends AppController
             ])
             ->first();
 
+        $newTotal = $currentTotal + $quantity;
+
+        if ($newTotal > $maxCopies) {
+            $remaining = $maxCopies - $currentTotal;
+            $this->Flash->error(
+                "Only $remaining total print" . ($remaining === 1 ? '' : 's')
+                . " remaining for “$artwork->title.”",
+            );
+
+            return $this->redirect($this->referer());
+        }
+
+        // Proceed with existing‐or‐new logic
         if ($existing) {
-            // calculate new quantity, guard against max_copies
-            $newQty = $existing->quantity + $quantity;
-            $max = $variant->artwork->max_copies;
-            if ($newQty > $max) {
-                $this->Flash->error("You can only have up to $max copies of “{$variant->artwork->title}.”");
+            $existing->quantity += $quantity;
+            if ($this->Carts->ArtworkVariantCarts->save($existing)) {
+                $this->Flash->success("Updated quantity to $existing->quantity.");
             } else {
-                $existing->quantity = $newQty;
-                if ($this->Carts->ArtworkVariantCarts->save($existing)) {
-                    $this->Flash->success("Updated quantity to $newQty.");
-                } else {
-                    $this->Flash->error('Could not update quantity.');
-                }
+                $this->Flash->error('Could not update quantity.');
             }
         } else {
             if ($this->_addArtworkVariantToCart($cart, $artworkVariantId, $quantity)) {
@@ -262,24 +285,13 @@ class CartsController extends AppController
      * @param array<string, string> $conditions
      * @param string|null $userId
      * @param string $sessionId
-     * @param string|null $artworkVariantId Optional artwork variant ID to check for.
      * @return \App\Model\Entity\Cart|null
      */
-    protected function _findOrCreateCart(array $conditions, ?string $userId, string $sessionId, ?string $artworkVariantId = null): ?Cart
+    protected function _findOrCreateCart(array $conditions, ?string $userId, string $sessionId): ?Cart
     {
-        $query = $this->Carts->find();
-
-        if ($artworkVariantId) {
-            $query->contain([
-                'ArtworkVariantCarts' => function ($q) use ($artworkVariantId) {
-                    return $q->where([
-                            'ArtworkVariantCarts.artwork_variant_id' => $artworkVariantId,
-                            'ArtworkVariantCarts.is_deleted' => 0,
-                        ]);
-                },
-            ]);
-        }
-        $cart = $query->where($conditions)->first();
+        $cart = $this->Carts->find()
+            ->where($conditions)
+            ->first();
         if (!$cart) {
             $cart = $this->Carts->newEmptyEntity();
             if ($userId !== null) {
