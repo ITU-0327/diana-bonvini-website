@@ -121,6 +121,19 @@ return function (RouteBuilder $routes): void {
             ->setPatterns(['id' => '[a-zA-Z0-9-]+', 'lastMessageId' => '[a-zA-Z0-9-]+'])
             ->setPass(['id', 'lastMessageId']);
 
+        // AJAX endpoint for getting available time slots
+        $builder->connect('/writing-service-requests/get-available-time-slots', ['controller' => 'WritingServiceRequests', 'action' => 'getAvailableTimeSlots']);
+
+        // Endpoint for sending time slots to clients
+        $builder->connect('/writing-service-requests/send-time-slots/:id', ['controller' => 'WritingServiceRequests', 'action' => 'sendTimeSlots'])
+            ->setPatterns(['id' => '[a-zA-Z0-9-]+'])
+            ->setPass(['id']);
+
+        // Google Calendar Auth routes
+        $builder->connect('/google-auth', ['controller' => 'GoogleAuth', 'action' => 'index']);
+        $builder->connect('/google-auth/callback', ['controller' => 'GoogleAuth', 'action' => 'callback']);
+        $builder->connect('/google-auth/view-calendar', ['controller' => 'GoogleAuth', 'action' => 'viewCalendar']);
+
         // Artworks management for the art e-commerce section
         // Allows adding, editing, and removing artwork products
         $builder->connect('/artworks', ['controller' => 'Artworks', 'action' => 'index']);
