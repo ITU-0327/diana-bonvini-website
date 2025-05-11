@@ -11,6 +11,10 @@
         <!-- Cart Table Card -->
         <div class="bg-white shadow rounded-lg p-6 mb-8">
             <div class="overflow-x-auto">
+                <?= $this->Form->create(null, [
+                    'url'  => ['action' => 'updateQuantities'],
+                    'type' => 'post',
+                ]) ?>
                 <table class="min-w-full">
                     <thead>
                         <tr class="bg-gray-100">
@@ -54,6 +58,7 @@
                                     [
                                         'type' => 'number',
                                         'min' => 1,
+                                        'max' => 5,
                                         'value' => $quantity,
                                         'label' => false,
                                         'class' => 'w-20 border rounded p-1',
@@ -80,6 +85,8 @@
                         </tr>
                     </tfoot>
                 </table>
+
+                <?= $this->Form->end() ?>
             </div>
         </div>
         <div class="text-right">
