@@ -12,6 +12,7 @@ use Cake\Validation\Validator;
  * Appointments Model
  *
  * @property \App\Model\Table\UsersTable&\Cake\ORM\Association\BelongsTo $Users
+ * @property \App\Model\Table\WritingServiceRequestsTable&\Cake\ORM\Association\BelongsTo $WritingServiceRequests
  * @method \App\Model\Entity\Appointment newEmptyEntity()
  * @method \App\Model\Entity\Appointment newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\Appointment> newEntities(array $data, array $options = [])
@@ -46,6 +47,11 @@ class AppointmentsTable extends Table
             'foreignKey' => 'user_id',
             'joinType' => 'INNER',
         ]);
+
+        $this->belongsTo('WritingServiceRequests', [
+            'foreignKey' => 'writing_service_request_id',
+            'joinType' => 'LEFT',
+        ]);
     }
 
     /**
@@ -59,6 +65,11 @@ class AppointmentsTable extends Table
         $validator
             ->uuid('user_id')
             ->notEmptyString('user_id');
+
+        $validator
+            ->scalar('writing_service_request_id')
+            ->maxLength('writing_service_request_id', 9)
+            ->allowEmptyString('writing_service_request_id');
 
         $validator
             ->scalar('appointment_type')
@@ -86,9 +97,28 @@ class AppointmentsTable extends Table
             ->notEmptyString('status');
 
         $validator
+            ->scalar('description')
+            ->maxLength('description', 1000)
+            ->allowEmptyString('description');
+
+        $validator
+            ->scalar('location')
+            ->maxLength('location', 255)
+            ->allowEmptyString('location');
+
+        $validator
+            ->boolean('is_google_synced')
+            ->notEmptyString('is_google_synced');
+
+        $validator
             ->scalar('google_calendar_event_id')
             ->maxLength('google_calendar_event_id', 255)
             ->allowEmptyString('google_calendar_event_id');
+
+        $validator
+            ->scalar('meeting_link')
+            ->maxLength('meeting_link', 255)
+            ->allowEmptyString('meeting_link');
 
         $validator
             ->boolean('is_deleted')
@@ -115,6 +145,7 @@ class AppointmentsTable extends Table
     public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->existsIn(['user_id'], 'Users'), ['errorField' => 'user_id']);
+        $rules->add($rules->existsIn(['writing_service_request_id'], 'WritingServiceRequests'), ['errorField' => 'writing_service_request_id']);
 
         return $rules;
     }
