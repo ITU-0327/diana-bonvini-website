@@ -58,6 +58,7 @@
                         <?= $this->Form->control("artwork_variants.$i.price", [
                             'type' => 'number',
                             'step' => '0.01',
+                            'min' => '1',
                             'label' => 'Price',
                             'class' => 'border rounded w-full p-2',
                             'placeholder' => 'Enter price or leave blank to skip',

@@ -76,12 +76,14 @@ class ArtworkVariantsTable extends Table
         $validator
             ->scalar('dimension')
             ->requirePresence('dimension', 'create')
-            ->notEmptyString('dimension');
+            ->notEmptyString('dimension')
+            ->inList('dimension', ['A3','A2','A1'], 'Dimension must be A3, A2 or A1');
 
         $validator
             ->decimal('price')
             ->requirePresence('price', 'create')
-            ->notEmptyString('price');
+            ->notEmptyString('price')
+            ->greaterThanOrEqual('price', 1, 'Price must be at least $1.00');
 
         $validator
             ->boolean('is_deleted')
