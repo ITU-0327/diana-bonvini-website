@@ -21,7 +21,7 @@ class ArtworkVariantCartsFixture extends TestFixture
             [
                 'artwork_variant_cart_id' => 'item-1',
                 'cart_id' => 'cart-1234',
-                'artwork_variant_id' => '8424e85e-f1b2-41f5-85cb-bfbe115b45bc',
+                'artwork_variant_id' => '8424e85e-f1b2-41f5-0000-000000000000',
                 'quantity' => 1,
                 'is_deleted' => 0,
                 'date_added' => '2025-03-07 10:00:00',
@@ -29,7 +29,7 @@ class ArtworkVariantCartsFixture extends TestFixture
             [
                 'artwork_variant_cart_id' => 'item-2',
                 'cart_id' => 'cart-1234',
-                'artwork_variant_id' => 'artwork-deleted',
+                'artwork_variant_id' => 'artwork-deleted-0000000000000000',
                 'quantity' => 1,
                 'is_deleted' => 0,
                 'date_added' => '2025-03-07 10:00:00',
@@ -37,7 +37,7 @@ class ArtworkVariantCartsFixture extends TestFixture
             [
                 'artwork_variant_cart_id' => 'item-3',
                 'cart_id' => 'cart-1234',
-                'artwork_variant_id' => 'artwork-sold',
+                'artwork_variant_id' => 'artwork-sold-0000000000000000',
                 'quantity' => 1,
                 'is_deleted' => 0,
                 'date_added' => '2025-03-07 10:00:00',

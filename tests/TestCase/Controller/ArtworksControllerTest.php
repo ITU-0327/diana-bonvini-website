@@ -20,6 +20,7 @@ class ArtworksControllerTest extends TestCase
      */
     protected array $fixtures = [
         'app.Artworks',
+        'app.ArtworkVariants',
         'app.ContentBlocks',
     ];
 

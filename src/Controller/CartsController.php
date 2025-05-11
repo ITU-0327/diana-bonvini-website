@@ -255,9 +255,7 @@ class CartsController extends AppController
         foreach ($quantities as $lineId => $newQty) {
             $newQty = (int)max(1, $newQty);
             /** @var \App\Model\Entity\ArtworkVariantCart $line */
-            $line = $this->Carts->ArtworkVariantCarts->get($lineId, [
-                'contain' => ['ArtworkVariants.Artworks'],
-            ]);
+            $line = $this->Carts->ArtworkVariantCarts->get($lineId, contain: ['ArtworkVariants.Artworks']);
 
             // Compute how many of this artwork are sold
             $variant = $line->artwork_variant;
@@ -325,9 +323,7 @@ class CartsController extends AppController
     {
         /** @var \App\Model\Table\ArtworkVariantsTable $artworkVariantsTable */
         $artworkVariantsTable = $this->getTableLocator()->get('ArtworkVariants');
-        $variant = $artworkVariantsTable->get($artworkVariantId, [
-            'contain' => ['Artworks'],
-        ]);
+        $variant = $artworkVariantsTable->get($artworkVariantId, contain: ['Artworks']);
 
         // check its parent artwork
         if (
