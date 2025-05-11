@@ -3,9 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Model\Entity\Artwork;
+use App\Model\Entity\ArtworkVariant;
 use App\Model\Entity\Cart;
-use Cake\Datasource\Exception\RecordNotFoundException;
 use Cake\Event\EventInterface;
 use Cake\Http\Exception\NotFoundException;
 use Cake\Http\Response;
@@ -14,7 +13,6 @@ use Cake\Http\Response;
  * Carts Controller
  *
  * @property \App\Model\Table\CartsTable $Carts
- * @property \App\Model\Table\ArtworkVariantCartsTable $ArtworkCarts
  * @property \Authentication\Controller\Component\AuthenticationComponent $Authentication
  */
 class CartsController extends AppController
@@ -33,7 +31,6 @@ class CartsController extends AppController
             'index',
             'add',
             'remove',
-            'buyNow',
         ]);
     }
 
@@ -45,19 +42,21 @@ class CartsController extends AppController
     public function index(): void
     {
         // Get user/session info and build conditions
-        $data = $this->_getUserAndSession();
-        $conditions = $this->_buildCartConditions($data['userId'], $data['sessionId']);
+        [$userId, $sessionId] = array_values($this->_getUserAndSession());
+        $conditions = $this->_buildCartConditions($userId, $sessionId);
 
         // Retrieve the cart with associated ArtworkCarts and their Artworks
         $cart = $this->Carts->find()
             ->contain([
-                'ArtworkCarts' => function ($q) {
-                    return $q->where(['ArtworkCarts.is_deleted' => 0]);
+                'ArtworkVariantCarts' => function ($q) {
+                    return $q->where(['ArtworkVariantCarts.is_deleted' => 0]);
                 },
-                'ArtworkCarts.Artworks' => function ($q) {
+                // then load the size & artwork for each line
+                'ArtworkVariantCarts.ArtworkVariants.Artworks' => function ($q) {
                     return $q->where([
                         'Artworks.is_deleted' => 0,
                         'Artworks.availability_status' => 'available',
+                        'ArtworkVariants.is_deleted' => 0,
                     ]);
                 },
             ])
@@ -70,50 +69,69 @@ class CartsController extends AppController
     /**
      * Add an artwork to the cart.
      *
-     * @param string|null $artworkId The artwork ID to add.
      * @return \Cake\Http\Response|null Redirects back to referring page.
      */
-    public function add(?string $artworkId = null): ?Response
+    public function add(): ?Response
     {
         if (!$this->request->is(['post', 'put'])) {
             throw new NotFoundException('Invalid request method.');
         }
 
-        if (!$artworkId) {
-            $artworkId = $this->request->getData('artwork_id');
-        }
-        if (!$artworkId) {
-            $this->Flash->error('No artwork specified.');
+        // pull from URL or form
+        $artworkVariantId = $this->request->getData('artwork_variant_id');
+        $quantity = max(1, (int)$this->request->getData('quantity', 1));
+
+        if (!$artworkVariantId) {
+            $this->Flash->error('No size selected.');
 
             return $this->redirect($this->referer());
         }
 
-        // Retrieve and validate the artwork
-        $artwork = $this->_getValidArtwork($artworkId);
-        if (!$artwork) {
+        // make sure the variant (and its artwork) is still available
+        $variant = $this->_getValidVariant($artworkVariantId);
+        if (!$variant) {
             return $this->redirect($this->referer());
         }
 
-        // Get user/session info and build conditions
-        $data = $this->_getUserAndSession();
-        $conditions = $this->_buildCartConditions($data['userId'], $data['sessionId']);
-
-        // Find an existing cart or create a new one
-        $cart = $this->_findOrCreateCart($conditions, $data['userId'], $data['sessionId'], $artworkId);
+        // find-or-make the cart
+        [$userId, $sessionId] = array_values($this->_getUserAndSession());
+        $conditions = $this->_buildCartConditions($userId, $sessionId);
+        $cart = $this->_findOrCreateCart($conditions, $userId, $sessionId, $artworkVariantId);
         if (!$cart) {
             $this->Flash->error('Unable to create cart.');
 
             return $this->redirect($this->referer());
         }
 
-        // Check if the artwork is already in the cart, or add it if not
-        if (!empty($cart->artwork_carts)) {
-            $this->Flash->success('Item already in cart.');
+        // look for an existing line for this variant
+        /** @var \App\Model\Entity\ArtworkVariantCart|null $existing */
+        $existing = $this->Carts->ArtworkVariantCarts->find()
+            ->where([
+                'cart_id' => $cart->cart_id,
+                'artwork_variant_id' => $artworkVariantId,
+                'is_deleted' => 0,
+            ])
+            ->first();
+
+        if ($existing) {
+            // calculate new quantity, guard against max_copies
+            $newQty = $existing->quantity + $quantity;
+            $max = $variant->artwork->max_copies;
+            if ($newQty > $max) {
+                $this->Flash->error("You can only have up to $max copies of “{$variant->artwork->title}.”");
+            } else {
+                $existing->quantity = $newQty;
+                if ($this->Carts->ArtworkVariantCarts->save($existing)) {
+                    $this->Flash->success("Updated quantity to $newQty.");
+                } else {
+                    $this->Flash->error('Could not update quantity.');
+                }
+            }
         } else {
-            if ($this->_addArtworkToCart($cart, $artworkId)) {
+            if ($this->_addArtworkVariantToCart($cart, $artworkVariantId, $quantity)) {
                 $this->Flash->success('Item added to cart.');
             } else {
-                $this->Flash->error('Unable to add item to cart.');
+                $this->Flash->error('Unable to add to cart.');
             }
         }
 
@@ -121,86 +139,30 @@ class CartsController extends AppController
     }
 
     /**
-     * Buy an artwork directly.
-     *
-     * @param string|null $artworkId The artwork ID to buy.
-     * @return \Cake\Http\Response|null Redirects to the cart page.
-     */
-    public function buyNow(?string $artworkId = null): ?Response
-    {
-        if (!$this->request->is(['post', 'put'])) {
-            throw new NotFoundException('Invalid request method.');
-        }
-
-        if (!$artworkId) {
-            $artworkId = $this->request->getData('artwork_id');
-        }
-        if (!$artworkId) {
-            $this->Flash->error('No artwork specified.');
-
-            return $this->redirect($this->referer());
-        }
-
-        // Retrieve and validate the artwork
-        $artwork = $this->_getValidArtwork($artworkId);
-        if (!$artwork) {
-            return $this->redirect($this->referer());
-        }
-
-        // Get user/session info and build conditions
-        $data = $this->_getUserAndSession();
-        $conditions = $this->_buildCartConditions($data['userId'], $data['sessionId']);
-
-        // Find an existing cart or create a new one
-        $cart = $this->_findOrCreateCart($conditions, $data['userId'], $data['sessionId'], $artworkId);
-        if (!$cart) {
-            $this->Flash->error('Unable to create cart.');
-
-            return $this->redirect($this->referer());
-        }
-
-        // Check if the artwork is already in the cart, or add it if not
-        if (!empty($cart->artwork_carts)) {
-            $this->Flash->success('Item already in cart.');
-        } else {
-            if ($this->_addArtworkToCart($cart, $artworkId)) {
-                $this->Flash->success('Item added to cart.');
-            } else {
-                $this->Flash->error('Unable to add item to cart.');
-            }
-        }
-
-        // Redirect directly to the cart page
-        return $this->redirect(['controller' => 'Carts', 'action' => 'index']);
-    }
-
-    /**
      * Remove a cart item from the cart by artwork ID.
      *
-     * @param string|null $artworkId The artwork ID to remove from the cart.
+     * @param string|null $artworkVariantId The artwork variant ID to remove from the cart.
      * @return \Cake\Http\Response|null Redirects back to the referring page.
      */
-    public function remove(?string $artworkId = null): ?Response
+    public function remove(?string $artworkVariantId = null): ?Response
     {
         if (!$this->request->is(['post', 'delete'])) {
             throw new NotFoundException('Invalid request method.');
         }
 
-        if (!$artworkId) {
-            $artworkId = $this->request->getData('artwork_id');
-        }
-        if (!$artworkId) {
+        $artworkVariantId = $artworkVariantId ?? $this->request->getData('artwork_variant_id');
+        if (!$artworkVariantId) {
             $this->Flash->error('No artwork specified.');
 
             return $this->redirect($this->referer());
         }
 
-        // Get user/session info and build conditions
-        $data = $this->_getUserAndSession();
-        $conditions = $this->_buildCartConditions($data['userId'], $data['sessionId']);
+        [$userId, $sessionId] = array_values($this->_getUserAndSession());
+        $conditions = $this->_buildCartConditions($userId, $sessionId);
 
+        /** @var \App\Model\Entity\Cart $cart */
         $cart = $this->Carts->find()
-            ->contain(['ArtworkCarts'])
+            ->contain(['ArtworkVariantCarts'])
             ->where($conditions)
             ->first();
 
@@ -210,36 +172,27 @@ class CartsController extends AppController
             return $this->redirect($this->referer());
         }
 
-        // Find the cart item corresponding to the artwork ID in this cart
-        $cartItem = $this->Carts->ArtworkCarts->find()
+        $cartItem = $this->Carts->ArtworkVariantCarts->find()
             ->where([
-                'cart_id'    => $cart->cart_id,
-                'artwork_id' => $artworkId,
+                'cart_id' => $cart->cart_id,
+                'artwork_variant_id' => $artworkVariantId,
             ])
             ->first();
 
         if (!$cartItem) {
-            $this->Flash->error('Cart item not found.');
+            $this->Flash->error('Item not in cart.');
 
             return $this->redirect($this->referer());
         }
 
-        // Delete the cart item
-        if ($this->Carts->ArtworkCarts->delete($cartItem)) {
-            $this->Flash->success('Item removed from cart.');
-
-            // Check if the cart is now empty
-            $remainingItems = $this->Carts->ArtworkCarts->find()
+        if ($this->Carts->ArtworkVariantCarts->delete($cartItem)) {
+            $this->Flash->success('Item removed.');
+            // if cart empty, delete the cart record
+            $remaining = $this->Carts->ArtworkVariantCarts->find()
                 ->where(['cart_id' => $cart->cart_id])
                 ->count();
-
-            if ($remainingItems === 0) {
-                // No remaining items; delete the cart silently.
-                try {
-                    $this->Carts->delete($cart);
-                } catch (RecordNotFoundException) {
-                    // Cart might have already been deleted.
-                }
+            if ($remaining === 0) {
+                $this->Carts->delete($cart);
             }
         } else {
             $this->Flash->error('Unable to remove item from cart.');
@@ -251,27 +204,29 @@ class CartsController extends AppController
     /**
      * Retrieves the artwork and validates its availability.
      *
-     * @param string $artworkId
-     * @return \App\Model\Entity\Artwork|null
+     * @param string $artworkVariantId The artwork variant ID to validate.
+     * @return \App\Model\Entity\ArtworkVariant|null
      */
-    protected function _getValidArtwork(string $artworkId): ?Artwork
+    protected function _getValidVariant(string $artworkVariantId): ?ArtworkVariant
     {
-        $artworksTable = $this->fetchTable('Artworks');
-        try {
-            /** @var \App\Model\Entity\Artwork $artwork */
-            $artwork = $artworksTable->get($artworkId);
-        } catch (RecordNotFoundException) {
-            $this->Flash->error('Artwork not found.');
+        /** @var \App\Model\Table\ArtworkVariantsTable $artworkVariantsTable */
+        $artworkVariantsTable = $this->getTableLocator()->get('ArtworkVariants');
+        $variant = $artworkVariantsTable->get($artworkVariantId, [
+            'contain' => ['Artworks'],
+        ]);
+
+        // check its parent artwork
+        if (
+            $variant->is_deleted
+            || $variant->artwork->is_deleted
+            || $variant->artwork->availability_status !== 'available'
+        ) {
+            $this->Flash->error('That artwork/size is not available.');
 
             return null;
         }
-        if ($artwork->availability_status !== 'available' || $artwork->is_deleted) {
-            $this->Flash->error('Artwork is not available.');
 
-            return null;
-        }
-
-        return $artwork;
+        return $variant;
     }
 
     /**
@@ -307,19 +262,22 @@ class CartsController extends AppController
      * @param array<string, string> $conditions
      * @param string|null $userId
      * @param string $sessionId
-     * @param string|null $artworkId Optional artwork ID to limit contained cart items.
+     * @param string|null $artworkVariantId Optional artwork variant ID to check for.
      * @return \App\Model\Entity\Cart|null
      */
-    protected function _findOrCreateCart(array $conditions, ?string $userId, string $sessionId, ?string $artworkId = null): ?Cart
+    protected function _findOrCreateCart(array $conditions, ?string $userId, string $sessionId, ?string $artworkVariantId = null): ?Cart
     {
         $query = $this->Carts->find();
-        if ($artworkId !== null) {
-            $query->contain(['ArtworkCarts' => function ($q) use ($artworkId) {
-                return $q->where([
-                    'ArtworkCarts.artwork_id' => $artworkId,
-                    'ArtworkCarts.is_deleted' => 0,
-                ]);
-            }]);
+
+        if ($artworkVariantId) {
+            $query->contain([
+                'ArtworkVariantCarts' => function ($q) use ($artworkVariantId) {
+                    return $q->where([
+                            'ArtworkVariantCarts.artwork_variant_id' => $artworkVariantId,
+                            'ArtworkVariantCarts.is_deleted' => 0,
+                        ]);
+                },
+            ]);
         }
         $cart = $query->where($conditions)->first();
         if (!$cart) {
@@ -340,24 +298,23 @@ class CartsController extends AppController
     /**
      * Adds an artwork to the cart.
      *
-     * @param \App\Model\Entity\Cart $cart
-     * @param string $artworkId
-     * @return bool
+     * @param \App\Model\Entity\Cart $cart The cart to add the artwork to.
+     * @param string $artworkVariantId The artwork variant ID to add.
+     * @param int $quantity The quantity to add.
+     * @return bool True on success, false on failure.
      */
-    protected function _addArtworkToCart(Cart $cart, string $artworkId): bool
+    protected function _addArtworkVariantToCart(Cart $cart, string $artworkVariantId, int $quantity = 1): bool
     {
-        if (!empty($cart->artwork_carts)) {
-            return false;
-        }
-        $cartItem = $this->Carts->ArtworkCarts->newEntity([
-            'cart_id'    => $cart->cart_id,
-            'artwork_id' => $artworkId,
-            'quantity'   => 1,
+        $cartItem = $this->Carts->ArtworkVariantCarts->newEntity([
+            'cart_id' => $cart->cart_id,
+            'artwork_variant_id' => $artworkVariantId,
+            'quantity' => $quantity,
         ]);
-        if ($this->Carts->ArtworkCarts->save($cartItem)) {
-            $updatedCartItems = $this->Carts->ArtworkCarts->find()
+        if ($this->Carts->ArtworkVariantCarts->save($cartItem)) {
+            // refresh the session cache if you’re storing it there
+            $updatedCartItems = $this->Carts->ArtworkVariantCarts->find()
                 ->where([
-                    'cart_id'    => $cart->cart_id,
+                    'cart_id' => $cart->cart_id,
                     'is_deleted' => 0,
                 ])
                 ->toArray();

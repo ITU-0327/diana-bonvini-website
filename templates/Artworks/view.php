@@ -4,7 +4,28 @@
  * @var \App\Model\Entity\Artwork $artwork
  */
 
+use Cake\Collection\Collection;
+
 $user = $this->request->getAttribute('identity');
+
+// Define desired size order
+$orderMap = ['A3' => 1, 'A2' => 2, 'A1' => 3];
+
+// Wrap variants in a Collection for sorting and combining
+$variants = new Collection($artwork->artwork_variants ?? []);
+
+// Determine cheapest variant price
+$cheapest = $variants->sortBy('price')->last();
+$displayPrice = $cheapest->price ?? null;
+
+// Sort by defined size order for dropdown
+$sortedBySize = $variants->sortBy(fn($v) => $orderMap[$v->dimension] ?? PHP_INT_MAX);
+
+// Build options for size selector
+$options = $sortedBySize->combine(
+    'artwork_variant_id',
+    fn($v) => $v->dimension . ' – $' . $v->price,
+)->toArray();
 ?>
 
 <div class="max-w-6xl mx-auto px-4 py-8">
@@ -50,9 +71,11 @@ $user = $this->request->getAttribute('identity');
 
             <!-- Price & Shipping Info -->
             <div class="border-t py-4 text-sm space-y-2">
-                <p class="text-xl font-semibold text-gray-800">
-                    $<?= $this->Number->format($artwork->price) ?>
-                </p>
+                <?php if ($displayPrice !== null) : ?>
+                    <p class="text-xl font-semibold text-gray-800">
+                        From $<?= $this->Number->format($displayPrice) ?>
+                    </p>
+                <?php endif; ?>
                 <p class="text-gray-500">Ships from Adelaide, SA, Australia</p>
                 <p class="text-gray-500">Estimated to ship in 3–7 days within Australia</p>
             </div>
@@ -61,19 +84,41 @@ $user = $this->request->getAttribute('identity');
                 <!-- Sold display -->
                 <div class="text-red-500 font-semibold">Sold</div>
             <?php else : ?>
-                <!-- Add to Cart (admin/customer/guest)-->
+                <!-- Add to Cart -->
                 <div>
                     <?= $this->Form->create(
                         null,
-                        ['url' => ['controller' => 'Carts', 'action' => 'add', $artwork->artwork_id]],
+                        ['url' => ['controller' => 'Carts', 'action' => 'add']],
                     ) ?>
-                    <?= $this->Form->button(
-                        '<i class="fa fa-shopping-cart mr-2"></i>Add to Cart',
-                        [
-                            'escapeTitle' => false,
-                            'class' => 'inline-flex items-center bg-indigo-600 text-white py-2 px-6 rounded hover:bg-indigo-700',
-                        ],
-                    ) ?>
+
+                    <!-- size selector -->
+                    <div class="mb-4">
+                        <?= $this->Form->control('artwork_variant_id', [
+                            'type' => 'select',
+                            'options' => $options,
+                            'empty' => 'Select size',
+                            'label' => 'Size',
+                            'class' => 'border rounded p-2 w-full',
+                        ]) ?>
+                    </div>
+
+                    <!-- quantity -->
+                    <div class="mb-4">
+                        <?= $this->Form->control('quantity', [
+                            'type' => 'number',
+                            'min' => 1,
+                            'max' => $artwork->max_copies,
+                            'value' => 1,
+                            'label' => 'Quantity',
+                            'class' => 'border rounded p-2 w-full',
+                        ]) ?>
+                    </div>
+
+                    <?= $this->Form->button('<i class="fa fa-shopping-cart mr-2"></i>Add to Cart', [
+                        'escapeTitle' => false,
+                        'class' => 'inline-flex items-center bg-indigo-600 text-white py-2 px-6 rounded hover:bg-indigo-700',
+                    ]) ?>
+
                     <?= $this->Form->end() ?>
                 </div>
 

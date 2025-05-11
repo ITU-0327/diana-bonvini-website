@@ -57,6 +57,11 @@ class OrdersTable extends Table
             'dependent' => true,
             'cascadeCallbacks' => true,
         ]);
+
+        $this->hasMany('ArtworkVariantOrders', [
+            'foreignKey' => 'order_id',
+            'dependent' => true,
+        ]);
     }
 
     /**

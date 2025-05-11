@@ -15,7 +15,7 @@ use Cake\ORM\Entity;
  * @property \Cake\I18n\DateTime $updated_at
  *
  * @property \App\Model\Entity\User $user
- * @property \App\Model\Entity\ArtworkVariantCart[] $artwork_carts
+ * @property \App\Model\Entity\ArtworkVariantCart[] $artwork_variant_carts
  */
 class Cart extends Entity
 {
@@ -34,6 +34,6 @@ class Cart extends Entity
         'created_at' => true,
         'updated_at' => true,
         'user' => true,
-        'artwork_carts' => true,
+        'artwork_variant_carts' => true,
     ];
 }

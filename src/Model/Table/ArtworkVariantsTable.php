@@ -11,6 +11,8 @@ use Cake\Validation\Validator;
  * ArtworkVariants Model
  *
  * @property \App\Model\Table\ArtworksTable&\Cake\ORM\Association\BelongsTo $Artworks
+ * @property \App\Model\Table\ArtworkVariantOrdersTable&\Cake\ORM\Association\HasMany $ArtworkVariantOrders
+ * @property \App\Model\Table\ArtworkVariantCartsTable&\Cake\ORM\Association\HasMany $ArtworkVariantCarts
  * @method \App\Model\Entity\ArtworkVariant newEmptyEntity()
  * @method \App\Model\Entity\ArtworkVariant newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\ArtworkVariant> newEntities(array $data, array $options = [])
@@ -44,6 +46,18 @@ class ArtworkVariantsTable extends Table
         $this->belongsTo('Artworks', [
             'foreignKey' => 'artwork_id',
             'joinType' => 'INNER',
+        ]);
+
+        $this->hasMany('ArtworkVariantOrders', [
+            'foreignKey' => 'artwork_variant_id',
+            'dependent' => true,
+            'cascadeCallbacks' => true,
+        ]);
+
+        $this->hasMany('ArtworkVariantCarts', [
+            'foreignKey' => 'artwork_variant_id',
+            'dependent' => true,
+            'cascadeCallbacks' => true,
         ]);
     }
 

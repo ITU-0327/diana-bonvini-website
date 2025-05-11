@@ -14,6 +14,7 @@ use Cake\Validation\Validator;
 /**
  * Artworks Model
  *
+ * @property \App\Model\Table\ArtworkVariantsTable&\Cake\ORM\Association\HasMany $ArtworkVariants
  * @method \App\Model\Entity\Artwork newEmptyEntity()
  * @method \App\Model\Entity\Artwork newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\Artwork> newEntities(array $data, array $options = [])
@@ -46,6 +47,12 @@ class ArtworksTable extends Table
         $this->setTable('artworks');
         $this->setDisplayField('title');
         $this->setPrimaryKey('artwork_id');
+
+        $this->hasMany('ArtworkVariants', [
+            'foreignKey' => 'artwork_id',
+            'dependent' => true,
+            'cascadeCallbacks' => true,
+        ]);
     }
 
     /**
@@ -110,19 +117,45 @@ class ArtworksTable extends Table
     public function delete(EntityInterface $entity, array $options = []): bool
     {
         $artworkId = $entity->get('artwork_id');
-        $hasDeps = $this->ArtworkOrders->exists(['artwork_id' => $artworkId]);
+        // Fetch all variant IDs for this artwork
+        $variantIds = $this->ArtworkVariants->find('list', [
+            'keyField' => 'artwork_variant_id',
+            'valueField' => 'artwork_variant_id',
+        ])
+        ->where(['artwork_id' => $artworkId])
+        ->toArray();
 
-        if ($hasDeps) {
-            $rows = $this->updateAll(['is_deleted' => true], ['artwork_id' => $artworkId]);
-            if ($rows < 1) {
+        // Remove any variant entries in carts
+        $this->ArtworkVariants->ArtworkVariantCarts->deleteAll([
+            'artwork_variant_id IN' => $variantIds,
+        ]);
+
+        // Check if any orders exist for these variants
+        $hasOrders = !empty($variantIds) &&
+            $this->ArtworkVariants->ArtworkVariantOrders->exists([
+                'artwork_variant_id IN' => $variantIds,
+            ]);
+
+        if ($hasOrders) {
+            // Soft-delete the artwork
+            $rows = $this->updateAll(
+                ['is_deleted' => true],
+                ['artwork_id' => $artworkId],
+            );
+            if (!$rows) {
                 return false;
             }
-            $this->ArtworkOrders->updateAll(['is_deleted' => true], ['artwork_id' => $artworkId]);
-            $this->ArtworkCarts->deleteAll(['artwork_id' => $artworkId]);
+
+            // Soft-delete its variants
+            $this->ArtworkVariants->updateAll(
+                ['is_deleted' => true],
+                ['artwork_id' => $artworkId],
+            );
 
             return true;
         }
 
+        // No dependent orders: proceed with hard delete
         return parent::delete($entity, $options);
     }
 

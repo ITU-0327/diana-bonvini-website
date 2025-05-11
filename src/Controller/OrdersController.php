@@ -45,7 +45,12 @@ class OrdersController extends AppController
 
             $order = $this->Orders->get(
                 $pendingId,
-                contain: ['ArtworkOrders' => ['Artworks'], 'Users'],
+                contain: [
+                    'ArtworkVariantOrders' => [
+                        'ArtworkVariants' => ['Artworks'],
+                    ],
+                    'Users',
+                ],
             );
             $total = $this->_calculateOrderTotal($order);
         } else {
@@ -79,12 +84,11 @@ class OrdersController extends AppController
 
         // See if we're updating an in‑flight order
         $pendingId = !empty($data['order_id']) ? (string)$data['order_id'] : null;
-
         if ($pendingId) {
             // load the existing pending order (and its artwork_orders)
             $order = $this->Orders->get(
                 $pendingId,
-                contain: ['ArtworkOrders' => ['Artworks']],
+                contain: ['ArtworkVariantOrders' => ['ArtworkVariants']],
             );
         } else {
             // brand‑new checkout
@@ -94,7 +98,7 @@ class OrdersController extends AppController
         // Get the current user's cart.
         $cart = $this->_getCart();
 
-        if (!$cart || empty($cart->artwork_carts)) {
+        if (!$cart || empty($cart->artwork_variant_carts)) {
             $this->Flash->error(__('Your cart is empty.'));
 
             return $this->redirect(['controller' => 'Carts', 'action' => 'index']);
@@ -103,33 +107,34 @@ class OrdersController extends AppController
         // Build artwork orders from cart items.
         $total = $this->_calculateCartTotal($cart);
         $orderItems = [];
-        foreach ($cart->artwork_carts as $cartItem) {
+        foreach ($cart->artwork_variant_carts as $cartItem) {
+            $variant = $cartItem->artwork_variant;
             $orderItems[] = [
-                'artwork_id' => $cartItem->artwork->artwork_id,
+                'artwork_variant_id' => $variant->artwork_variant_id,
                 'quantity' => $cartItem->quantity,
-                'price' => $cartItem->artwork->price,
-                'subtotal' => $cartItem->artwork->price * (float)$cartItem->quantity,
+                'price' => $variant->price,
+                'subtotal' => $variant->price * (float)$cartItem->quantity,
             ];
         }
 
         // Complete the order data.
-        $data['total_amount']   = (string)$total;
-        $data['artwork_orders'] = $orderItems;
-        $data['order_status']   = 'pending';
-        $data['order_date']     = date('Y-m-d H:i:s');
+        $data['total_amount'] = (string)$total;
+        $data['artwork_variant_orders'] = $orderItems;
+        $data['order_status'] = 'pending';
+        $data['order_date'] = date('Y-m-d H:i:s');
 
         // Patch the order entity including associated artwork orders.
         $order = $this->Orders->patchEntity(
             $order,
             $data,
-            ['associated' => ['ArtworkOrders']],
+            ['associated' => ['ArtworkVariantOrders']],
         );
 
         // Begin a transaction and save the order.
         $connection = $this->Orders->getConnection();
         $connection->begin();
 
-        if ($this->Orders->save($order, ['associated' => ['ArtworkOrders']])) {
+        if ($this->Orders->save($order, ['associated' => ['ArtworkVariantOrders']])) {
             // Create a payment record.
             $paymentsTable = $this->fetchTable('Payments');
             $existingPayment = $paymentsTable->find()
@@ -137,20 +142,16 @@ class OrdersController extends AppController
                 ->first();
 
             $paymentData = [
-                'order_id'       => $order->order_id,
-                'amount'         => $order->total_amount,
-                'payment_date'   => date('Y-m-d H:i:s'),
+                'order_id' => $order->order_id,
+                'amount' => $order->total_amount,
+                'payment_date' => date('Y-m-d H:i:s'),
                 'payment_method' => 'stripe',
-                'status'         => 'pending',
+                'status' => 'pending',
             ];
 
-            if ($existingPayment) {
-                // update the existing payment
-                $payment = $paymentsTable->patchEntity($existingPayment, $paymentData);
-            } else {
-                // create a fresh one
-                $payment = $paymentsTable->newEntity($paymentData);
-            }
+            $payment = $existingPayment
+                ? $paymentsTable->patchEntity($existingPayment, $paymentData)
+                : $paymentsTable->newEntity($paymentData);
 
             if (!$paymentsTable->save($payment)) {
                 $connection->rollback();
@@ -165,22 +166,20 @@ class OrdersController extends AppController
             $connection->commit();
 
             try {
-                $url = $stripeService->createCheckoutUrl($order->order_id);
-
-                return $this->redirect($url);
+                return $this->redirect($stripeService->createCheckoutUrl($order->order_id));
             } catch (Exception $e) {
                 $this->Flash->error(__('Payment processor error: ') . $e->getMessage());
                 $this->set(compact('order', 'cart', 'user'));
 
                 return $this->render('checkout');
             }
-        } else {
-            $connection->rollback();
-            $this->Flash->error(__('There were errors in your order submission. Please correct them and try again.'));
-            $this->set(compact('order', 'cart', 'user'));
-
-            return $this->render('checkout');
         }
+
+        $connection->rollback();
+        $this->Flash->error(__('There were errors in your order submission. Please correct them and try again.'));
+        $this->set(compact('order', 'cart', 'user'));
+
+        return $this->render('checkout');
     }
 
     /**
@@ -195,8 +194,9 @@ class OrdersController extends AppController
      */
     public function confirmation(string $orderId, StripeService $stripeService): ?Response
     {
-        $order = $this->Orders->get($orderId, [
-            'contain' => ['ArtworkOrders.Artworks', 'Payments'],
+        $order = $this->Orders->get($orderId, contain: [
+            'ArtworkVariantOrders.ArtworkVariants.Artworks',
+            'Payments',
         ]);
 
         // If Stripe just redirected back with a session_id, try to confirm payment
@@ -205,8 +205,9 @@ class OrdersController extends AppController
             if ($stripeService->confirmCheckout($orderId, $sessionId)) {
                 $this->Flash->success(__('Payment confirmed!'));
 
-                $order = $this->Orders->get($orderId, [
-                    'contain' => ['ArtworkOrders.Artworks', 'Payments'],
+                $order = $this->Orders->get($orderId, contain: [
+                    'ArtworkVariantOrders.ArtworkVariants.Artworks',
+                    'Payments',
                 ]);
             } else {
                 $this->Flash->error(__('Could not confirm payment.'));
@@ -245,7 +246,7 @@ class OrdersController extends AppController
      */
     public function view(?string $id = null): void
     {
-        $order = $this->Orders->get($id, ['contain' => ['Users', 'Payments']]);
+        $order = $this->Orders->get($id, contain: ['Users', 'Payments']);
         $this->set(compact('order'));
     }
 
@@ -302,11 +303,11 @@ class OrdersController extends AppController
         /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
         $conditions = $user
-            ? ['user_id'    => $user->user_id]
+            ? ['user_id' => $user->user_id]
             : ['session_id' => $this->request->getSession()->id()];
 
         return $this->fetchTable('Carts')->find()
-            ->contain(['ArtworkCarts.Artworks'])
+            ->contain(['ArtworkVariantCarts.ArtworkVariants.Artworks'])
             ->where($conditions)
             ->first();
     }
@@ -320,7 +321,7 @@ class OrdersController extends AppController
     private function _calculateCartTotal(Cart $cart): float
     {
         return array_reduce(
-            $cart->artwork_carts,
+            $cart->artwork_variant_carts,
             /**
              * @param float $sum
              * @param \App\Model\Entity\ArtworkVariantCart $item

@@ -43,13 +43,28 @@
                 ]) ?>
             </div>
 
-            <div>
-                <?= $this->Form->label('price', 'Price', ['class' => 'block text-lg font-medium text-gray-700 mb-2']) ?>
-                <?= $this->Form->control('price', [
-                    'label' => false,
-                    'class' => 'w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400',
-                ]) ?>
-            </div>
+            <h3 class="text-xl font-semibold">Variant Prices</h3>
+            <?php foreach ($artwork->artwork_variants as $i => $variant) : ?>
+                <div class="grid grid-cols-3 gap-4 items-end">
+                    <div>
+                        <?= $this->Form->control("artwork_variants.$i.dimension", [
+                            'type' => 'text',
+                            'label' => 'Size',
+                            'readonly' => true,
+                            'class' => 'border rounded w-full p-2 bg-gray-100',
+                        ]) ?>
+                    </div>
+                    <div class="col-span-2">
+                        <?= $this->Form->control("artwork_variants.$i.price", [
+                            'type' => 'number',
+                            'step' => '0.01',
+                            'label' => 'Price',
+                            'class' => 'border rounded w-full p-2',
+                            'placeholder' => 'Enter price or leave blank to skip',
+                        ]) ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
 
             <div>
                 <?= $this->Form->button(__('Submit'), [

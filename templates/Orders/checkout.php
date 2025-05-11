@@ -185,9 +185,9 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
             </div>
             <!-- Order Items & Totals -->
             <div class="flex-1 overflow-y-auto">
-                <?php if (!empty($cart->artwork_carts)) : ?>
+                <?php if (!empty($cart->artwork_variant_carts)) : ?>
                     <div class="space-y-4">
-                        <?php foreach ($cart->artwork_carts as $item) : ?>
+                        <?php foreach ($cart->artwork_variant_carts as $item) : ?>
                             <?php if (isset($item->artwork)) : ?>
                                 <div class="flex items-center space-x-4 border-b pb-4">
                                     <?= $this->Html->image($item->artwork->image_url, [
@@ -209,7 +209,7 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                     <div class="mt-6 border-t pt-4">
                         <?php
                         $subtotal = 0;
-                        foreach ($cart->artwork_carts as $ci) {
+                        foreach ($cart->artwork_variant_carts as $ci) {
                             if (isset($ci->artwork)) {
                                 $subtotal += $ci->artwork->price * $ci->quantity;
                             }
