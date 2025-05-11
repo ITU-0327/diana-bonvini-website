@@ -14,7 +14,7 @@ use Cake\Http\Response;
  * Carts Controller
  *
  * @property \App\Model\Table\CartsTable $Carts
- * @property \App\Model\Table\ArtworkCartsTable $ArtworkCarts
+ * @property \App\Model\Table\ArtworkVariantCartsTable $ArtworkCarts
  * @property \Authentication\Controller\Component\AuthenticationComponent $Authentication
  */
 class CartsController extends AppController

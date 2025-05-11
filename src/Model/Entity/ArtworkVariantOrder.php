@@ -6,20 +6,22 @@ namespace App\Model\Entity;
 use Cake\ORM\Entity;
 
 /**
- * ArtworkOrder Entity
+ * ArtworkVariantOrder Entity
  *
- * @property string $artwork_order_id
+ * @property string $artwork_variant_order_id
+ * @property string $artwork_variant_id
  * @property string $order_id
- * @property string $artwork_id
  * @property int $quantity
  * @property float $price
  * @property float $subtotal
  * @property bool $is_deleted
+ * @property \Cake\I18n\DateTime $created_at
+ * @property \Cake\I18n\DateTime $updated_at
  *
+ * @property \App\Model\Entity\ArtworkVariant $artwork_variant
  * @property \App\Model\Entity\Order $order
- * @property \App\Model\Entity\Artwork $artwork
  */
-class ArtworkOrder extends Entity
+class ArtworkVariantOrder extends Entity
 {
     /**
      * Fields that can be mass assigned using newEntity() or patchEntity().
@@ -31,13 +33,15 @@ class ArtworkOrder extends Entity
      * @var array<string, bool>
      */
     protected array $_accessible = [
+        'artwork_variant_id' => true,
         'order_id' => true,
-        'artwork_id' => true,
         'quantity' => true,
         'price' => true,
         'subtotal' => true,
         'is_deleted' => true,
+        'created_at' => true,
+        'updated_at' => true,
+        'artwork_variant' => true,
         'order' => true,
-        'artwork' => true,
     ];
 }

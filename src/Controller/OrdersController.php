@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Mailer\OrderMailer;
-use App\Model\Entity\ArtworkCart;
-use App\Model\Entity\ArtworkOrder;
+use App\Model\Entity\ArtworkVariantCart;
+use App\Model\Entity\ArtworkVariantOrder;
 use App\Model\Entity\Cart;
 use App\Model\Entity\Order;
 use App\Service\StripeService;
@@ -323,10 +323,10 @@ class OrdersController extends AppController
             $cart->artwork_carts,
             /**
              * @param float $sum
-             * @param \App\Model\Entity\ArtworkCart $item
+             * @param \App\Model\Entity\ArtworkVariantCart $item
              * @return float
              */
-            function (float $sum, ArtworkCart $item): float {
+            function (float $sum, ArtworkVariantCart $item): float {
                 // artwork->price * quantity
                 $price = $item->artwork->price ?? 0.0;
                 $quantity = (float)$item->quantity;
@@ -349,10 +349,10 @@ class OrdersController extends AppController
             $order->artwork_orders,
             /**
              * @param float $sum
-             * @param \App\Model\Entity\ArtworkOrder $item
+             * @param \App\Model\Entity\ArtworkVariantOrder $item
              * @return float
              */
-            function (float $sum, ArtworkOrder $item): float {
+            function (float $sum, ArtworkVariantOrder $item): float {
                 $line = $item->subtotal ?? $item->price * (float)$item->quantity;
 
                 return $sum + $line;

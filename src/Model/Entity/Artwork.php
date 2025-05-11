@@ -12,11 +12,13 @@ use Cake\ORM\Entity;
  * @property string $title
  * @property string|null $description
  * @property string $image_url
- * @property float $price
  * @property string $availability_status
+ * @property int $max_copies
  * @property bool $is_deleted
  * @property \Cake\I18n\DateTime $created_at
  * @property \Cake\I18n\DateTime $updated_at
+ *
+ * @property \App\Model\Entity\ArtworkVariant[] $artwork_variants
  */
 class Artwork extends Entity
 {
@@ -34,11 +36,12 @@ class Artwork extends Entity
     protected array $_accessible = [
         'title' => true,
         'description' => true,
-        'price' => true,
         'availability_status' => true,
+        'max_copies' => true,
         'is_deleted' => true,
         'created_at' => true,
         'updated_at' => true,
+        'artwork_variants' => true,
     ];
 
     /**

@@ -21,7 +21,7 @@ class CartsControllerTest extends TestCase
     protected array $fixtures = [
         'app.Users',
         'app.Artworks',
-        'app.ArtworkCarts',
+        'app.ArtworkVariantCarts',
         'app.Carts',
         'app.ContentBlocks',
     ];

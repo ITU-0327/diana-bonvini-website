@@ -14,8 +14,6 @@ use Cake\Validation\Validator;
 /**
  * Artworks Model
  *
- * @property \App\Model\Table\ArtworkOrdersTable&\Cake\ORM\Association\HasMany $ArtworkOrders
- * @property \App\Model\Table\ArtworkCartsTable&\Cake\ORM\Association\HasMany $ArtworkCarts
  * @method \App\Model\Entity\Artwork newEmptyEntity()
  * @method \App\Model\Entity\Artwork newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\Artwork> newEntities(array $data, array $options = [])
@@ -48,13 +46,6 @@ class ArtworksTable extends Table
         $this->setTable('artworks');
         $this->setDisplayField('title');
         $this->setPrimaryKey('artwork_id');
-
-        $this->hasMany('ArtworkOrders', [
-            'foreignKey' => 'artwork_id',
-        ]);
-        $this->hasMany('ArtworkCarts', [
-            'foreignKey' => 'artwork_id',
-        ]);
     }
 
     /**
@@ -86,14 +77,13 @@ class ArtworksTable extends Table
             ]);
 
         $validator
-            ->decimal('price')
-            ->requirePresence('price', 'create')
-            ->notEmptyString('price');
-
-        $validator
             ->scalar('availability_status')
             ->requirePresence('availability_status', 'create')
             ->notEmptyString('availability_status');
+
+        $validator
+            ->integer('max_copies')
+            ->notEmptyString('max_copies');
 
         $validator
             ->boolean('is_deleted')
