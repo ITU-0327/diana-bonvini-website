@@ -98,13 +98,13 @@ class ArtworksController extends AppController
         $ArtworkVariantOrdersTable = TableRegistry::getTableLocator()->get('ArtworkVariantOrders');
         $soldCountQuery = $ArtworkVariantOrdersTable->find();
         $soldCountQuery->select(['sum' => 'SUM(ArtworkVariantOrders.quantity)'])
-            ->matching('ArtworkVariants', function($q) use ($artwork) {
+            ->matching('ArtworkVariants', function ($q) use ($artwork) {
                 return $q->where(['ArtworkVariants.artwork_id' => $artwork->artwork_id]);
             })
-            ->innerJoinWith('Orders', function($q) {
+            ->innerJoinWith('Orders', function ($q) {
                 return $q->where([
                     'Orders.order_status IN' => ['confirmed','completed'],
-                    'Orders.is_deleted' => false
+                    'Orders.is_deleted' => false,
                 ]);
             });
         $soldCount = (int)($soldCountQuery->first()->get('sum') ?? 0);

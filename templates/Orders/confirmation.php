@@ -167,9 +167,9 @@
         <!-- Items Ordered -->
         <div>
             <h2 class="text-2xl font-semibold text-gray-800 mb-4">Items Ordered</h2>
-            <?php if (!empty($order->artwork_orders)) : ?>
+            <?php if (!empty($order->artwork_variant_orders)) : ?>
                 <ul class="space-y-4">
-                    <?php foreach ($order->artwork_orders as $item) : ?>
+                    <?php foreach ($order->artwork_variant_orders as $item) : ?>
                         <li class="flex items-center justify-between border-b pb-3">
                             <div class="flex items-center">
                                 <?= $this->Html->image(

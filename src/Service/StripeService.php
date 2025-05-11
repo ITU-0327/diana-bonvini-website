@@ -37,15 +37,21 @@ class StripeService
         // Load the order with its associated artwork orders and artwork details.
         $ordersTable = TableRegistry::getTableLocator()->get('Orders');
         /** @var \App\Model\Entity\Order $order */
-        $order = $ordersTable->get($orderId, contain: ['ArtworkOrders' => ['Artworks']]);
+        $order = $ordersTable->get($orderId, contain: [
+            'ArtworkVariantOrders' => [
+                'ArtworkVariants' => ['Artworks'],
+            ],
+        ]);
 
         // build line items from the order's artwork_orders
         $lineItems = [];
-        foreach ($order->artwork_orders as $item) {
+        foreach ($order->artwork_variant_orders as $item) {
+            $artwork = $item->artwork_variant->artwork;
+            $dimension = $item->artwork_variant->dimension;
             $lineItems[] = [
                 'price_data' => [
                     'currency' => 'aud',
-                    'product_data' => ['name' => $item->artwork->title],
+                    'product_data' => ['name' => "$artwork->title ($dimension)"],
                     'unit_amount' => (int)round($item->price * 100.0),
                 ],
                 'quantity' => $item->quantity,

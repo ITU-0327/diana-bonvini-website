@@ -9,6 +9,7 @@ use ArrayObject;
 use Cake\Datasource\EntityInterface;
 use Cake\Event\EventInterface;
 use Cake\ORM\Table;
+use Cake\ORM\TableRegistry;
 use Cake\Validation\Validator;
 
 /**
@@ -125,14 +126,18 @@ class ArtworksTable extends Table
         ->where(['artwork_id' => $artworkId])
         ->toArray();
 
+        $ArtworkVariantCartsTable = TableRegistry::getTableLocator()->get('ArtworkVariantCarts');
+        $ArtworkVariantOrdersTable = TableRegistry::getTableLocator()->get('ArtworkVariantOrders');
+
         // Remove any variant entries in carts
-        $this->ArtworkVariants->ArtworkVariantCarts->deleteAll([
-            'artwork_variant_id IN' => $variantIds,
-        ]);
+        if (!empty($variantIds)) {
+            $ArtworkVariantCartsTable->deleteAll([
+                'artwork_variant_id IN' => $variantIds,
+            ]);
+        }
 
         // Check if any orders exist for these variants
-        $hasOrders = !empty($variantIds) &&
-            $this->ArtworkVariants->ArtworkVariantOrders->exists([
+        $hasOrders = !empty($variantIds) && $ArtworkVariantOrdersTable->exists([
                 'artwork_variant_id IN' => $variantIds,
             ]);
 
@@ -142,7 +147,7 @@ class ArtworksTable extends Table
                 ['is_deleted' => true],
                 ['artwork_id' => $artworkId],
             );
-            if (!$rows) {
+            if ($rows < 1) {
                 return false;
             }
 

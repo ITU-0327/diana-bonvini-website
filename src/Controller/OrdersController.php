@@ -347,7 +347,7 @@ class OrdersController extends AppController
     private function _calculateOrderTotal(Order $order): float
     {
         return array_reduce(
-            $order->artwork_orders,
+            $order->artwork_variant_orders,
             /**
              * @param float $sum
              * @param \App\Model\Entity\ArtworkVariantOrder $item

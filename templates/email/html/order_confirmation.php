@@ -33,8 +33,8 @@
         </aside>
 
         <h3 style="color:#008080;">Details</h3>
-        <?php if (!empty($order->artwork_orders)) : ?>
-            <?php foreach ($order->artwork_orders as $item) : ?>
+        <?php if (!empty($order->artwork_variant_orders)) : ?>
+            <?php foreach ($order->artwork_variant_orders as $item) : ?>
                 <div style="display:flex; padding:10px 0; border-bottom:1px solid #eee;">
                     <div style="flex:0 0 80px;">
                         <?php if (!empty($item->artwork->image_url)) : ?>
