@@ -217,7 +217,7 @@ class WritingServiceRequestsController extends BaseAdminController
                         'sender' => $isAdmin ? 'admin' : 'client',
                         'senderName' => $isAdmin ? 'Admin' : ($message->user->first_name . ' ' . $message->user->last_name),
                         'timestamp' => $timeFormatted,
-                        'is_read' => $message->is_read,
+                        'is_read' => (bool)$message->is_read,
                         'created_at' => $message->created_at->format('c'),
                     ];
 
@@ -352,7 +352,7 @@ class WritingServiceRequestsController extends BaseAdminController
             $this->Flash->success(__('The price has been set successfully.'));
 
             // Add automatic message about price update
-            $this->sendPriceUpdateMessage($writingServiceRequest, (float)$price);
+            $this->sendPriceUpdateMessage($writingServiceRequest, $price);
         } else {
             $this->Flash->error(__('The price could not be updated. Please, try again.'));
         }
@@ -424,5 +424,107 @@ class WritingServiceRequestsController extends BaseAdminController
         if ($updatedCount > 0) {
             $this->log("Marked $updatedCount messages as read for admin user $userId", 'info');
         }
+    }
+
+    /**
+     * Get available time slots for a given date
+     *
+     * @return void
+     */
+    public function getAvailableTimeSlots()
+    {
+        $this->request->allowMethod(['get', 'ajax']);
+
+        // Return JSON response
+        $this->viewBuilder()->setClassName('Json');
+        $this->viewBuilder()->setOption('serialize', ['success', 'timeSlots']);
+
+        $success = false;
+        $timeSlots = [];
+
+        // Get date from query parameter
+        $date = $this->request->getQuery('date');
+
+        if (!empty($date) && strtotime($date)) {
+            /** @var \App\Model\Entity\User $admin */
+            $admin = $this->Authentication->getIdentity();
+
+            // Create Google Calendar Service
+            $googleCalendarService = new \App\Service\GoogleCalendarService();
+            $dateObj = new \DateTime($date, new \DateTimeZone(date_default_timezone_get()));
+
+            // Define working hours (9 AM to 5 PM by default)
+            $workingHours = [
+                'start' => '09:00',
+                'end' => '17:00',
+            ];
+
+            // Get free time slots (will return demo slots if calendar not connected)
+            $timeSlots = $googleCalendarService->getFreeTimeSlots($admin->user_id, $dateObj, $workingHours);
+            $success = true;
+        }
+
+        $this->set(compact('success', 'timeSlots'));
+    }
+
+    /**
+     * Send available time slots to the client
+     *
+     * @param string|null $id Writing Service Request id.
+     * @return \Cake\Http\Response|null
+     */
+    public function sendTimeSlots(?string $id = null)
+    {
+        /** @var \App\Model\Entity\User $admin */
+        $admin = $this->Authentication->getIdentity();
+        $writingServiceRequest = $this->WritingServiceRequests->get($id);
+
+        if ($this->request->is('post')) {
+            $data = $this->request->getData();
+
+            if (!empty($data['time_slots']) && !empty($data['message_text'])) {
+                $timeSlots = json_decode($data['time_slots'], true);
+                $messageText = $data['message_text'];
+
+                // Format the time slots for the message
+                $formattedSlots = '';
+                foreach ($timeSlots as $index => $slot) {
+                    $formattedSlots .= ($index + 1) . ". " . $slot['formatted'] . " on " . date('l, F j, Y', strtotime($slot['date'])) . "\n";
+                }
+
+                // Create the full message with the time slots
+                $fullMessage = $messageText . "\n\nAvailable time slots:\n" . $formattedSlots;
+                $fullMessage .= "\nTo book an appointment, please visit: " . $this->request->webroot . "calendar/availability/" . $id;
+
+                // Save the message
+                $messageData = [
+                    'request_messages' => [
+                        [
+                            'user_id' => $admin->user_id,
+                            'message' => $fullMessage,
+                            'is_read' => false,
+                            'writing_service_request_id' => $writingServiceRequest->writing_service_request_id,
+                        ],
+                    ],
+                ];
+
+                $writingServiceRequest = $this->WritingServiceRequests->patchEntity(
+                    $writingServiceRequest,
+                    $messageData
+                );
+
+                if ($this->WritingServiceRequests->save($writingServiceRequest)) {
+                    $this->Flash->success(__('Time slots have been sent to the client.'));
+                } else {
+                    $this->Flash->error(__('Failed to send time slots. Please try again.'));
+                }
+            } else {
+                $this->Flash->error(__('Please select at least one time slot and provide a message.'));
+            }
+
+            return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
+        }
+
+        return $this->redirect(['action' => 'view', $id]);
     }
 }

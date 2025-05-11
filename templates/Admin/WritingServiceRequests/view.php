@@ -204,6 +204,14 @@ $this->assign('title', __('Writing Service Request Details'));
                     <h6 class="m-0 font-weight-bold text-primary">Request Actions</h6>
                 </div>
                 <div class="card-body">
+                    <!-- Schedule Consultation -->
+                    <div class="mb-4">
+                        <h6 class="font-weight-bold mb-2">Schedule Consultation</h6>
+                        <button type="button" class="btn btn-success btn-block" data-toggle="modal" data-target="#timeSlotsModal">
+                            <i class="fas fa-calendar-alt mr-1"></i> Offer Available Time Slots
+                        </button>
+                        <p class="mt-2 text-sm text-muted">Select and send available time slots to the client</p>
+                    </div>
                     <!-- Update Status -->
                     <div class="mb-4">
                         <h6 class="font-weight-bold mb-2">Update Status</h6>
@@ -267,13 +275,14 @@ $this->assign('title', __('Writing Service Request Details'));
                         <?= $this->Form->end() ?>
                     </div>
                     
-                    <!-- Schedule Meeting Button (Will be implemented later) -->
+                    <!-- Google Calendar Link -->
                     <div class="mb-4 pt-2 border-top">
-                        <h6 class="font-weight-bold mb-2">Schedule Consultation</h6>
-                        <button type="button" class="btn btn-info btn-block" id="scheduleMeetingBtn" disabled>
-                            <i class="fas fa-calendar-alt mr-1"></i> Schedule Meeting
-                            <small class="d-block mt-1">(Coming Soon)</small>
-                        </button>
+                        <h6 class="font-weight-bold mb-2">Google Calendar</h6>
+                        <?= $this->Html->link(
+                            '<i class="fab fa-google mr-1"></i> View My Calendar',
+                            ['controller' => 'GoogleAuth', 'action' => 'viewCalendar'],
+                            ['class' => 'btn btn-info btn-block', 'escape' => false]
+                        ) ?>
                     </div>
                     
                     <!-- Payment Options Button (Will be implemented later) -->
@@ -400,6 +409,10 @@ $this->assign('title', __('Writing Service Request Details'));
         transition: transform 0.2s;
     }
 </style>
+
+<!-- Load jQuery UI for datepicker -->
+<?= $this->Html->css('https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css') ?>
+<?= $this->Html->script('https://code.jquery.com/ui/1.12.1/jquery-ui.min.js') ?>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -534,6 +547,253 @@ $this->assign('title', __('Writing Service Request Details'));
             clearInterval(pollingInterval);
         });
     }
+</script>
+
+<!-- Time Slots Modal -->
+<div class="modal fade" id="timeSlotsModal" tabindex="-1" role="dialog" aria-labelledby="timeSlotsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="timeSlotsModalLabel"><i class="fas fa-calendar-alt mr-2"></i> Select Available Time Slots</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <?= $this->Form->create(null, [
+                    'url' => ['action' => 'sendTimeSlots', $writingServiceRequest->writing_service_request_id],
+                    'id' => 'timeSlotsForm',
+                ]) ?>
+
+                <div class="row">
+                    <div class="col-md-5">
+                        <!-- Calendar -->
+                        <h6 class="font-weight-bold mb-3">Select a Date</h6>
+                        <div id="datepicker"></div>
+
+                        <div class="text-center mt-3 mb-3">
+                            <button type="button" id="loadTimeSlots" class="btn btn-primary">
+                                <i class="fas fa-clock mr-1"></i> Load Time Slots
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="col-md-7">
+                        <!-- Time Slots Selection -->
+                        <h6 class="font-weight-bold mb-3">Select Time Slots to Offer</h6>
+
+                        <div id="timeSlots-loading" class="text-center py-4 d-none">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Loading available time slots...</p>
+                        </div>
+
+                        <div id="timeSlots-empty" class="text-center py-4">
+                            <i class="far fa-clock fa-3x text-gray-300 mb-3"></i>
+                            <p class="text-gray-500">Select a date and click "Load Time Slots" to view available times</p>
+                        </div>
+
+                        <div id="timeSlots-list" class="d-none">
+                            <div id="selected-date-display" class="font-weight-bold mb-3 text-primary"></div>
+
+                            <div id="time-slots-container">
+                                <!-- Time slots will be populated via JavaScript -->
+                            </div>
+
+                            <div class="mt-3">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" id="selectAllTimeSlots">
+                                    <label class="custom-control-label" for="selectAllTimeSlots">Select All Time Slots</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="timeSlots-none" class="text-center py-4 d-none">
+                            <i class="fas fa-calendar-times fa-3x text-gray-300 mb-3"></i>
+                            <p class="text-gray-500">No available time slots for this date</p>
+                            <p class="text-sm text-gray-400">Please select another date</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Message Text Area -->
+                <div class="form-group mt-4">
+                    <h6 class="font-weight-bold mb-2">Message to Client</h6>
+                    <textarea name="message_text" class="form-control" rows="3" id="timeSlotMessageText" placeholder="Enter a message to accompany the time slots...">I'd like to schedule a consultation to discuss your writing service request. Here are some available time slots. Please click the link below to book one of these times or select another time that works for you."></textarea>
+
+                    <input type="hidden" name="time_slots" id="selectedTimeSlotsJson" value="">
+                </div>
+
+                <?= $this->Form->end() ?>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" id="sendTimeSlots" class="btn btn-success" disabled>
+                    <i class="fas fa-paper-plane mr-1"></i> Send Time Slots
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Time slots selection functionality
+        const datepicker = $('#datepicker');
+        const loadTimeSlotsBtn = document.getElementById('loadTimeSlots');
+        const timeSlotsLoading = document.getElementById('timeSlots-loading');
+        const timeSlotsEmpty = document.getElementById('timeSlots-empty');
+        const timeSlotsNone = document.getElementById('timeSlots-none');
+        const timeSlotsContainer = document.getElementById('time-slots-container');
+        const timeSlotsListContainer = document.getElementById('timeSlots-list');
+        const selectedDateDisplay = document.getElementById('selected-date-display');
+        const selectedTimeSlotsJson = document.getElementById('selectedTimeSlotsJson');
+        const selectAllCheckbox = document.getElementById('selectAllTimeSlots');
+        const sendTimeSlotsBtn = document.getElementById('sendTimeSlots');
+
+        // Initialize datepicker
+        datepicker.datepicker({
+            minDate: 0, // Today
+            maxDate: '+60d', // Allow up to 60 days in the future
+            dateFormat: 'yy-mm-dd',
+            firstDay: 1, // Start week on Monday
+            showOtherMonths: true,
+            selectOtherMonths: true,
+            beforeShowDay: $.datepicker.noWeekends // Disable weekends
+        });
+
+        // Load time slots when the button is clicked
+        loadTimeSlotsBtn.addEventListener('click', function() {
+            const selectedDate = datepicker.val();
+
+            if (!selectedDate) {
+                alert('Please select a date first');
+                return;
+            }
+
+            loadTimeSlots(selectedDate);
+        });
+
+        // Function to load time slots for a selected date
+        function loadTimeSlots(date) {
+            // Show loading, hide other elements
+            timeSlotsEmpty.classList.add('d-none');
+            timeSlotsNone.classList.add('d-none');
+            timeSlotsListContainer.classList.add('d-none');
+            timeSlotsLoading.classList.remove('d-none');
+
+            // Format the date for display
+            const formattedDate = new Date(date);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            selectedDateDisplay.textContent = formattedDate.toLocaleDateString('en-US', options);
+
+            // Fetch available time slots
+            fetch(`/admin/writing-service-requests/get-available-time-slots?date=${date}`)
+                .then(response => response.json())
+                .then(data => {
+                    timeSlotsLoading.classList.add('d-none');
+
+                    if (data.success && data.timeSlots && data.timeSlots.length > 0) {
+                        // Show time slots container
+                        timeSlotsListContainer.classList.remove('d-none');
+
+                        // Populate time slots
+                        timeSlotsContainer.innerHTML = '';
+
+                        data.timeSlots.forEach(slot => {
+                            const slotDiv = document.createElement('div');
+                            slotDiv.className = 'custom-control custom-checkbox time-slot-item mb-2';
+
+                            const id = `slot-${slot.date}-${slot.start.replace(':', '-')}`;
+
+                            slotDiv.innerHTML = `
+                                <input type="checkbox" class="custom-control-input time-slot-checkbox" id="${id}" data-slot='${JSON.stringify(slot)}'>
+                                <label class="custom-control-label" for="${id}">
+                                    ${slot.formatted}
+                                </label>
+                            `;
+
+                            timeSlotsContainer.appendChild(slotDiv);
+                        });
+
+                        // Setup the checkboxes for selecting time slots
+                        setupTimeSlotCheckboxes();
+                    } else {
+                        // Show no time slots message
+                        timeSlotsNone.classList.remove('d-none');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading time slots:', error);
+                    timeSlotsLoading.classList.add('d-none');
+                    timeSlotsNone.classList.remove('d-none');
+                });
+        }
+
+        // Setup time slot checkboxes
+        function setupTimeSlotCheckboxes() {
+            const timeSlotCheckboxes = document.querySelectorAll('.time-slot-checkbox');
+
+            // Handle individual checkbox changes
+            timeSlotCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectedTimeSlots);
+            });
+
+            // Handle select all checkbox
+            selectAllCheckbox.addEventListener('change', function() {
+                timeSlotCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+
+                updateSelectedTimeSlots();
+            });
+
+            // Clear previous selection
+            selectAllCheckbox.checked = false;
+            updateSelectedTimeSlots();
+        }
+
+        // Update selected time slots
+        function updateSelectedTimeSlots() {
+            const selectedTimeSlots = [];
+            const timeSlotCheckboxes = document.querySelectorAll('.time-slot-checkbox:checked');
+
+            timeSlotCheckboxes.forEach(checkbox => {
+                const slotData = JSON.parse(checkbox.dataset.slot);
+                selectedTimeSlots.push(slotData);
+            });
+
+            // Update hidden input with selected time slots
+            selectedTimeSlotsJson.value = JSON.stringify(selectedTimeSlots);
+
+            // Enable/disable send button based on selection
+            sendTimeSlotsBtn.disabled = selectedTimeSlots.length === 0;
+
+            // Update select all checkbox state
+            const allCheckboxes = document.querySelectorAll('.time-slot-checkbox');
+            selectAllCheckbox.checked = timeSlotCheckboxes.length > 0 && timeSlotCheckboxes.length === allCheckboxes.length;
+        }
+
+        // Send time slots button
+        sendTimeSlotsBtn.addEventListener('click', function() {
+            const messageText = document.getElementById('timeSlotMessageText').value.trim();
+            const selectedTimeSlots = selectedTimeSlotsJson.value;
+
+            if (!messageText) {
+                alert('Please enter a message to accompany the time slots');
+                return;
+            }
+
+            if (!selectedTimeSlots || selectedTimeSlots === '[]') {
+                alert('Please select at least one time slot');
+                return;
+            }
+
+            // Submit the form
+            document.getElementById('timeSlotsForm').submit();
+        });
+    });
 </script>
 
 <?php
