@@ -173,11 +173,11 @@
                         <li class="flex items-center justify-between border-b pb-3">
                             <div class="flex items-center">
                                 <?= $this->Html->image(
-                                    $item->artwork->image_url,
-                                    ['alt' => $item->artwork->title, 'class' => 'w-16 h-16 object-cover rounded-lg mr-4'],
+                                    $item->artwork_variant->artwork->image_url,
+                                    ['alt' => $item->artwork_variant->artwork->title, 'class' => 'w-16 h-16 object-cover rounded-lg mr-4'],
                                 ) ?>
                                 <div>
-                                    <p class="font-bold text-gray-900 text-lg"><?= h($item->artwork->title) ?></p>
+                                    <p class="font-bold text-gray-900 text-lg"><?= h($item->artwork_variant->artwork->title) ?></p>
                                     <p class="text-gray-600 text-sm">Qty: <?= h($item->quantity) ?></p>
                                 </div>
                                 <div class="text-right">

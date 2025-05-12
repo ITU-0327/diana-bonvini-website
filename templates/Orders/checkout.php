@@ -80,9 +80,9 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
 
                 <!-- Address Lookup - Raw HTML approach -->
                 <div class="mt-4">
-                    <label for="address-lookup" class="block text-sm font-medium text-gray-700 mb-1">Find Address *</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Find Address *</label>
                     <!-- This is a raw HTML input that won't be part of the form submission -->
-                    <input type="text" id="address-lookup" name="address-lookup" placeholder="Start typing your address..."
+                    <input type="text" id="address-lookup" placeholder="Start typing your address..."
                            class="border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                            autocomplete="off">
                     <p class="text-sm text-gray-500 mt-1">
