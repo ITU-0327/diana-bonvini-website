@@ -81,9 +81,14 @@ $options = $sortedBySize->combine(
                 <p class="text-gray-500">Estimated to ship in 3–7 days within Australia</p>
             </div>
 
-            <?php if ($artwork->availability_status === 'sold' || $remaining == 0) : ?>
+            <?php if ($artwork->availability_status === 'sold') : ?>
                 <!-- Sold display -->
                 <div class="text-red-500 font-semibold">Sold</div>
+            <?php elseif ($remaining === 0) : ?>
+                <!-- Reserved display -->
+                <div class="text-yellow-600 font-semibold">
+                    You've added all available copies to your cart. Please review your cart or proceed to checkout.
+                </div>
             <?php else : ?>
                 <!-- Add to Cart -->
                 <div>

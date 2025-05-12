@@ -11,10 +11,6 @@
         <!-- Cart Table Card -->
         <div class="bg-white shadow rounded-lg p-6 mb-8">
             <div class="overflow-x-auto">
-                <?= $this->Form->create(null, [
-                    'url'  => ['action' => 'updateQuantities'],
-                    'type' => 'post',
-                ]) ?>
                 <table class="min-w-full">
                     <thead>
                         <tr class="bg-gray-100">
@@ -53,6 +49,7 @@
                             </td>
                             <td class="py-2 px-4 border-b">$<?= number_format($price, 2) ?></td>
                             <td class="py-2 px-4 border-b">
+                                <?= $this->Form->create(null, ['url' => ['action' => 'updateQuantities'], 'type' => 'post']) ?>
                                 <?= $this->Form->control(
                                     "quantities.$item->artwork_variant_cart_id",
                                     [
@@ -63,8 +60,9 @@
                                         'label' => false,
                                         'class' => 'w-20 border rounded p-1',
                                         'onchange' => 'this.form.submit();',
-                                    ],
+                                    ]
                                 ) ?>
+                                <?= $this->Form->end() ?>
                             </td>
                             <td class="py-2 px-4 border-b">$<?= number_format($subtotal, 2) ?></td>
                             <td class="py-2 px-4 border-b">
@@ -85,8 +83,6 @@
                         </tr>
                     </tfoot>
                 </table>
-
-                <?= $this->Form->end() ?>
             </div>
         </div>
         <div class="text-right">
