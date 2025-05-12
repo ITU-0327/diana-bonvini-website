@@ -13,7 +13,6 @@ use Cake\ORM\Entity;
  * @property string $cart_id
  * @property int $quantity
  * @property \Cake\I18n\DateTime $date_added
- * @property bool $is_deleted
  *
  * @property \App\Model\Entity\ArtworkVariant $artwork_variant
  * @property \App\Model\Entity\Cart $cart
@@ -34,7 +33,6 @@ class ArtworkVariantCart extends Entity
         'cart_id' => true,
         'quantity' => true,
         'date_added' => true,
-        'is_deleted' => true,
         'artwork_variant' => true,
         'cart' => true,
     ];

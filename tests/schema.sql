@@ -141,7 +141,6 @@ CREATE TABLE artwork_variant_carts (
     cart_id CHAR(36) NOT NULL,
     quantity INT NOT NULL DEFAULT 1,
     date_added DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     INDEX idx_artwork_variant_carts_cart (cart_id),
     INDEX idx_artwork_variant_carts_variant (artwork_variant_id),
     UNIQUE INDEX ux_cart_variant (cart_id, artwork_variant_id),

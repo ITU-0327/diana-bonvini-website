@@ -76,10 +76,6 @@ class ArtworkVariantCartsTable extends Table
             ->dateTime('date_added')
             ->notEmptyDateTime('date_added');
 
-        $validator
-            ->boolean('is_deleted')
-            ->notEmptyString('is_deleted');
-
         return $validator;
     }
 

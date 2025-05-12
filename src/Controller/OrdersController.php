@@ -215,6 +215,8 @@ class OrdersController extends AppController
         }
 
         if ($order->payment->status == 'confirmed') {
+            // Mark any sold-out artworks
+            $this->updateArtworkAvailability($order);
             $this->cleanupCart();
             $this->sendConfirmationEmail($order);
         }
@@ -222,6 +224,40 @@ class OrdersController extends AppController
         $this->set(compact('order'));
 
         return null;
+    }
+
+    /**
+     * Loop through ordered items and mark artworks as sold if max copies reached.
+     *
+     * @param \App\Model\Entity\Order $order The order entity with variants loaded.
+     * @return void
+     */
+    private function updateArtworkAvailability(Order $order): void
+    {
+        $artworksTable = $this->fetchTable('Artworks');
+        foreach ($order->artwork_variant_orders as $item) {
+            $artwork = $item->artwork_variant->artwork;
+            // Count sold quantity across confirmed/completed orders
+            $soldCount = (int)$this->Orders->ArtworkVariantOrders->find()
+                ->select(['sum' => 'SUM(ArtworkVariantOrders.quantity)'])
+                ->matching('ArtworkVariants', function ($q) use ($artwork) {
+                    return $q->where(['ArtworkVariants.artwork_id' => $artwork->artwork_id]);
+                })
+                ->matching('Orders', function ($q) {
+                    return $q->where([
+                        'Orders.order_status IN' => ['confirmed', 'completed'],
+                        'Orders.is_deleted' => false,
+                    ]);
+                })
+                ->first()
+                ->get('sum') ?? 0;
+            // If sold out and still marked available, update status
+            if ($soldCount >= $artwork->max_copies && $artwork->availability_status === 'available') {
+                $toUpdate = $artworksTable->get($artwork->artwork_id);
+                $toUpdate->availability_status = 'sold';
+                $artworksTable->save($toUpdate);
+            }
+        }
     }
 
     /**
@@ -307,7 +343,20 @@ class OrdersController extends AppController
             : ['session_id' => $this->request->getSession()->id()];
 
         return $this->fetchTable('Carts')->find()
-            ->contain(['ArtworkVariantCarts.ArtworkVariants.Artworks'])
+            ->contain([
+                'ArtworkVariantCarts' => function ($q) {
+                    return $q->where(['ArtworkVariantCarts.is_deleted' => false]);
+                },
+                'ArtworkVariantCarts.ArtworkVariants' => function ($q) {
+                    return $q->where(['ArtworkVariants.is_deleted' => false]);
+                },
+                'ArtworkVariantCarts.ArtworkVariants.Artworks' => function ($q) {
+                    return $q->where([
+                        'Artworks.is_deleted' => false,
+                        'Artworks.availability_status' => 'available',
+                    ]);
+                },
+            ])
             ->where($conditions)
             ->first();
     }

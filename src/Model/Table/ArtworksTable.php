@@ -178,4 +178,29 @@ class ArtworksTable extends Table
 
         $this->r2StorageService->delete($key);
     }
+
+    /**
+     * After saving an artwork, if it has been marked sold, remove any cart entries for its variants.
+     *
+     * @param \Cake\Event\EventInterface<\App\Model\Entity\Artwork> $event The afterSave event.
+     * @param \App\Model\Entity\Artwork $entity The artwork entity.
+     * @param \ArrayObject<string, mixed> $options The save options.
+     * @return void
+     */
+    public function afterSave(EventInterface $event, Artwork $entity, ArrayObject $options): void
+    {
+        if ($entity->availability_status === 'sold') {
+            $variantIds = $this->ArtworkVariants->find('list', [
+                'keyField' => 'artwork_variant_id',
+                'valueField' => 'artwork_variant_id',
+            ])
+            ->where(['artwork_id' => $entity->artwork_id])
+            ->toArray();
+
+            if (!empty($variantIds)) {
+                TableRegistry::getTableLocator()->get('ArtworkVariantCarts')
+                    ->deleteAll(['artwork_variant_id IN' => $variantIds]);
+            }
+        }
+    }
 }

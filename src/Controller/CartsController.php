@@ -48,10 +48,7 @@ class CartsController extends AppController
         // Retrieve the cart with associated ArtworkCarts and their Artworks
         $cart = $this->Carts->find()
             ->contain([
-                'ArtworkVariantCarts' => function ($q) {
-                    return $q->where(['ArtworkVariantCarts.is_deleted' => 0]);
-                },
-                // then load the size & artwork for each line
+                // load the size & artwork for each line
                 'ArtworkVariantCarts.ArtworkVariants.Artworks' => function ($q) {
                     return $q->where([
                         'Artworks.is_deleted' => 0,
@@ -113,10 +110,7 @@ class CartsController extends AppController
                     'ArtworkVariants.is_deleted' => false,
                 ]);
             })
-            ->where([
-                'ArtworkVariantCarts.cart_id'    => $cart->cart_id,
-                'ArtworkVariantCarts.is_deleted' => false,
-            ])
+            ->where(['ArtworkVariantCarts.cart_id' => $cart->cart_id])
             ->first()
             ->get('sum') ?? 0;
 
@@ -126,7 +120,6 @@ class CartsController extends AppController
             ->where([
                 'cart_id' => $cart->cart_id,
                 'artwork_variant_id' => $artworkVariantId,
-                'is_deleted' => 0,
             ])
             ->first();
 
@@ -275,38 +268,35 @@ class CartsController extends AppController
             $inCart = $this->Carts->ArtworkVariantCarts->find()
                 ->matching('ArtworkVariants', function ($q) use ($artwork) {
                     return $q->where([
-                        'ArtworkVariants.artwork_id'   => $artwork->artwork_id,
-                        'ArtworkVariants.is_deleted'   => false,
+                        'ArtworkVariants.artwork_id' => $artwork->artwork_id,
+                        'ArtworkVariants.is_deleted' => false,
                     ]);
                 })
-                ->where([
-                    'ArtworkVariantCarts.cart_id'    => $cart->cart_id,
-                    'ArtworkVariantCarts.is_deleted' => false,
-                ])
+                ->where(['ArtworkVariantCarts.cart_id' => $cart->cart_id])
                 ->select(['sum' => 'SUM(ArtworkVariantCarts.quantity)'])
                 ->first()
                 ->get('sum') ?? 0;
 
-            // remove this line’s old qty so we can re-add with new
+            // remove this line's old qty so we can re-add with new
             $inCart -= $line->quantity;
 
             $available = $max - $soldCount - $inCart;
             if ($available < 1) {
                 $this->Flash->error(
-                    "No more copies available for “$artwork->title.”",
+                    "No more copies available for " . $artwork->title . ".",
                 );
                 continue;
             }
 
             if ($newQty < 1 || $newQty > $available) {
-                $this->Flash->error("Quantity for '$artwork->title' can only be between 1 and $available.");
+                $this->Flash->error("Quantity for '" . $artwork->title . "' can only be between 1 and " . $available . ".");
                 continue;
             }
 
             // save updated quantity
             $line->quantity = $newQty;
             if (!$this->Carts->ArtworkVariantCarts->save($line)) {
-                $this->Flash->error("Could not update quantity for '{$artwork->title}'.");
+                $this->Flash->error("Could not update quantity for '" . $artwork->title . "'.");
             }
         }
 
@@ -410,12 +400,9 @@ class CartsController extends AppController
             'quantity' => $quantity,
         ]);
         if ($this->Carts->ArtworkVariantCarts->save($cartItem)) {
-            // refresh the session cache if you’re storing it there
+            // refresh the session cache if you're storing it there
             $updatedCartItems = $this->Carts->ArtworkVariantCarts->find()
-                ->where([
-                    'cart_id' => $cart->cart_id,
-                    'is_deleted' => 0,
-                ])
+                ->where(['cart_id' => $cart->cart_id])
                 ->toArray();
             $this->request->getSession()->write('Cart.items', $updatedCartItems);
 
