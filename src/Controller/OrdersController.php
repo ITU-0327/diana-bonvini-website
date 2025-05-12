@@ -250,9 +250,10 @@ class OrdersController extends AppController
                     ]);
                 })
                 ->first()
-                ->get('sum') ?? 0;
+                ->get('sum');
             // If sold out and still marked available, update status
             if ($soldCount >= $artwork->max_copies && $artwork->availability_status === 'available') {
+                /** @var \App\Model\Entity\Artwork $toUpdate **/
                 $toUpdate = $artworksTable->get($artwork->artwork_id);
                 $toUpdate->availability_status = 'sold';
                 $artworksTable->save($toUpdate);
