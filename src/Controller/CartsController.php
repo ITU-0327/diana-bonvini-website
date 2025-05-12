@@ -283,13 +283,13 @@ class CartsController extends AppController
             $available = $max - $soldCount - $inCart;
             if ($available < 1) {
                 $this->Flash->error(
-                    "No more copies available for " . $artwork->title . ".",
+                    'No more copies available for ' . $artwork->title . '.',
                 );
                 continue;
             }
 
             if ($newQty < 1 || $newQty > $available) {
-                $this->Flash->error("Quantity for '" . $artwork->title . "' can only be between 1 and " . $available . ".");
+                $this->Flash->error("Quantity for '" . $artwork->title . "' can only be between 1 and " . $available . '.');
                 continue;
             }
 

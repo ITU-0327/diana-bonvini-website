@@ -2,7 +2,16 @@
 <ruleset name="Diana Bonvini Website">
     <config name="installed_paths" value="../../cakephp/cakephp-codesniffer"/>
 
-    <rule ref="CakePHP"/>
+    <rule ref="CakePHP">
+        <exclude name="Generic.Formatting.NoSpaceAfterCast"/>
+        <exclude name="Squiz.WhiteSpace.LanguageConstructSpacing"/>
+    </rule>
+    <rule ref="Generic.Formatting.SpaceAfterCast">
+        <properties>
+            <property name="spacing" type="integer" value="0"/>
+        </properties>
+    </rule>
+    <rule ref="Generic.WhiteSpace.LanguageConstructSpacing"/>
     <rule ref="SlevomatCodingStandard.TypeHints.ReturnTypeHint.MissingNativeTypeHint">
         <exclude-pattern>*/src/Controller/*</exclude-pattern>
     </rule>
