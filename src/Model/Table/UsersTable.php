@@ -84,12 +84,8 @@ class UsersTable extends Table
         $validator
             ->scalar('password')
             ->maxLength('password', 255)
-            ->requirePresence('password', function ($context) {
-                return empty($context['data']['oauth_provider']);
-            })
-            ->notEmptyString('password', 'Password is required', function ($context) {
-                return empty($context['data']['oauth_provider']);
-            })
+            ->requirePresence('password', 'create')
+            ->notEmptyString('password', 'Password is required', 'create')
             ->add('password', 'complexity', [
                 'rule' => function ($value, $context) {
                     // Skip complexity check if using OAuth.
