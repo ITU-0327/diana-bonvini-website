@@ -45,7 +45,7 @@ class PagesControllerTest extends TestCase
     public function testDisplay()
     {
         Configure::write('debug', true);
-        $this->get('/pages/landing');
+        $this->get('/');
         $this->assertResponseOk();
         $this->assertResponseContains('diana bonvini');
         $this->assertResponseContains('<html lang="en">');
