@@ -360,7 +360,6 @@ class UsersController extends AppController
             $this->Flash->error(__('Unable to generate reset link. Please try again later.'));
         }
 
-        // 回到刚才的 Settings 页面
         return $this->redirect($this->referer());
     }
 }

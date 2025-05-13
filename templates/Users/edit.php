@@ -43,28 +43,37 @@
         <h2 class="text-xl font-semibold mb-6 text-center">Address Information</h2>
 
         <div class="space-y-6 max-w-md mx-auto">
+
             <?= $this->Form->control('street_address', [
-                'label' => 'Street Address',
-                'class' => 'form-input w-full border rounded px-3 py-2',
+                'label'       => 'Street Address *',
+                'id'          => 'address-lookup',
+                'placeholder' => 'Start typing your address…',
+                'class'       => 'form-input w-full border rounded px-3 py-2',
+                'required'    => true,
             ]) ?>
             <?= $this->Form->control('street_address2', [
                 'label' => 'Street Address 2',
+                'id'    => 'street_address2',
                 'class' => 'form-input w-full border rounded px-3 py-2',
             ]) ?>
             <?= $this->Form->control('suburb', [
                 'label' => 'Suburb',
+                'id'    => 'shipping_suburb',
                 'class' => 'form-input w-full border rounded px-3 py-2',
             ]) ?>
             <?= $this->Form->control('state', [
                 'label' => 'State',
+                'id'    => 'shipping_state',
                 'class' => 'form-input w-full border rounded px-3 py-2',
             ]) ?>
             <?= $this->Form->control('postcode', [
                 'label' => 'Postcode',
+                'id'    => 'shipping_postcode',
                 'class' => 'form-input w-full border rounded px-3 py-2',
             ]) ?>
             <?= $this->Form->control('country', [
                 'label' => 'Country',
+                'id'    => 'shipping_country',
                 'class' => 'form-input w-full border rounded px-3 py-2',
             ]) ?>
         </div>
@@ -109,3 +118,49 @@
     </div>
 
 </div>
+
+<?php use Cake\Core\Configure; ?>
+<script
+    src="https://maps.googleapis.com/maps/api/js?key=<?= h(Configure::read('GoogleMaps.key')) ?>&libraries=places"
+    async
+    defer
+></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        function init() {
+            var input = document.getElementById('address-lookup');
+            if (!input || !window.google?.maps?.places) {
+                return setTimeout(init, 100);
+            }
+            var autocomplete = new google.maps.places.Autocomplete(input, {
+                fields: ['address_components'],
+                types: ['address']
+            });
+            autocomplete.addListener('place_changed', function() {
+                var place = autocomplete.getPlace();
+                var map = {};
+                (place.address_components || []).forEach(function(c) {
+                    c.types.forEach(function(t){
+                        if (t === 'country') {
+                            map[t] = c.short_name;   // ISO 2-letter code
+                        } else {
+                            map[t] = c.long_name;
+                        }
+                    });
+                });
+                document.getElementById('address-lookup').value  =
+                    ((map.street_number||'') + ' ' + (map.route||'')).trim();
+                document.getElementById('shipping_suburb').value   =
+                    map.locality || map.sublocality_level_1 || '';
+                document.getElementById('shipping_state').value    =
+                    map.administrative_area_level_1 || '';
+                document.getElementById('shipping_postcode').value =
+                    map.postal_code || '';
+                document.getElementById('shipping_country').value  =
+                    map.country || '';
+            });
+        }
+        init();
+    });
+</script>
