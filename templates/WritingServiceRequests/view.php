@@ -102,7 +102,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                         <?= $this->Form->textarea('reply_message', [
                             'class' => 'w-full border border-gray-200 rounded-3xl p-2 pr-8 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-none shadow-sm text-sm',
                             'rows' => '1',
-                            'placeholder' => 'iMessage',
+                            'placeholder' => 'Reply',
                             'required' => true,
                         ]) ?>
                         <div class="absolute right-3 bottom-2 text-gray-400">
@@ -185,19 +185,19 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                         }
                         ?>
                     </div>
-                    
+
                     <?php if ($paidPayments > 0 || $pendingPayments > 0): ?>
                     <div class="mt-3 space-y-2 pt-3 border-t border-gray-100">
                         <?php if ($paidPayments > 0): ?>
                         <div class="flex justify-between items-center text-sm">
                             <span class="text-gray-500">
-                                <i class="fas fa-check-circle text-green-500 mr-1"></i> 
+                                <i class="fas fa-check-circle text-green-500 mr-1"></i>
                                 Paid (<?= $paidPayments ?>):
                             </span>
                             <span class="font-bold text-green-600">$<?= number_format($totalPaid, 2) ?></span>
                         </div>
                         <?php endif; ?>
-                        
+
                         <?php if ($pendingPayments > 0): ?>
                         <div class="flex justify-between items-center text-sm">
                             <span class="text-gray-500">
@@ -207,7 +207,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                             <span class="font-bold text-yellow-600">$<?= number_format($totalPending, 2) ?></span>
                         </div>
                         <?php endif; ?>
-                        
+
                         <?php if ($paidPayments > 0 && $pendingPayments > 0): ?>
                         <div class="flex justify-between items-center text-sm pt-2 border-t border-gray-100">
                             <span class="text-gray-500 font-medium">Total:</span>
@@ -356,7 +356,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                 const submitButton = this.querySelector('button[type="submit"]');
                 submitButton.disabled = true;
                 submitButton.innerHTML = '<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
-                
+
                 // Normal form submission - we don't want to show the payment toast
                 // No need to prevent default, let the form submit normally
             });
