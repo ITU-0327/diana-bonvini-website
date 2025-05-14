@@ -2,23 +2,22 @@
 /**
  * User Edit View — two cards + external submit button
  *
- * @var \App\View\AppView   $this
+ * @var \App\View\AppView $this
  * @var \App\Model\Entity\User $user
  */
-?>
 
-<link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/css/intlTelInput.css"
-/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/utils.js"></script>
+use Cake\Core\Configure;
+
+$this->Html->css('https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/css/intlTelInput.css', ['block' => true]);
+$this->Html->script('https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js', ['block' => true]);
+$this->Html->script('https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/utils.js', ['block' => true]);
+?>
 
 <div class="max-w-4xl mx-auto space-y-8">
 
     <!-- 1. Begin the form. Give it an explicit ID so an external button can reference it -->
     <?= $this->Form->create($user, [
-        'id'    => 'user-edit-form',     // <— referenced by the button below
+        'id' => 'user-edit-form',
         'class' => 'space-y-8',
     ]) ?>
 
@@ -40,13 +39,13 @@
                 'class' => 'form-input w-full border rounded px-3 py-2',
             ]) ?>
             <?= $this->Form->control('phone_number', [
-                'type'  => 'tel',
-                'id'    => 'phone_number',
+                'type' => 'tel',
+                'id' => 'phone_number',
                 'label' => [
-                    'text'  => 'Phone Number',
+                    'text' => 'Phone Number',
                     'class' => 'block mb-2',
                 ],
-                'class'       => 'form-input w-full border rounded px-3 py-2',
+                'class' => 'form-input w-full border rounded px-3 py-2',
                 'placeholder' => '+61 412 345 677',
             ]) ?>
         </div>
@@ -59,35 +58,34 @@
         <div class="space-y-6 max-w-md mx-auto">
 
             <?= $this->Form->control('street_address', [
-                'label'       => 'Street Address *',
-                'id'          => 'address-lookup',
+                'label' => 'Street Address *',
+                'id' => 'address-lookup',
                 'placeholder' => 'Start typing your address…',
-                'class'       => 'form-input w-full border rounded px-3 py-2',
-                'required'    => true,
+                'class' => 'form-input w-full border rounded px-3 py-2',
             ]) ?>
             <?= $this->Form->control('street_address2', [
                 'label' => 'Street Address 2',
-                'id'    => 'street_address2',
+                'id' => 'street_address2',
                 'class' => 'form-input w-full border rounded px-3 py-2',
             ]) ?>
             <?= $this->Form->control('suburb', [
                 'label' => 'Suburb',
-                'id'    => 'shipping_suburb',
+                'id' => 'shipping_suburb',
                 'class' => 'form-input w-full border rounded px-3 py-2',
             ]) ?>
             <?= $this->Form->control('state', [
                 'label' => 'State',
-                'id'    => 'shipping_state',
+                'id' => 'shipping_state',
                 'class' => 'form-input w-full border rounded px-3 py-2',
             ]) ?>
             <?= $this->Form->control('postcode', [
                 'label' => 'Postcode',
-                'id'    => 'shipping_postcode',
+                'id' => 'shipping_postcode',
                 'class' => 'form-input w-full border rounded px-3 py-2',
             ]) ?>
             <?= $this->Form->control('country', [
                 'label' => 'Country',
-                'id'    => 'shipping_country',
+                'id' => 'shipping_country',
                 'class' => 'form-input w-full border rounded px-3 py-2',
             ]) ?>
         </div>
@@ -106,7 +104,7 @@
         <?= $this->Form->create(
             null,
             [
-                'url'  => ['action' => 'changePassword'],
+                'url' => ['action' => 'changePassword'],
                 'type' => 'post',
                 'class' => 'max-w-xs mx-auto',
             ],
@@ -116,7 +114,7 @@
         <?= $this->Form->hidden('email', ['value' => $user->email]) ?>
 
         <?= $this->Form->button('Send Reset Link', [
-            'class'   => 'w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700',
+            'class' => 'w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700',
             'confirm' => 'Send a reset link to ' . h($user->email) . '?',
         ]) ?>
 
@@ -133,7 +131,6 @@
 
 </div>
 
-<?php use Cake\Core\Configure; ?>
 <script
     src="https://maps.googleapis.com/maps/api/js?key=<?= h(Configure::read('GoogleMaps.key')) ?>&libraries=places"
     async
@@ -141,21 +138,21 @@
 ></script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         function init() {
-            var input = document.getElementById('address-lookup');
+            const input = document.getElementById('address-lookup');
             if (!input || !window.google?.maps?.places) {
                 return setTimeout(init, 100);
             }
-            var autocomplete = new google.maps.places.Autocomplete(input, {
+            const autocomplete = new google.maps.places.Autocomplete(input, {
                 fields: ['address_components'],
                 types: ['address']
             });
-            autocomplete.addListener('place_changed', function() {
-                var place = autocomplete.getPlace();
-                var map = {};
-                (place.address_components || []).forEach(function(c) {
-                    c.types.forEach(function(t){
+            autocomplete.addListener('place_changed', function () {
+                const place = autocomplete.getPlace();
+                const map = {};
+                (place.address_components || []).forEach(function (c) {
+                    c.types.forEach(function (t) {
                         if (t === 'country') {
                             map[t] = c.short_name;   // ISO 2-letter code
                         } else {
@@ -163,33 +160,33 @@
                         }
                     });
                 });
-                document.getElementById('address-lookup').value  =
-                    ((map.street_number||'') + ' ' + (map.route||'')).trim();
-                document.getElementById('shipping_suburb').value   =
+                document.getElementById('address-lookup').value =
+                    ((map.street_number || '') + ' ' + (map.route || '')).trim();
+                document.getElementById('shipping_suburb').value =
                     map.locality || map.sublocality_level_1 || '';
-                document.getElementById('shipping_state').value    =
+                document.getElementById('shipping_state').value =
                     map.administrative_area_level_1 || '';
                 document.getElementById('shipping_postcode').value =
                     map.postal_code || '';
-                document.getElementById('shipping_country').value  =
+                document.getElementById('shipping_country').value =
                     map.country || '';
             });
         }
         init();
     });
     document.addEventListener('DOMContentLoaded', function() {
-        var input = document.querySelector('#phone_number');
+        const input = document.querySelector('#phone_number');
         if (!input || !window.intlTelInput) return;
 
-        var iti = intlTelInput(input, {
+        const iti = intlTelInput(input, {
             separateDialCode: true,
             nationalMode: false,
             utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/utils.js'
         });
 
-        var form = document.querySelector('#user-edit-form');
+        const form = document.querySelector('#user-edit-form');
         form.addEventListener('submit', function() {
-            var full = iti.getNumber();   // e.g. "+61412345677"
+            const full = iti.getNumber();   // e.g. "+61412345677"
             if (full) input.value = full;
         });
     });

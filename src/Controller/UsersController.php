@@ -332,34 +332,4 @@ class UsersController extends AppController
         $user->password = '';
         $this->set(compact('user'));
     }
-
-    public function changePassword()
-    {
-        $this->request->allowMethod(['post']);
-
-        $identity = $this->request->getAttribute('identity');
-        $user = $this->Users->get($identity->user_id);
-
-        $token = Security::hash(Text::uuid(), 'sha256', true);
-        $user->password_reset_token = $token;
-        $user->token_expiration    = new \DateTime('+1 hour');
-
-        if ($this->Users->save($user)) {
-            $resetLink = Router::url([
-                'controller' => 'Users',
-                'action'     => 'resetPassword',
-                $token,
-            ], true);
-
-            $mailer = new UserMailer('default');
-            $mailer->resetPassword($user, $resetLink);
-            $mailer->deliver();
-
-            $this->Flash->success(__('A reset link has been sent to {0}.', $user->email));
-        } else {
-            $this->Flash->error(__('Unable to generate reset link. Please try again later.'));
-        }
-
-        return $this->redirect($this->referer());
-    }
 }

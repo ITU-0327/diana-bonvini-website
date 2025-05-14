@@ -17,7 +17,6 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use Cake\Controller\Controller;
-use Cake\Event\EventInterface;
 
 /**
  * Application Controller
@@ -52,22 +51,5 @@ class AppController extends Controller
          * see https://book.cakephp.org/5/en/controllers/components/form-protection.html
          */
         $this->loadComponent('FormProtection');
-    }
-
-    public function beforeRender(EventInterface $event): void
-    {
-        parent::beforeRender($event);
-
-        $identity = $this->request->getAttribute('identity');
-        if (!$identity) {
-            return;
-        }
-
-        $usersTable = $this->getTableLocator()->get('Users');
-        $freshUser = $usersTable->get($identity->user_id);
-
-        $this->set('user', $freshUser);
-
-        $this->Authentication->setIdentity($freshUser);
     }
 }
