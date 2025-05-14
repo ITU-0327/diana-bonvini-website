@@ -3,6 +3,7 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Artwork $artwork
  */
+$this->assign('title', __('Add New Artwork'));
 ?>
 <div class="container-fluid">
     <div class="row mb-4">
@@ -19,7 +20,7 @@
             </div>
         </div>
     </div>
-    
+
     <?= $this->Form->create($artwork, ['type' => 'file', 'class' => 'artwork-form']) ?>
     <div class="row">
         <div class="col-12 col-md-8">
@@ -29,7 +30,7 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <div class="form-group mb-3">
                                 <?= $this->Form->label('title', 'Title', ['class' => 'form-label']) ?>
                                 <?= $this->Form->control('title', [
@@ -39,40 +40,9 @@
                                     'required' => true,
                                 ]) ?>
                             </div>
-
-                            <div class="form-group mb-3">
-                                <?= $this->Form->label('price', 'Price ($)', ['class' => 'form-label']) ?>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <?= $this->Form->control('price', [
-                                        'label' => false,
-                                        'class' => 'form-control',
-                                        'placeholder' => '0.00',
-                                        'step' => '0.01',
-                                        'min' => '0',
-                                        'required' => true,
-                                    ]) ?>
-                                </div>
-                            </div>
                         </div>
 
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <?= $this->Form->label('availability_status', 'Availability Status', ['class' => 'form-label']) ?>
-                                <?= $this->Form->select(
-                                    'availability_status',
-                                    [
-                                        'available' => 'Available', 
-                                        'sold' => 'Sold',
-                                        'pending' => 'Pending',
-                                        'reserved' => 'Reserved'
-                                    ],
-                                    ['class' => 'form-select', 'value' => 'available']
-                                ) ?>
-                            </div>
-                        </div>
-
-                        <div class="col-12">
+                        <div class="col-md-12">
                             <div class="form-group mb-3">
                                 <?= $this->Form->label('description', 'Description', ['class' => 'form-label']) ?>
                                 <?= $this->Form->textarea('description', [
@@ -81,6 +51,32 @@
                                     'placeholder' => 'Describe the artwork in detail...',
                                     'required' => true,
                                 ]) ?>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-group mb-3">
+                                <label class="form-label">Variant Prices</label>
+                                <div class="row">
+                                    <?php foreach ($artwork->artwork_variants as $i => $variant) : ?>
+                                        <div class="col-md-4 mb-3">
+                                            <?= $this->Form->control("artwork_variants.$i.dimension", [
+                                                'type' => 'text',
+                                                'label' => 'Size',
+                                                'readonly' => true,
+                                                'class' => 'form-control',
+                                            ]) ?>
+                                            <?= $this->Form->control("artwork_variants.$i.price", [
+                                                'type' => 'number',
+                                                'step' => '0.01',
+                                                'min' => '1',
+                                                'label' => 'Price ($)',
+                                                'class' => 'form-control',
+                                                'placeholder' => 'Enter price',
+                                            ]) ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -95,20 +91,19 @@
                 </div>
                 <div class="card-body">
                     <div class="image-upload-container mb-3">
-                        <div class="image-preview" id="imagePreview">
-                            <img src="/img/cake-logo.png" alt="Image Preview" class="img-fluid rounded shadow-sm d-block mx-auto" id="preview">
-                            <div class="text-center mt-2 text-muted small">Preview will appear here</div>
+                        <div class="image-preview" id="imagePreview" style="display:none;">
+                            <img src="" alt="Image Preview" class="img-fluid rounded shadow-sm mx-auto" id="preview">
                         </div>
 
                         <div class="form-group mt-4">
-                            <?= $this->Form->label('image_path', 'Upload Image', ['class' => 'form-label']) ?>
+                            <?= $this->Form->label('image_path', 'Upload Image', ['class' => 'block text-lg font-medium text-gray-700 mb-2']) ?>
                             <?= $this->Form->file('image_path', [
-                                'class' => 'form-control',
-                                'accept' => 'image/jpeg,image/png',
+                                'class' => 'w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100',
+                                'accept' => 'image/jpeg',
                                 'required' => true,
                                 'id' => 'imageUpload',
                             ]) ?>
-                            <div class="text-muted small mt-1">JPEG or PNG format, Recommended size: 1200x800px, Max 5MB</div>
+                            <div class="text-muted small mt-1">JPEG format, Max 8MB</div>
                         </div>
                     </div>
 
@@ -133,132 +128,70 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Image preview functionality
-    const imageUpload = document.getElementById('imageUpload');
-    const preview = document.getElementById('preview');
+    document.addEventListener('DOMContentLoaded', function() {
+        // Image preview functionality
+        const imageUpload = document.getElementById('imageUpload');
+        const preview = document.getElementById('preview');
 
-    imageUpload.addEventListener('change', function() {
-        const file = this.files[0];
-        if (file) {
+        imageUpload.addEventListener('change', function() {
+            // If no file selected, hide preview
+            if (!this.files || this.files.length === 0) {
+                preview.src = '';
+                document.getElementById('imagePreview').style.display = 'none';
+                return;
+            }
+            // Show preview for selected file
+            const file = this.files[0];
             const reader = new FileReader();
-
             reader.addEventListener('load', function() {
                 preview.src = reader.result;
-                document.querySelector('#imagePreview .text-muted').style.display = 'none';
+                document.getElementById('imagePreview').style.display = 'block';
             });
-
             reader.readAsDataURL(file);
-        }
-    });
+        });
 
-    // Form validation
-    const form = document.querySelector('.artwork-form');
-    form.addEventListener('submit', function(event) {
-        let isValid = true;
+        // Form validation
+        const form = document.querySelector('.artwork-form');
+        form.addEventListener('submit', function(event) {
+            let isValid = true;
 
-        // Basic validation
-        const title = document.querySelector('input[name="title"]');
-        const price = document.querySelector('input[name="price"]');
-        const description = document.querySelector('textarea[name="description"]');
-        const imageUpload = document.getElementById('imageUpload');
+            // Basic validation
+            const title = document.querySelector('input[name="title"]');
+            const description = document.querySelector('textarea[name="description"]');
+            const imageUpload = document.getElementById('imageUpload');
 
-        if (!title.value.trim()) {
-            isValid = false;
-            title.classList.add('is-invalid');
-        } else {
-            title.classList.remove('is-invalid');
-        }
+            if (!title.value.trim()) {
+                isValid = false;
+                title.classList.add('is-invalid');
+            } else {
+                title.classList.remove('is-invalid');
+            }
 
-        if (!price.value || isNaN(parseFloat(price.value)) || parseFloat(price.value) < 0) {
-            isValid = false;
-            price.classList.add('is-invalid');
-        } else {
-            price.classList.remove('is-invalid');
-        }
+            if (!description.value.trim()) {
+                isValid = false;
+                description.classList.add('is-invalid');
+            } else {
+                description.classList.remove('is-invalid');
+            }
 
-        if (!description.value.trim()) {
-            isValid = false;
-            description.classList.add('is-invalid');
-        } else {
-            description.classList.remove('is-invalid');
-        }
-
-        if (imageUpload.files.length === 0) {
-            isValid = false;
-            imageUpload.classList.add('is-invalid');
-        } else {
-            const file = imageUpload.files[0];
-            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-            if (!allowedTypes.includes(file.type)) {
+            if (imageUpload.files.length === 0) {
                 isValid = false;
                 imageUpload.classList.add('is-invalid');
-                alert('Please upload a JPEG or PNG image only.');
             } else {
-                imageUpload.classList.remove('is-invalid');
+                const file = imageUpload.files[0];
+                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                if (!allowedTypes.includes(file.type)) {
+                    isValid = false;
+                    imageUpload.classList.add('is-invalid');
+                    alert('Please upload a JPEG or PNG image only.');
+                } else {
+                    imageUpload.classList.remove('is-invalid');
+                }
             }
-        }
 
-        if (!isValid) {
-            event.preventDefault();
-        }
+            if (!isValid) {
+                event.preventDefault();
+            }
+        });
     });
-});
 </script>
-
-<style>
-.image-upload-container {
-    border: 2px dashed #ddd;
-    padding: 20px;
-    text-align: center;
-    border-radius: 5px;
-    background-color: #f9f9f9;
-}
-
-.image-preview {
-    margin-bottom: 15px;
-}
-
-.image-preview img {
-    max-height: 200px;
-    border: 1px solid #eee;
-}
-
-.card-outline {
-    border-top: 3px solid;
-}
-
-.card-primary.card-outline {
-    border-top-color: #007bff;
-}
-
-.card-success.card-outline {
-    border-top-color: #28a745;
-}
-
-.form-label {
-    font-weight: 600;
-}
-
-.is-invalid {
-    border-color: #dc3545 !important;
-}
-
-.breadcrumb {
-    background: transparent;
-    margin-bottom: 0;
-    padding: 0.75rem 0;
-}
-
-.float-sm-end {
-    float: right !important;
-}
-
-.d-grid {
-    display: grid !important;
-}
-
-.gap-2 {
-    gap: 0.5rem !important;
-}
-</style>

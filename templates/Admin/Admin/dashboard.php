@@ -161,7 +161,11 @@ $this->assign('title', 'Dashboard');
                 </div>
                 <div class="card-body">
                     <div class="text-center">
-                        <?= $this->Html->image('logo.png', ['alt' => 'Logo', 'style' => 'width: 60px; height: 60px; border-radius: 50%;']) ?>
+                        <?= $this->Html->image('logo.png', [
+                            'alt' => 'Logo',
+                            'class' => 'rounded-circle d-block mx-auto mb-3',
+                            'style' => 'width: 60px; height: 60px;',
+                        ]) ?>
                         <h5 class="mb-3">Diana Bonvini Art</h5>
                     </div>
 

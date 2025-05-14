@@ -373,12 +373,4 @@
         vertical-align: baseline;
         border-radius: 0.25rem;
     }
-
-    .badge.bg-warning {
-        color: #212529;
-    }
-
-    .float-sm-end {
-        float: right !important;
-    }
 </style>

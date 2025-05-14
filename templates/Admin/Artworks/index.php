@@ -3,8 +3,11 @@
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\Artwork> $artworks
  */
-?>
 
+use Cake\Collection\Collection;
+
+$this->assign('title', __('Artworks'));
+?>
 <div class="container-fluid">
     <div class="row mb-4">
         <div class="col-12">
@@ -28,14 +31,16 @@
                     <h6 class="m-0 font-weight-bold text-primary">
                         <i class="fas fa-filter mr-1"></i> Filter Artworks
                     </h6>
-                    <a href="<?= $this->Url->build(['action' => 'add']) ?>" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus-circle mr-2"></i>Add New Artwork
-                    </a>
+                    <?= $this->Html->link(
+                        '<i class="fas fa-plus-circle mr-2"></i>Add New Artwork',
+                        ['action' => 'add'],
+                        ['class' => 'btn btn-primary btn-sm', 'escape' => false]
+                    ) ?>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Status</label>
+                            <label for="status-filter" class="form-label">Status</label>
                             <select id="status-filter" class="form-control">
                                 <option value="all">All Status</option>
                                 <option value="available">Available</option>
@@ -45,7 +50,7 @@
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Sort By</label>
+                            <label for="sort-order" class="form-label">Sort By</label>
                             <select id="sort-order" class="form-control">
                                 <option value="newest">Newest First</option>
                                 <option value="oldest">Oldest First</option>
@@ -54,7 +59,7 @@
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Search</label>
+                            <label for="search-input" class="form-label">Search</label>
                             <div class="input-group">
                                 <input type="text" id="search-input" class="form-control" placeholder="Search artworks...">
                                 <div class="input-group-append">
@@ -79,7 +84,7 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered" id="artworksTable" width="100%" cellspacing="0">
+                        <table class="table table-bordered" id="artworksTable">
                             <thead>
                                 <tr>
                                     <th>Preview</th>
@@ -98,34 +103,43 @@
                                             // Add a random query parameter to prevent caching
                                             $imageUrl = h($artwork->image_url) . '?v=' . time();
                                         ?>
-                                        <img src="<?= $imageUrl ?>" alt="<?= h($artwork->title) ?>" class="img-thumbnail" style="width: 80px; height: 60px; object-fit: cover;">
-                                        <?php if (empty($artwork->image_url)): ?>
-                                            <div class="text-danger small mt-1">No image found</div>
-                                        <?php endif; ?>
+                                        <?= $this->Html->image('Artworks/' . $artwork->artwork_id . '.jpg', [
+                                            'alt' => h($artwork->title),
+                                            'class' => 'img-thumbnail',
+                                            'style' => 'width: 80px; height: 60px; object-fit: cover;',
+                                        ]) ?>
                                     </td>
                                     <td class="align-middle"><?= h($artwork->title) ?></td>
-                                    <td class="align-middle">$<?= $this->Number->format($artwork->price) ?></td>
                                     <td class="align-middle">
-                                        <?php 
-                                            $statusClass = match ($artwork->availability_status) {
-                                                'available' => 'success',
-                                                'sold' => 'danger',
-                                                'pending' => 'warning',
-                                                'reserved' => 'info',
-                                                default => 'secondary'
-                                            };
+                                        <?php
+                                        // Calculate the cheapest variant price
+                                        $variants = $artwork->artwork_variants ?? [];
+                                        $cheapest = (new Collection($variants))->sortBy('price')->first();
+                                        $displayPrice = $cheapest ? $cheapest->price : null;
                                         ?>
+                                        <?php if ($displayPrice !== null): ?>
+                                            $<?= $this->Number->format($displayPrice, ['precision' => 2]) ?>
+                                        <?php else: ?>
+                                            N/A
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="align-middle">
+                                        <?php
+                                        $statusClass = match ($artwork->availability_status) {
+                                            'available' => 'success',
+                                            'sold' => 'danger',
+                                            default => 'secondary'
+                                        }; ?>
                                         <span class="badge badge-<?= $statusClass ?>"><?= ucfirst(h($artwork->availability_status)) ?></span>
                                     </td>
                                     <td class="align-middle"><?= $artwork->created_at ? $artwork->created_at->format('M d, Y') : 'N/A' ?></td>
                                     <td class="align-middle">
                                         <div class="btn-group">
-                                            <a href="<?= $this->Url->build(['action' => 'view', $artwork->artwork_id]) ?>" class="btn btn-sm btn-info">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="<?= $this->Url->build(['action' => 'edit', $artwork->artwork_id]) ?>" class="btn btn-sm btn-primary">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
+                                            <?= $this->Html->link(
+                                                '<i class="fas fa-edit"></i>',
+                                                ['action' => 'edit', $artwork->artwork_id],
+                                                ['class' => 'btn btn-sm btn-primary', 'escape' => false]
+                                            ) ?>
                                             <?= $this->Form->postLink(
                                                 '<i class="fas fa-trash"></i>',
                                                 ['action' => 'delete', $artwork->artwork_id],
@@ -199,42 +213,3 @@
         }
     });
 </script>
-
-<style>
-.badge {
-    display: inline-block;
-    padding: 0.35em 0.65em;
-    font-size: 0.75em;
-    font-weight: 700;
-    line-height: 1;
-    text-align: center;
-    white-space: nowrap;
-    vertical-align: baseline;
-    border-radius: 0.25rem;
-}
-
-.badge-success {
-    background-color: #28a745 !important;
-    color: white !important;
-}
-
-.badge-danger {
-    background-color: #dc3545 !important;
-    color: white !important;
-}
-
-.badge-warning {
-    background-color: #ffc107 !important;
-    color: #212529 !important;
-}
-
-.badge-info {
-    background-color: #17a2b8 !important;
-    color: white !important;
-}
-
-.badge-secondary {
-    background-color: #6c757d !important;
-    color: white !important;
-}
-</style>
