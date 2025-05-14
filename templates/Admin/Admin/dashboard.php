@@ -161,7 +161,7 @@ $this->assign('title', 'Dashboard');
                 </div>
                 <div class="card-body">
                     <div class="text-center">
-                        <img class="mb-3" src="https://via.placeholder.com/60" alt="Business Icon" style="width: 60px; height: 60px; border-radius: 50%;">
+                        <?= $this->Html->image('logo.png', ['alt' => 'Logo', 'style' => 'width: 60px; height: 60px; border-radius: 50%;']) ?>
                         <h5 class="mb-3">Diana Bonvini Art</h5>
                     </div>
 
