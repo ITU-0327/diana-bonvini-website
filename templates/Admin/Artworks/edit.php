@@ -4,6 +4,7 @@
  * @var \App\Model\Entity\Artwork $artwork
  */
 $this->assign('title', __('Edit Artwork'));
+$this->Html->script('https://cdn.tailwindcss.com', ['block' => 'script']);
 ?>
 <div class="container-fluid">
     <div class="row mb-4">

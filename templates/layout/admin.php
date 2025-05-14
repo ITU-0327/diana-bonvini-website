@@ -19,7 +19,6 @@ $siteTitle = 'Diana Bonvini Admin';
 
     <!-- Core CSS -->
     <?= $this->Html->css('normalize.min') ?>
-    <script src="https://cdn.tailwindcss.com"></script>
     <?= $this->Html->css('https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css'); ?>
     <?= $this->Html->css('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'); ?>
     <?= $this->Html->css('admin_styles') ?>
