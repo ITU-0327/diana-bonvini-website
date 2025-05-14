@@ -191,6 +191,8 @@ class UsersController extends AppController
 
             if ($this->Users->save($user)) {
                 $this->Flash->success(__('Your details were updated.'));
+                // Update the identity in session to reflect changes
+                $this->Authentication->setIdentity($user);
 
                 return $this->redirect(['action' => 'edit', $user->user_id]);
             }
