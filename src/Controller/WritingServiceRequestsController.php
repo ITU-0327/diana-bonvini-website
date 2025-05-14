@@ -4,9 +4,14 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Model\Entity\WritingServiceRequest;
+use Cake\Core\Configure;
 use Cake\Http\Response;
-use Exception;
+use Cake\Routing\Router;
+use DateTimeInterface;
 use Psr\Http\Message\UploadedFileInterface;
+use RuntimeException;
+use Stripe\Checkout\Session;
+use Stripe\Stripe;
 
 /**
  * WritingServiceRequests Controller
@@ -64,12 +69,16 @@ class WritingServiceRequestsController extends AppController
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
 
+        // Use basic contain without WritingServicePayments to ensure it works
         $writingServiceRequest = $this->WritingServiceRequests->get(
             $id,
-            contain: ['Users', 'RequestMessages' => function ($q) {
-                return $q->contain(['Users'])
-                    ->order(['RequestMessages.created_at' => 'ASC']);
-            }],
+            contain: [
+                'Users',
+                'RequestMessages' => function ($q) {
+                    return $q->contain(['Users'])
+                        ->order(['RequestMessages.created_at' => 'ASC']);
+                },
+            ],
         );
 
         // Mark messages from admin as read when customer views them
@@ -368,6 +377,549 @@ class WritingServiceRequestsController extends AppController
     }
 
     /**
+     * Check payment status
+     *
+     * @param string|null $id Writing Service Request id
+     * @param string|null $paymentId Unique payment identifier
+     * @return \Cake\Http\Response JSON response with payment status
+     */
+    public function checkPaymentStatus(?string $id = null, ?string $paymentId = null)
+    {
+        $this->request->allowMethod(['get', 'ajax']);
+        $this->disableAutoRender();
+        $this->response = $this->response->withType('application/json');
+
+        // Support both URL segments and query parameters
+        if (empty($id)) {
+            $id = $this->request->getQuery('id');
+        }
+
+        if (empty($paymentId)) {
+            $paymentId = $this->request->getQuery('paymentId');
+        }
+
+        if (empty($id) || empty($paymentId)) {
+            return $this->response->withStringBody(json_encode([
+                'success' => false,
+                'message' => 'Request ID and Payment ID are required',
+            ]));
+        }
+
+        // URL-decode the payment ID first
+        $paymentId = urldecode($paymentId);
+
+        // Check if we have a session payment ID or a database payment ID
+        $parts = explode('|', $paymentId);
+        $sessionPaymentId = $parts[0];
+        $dbPaymentId = $parts[1] ?? null;
+
+        // Ensure dbPaymentId is a string if not null
+        if ($dbPaymentId !== null && !is_string($dbPaymentId)) {
+            $dbPaymentId = (string)$dbPaymentId;
+            $this->log('Converted dbPaymentId to string in checkPaymentStatus: ' . $dbPaymentId, 'debug');
+        }
+
+        // Default status and payment details
+        $status = 'pending';
+        $paymentDetails = null;
+        $isPaid = false;
+
+        // Get the writing service request to ensure we have the correct price
+        try {
+            $writingServiceRequest = $this->WritingServiceRequests->get($id);
+        } catch (\Exception $e) {
+            $this->log('Error retrieving writing service request: ' . $e->getMessage(), 'error');
+            return $this->response->withStringBody(json_encode([
+                'success' => false,
+                'message' => 'Error retrieving writing service request',
+            ]));
+        }
+
+        // Always prioritize session data, since database table might not exist
+        $paymentData = $this->request->getSession()->read("WsrPayments.$sessionPaymentId");
+        if ($paymentData) {
+            $status = $paymentData['status'] ?? 'pending';
+            $paymentDetails = $paymentData['receipt'] ?? null;
+
+            // Update amount in payment data if needed
+            if (!empty($writingServiceRequest->final_price) &&
+                (!isset($paymentData['amount']) || $paymentData['amount'] != $writingServiceRequest->final_price)) {
+                $this->request->getSession()->write(
+                    "WsrPayments.$sessionPaymentId.amount",
+                    (string)$writingServiceRequest->final_price
+                );
+                $this->log('Updated payment amount in session to: ' . $writingServiceRequest->final_price, 'debug');
+            }
+
+            // If status is already paid in session, use that and skip DB check
+            if ($status === 'paid' && $paymentDetails) {
+                $isPaid = true;
+
+                // Make sure the database is also updated
+                // Convert dbPaymentId to string again just to be safe
+                if ($dbPaymentId !== null && !is_string($dbPaymentId)) {
+                    $dbPaymentId = (string)$dbPaymentId;
+                }
+                $this->_updateDatabasePaymentStatus($id, $dbPaymentId, $sessionPaymentId, $paymentDetails);
+
+                return $this->response->withStringBody(json_encode([
+                    'success' => true,
+                    'status' => $status,
+                    'paid' => true,
+                    'details' => $paymentDetails,
+                ]));
+            }
+        }
+
+        // Check URL parameters for payment success indicators
+        $paymentSuccess = $this->request->getQuery('payment_success');
+        $paymentAlreadyCompleted = $this->request->getQuery('payment_already_completed');
+
+        if ($paymentSuccess === 'true' || $paymentAlreadyCompleted === 'true') {
+            $isPaid = true;
+            $status = 'paid';
+
+            // Create payment details if missing
+            if (!$paymentDetails) {
+                $paymentDetails = [
+                    'transaction_id' => 'COMPLETED-' . substr(md5($sessionPaymentId), 0, 8),
+                    'amount' => $writingServiceRequest->final_price ?? '0.00',
+                    'date' => time(),
+                    'status' => 'paid',
+                ];
+
+                // Update session data
+                $this->request->getSession()->write("WsrPayments.$sessionPaymentId.status", 'paid');
+                $this->request->getSession()->write("WsrPayments.$sessionPaymentId.receipt", $paymentDetails);
+
+                // Update database
+                // Convert dbPaymentId to string again just to be safe
+                if ($dbPaymentId !== null && !is_string($dbPaymentId)) {
+                    $dbPaymentId = (string)$dbPaymentId;
+                }
+                $this->_updateDatabasePaymentStatus($id, $dbPaymentId, $sessionPaymentId, $paymentDetails);
+
+                // Update request status to in_progress if it was pending
+                if ($writingServiceRequest->request_status === 'pending') {
+                    $writingServiceRequest->request_status = 'in_progress';
+                    $this->WritingServiceRequests->save($writingServiceRequest);
+                }
+            }
+        }
+
+        // Only try database as fallback if we have a DB payment ID and session doesn't have complete data
+        if (!$isPaid && $dbPaymentId && $dbPaymentId !== 'pending' && ($status === 'pending' || !$paymentDetails)) {
+            try {
+                $writingServicePaymentsTable = $this->fetchTable('WritingServicePayments');
+                try {
+                    $paymentEntity = $writingServicePaymentsTable->get($dbPaymentId);
+                    $status = $paymentEntity->status;
+
+                    if ($status === 'paid') {
+                        $isPaid = true;
+                        $paymentDetails = [
+                            'transaction_id' => $paymentEntity->transaction_id,
+                            'amount' => $paymentEntity->amount,
+                            'date' => $paymentEntity->payment_date instanceof DateTimeInterface ? $paymentEntity->payment_date->getTimestamp() : time(),
+                            'status' => $paymentEntity->status,
+                            'db_payment_id' => $paymentEntity->writing_service_payment_id,
+                        ];
+
+                        // Also update session data for future reference
+                        if ($paymentData) {
+                            $this->request->getSession()->write("WsrPayments.$sessionPaymentId.status", 'paid');
+                            $this->request->getSession()->write("WsrPayments.$sessionPaymentId.receipt", $paymentDetails);
+                        }
+                    }
+                } catch (\Exception $e) {
+                    $this->log('Error fetching payment record: ' . $e->getMessage(), 'error');
+                    // Already using session data as default
+                }
+            } catch (\Exception $e) {
+                $this->log('WritingServicePayments table not available: ' . $e->getMessage(), 'warning');
+                // Already using session data as default
+            }
+        }
+
+        // Double-check request status in case payment was previously recorded
+        if (!$isPaid) {
+            // If request has a final price and is not pending, consider it paid
+            if (!empty($writingServiceRequest->final_price) && $writingServiceRequest->request_status !== 'pending') {
+                $isPaid = true;
+                $status = 'paid';
+
+                // Create payment details if missing
+                if (!$paymentDetails) {
+                    $paymentDetails = [
+                        'transaction_id' => 'WSR-' . substr($id, -6),
+                        'amount' => $writingServiceRequest->final_price,
+                        'date' => time(),
+                        'status' => 'paid',
+                    ];
+
+                    // Update session data
+                    $this->request->getSession()->write("WsrPayments.$sessionPaymentId.status", 'paid');
+                    $this->request->getSession()->write("WsrPayments.$sessionPaymentId.receipt", $paymentDetails);
+
+                    // Update database
+                    // Convert dbPaymentId to string again just to be safe
+                    if ($dbPaymentId !== null && !is_string($dbPaymentId)) {
+                        $dbPaymentId = (string)$dbPaymentId;
+                    }
+                    $this->_updateDatabasePaymentStatus($id, $dbPaymentId, $sessionPaymentId, $paymentDetails);
+                }
+            }
+        }
+
+        // Add a payment confirmation message if payment is complete
+        if ($isPaid && $status === 'paid') {
+            $this->_addPaymentConfirmationMessage($id, $paymentDetails);
+        }
+
+        return $this->response->withStringBody(json_encode([
+            'success' => true,
+            'status' => $status,
+            'paid' => $isPaid,
+            'details' => $paymentDetails,
+        ]));
+    }
+
+    /**
+     * Update payment status in database
+     *
+     * @param string $requestId The writing service request ID
+     * @param string|int|null $dbPaymentId The database payment ID
+     * @param string $sessionPaymentId The session payment ID
+     * @param array $paymentDetails Payment details
+     * @return bool True if successful, false otherwise
+     */
+    protected function _updateDatabasePaymentStatus(string $requestId, $dbPaymentId, string $sessionPaymentId, array $paymentDetails): bool
+    {
+        try {
+            // Ensure dbPaymentId is a string or null
+            if ($dbPaymentId !== null && !is_string($dbPaymentId)) {
+                $dbPaymentId = (string)$dbPaymentId;
+            }
+
+            // Get the writing service request to ensure we have the correct final price
+            $writingServiceRequest = $this->WritingServiceRequests->get($requestId);
+
+            // Use the final price from the request as the authoritative source
+            $amount = !empty($writingServiceRequest->final_price)
+                ? (string)$writingServiceRequest->final_price
+                : ($paymentDetails['amount'] ?? '0.00');
+
+            $writingServicePaymentsTable = $this->fetchTable('WritingServicePayments');
+
+            // Try to find existing payment record
+            if ($dbPaymentId && $dbPaymentId !== 'pending') {
+                try {
+                    $paymentEntity = $writingServicePaymentsTable->get($dbPaymentId);
+                } catch (\Exception $e) {
+                    $paymentEntity = null;
+                    $this->log('Payment record not found, will create new: ' . $e->getMessage(), 'debug');
+                }
+            } else {
+                $paymentEntity = null;
+            }
+
+            // If no existing payment record, create a new one
+            if (!$paymentEntity) {
+                $paymentEntity = $writingServicePaymentsTable->newEntity([
+                    'writing_service_request_id' => $requestId,
+                    'amount' => $amount,
+                    'transaction_id' => $paymentDetails['transaction_id'] ?? 'COMPLETED-' . substr(md5($sessionPaymentId), 0, 8),
+                    'payment_date' => date('Y-m-d H:i:s'),
+                    'payment_method' => 'stripe',
+                    'status' => 'paid',
+                ]);
+            } else {
+                // Update existing payment record
+                $paymentEntity->status = 'paid';
+                $paymentEntity->transaction_id = $paymentDetails['transaction_id'] ?? $paymentEntity->transaction_id;
+                $paymentEntity->amount = $amount; // Always use the authoritative amount
+            }
+
+            // Save the payment record
+            $result = $writingServicePaymentsTable->save($paymentEntity);
+
+            if ($result) {
+                $this->log('Payment status updated in database: ' . json_encode([
+                        'id' => $paymentEntity->writing_service_payment_id,
+                        'status' => $paymentEntity->status,
+                        'amount' => $paymentEntity->amount,
+                    ]), 'debug');
+
+                // Also update the writing service request status
+                if ($writingServiceRequest->request_status === 'pending') {
+                    $writingServiceRequest->request_status = 'in_progress';
+                    $this->WritingServiceRequests->save($writingServiceRequest);
+                }
+
+                return true;
+            } else {
+                $this->log('Failed to update payment status in database: ' . json_encode($paymentEntity->getErrors()), 'error');
+                return false;
+            }
+        } catch (\Exception $e) {
+            $this->log('Error updating payment status in database: ' . $e->getMessage(), 'error');
+            return false;
+        }
+    }
+
+    /**
+     * Handle payment for a writing service request
+     *
+     * @param string|null $id Writing Service Request id
+     * @param string|null $paymentId Unique payment identifier
+     * @return \Cake\Http\Response|null
+     */
+    public function pay(?string $id = null, ?string $paymentId = null)
+    {
+        /** @var \App\Model\Entity\User|null $user */
+        $user = $this->Authentication->getIdentity();
+
+        $this->log('pay method called with parameters: ' . json_encode([
+                'id' => $id,
+                'paymentId' => $paymentId,
+                'user' => $user ? $user->user_id : 'not logged in',
+                'request_url' => $this->request->getRequestTarget(),
+            ]), 'debug');
+
+        if (!$user) {
+            $this->Flash->info(__('Please log in to make this payment.'));
+            $this->request->getSession()->write('Writing.paymentRedirect', [
+                'id' => $id,
+                'paymentId' => $paymentId,
+            ]);
+
+            return $this->redirect(['controller' => 'Users', 'action' => 'login']);
+        }
+
+        // Get writing service request with basic containment
+        try {
+            $writingServiceRequest = $this->WritingServiceRequests->get($id, [
+                'contain' => ['Users'],
+            ]);
+        } catch (\Exception $e) {
+            $this->log('Error retrieving request: ' . $e->getMessage(), 'error');
+            $this->Flash->error('Unable to find the requested service.');
+
+            return $this->redirect(['action' => 'index']);
+        }
+
+        // Verify the request belongs to this user
+        if ($writingServiceRequest->user_id !== $user->user_id) {
+            $this->Flash->error(__('You can only make payments for your own writing service requests.'));
+
+            return $this->redirect(['action' => 'index']);
+        }
+
+        // URL-decode the payment ID first
+        $paymentId = urldecode($paymentId);
+
+        // Check if we have a session payment ID or a database payment ID
+        $parts = explode('|', $paymentId);
+        $sessionPaymentId = $parts[0];
+        $dbPaymentId = $parts[1] ?? null;
+
+        // Ensure dbPaymentId is a string if not null
+        if ($dbPaymentId !== null && !is_string($dbPaymentId)) {
+            $dbPaymentId = (string)$dbPaymentId;
+            $this->log('Converted dbPaymentId to string in pay method: ' . $dbPaymentId, 'debug');
+        }
+
+        // First check session payment status (prioritize session data)
+        $paymentData = $this->request->getSession()->read("WsrPayments.$sessionPaymentId");
+
+        $this->log('Payment data from session: ' . json_encode([
+                'sessionPaymentId' => $sessionPaymentId,
+                'dbPaymentId' => $dbPaymentId,
+                'paymentData' => $paymentData,
+            ]), 'debug');
+
+        if (!$paymentData) {
+            $this->Flash->error(__('Invalid payment request.'));
+            $this->log('Payment data not found in session', 'error');
+
+            return $this->redirect(['action' => 'view', $id]);
+        }
+
+        // Check if already paid in session
+        if (isset($paymentData['status']) && $paymentData['status'] === 'paid') {
+            $this->Flash->success(__('This payment has already been completed.'));
+
+            return $this->redirect(['action' => 'view', $id, '?' => ['payment_already_completed' => true]]);
+        }
+
+        // Only check database as fallback if session doesn't indicate payment completion
+        if ($dbPaymentId && $dbPaymentId !== 'pending') {
+            try {
+                $writingServicePaymentsTable = $this->fetchTable('WritingServicePayments');
+                try {
+                    $paymentEntity = $writingServicePaymentsTable->get($dbPaymentId);
+
+                    // If payment is already marked as paid in database, redirect
+                    if ($paymentEntity->status === 'paid') {
+                        // Also update session for consistency
+                        $this->request->getSession()->write("WsrPayments.$sessionPaymentId.status", 'paid');
+
+                        $this->Flash->success(__('This payment has already been completed.'));
+
+                        return $this->redirect(['action' => 'view', $id, '?' => ['payment_already_completed' => true]]);
+                    }
+                } catch (\Exception $e) {
+                    $this->log('Error fetching payment record: ' . $e->getMessage(), 'error');
+                    // Continue with session data
+                }
+            } catch (\Exception $e) {
+                $this->log('WritingServicePayments table not available: ' . $e->getMessage(), 'warning');
+                // Continue with session data
+            }
+        }
+
+        // Create Stripe session
+        try {
+            // Configure Stripe API
+            $stripeSecretKey = Configure::read('Stripe.secret');
+            $this->log('Using Stripe secret key: ' . substr($stripeSecretKey, 0, 10) . '...', 'debug');
+
+            if (empty($stripeSecretKey)) {
+                throw new RuntimeException('Stripe secret key is not configured');
+            }
+
+            Stripe::setApiKey($stripeSecretKey);
+
+            // Create the line item
+            $amount = $paymentData['amount'];
+            $description = $paymentData['description'];
+
+            if (empty($amount) || !is_numeric($amount) || (float)$amount <= 0) {
+                throw new RuntimeException('Invalid payment amount: ' . $amount);
+            }
+
+            $lineItem = [
+                'price_data' => [
+                    'currency' => 'aud',
+                    'product_data' => [
+                        'name' => 'Writing Service: ' . $description,
+                    ],
+                    'unit_amount' => (int)round((float)$amount * 100),
+                ],
+                'quantity' => 1,
+            ];
+
+            // Create session parameters
+            $successUrl = Router::url(
+                ['controller' => 'WritingServiceRequests', 'action' => 'paymentSuccess', $id, $sessionPaymentId],
+                true
+            );
+
+            $cancelUrl = Router::url(
+                ['controller' => 'WritingServiceRequests', 'action' => 'view', $id],
+                true
+            );
+
+            $params = [
+                'payment_method_types' => ['card'],
+                'line_items' => [$lineItem],
+                'mode' => 'payment',
+                'metadata' => [
+                    'writing_service_request_id' => $id,
+                    'payment_id' => $sessionPaymentId,
+                ],
+                'success_url' => $successUrl,
+                'cancel_url' => $cancelUrl,
+            ];
+
+            $this->log('Creating Stripe session with params: ' . json_encode([
+                    'line_items' => $lineItem,
+                    'success_url' => $successUrl,
+                    'cancel_url' => $cancelUrl,
+                ]), 'debug');
+
+            // Create the session
+            $session = Session::create($params);
+
+            if (empty($session->url)) {
+                throw new RuntimeException('Stripe did not return a checkout URL');
+            }
+
+            $this->log('Stripe session created successfully. Redirecting to: ' . $session->url, 'debug');
+
+            // Redirect to Stripe checkout
+            return $this->redirect($session->url);
+        } catch (\Exception $e) {
+            $this->log('Stripe error: ' . $e->getMessage() . "\n" . $e->getTraceAsString(), 'error');
+            $this->Flash->error(__('There was an error processing your payment: ') . $e->getMessage());
+
+            return $this->redirect(['action' => 'view', $id]);
+        }
+    }
+
+    /**
+     * Add a payment confirmation message to the chat
+     *
+     * @param string $requestId The writing service request ID
+     * @param array $paymentDetails Payment details
+     * @return bool True if successful, false otherwise
+     */
+    protected function _addPaymentConfirmationMessage(string $requestId, array $paymentDetails): bool
+    {
+        // Only add confirmation if we have the necessary data
+        if (empty($requestId) || empty($paymentDetails)) {
+            return false;
+        }
+
+        try {
+            // Get the request
+            $writingServiceRequest = $this->WritingServiceRequests->get($requestId);
+
+            // Format amount
+            $amount = !empty($paymentDetails['amount'])
+                ? '$' . number_format((float)$paymentDetails['amount'], 2)
+                : 'N/A';
+
+            // Format date
+            $date = !empty($paymentDetails['date'])
+                ? date('F j, Y \a\t g:i A', (int)$paymentDetails['date'])
+                : 'recently';
+
+            // Create confirmation message
+            $messageText = "[PAYMENT_CONFIRMATION]\n\n";
+            $messageText .= "**Payment Confirmation**\n\n";
+            $messageText .= "Your payment of **{$amount}** has been successfully processed on {$date}.\n\n";
+            $messageText .= "Thank you for your payment. We'll now begin work on your writing service request.";
+
+            // Create system message
+            $messageData = [
+                'request_messages' => [
+                    [
+                        'user_id' => $writingServiceRequest->user_id, // Use client's ID for the confirmation
+                        'message' => $messageText,
+                        'is_read' => false,
+                        'writing_service_request_id' => $requestId,
+                        'is_system' => true,
+                    ],
+                ],
+            ];
+
+            // Add the message
+            $writingServiceRequest = $this->WritingServiceRequests->patchEntity(
+                $writingServiceRequest,
+                $messageData,
+            );
+
+            // Save the message
+            return (bool)$this->WritingServiceRequests->save($writingServiceRequest);
+        } catch (\Exception $e) {
+            $this->log('Error adding payment confirmation message: ' . $e->getMessage(), 'error');
+
+            return false;
+        }
+    }
+
+    /**
      * Admin index method
      *
      * @return \Cake\Http\Response|null|void Renders view
@@ -468,6 +1020,80 @@ class WritingServiceRequestsController extends AppController
     }
 
     /**
+     * Alternative payment method that uses query parameters instead of URL segments
+     * This provides a more reliable way to handle payments when URL routing is causing issues
+     *
+     * @return \Cake\Http\Response|null
+     */
+    public function payDirect()
+    {
+        $id = $this->request->getQuery('id');
+        $paymentId = $this->request->getQuery('paymentId');
+
+        // Log all incoming data
+        $this->log('payDirect method called with query parameters: ' . json_encode([
+                'id' => $id,
+                'paymentId' => $paymentId,
+                'all_query' => $this->request->getQueryParams(),
+                'request_url' => $this->request->getRequestTarget(),
+                'referer' => $this->request->referer(),
+            ]), 'debug');
+
+        if (empty($id) || empty($paymentId)) {
+            $this->Flash->error('Missing required payment information.');
+            $this->log('payDirect error: Missing required parameters', 'error');
+
+            return $this->redirect(['action' => 'index']);
+        }
+
+        try {
+            // Check if the writing service request exists
+            $writingServiceRequest = $this->WritingServiceRequests->get($id);
+
+            // Verify the final price is set
+            if (empty($writingServiceRequest->final_price)) {
+                $this->Flash->error('The final price has not been set by the admin yet.');
+                return $this->redirect(['action' => 'view', $id]);
+            }
+
+            // Check if we can find the payment data in the session
+            $parts = explode('|', urldecode($paymentId));
+            $sessionPaymentId = $parts[0];
+            $paymentData = $this->request->getSession()->read("WsrPayments.$sessionPaymentId");
+
+            $this->log('Payment data retrieved from session: ' . json_encode([
+                    'sessionPaymentId' => $sessionPaymentId,
+                    'paymentData' => $paymentData,
+                    'session_keys' => $this->request->getSession()->read(),
+                ]), 'debug');
+
+            // If payment data doesn't exist in the session, create it with the correct price
+            if (!$paymentData) {
+                $this->log('Creating payment data in session for ' . $sessionPaymentId, 'debug');
+                $paymentData = [
+                    'amount' => (string)$writingServiceRequest->final_price,
+                    'description' => 'Writing service: ' . $writingServiceRequest->service_title,
+                    'writing_service_request_id' => $id,
+                    'created' => time(),
+                    'status' => 'pending',
+                    'db_payment_id' => 'pending',
+                ];
+                $this->request->getSession()->write("WsrPayments.$sessionPaymentId", $paymentData);
+
+                $this->log('Created payment data with amount: ' . $paymentData['amount'], 'debug');
+            }
+
+            // Call the regular pay method with the extracted parameters
+            return $this->pay($id, $paymentId);
+        } catch (\Exception $e) {
+            $this->log('payDirect error: ' . $e->getMessage(), 'error');
+            $this->Flash->error('Error processing payment: ' . $e->getMessage());
+
+            return $this->redirect(['action' => 'view', $id]);
+        }
+    }
+
+    /**
      * Handles document upload
      *
      * @param \Psr\Http\Message\UploadedFileInterface|null $file
@@ -502,5 +1128,87 @@ class WritingServiceRequestsController extends AppController
         $file->moveTo($filePath);
 
         return 'uploads/documents/' . $filename;
+    }
+
+    /**
+     * Handle successful payment from Stripe
+     *
+     * @param string|null $id Writing Service Request id
+     * @param string|null $sessionPaymentId Session payment identifier
+     * @return \Cake\Http\Response|null
+     */
+    public function paymentSuccess(?string $id = null, ?string $sessionPaymentId = null)
+    {
+        if (empty($id) || empty($sessionPaymentId)) {
+            $this->Flash->error('Invalid payment information.');
+            return $this->redirect(['action' => 'index']);
+        }
+
+        $this->log('Payment success received for request ' . $id . ' with session payment ID ' . $sessionPaymentId, 'debug');
+
+        // Get the writing service request to ensure we have the correct price
+        try {
+            $writingServiceRequest = $this->WritingServiceRequests->get($id);
+        } catch (\Exception $e) {
+            $this->log('Error retrieving writing service request: ' . $e->getMessage(), 'error');
+            $this->Flash->error('Error processing payment: Unable to find the writing service request.');
+            return $this->redirect(['action' => 'index']);
+        }
+
+        // Get payment data from session
+        $paymentData = $this->request->getSession()->read("WsrPayments.$sessionPaymentId");
+
+        // Create payment details with the correct amount from the writing service request
+        $paymentDetails = [
+            'transaction_id' => 'STRIPE-' . substr(md5($sessionPaymentId . time()), 0, 8),
+            'amount' => $writingServiceRequest->final_price ?? ($paymentData['amount'] ?? '0.00'),
+            'date' => time(),
+            'status' => 'paid',
+        ];
+
+        $this->log('Created payment details with amount: ' . $paymentDetails['amount'], 'debug');
+
+        // Update session data
+        $this->request->getSession()->write("WsrPayments.$sessionPaymentId.status", 'paid');
+        $this->request->getSession()->write("WsrPayments.$sessionPaymentId.receipt", $paymentDetails);
+
+        // Also update the amount in the session to ensure consistency
+        if (!empty($writingServiceRequest->final_price)) {
+            $this->request->getSession()->write(
+                "WsrPayments.$sessionPaymentId.amount",
+                (string)$writingServiceRequest->final_price
+            );
+        }
+
+        // Extract database payment ID if available
+        $dbPaymentId = $paymentData['db_payment_id'] ?? null;
+
+        // Ensure dbPaymentId is a string if it's not null
+        if ($dbPaymentId !== null && !is_string($dbPaymentId)) {
+            $dbPaymentId = (string)$dbPaymentId;
+            $this->log('Converted dbPaymentId to string: ' . $dbPaymentId, 'debug');
+        }
+
+        // Update database
+        // Convert dbPaymentId to string again just to be safe
+        if ($dbPaymentId !== null && !is_string($dbPaymentId)) {
+            $dbPaymentId = (string)$dbPaymentId;
+        }
+        $this->_updateDatabasePaymentStatus($id, $dbPaymentId, $sessionPaymentId, $paymentDetails);
+
+        // Update request status if needed
+        if ($writingServiceRequest->request_status === 'pending') {
+            $writingServiceRequest->request_status = 'in_progress';
+            $this->WritingServiceRequests->save($writingServiceRequest);
+        }
+
+        // Add payment confirmation message
+        $this->_addPaymentConfirmationMessage($id, $paymentDetails);
+
+        // Show success message
+        $this->Flash->success('Payment completed successfully!');
+
+        // Redirect to view page with success parameter
+        return $this->redirect(['action' => 'view', $id, '?' => ['payment_success' => true]]);
     }
 }

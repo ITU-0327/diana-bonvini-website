@@ -22,6 +22,7 @@ use Cake\ORM\Entity;
  *
  * @property \App\Model\Entity\User $user
  * @property \App\Model\Entity\RequestMessage[] $request_messages
+ * @property \App\Model\Entity\WritingServicePayment[] $writing_service_payments
  */
 class WritingServiceRequest extends Entity
 {
@@ -47,5 +48,6 @@ class WritingServiceRequest extends Entity
         'updated_at' => true,
         'user' => true,
         'request_messages' => true,
+        'writing_service_payments' => true,
     ];
 }

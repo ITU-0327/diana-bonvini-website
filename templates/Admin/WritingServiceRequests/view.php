@@ -76,7 +76,7 @@ $this->assign('title', __('Writing Service Request Details'));
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Request Notes -->
                     <?php if (!empty($writingServiceRequest->notes)) : ?>
                     <div class="row">
@@ -90,7 +90,7 @@ $this->assign('title', __('Writing Service Request Details'));
                         </div>
                     </div>
                     <?php endif; ?>
-                    
+
                     <!-- Document Display -->
                     <?php if (!empty($writingServiceRequest->document)) : ?>
                     <div class="row mt-4">
@@ -172,7 +172,7 @@ $this->assign('title', __('Writing Service Request Details'));
                             'url' => ['action' => 'view', $writingServiceRequest->writing_service_request_id],
                             'id' => 'replyForm',
                         ]) ?>
-                        
+
                         <div class="form-group mb-3">
                             <?= $this->Form->textarea('message_text', [
                                 'rows' => 3,
@@ -182,14 +182,14 @@ $this->assign('title', __('Writing Service Request Details'));
                                 'id' => 'messageText',
                             ]) ?>
                         </div>
-                        
+
                         <div class="form-group mb-0 text-right">
                             <button type="submit" class="btn btn-primary px-4" id="sendButton">
                                 <i class="fas fa-paper-plane mr-1"></i>
                                 Send Message
                             </button>
                         </div>
-                        
+
                         <?= $this->Form->end() ?>
                     </div>
                 </div>
@@ -219,7 +219,7 @@ $this->assign('title', __('Writing Service Request Details'));
                             'url' => ['action' => 'updateStatus', $writingServiceRequest->writing_service_request_id],
                             'id' => 'statusForm',
                         ]) ?>
-                        
+
                         <div class="form-group mb-3">
                             <?= $this->Form->select('status', [
                                 'pending' => 'Pending',
@@ -232,16 +232,16 @@ $this->assign('title', __('Writing Service Request Details'));
                                 'empty' => false,
                             ]) ?>
                         </div>
-                        
+
                         <div class="form-group">
                             <button type="submit" class="btn btn-primary btn-block">
                                 <i class="fas fa-sync-alt mr-1"></i> Update Status
                             </button>
                         </div>
-                        
+
                         <?= $this->Form->end() ?>
                     </div>
-                    
+
                     <!-- Set Price -->
                     <div class="mb-4 pt-2 border-top">
                         <h6 class="font-weight-bold mb-2">Set Price</h6>
@@ -249,7 +249,7 @@ $this->assign('title', __('Writing Service Request Details'));
                             'url' => ['action' => 'setPrice', $writingServiceRequest->writing_service_request_id],
                             'id' => 'priceForm',
                         ]) ?>
-                        
+
                         <div class="form-group mb-3">
                             <div class="input-group">
                                 <div class="input-group-prepend">
@@ -265,16 +265,16 @@ $this->assign('title', __('Writing Service Request Details'));
                                 ]) ?>
                             </div>
                         </div>
-                        
+
                         <div class="form-group">
                             <button type="submit" class="btn btn-success btn-block">
                                 <i class="fas fa-dollar-sign mr-1"></i> Set Price & Notify Client
                             </button>
                         </div>
-                        
+
                         <?= $this->Form->end() ?>
                     </div>
-                    
+
                     <!-- Google Calendar Link -->
                     <div class="mb-4 pt-2 border-top">
                         <h6 class="font-weight-bold mb-2">Google Calendar</h6>
@@ -284,18 +284,18 @@ $this->assign('title', __('Writing Service Request Details'));
                             ['class' => 'btn btn-info btn-block', 'escape' => false]
                         ) ?>
                     </div>
-                    
-                    <!-- Payment Options Button (Will be implemented later) -->
+
+                    <!-- Payment Request Button -->
                     <div class="mb-4 pt-2 border-top">
                         <h6 class="font-weight-bold mb-2">Payment Options</h6>
-                        <button type="button" class="btn btn-warning btn-block" id="paymentOptionsBtn" disabled>
+                        <button type="button" class="btn btn-warning btn-block" id="paymentOptionsBtn" data-toggle="modal" data-target="#paymentRequestModal">
                             <i class="fas fa-credit-card mr-1"></i> Send Payment Request
-                            <small class="d-block mt-1">(Coming Soon)</small>
                         </button>
+                        <p class="text-sm text-muted mt-1">Send a payment request link to the client</p>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Quick Actions Card -->
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
@@ -326,7 +326,7 @@ $this->assign('title', __('Writing Service Request Details'));
                     </div>
                 </div>
             </div>
-            
+
             <!-- Back Button Card -->
             <div class="card shadow mb-4">
                 <div class="card-body p-3">
@@ -344,29 +344,29 @@ $this->assign('title', __('Writing Service Request Details'));
     .chat-container {
         padding: 10px;
     }
-    
+
     .chat-message {
         margin-bottom: 20px;
     }
-    
+
     .client-message .message-content {
         margin-right: 25%;
     }
-    
+
     .admin-message .message-content {
         margin-left: 25%;
     }
-    
+
     .admin-message .message-bubble {
         background-color: #e3f2fd;
         border-left: 4px solid #4e73df;
     }
-    
+
     .client-message .message-bubble {
         background-color: #e8f5e9;
         border-left: 4px solid #1cc88a;
     }
-    
+
     .message-avatar .avatar {
         width: 32px;
         height: 32px;
@@ -376,13 +376,13 @@ $this->assign('title', __('Writing Service Request Details'));
         justify-content: center;
         font-weight: bold;
     }
-    
+
     /* Timeline Styles */
     .timeline {
         position: relative;
         padding-left: 25px;
     }
-    
+
     .timeline:before {
         content: '';
         position: absolute;
@@ -392,17 +392,17 @@ $this->assign('title', __('Writing Service Request Details'));
         width: 2px;
         background-color: #e9ecef;
     }
-    
+
     .bg-light-yellow {
         background-color: #fff8e1;
     }
-    
+
     /* Form focus styles */
     .form-control:focus {
         border-color: #4e73df;
         box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
     }
-    
+
     /* Quick action buttons hover */
     .btn-outline-primary:hover {
         transform: translateY(-2px);
@@ -421,10 +421,10 @@ $this->assign('title', __('Writing Service Request Details'));
         if (chatContainer) {
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
-        
+
         // Focus on message input when clicking reply button
         document.getElementById('messageText').focus();
-        
+
         // Animate button on form submit
         const replyForm = document.getElementById('replyForm');
         if (replyForm) {
@@ -434,7 +434,7 @@ $this->assign('title', __('Writing Service Request Details'));
                 button.disabled = true;
             });
         }
-        
+
         // Handle URL hash for navigating to specific sections
         if (window.location.hash) {
             const targetElement = document.querySelector(window.location.hash);
@@ -447,40 +447,215 @@ $this->assign('title', __('Writing Service Request Details'));
                 }, 100);
             }
         }
-        
+
+        // Handle payment request form submission
+        const paymentRequestForm = document.getElementById('paymentRequestForm');
+        const sendPaymentRequestBtn = document.getElementById('sendPaymentRequestBtn');
+
+        if (paymentRequestForm && sendPaymentRequestBtn) {
+            sendPaymentRequestBtn.addEventListener('click', function() {
+                // Validate the form
+                const amount = document.getElementById('amount').value;
+                const description = document.getElementById('description').value;
+
+                if (!amount || amount <= 0) {
+                    alert('Please enter a valid payment amount.');
+                    return;
+                }
+
+                if (!description.trim()) {
+                    alert('Please enter a payment description.');
+                    return;
+                }
+
+                // Show loading state
+                sendPaymentRequestBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
+                sendPaymentRequestBtn.disabled = true;
+
+                // Submit the form
+                paymentRequestForm.submit();
+            });
+        }
+
+        // Process payment buttons and confirmation messages
+        function processMessageElements() {
+            // Process payment buttons
+            document.querySelectorAll('.message-bubble').forEach(message => {
+
+                // First check for existing payment containers and initialize them
+                const existingContainers = message.querySelectorAll('[data-payment-container]');
+                existingContainers.forEach(container => {
+                    const paymentId = container.dataset.paymentContainer;
+                    if (paymentId) {
+                        checkPaymentStatus(paymentId);
+                    }
+                });
+                
+                // Process payment buttons
+                const text = message.innerHTML;
+                if (text.includes('[PAYMENT_BUTTON]')) {
+                    const buttonPattern = /\[PAYMENT_BUTTON\](.*?)\[\/PAYMENT_BUTTON\]/;
+                    const match = text.match(buttonPattern);
+
+                    if (match && match[1]) {
+                        const paymentId = match[1];
+                        const buttonHtml = `<div class="payment-container mt-2" data-payment-container="${paymentId}">
+                            <!-- Payment button -->
+                            <div class="payment-button-container">
+                                <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'pay', $writingServiceRequest->writing_service_request_id, 'prefix' => false]) ?>/${paymentId}"
+                                   class="btn btn-success btn-sm payment-button" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;" data-payment-id="${paymentId}">
+                                    <i class="fas fa-credit-card mr-1"></i> Make Payment
+                                </a>
+                                <button type="button" class="btn btn-sm btn-info ml-2 check-status-btn" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;" onclick="checkPaymentStatus('${paymentId}')">
+                                    <i class="fas fa-sync-alt mr-1"></i> Check Status
+                                </button>
+                            </div>
+                            <!-- Payment status indicator (hidden initially) -->
+                            <div class="payment-status d-none mt-2 text-muted small" data-status-container="${paymentId}">
+                                <span class="badge mr-1 badge-info status-badge">Pending</span>
+                                <span class="status-text">Payment pending</span>
+                                <span class="status-date ml-2"></span>
+                            </div>
+                        </div>`;
+
+                        // Replace the button tag with actual button
+                        message.innerHTML = text.replace(buttonPattern, buttonHtml);
+                    }
+                }
+
+                // Process payment confirmation messages
+                if (text.includes('[PAYMENT_CONFIRMATION]')) {
+                    const confirmPattern = /\[PAYMENT_CONFIRMATION\](.*?)\[\/PAYMENT_CONFIRMATION\]/;
+                    const match = text.match(confirmPattern);
+
+                    if (match && match[1]) {
+                        // Format the confirmation message nicely (markdown bold)
+                        let newContent = text.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight: 600;">$1</strong>');
+
+                        // Remove the confirmation marker
+                        newContent = newContent.replace(confirmPattern, '');
+
+                        // Apply special styling
+                        message.innerHTML = newContent;
+                        message.classList.add('bg-light-success');
+                        message.classList.add('border-left-success');
+                        message.classList.add('border-3');
+                        message.style.borderLeftWidth = '4px';
+                        message.style.backgroundColor = '#e8f5e9';
+
+                        // Add a success icon
+                        const iconDiv = document.createElement('div');
+                        iconDiv.className = 'd-flex align-items-center mb-2';
+                        iconDiv.innerHTML = `
+                            <i class="fas fa-check-circle text-success mr-2"></i>
+                            <span class="font-weight-bold text-success">Payment Confirmation</span>
+                        `;
+                        message.prepend(iconDiv);
+                    }
+                }
+            });
+        }
+
+        // Run the processor
+        processMessageElements();
+
         // Set up real-time message polling
         setupMessagePolling();
     });
-    
+
     // Template insertion function for quick replies
     function insertTemplate(text) {
         const textarea = document.getElementById('messageText');
         textarea.value = text;
         textarea.focus();
     }
-    
+
+    // Function to check payment status
+    function checkPaymentStatus(paymentId) {
+        const container = document.querySelector(`[data-payment-container="${paymentId}"]`);
+        const statusContainer = container.querySelector('[data-status-container]');
+        const statusBadge = statusContainer.querySelector('.status-badge');
+        const statusText = statusContainer.querySelector('.status-text');
+        const statusDate = statusContainer.querySelector('.status-date');
+        const button = container.querySelector(`[data-payment-id="${paymentId}"]`);
+
+        // Show the status container and set loading state
+        statusContainer.classList.remove('d-none');
+        statusBadge.textContent = 'Checking...';
+        statusBadge.className = 'badge mr-1 badge-secondary status-badge';
+        statusText.textContent = 'Checking payment status...';
+
+        // Call the API to check status
+        fetch(`<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'checkPaymentStatus', $writingServiceRequest->writing_service_request_id, 'prefix' => false]) ?>/${paymentId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.status === 'paid') {
+                        // Update badge and text for completed payment
+                        statusBadge.textContent = 'Paid';
+                        statusBadge.className = 'badge mr-1 badge-success status-badge';
+                        statusText.textContent = 'Payment completed';
+
+                        // Disable payment button
+                        button.innerHTML = '<i class="fas fa-check mr-1"></i> Payment Completed';
+                        button.className = 'btn btn-sm btn-outline-success payment-button';
+                        button.disabled = true;
+                        button.removeAttribute('href');
+
+                        // Show payment date if available
+                        if (data.details && data.details.date) {
+                            const paymentDate = new Date(data.details.date * 1000);
+                            statusDate.textContent = 'on ' + paymentDate.toLocaleDateString(undefined, {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        }
+                    } else {
+                        // Update badge and text for pending payment
+                        statusBadge.textContent = 'Pending';
+                        statusBadge.className = 'badge mr-1 badge-warning status-badge';
+                        statusText.textContent = 'Payment pending';
+                    }
+                } else {
+                    // Error checking status
+                    statusBadge.textContent = 'Error';
+                    statusBadge.className = 'badge mr-1 badge-danger status-badge';
+                    statusText.textContent = 'Error checking payment status';
+                }
+            })
+            .catch(error => {
+                console.error('Error checking payment status:', error);
+                statusBadge.textContent = 'Error';
+                statusBadge.className = 'badge mr-1 badge-danger status-badge';
+                statusText.textContent = 'Error checking payment status';
+            });
+    }
+
     // Set up real-time message polling
     function setupMessagePolling() {
         // Get the writing service request ID from the URL
         const urlParts = window.location.pathname.split('/');
         const requestId = urlParts[urlParts.length - 1]; // Last part of the URL
-        
+
         if (!requestId) return; // Exit if no ID found
-        
+
         let lastMessageId = null;
         const chatMessages = document.querySelector('.chat-messages');
-        
+
         // Find the last message ID if messages exist
         if (chatMessages && chatMessages.children.length > 0) {
             const lastMessage = chatMessages.children[chatMessages.children.length - 1];
             lastMessageId = lastMessage.dataset.messageId;
         }
-        
+
         // Function to fetch new messages
         function fetchNewMessages() {
-            const url = `/admin/writing-service-requests/fetch-messages/${requestId}` + 
+            const url = `/admin/writing-service-requests/fetch-messages/${requestId}` +
                          (lastMessageId ? `?lastMessageId=${lastMessageId}` : '');
-            
+
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
@@ -491,7 +666,10 @@ $this->assign('title', __('Writing Service Request Details'));
                             // Update lastMessageId for next poll
                             lastMessageId = message.id;
                         });
-                        
+
+                        // Process any new payment elements
+                        processMessageElements();
+
                         // Scroll to bottom
                         const chatContainer = document.querySelector('.chat-container');
                         if (chatContainer) {
@@ -501,22 +679,22 @@ $this->assign('title', __('Writing Service Request Details'));
                 })
                 .catch(error => console.error('Error fetching messages:', error));
         }
-        
+
         // Function to append a new message to the chat
         function appendMessage(message) {
             if (!chatMessages) return;
-            
+
             const isAdmin = message.sender === 'admin';
-            
+
             const messageEl = document.createElement('div');
             messageEl.className = `chat-message mb-3 ${isAdmin ? 'admin-message' : 'client-message'}`;
             messageEl.dataset.messageId = message.id;
-            
+
             messageEl.innerHTML = `
                 <div class="message-header d-flex align-items-center mb-1">
                     <div class="message-avatar mr-2">
-                        ${isAdmin ? 
-                        '<div class="avatar bg-primary text-white">A</div>' : 
+                        ${isAdmin ?
+                        '<div class="avatar bg-primary text-white">A</div>' :
                         '<div class="avatar bg-success text-white">' + message.senderName.charAt(0) + '</div>'}
                     </div>
                     <div class="message-info">
@@ -535,19 +713,91 @@ $this->assign('title', __('Writing Service Request Details'));
                     </div>
                 </div>
             `;
-            
+
             chatMessages.appendChild(messageEl);
+
+            // Check for payment buttons in the new message
+            const paymentContainers = messageEl.querySelectorAll('[data-payment-container]');
+            if (paymentContainers.length > 0) {
+                // Check status of all payment buttons in the message
+                paymentContainers.forEach(container => {
+                    const paymentId = container.dataset.paymentContainer;
+                    if (paymentId) {
+                        checkPaymentStatus(paymentId);
+                    }
+                });
+            }
         }
-        
+
         // Start polling every 3 seconds
         const pollingInterval = setInterval(fetchNewMessages, 3000);
-        
+
         // Clean up interval when user leaves the page
         window.addEventListener('beforeunload', function() {
             clearInterval(pollingInterval);
         });
     }
 </script>
+
+<!-- Payment Request Modal -->
+<div class="modal fade" id="paymentRequestModal" tabindex="-1" role="dialog" aria-labelledby="paymentRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="paymentRequestModalLabel"><i class="fas fa-credit-card mr-2"></i> Send Payment Request</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <?= $this->Form->create(null, [
+                    'url' => ['action' => 'sendPaymentRequest', $writingServiceRequest->writing_service_request_id],
+                    'id' => 'paymentRequestForm',
+                ]) ?>
+
+                <div class="form-group">
+                    <label for="amount">Payment Amount ($)</label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">$</span>
+                        </div>
+                        <?= $this->Form->number('amount', [
+                            'class' => 'form-control',
+                            'id' => 'amount',
+                            'required' => true,
+                            'min' => 1,
+                            'step' => '0.01',
+                            'value' => $writingServiceRequest->final_price ?: '',
+                            'placeholder' => 'Enter amount',
+                        ]) ?>
+                    </div>
+                    <small class="form-text text-muted">Enter the amount to charge the client.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Payment Description</label>
+                    <?= $this->Form->textarea('description', [
+                        'class' => 'form-control',
+                        'id' => 'description',
+                        'required' => true,
+                        'rows' => 3,
+                        'placeholder' => 'e.g., Editorial review fee',
+                        'value' => 'Writing Service: ' . $writingServiceRequest->service_title,
+                    ]) ?>
+                    <small class="form-text text-muted">Briefly describe what this payment is for.</small>
+                </div>
+
+                <?= $this->Form->end() ?>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="sendPaymentRequestBtn">
+                    <i class="fas fa-paper-plane mr-1"></i> Send Payment Request
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Time Slots Modal -->
 <div class="modal fade" id="timeSlotsModal" tabindex="-1" role="dialog" aria-labelledby="timeSlotsModalLabel" aria-hidden="true">
@@ -808,4 +1058,5 @@ function getStatusClass(string $status): string
         default => 'secondary'
     };
 }
+
 ?>

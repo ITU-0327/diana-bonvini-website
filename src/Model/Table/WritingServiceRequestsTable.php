@@ -55,6 +55,10 @@ class WritingServiceRequestsTable extends Table
             'foreignKey' => 'writing_service_request_id',
             'sort' => ['RequestMessages.created_at' => 'DESC'],
         ]);
+
+        $this->hasMany('WritingServicePayments', [
+            'foreignKey' => 'writing_service_request_id',
+        ]);
     }
 
     /**

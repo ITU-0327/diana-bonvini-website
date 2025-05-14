@@ -527,4 +527,130 @@ class WritingServiceRequestsController extends BaseAdminController
 
         return $this->redirect(['action' => 'view', $id]);
     }
+
+    /**
+     * Send payment request to client
+     *
+     * @param string|null $id Writing Service Request id.
+     * @return \Cake\Http\Response|null
+     */
+    public function sendPaymentRequest(?string $id = null)
+    {
+        $this->request->allowMethod(['post']);
+
+        /** @var \App\Model\Entity\User $admin */
+        $admin = $this->Authentication->getIdentity();
+        $writingServiceRequest = $this->WritingServiceRequests->get($id);
+
+        $data = $this->request->getData();
+        $amount = $data['amount'] ?? $writingServiceRequest->final_price;
+        $description = $data['description'] ?? 'Writing service fee';
+
+        if (empty($amount) || !is_numeric($amount) || $amount <= 0) {
+            $this->Flash->error(__('Please provide a valid payment amount.'));
+
+            return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
+        }
+
+        // Create a unique payment ID
+        $paymentId = uniqid('wsr_payment_');
+
+        // Format the amount for display
+        $formattedAmount = '$' . number_format((float)$amount, 2);
+
+        // Default to session-only tracking
+        $dbPaymentId = 'pending';
+        $useDatabase = false;
+
+        // Try to create a database record, but don't require it
+        try {
+            $writingServicePaymentsTable = $this->fetchTable('WritingServicePayments');
+            $useDatabase = true;
+        } catch (Exception $e) {
+            $this->log('WritingServicePayments table not available: ' . $e->getMessage(), 'warning');
+            // Continue with session-only tracking
+        }
+
+        // Only attempt database operations if the table exists
+        if ($useDatabase) {
+            try {
+                $paymentEntity = $writingServicePaymentsTable->newEntity([
+                    'writing_service_request_id' => $id,
+                    'amount' => $amount,
+                    'transaction_id' => null, // Will be filled when payment is completed
+                    'payment_date' => date('Y-m-d H:i:s'),
+                    'payment_method' => 'stripe',
+                    'status' => 'pending',
+                ]);
+
+                if (!$writingServicePaymentsTable->save($paymentEntity)) {
+                    $this->log('Failed to create pending payment record: ' . json_encode($paymentEntity->getErrors()), 'error');
+                } else {
+                    // Store the database payment ID for future reference
+                    $dbPaymentId = $paymentEntity->writing_service_payment_id;
+                }
+            } catch (Exception $e) {
+                $this->log('Error creating payment entity: ' . $e->getMessage(), 'error');
+                // Continue with session-only tracking
+            }
+        }
+
+        // Create a combined payment ID with session and DB identifiers
+        $combinedPaymentId = $paymentId . '|' . $dbPaymentId;
+
+        // Create a message with payment button using the new approach with query parameters
+        $messageText = "**Payment Request**\n\n";
+        $messageText .= "**Service:** " . $description . "\n";
+        $messageText .= "**Amount:** " . $formattedAmount . "\n\n";
+        $messageText .= "Please click the button below to complete your payment. Once payment is processed, you'll receive a confirmation and we'll begin work on your request.\n\n";
+        $messageText .= '[PAYMENT_BUTTON]' . $combinedPaymentId . '[/PAYMENT_BUTTON]';
+
+        // Store payment details in session (primary source of truth)
+        $this->request->getSession()->write("WsrPayments.$paymentId", [
+            'amount' => $amount,
+            'description' => $description,
+            'writing_service_request_id' => $id,
+            'created' => time(),
+            'status' => 'pending',
+            'db_payment_id' => $dbPaymentId,
+        ]);
+
+        $this->log('Payment data stored in session: ' . json_encode([
+                'sessionKey' => "WsrPayments.$paymentId",
+                'amount' => $amount,
+                'description' => $description,
+                'id' => $id,
+            ]), 'debug');
+
+        // Save the message
+        $messageData = [
+            'request_messages' => [
+                [
+                    'user_id' => $admin->user_id,
+                    'message' => $messageText,
+                    'is_read' => false,
+                    'writing_service_request_id' => $writingServiceRequest->writing_service_request_id,
+                ],
+            ],
+        ];
+
+        $writingServiceRequest = $this->WritingServiceRequests->patchEntity(
+            $writingServiceRequest,
+            $messageData,
+        );
+
+        if ($this->WritingServiceRequests->save($writingServiceRequest)) {
+            // Update the final price in the request if not already set
+            if ($writingServiceRequest->final_price === null || $writingServiceRequest->final_price <= 0) {
+                $writingServiceRequest->final_price = $amount;
+                $this->WritingServiceRequests->save($writingServiceRequest);
+            }
+
+            $this->Flash->success(__('Payment request has been sent to the client.'));
+        } else {
+            $this->Flash->error(__('Failed to send payment request. Please try again.'));
+        }
+
+        return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
+    }
 }
