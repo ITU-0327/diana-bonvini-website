@@ -9,25 +9,26 @@
  */
 
 document.addEventListener('DOMContentLoaded', function () {
+    console.log('Writing service payments module initialized');
+    
+    // Set a flag to prevent automatic payment completion on page load
+    window.initialPageLoad = true;
+    
     // Process any existing payment buttons on page load
     processPaymentElements();
 
-    // Check for payment success in URL and process it
+    // Check for payment success in URL (only when returning from Stripe)
     processPaymentSuccess();
 
-    // Set up a recurring check for all payment buttons (every 5 seconds)
-    setInterval(function () {
-        const paymentContainers = document.querySelectorAll('[data-payment-container]');
-        paymentContainers.forEach(container => {
-            const paymentId = container.dataset.paymentContainer;
-            const statusContainer = container.querySelector('.payment-status');
-
-            // Only check status for buttons that are still pending
-            if (statusContainer && !statusContainer.classList.contains('payment-completed')) {
-                checkPaymentStatus(container);
-            }
-        });
-    }, 5000); // Check every 5 seconds
+    // Set up a recurring check for pending payment buttons (every 5 seconds)
+    // But delay the first check to prevent immediately marking payments as completed
+    setTimeout(function() {
+        // Clear the initial page load flag after a delay
+        window.initialPageLoad = false;
+        
+        // Set up the recurring check
+        setInterval(checkPendingPayments, 5000);
+    }, 3000);
 
     // Set up real-time message fetching with AJAX (poll every 3 seconds)
     setupRealtimeMessageFetching();
@@ -162,7 +163,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         paymentContainers.forEach(container => {
                             const statusContainer = container.querySelector('.payment-status');
                             if (statusContainer && !statusContainer.classList.contains('payment-completed')) {
-                                forcePaymentStatusComplete(container);
+                                forcePaymentStatusComplete(container, true);
                             }
                         });
                     }
@@ -198,13 +199,17 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        // First, check if there's a payment confirmation message in the chat for this specific payment ID
-        // If there is, we can immediately mark this as paid without an API call
-        const hasPaymentConfirmation = checkForPaymentConfirmationMessage(paymentId);
-        if (hasPaymentConfirmation) {
-            forcePaymentStatusComplete(container);
+        // Skip already completed payments
+        if (statusContainer.classList.contains('payment-completed')) {
             return;
         }
+
+        // Skip payments that are already being processed
+        if (container.dataset.checkingStatus === 'true') {
+            return;
+        }
+        
+        container.dataset.checkingStatus = 'true';
 
         const statusIcon = statusContainer.querySelector('.status-icon');
         const statusText = statusContainer.querySelector('.status-text');
@@ -212,18 +217,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Show checking status immediately
         statusContainer.classList.remove('hidden');
+        
+        // Set initial status text
+        statusIcon.textContent = '⏳';
+        statusText.textContent = 'Checking payment status...';
+        if (statusText.classList.contains('text-green-600')) {
+            statusText.classList.remove('text-green-600', 'font-medium');
+        }
 
         // Build the status check URL
         const requestId = getRequestId();
         const baseUrl = getBaseUrl();
         const statusUrl = `${baseUrl}/writing-service-requests/check-payment-status?id=${requestId}&paymentId=${encodeURIComponent(paymentId)}`;
 
+        console.log(`Checking payment status for ID: ${paymentId}`);
+
         // Make the API call
         fetch(statusUrl)
             .then(response => response.json())
             .then(data => {
+                container.dataset.checkingStatus = 'false';
+                
+                console.log(`Payment status response:`, data);
+                
                 if (data.success) {
-                    if (data.paid === true || data.status === 'paid') {
+                    // Only consider the payment completed if the server explicitly says it's paid
+                    // AND it has success = true
+                    if ((data.paid === true || data.status === 'paid') && data.success === true) {
+                        console.log(`Payment ${paymentId} is confirmed paid`);
+                        
                         // Mark this container as complete to avoid redundant checks
                         statusContainer.classList.add('payment-completed');
 
@@ -249,50 +271,80 @@ document.addEventListener('DOMContentLoaded', function () {
                             const paymentDate = new Date(data.details.date * 1000);
                             statusDate.textContent = 'on ' + paymentDate.toLocaleDateString(undefined, {
                                 year: 'numeric',
-                                month: 'short',
+                                month: 'long',
                                 day: 'numeric'
                             });
                         }
-
-                        // IMPORTANT: Only show payment success toast when a payment is verified as paid
-                        showPaymentSuccessToast();
-                        updateGlobalPaymentStatus(data.details);
                     } else {
-                        // Payment is pending
+                        // Payment is not yet completed
+                        console.log(`Payment ${paymentId} is not paid yet`);
+                        
+                        // Ensure the button is active for payment
+                        if (paymentButton.style.pointerEvents === 'none') {
+                            paymentButton.style.pointerEvents = '';
+                        }
+                        
+                        // Update status text to pending
                         statusIcon.textContent = '⏳';
                         statusText.textContent = 'Payment pending';
-                        statusText.classList.add('text-yellow-600');
-
-                        // Check again in 3 seconds for fast feedback
-                        setTimeout(() => checkPaymentStatus(container), 3000);
+                        
+                        // Make sure the payment button is still clickable
+                        paymentButton.classList.remove('bg-green-600', 'cursor-default');
+                        paymentButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                        
+                        // Update button text if needed
+                        if (paymentButton.textContent.trim() === 'Payment Completed') {
+                            paymentButton.innerHTML = `
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                </svg>
+                                Make Payment
+                            `;
+                        }
                     }
                 } else {
-                    // Error checking payment
-                    statusContainer.classList.add('hidden');
+                    // Error checking payment status
+                    console.log('Error checking payment status:', data.message || 'Unknown error');
+                    
+                    // Update status text to error
+                    statusIcon.textContent = '❓';
+                    statusText.textContent = 'Status unknown';
                 }
             })
-            .catch(err => {
-                console.error('Error checking payment status:', err);
-                statusContainer.classList.add('hidden');
+            .catch(error => {
+                container.dataset.checkingStatus = 'false';
+                console.error('Error checking payment status:', error);
+                
+                // Update status text to error
+                statusIcon.textContent = '❌';
+                statusText.textContent = 'Error checking status';
             });
     }
 
     /**
-     * Force a payment status to complete (used when payment confirmation is found)
+     * Force payment status to completed state (only used by server-side callbacks)
      * @param {HTMLElement} container - The payment container element
+     * @param {boolean} isServerConfirmed - Whether this is confirmed by the server
      */
-    function forcePaymentStatusComplete(container) {
+    function forcePaymentStatusComplete(container, isServerConfirmed) {
         if (!container) return;
-
+        
+        // Only allow this function to be called from server-confirmed payment callbacks
+        if (!isServerConfirmed) {
+            console.warn('Attempted to force payment complete without server confirmation');
+            return;
+        }
+        
+        console.log('Server confirming payment completed');
+        
         const paymentButton = container.querySelector('.payment-button');
         const statusContainer = container.querySelector('.payment-status');
-
+        
         if (!statusContainer || !paymentButton) return;
-
+        
         // Mark this container as complete
         statusContainer.classList.add('payment-completed');
-        statusContainer.classList.remove('hidden');
-
+        
         // Update button to show completed state
         paymentButton.innerHTML = `
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -312,6 +364,9 @@ document.addEventListener('DOMContentLoaded', function () {
         statusIcon.textContent = '✅';
         statusText.textContent = 'Payment confirmed';
         statusText.classList.add('text-green-600', 'font-medium');
+        
+        // Show success toast
+        showPaymentSuccessToast();
     }
 
     /**
@@ -320,29 +375,37 @@ document.addEventListener('DOMContentLoaded', function () {
      * @returns {boolean} True if confirmation message is found
      */
     function checkForPaymentConfirmationMessage(paymentId) {
+        // Do not check for payment confirmation messages on initial page load
+        // This prevents automatically marking payments as paid without user interaction
+        if (window.initialPageLoad === undefined) {
+            window.initialPageLoad = true;
+            return false;
+        }
+        
         if (!paymentId) return false;
         
-        // First look for payment confirmation messages with matching payment ID in data attributes
+        console.log(`Checking payment confirmation for ID: ${paymentId}`);
+        
+        // Only consider exact matches for payment IDs from confirmation messages
         const confirmationMessages = document.querySelectorAll('[data-confirmed-payment-id]');
         for (let i = 0; i < confirmationMessages.length; i++) {
             const confirmedId = confirmationMessages[i].dataset.confirmedPaymentId;
-            if (confirmedId === paymentId) {
-                return true;
+            // Must be an exact match and must have come from server (not client-side detected)
+            if (confirmedId && confirmedId === paymentId) {
+                console.log(`Found payment confirmation match: ${confirmedId}`);
+                
+                // Additional check: payment confirmation must come from a system message
+                const messageContainer = confirmationMessages[i].closest('.flex');
+                if (messageContainer && messageContainer.classList.contains('payment-confirmation-message')) {
+                    // Check that the message has a server timestamp (more evidence it came from server)
+                    if (messageContainer.querySelector('.local-time')) {
+                        return true;
+                    }
+                }
             }
         }
         
-        // If exact match not found in data attributes, check message content for this specific payment ID
-        const messageContents = document.querySelectorAll('.message-content');
-        for (let i = 0; i < messageContents.length; i++) {
-            const content = messageContents[i];
-            // Only consider as a match if both the payment confirmation tag AND this specific payment ID are present
-            // Look for "Payment ID: ID_HERE" pattern in the content
-            if (content.innerHTML.includes(`[PAYMENT_CONFIRMATION]`) && 
-                (content.innerHTML.includes(`Payment ID: ${paymentId}`) || 
-                 content.innerHTML.includes(`Payment ID:${paymentId}`))) {
-                return true;
-            }
-        }
+        // DO NOT check for confirmation in message content at all - only trust server-generated confirmation data attributes
         
         // No specific payment confirmation found for this ID
         return false;
@@ -350,15 +413,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /**
      * Process payment success parameters in URL
+     * This is called when returning from the Stripe payment gateway
      */
     function processPaymentSuccess() {
         const urlParams = new URLSearchParams(window.location.search);
+        
         // Only show payment success toast when explicitly indicated in URL
+        // The payment_success=true will only be added when returning from a successful Stripe payment
         if (urlParams.get('payment_success') === 'true') {
-            showPaymentSuccessToast();
+            console.log('Payment success detected in URL');
             
             // Check if there's a specific payment ID in the URL
             const specificPaymentId = urlParams.get('paymentId');
+            if (!specificPaymentId) {
+                console.log('No payment ID found in URL, cannot process payment success');
+                return;
+            }
+            
+            console.log(`Processing payment success for ID: ${specificPaymentId}`);
+            showPaymentSuccessToast();
             
             // Remove the parameter from URL to prevent showing toast on page refresh
             if (window.history && window.history.replaceState) {
@@ -366,23 +439,37 @@ document.addEventListener('DOMContentLoaded', function () {
                 window.history.replaceState({}, document.title, newUrl);
             }
 
-            // Check payment buttons and update their status
-            const paymentContainers = document.querySelectorAll('[data-payment-container]');
-            paymentContainers.forEach(container => {
-                // If there's a specific paymentId in the URL, only update that one
-                if (specificPaymentId) {
-                    const containerId = container.dataset.paymentContainer;
-                    if (containerId === specificPaymentId || 
-                        (specificPaymentId.includes('|') && specificPaymentId.startsWith(containerId)) ||
-                        (containerId.includes('|') && containerId.startsWith(specificPaymentId))) {
-                        checkPaymentStatus(container);
-                    }
-                } else {
-                    // Otherwise check all containers
-                    checkPaymentStatus(container);
-                }
-            });
+            // Find the specific payment container for this payment ID
+            const matchingContainer = findPaymentContainer(specificPaymentId);
+            if (matchingContainer) {
+                console.log(`Found matching payment container for ID: ${specificPaymentId}`);
+                checkPaymentStatus(matchingContainer);
+            } else {
+                console.log(`No matching payment container found for ID: ${specificPaymentId}`);
+            }
         }
+    }
+    
+    /**
+     * Find the payment container element for a specific payment ID
+     * @param {string} paymentId - The payment ID to find
+     * @returns {HTMLElement|null} The payment container element if found, null otherwise
+     */
+    function findPaymentContainer(paymentId) {
+        if (!paymentId) return null;
+        
+        const paymentContainers = document.querySelectorAll('[data-payment-container]');
+        for (let i = 0; i < paymentContainers.length; i++) {
+            const containerId = paymentContainers[i].dataset.paymentContainer;
+            
+            // Check for exact match or payment IDs with pipe separator (ID|dbID format)
+            if (containerId === paymentId || 
+                (paymentId.includes('|') && paymentId.split('|')[0] === containerId)) {
+                return paymentContainers[i];
+            }
+        }
+        
+        return null;
     }
 
     /**
@@ -616,5 +703,33 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (e) {
             console.log('Audio playback not supported');
         }
+    }
+
+    /**
+     * Check status of all pending payment buttons
+     */
+    function checkPendingPayments() {
+        const paymentContainers = document.querySelectorAll('[data-payment-container]');
+        paymentContainers.forEach(container => {
+            const paymentId = container.dataset.paymentContainer;
+            const statusContainer = container.querySelector('.payment-status');
+            const paymentButton = container.querySelector('.payment-button');
+
+            // Only check status for buttons that are still pending and have not been completed
+            if (statusContainer && paymentButton && 
+                !statusContainer.classList.contains('payment-completed') && 
+                !paymentButton.classList.contains('bg-green-600')) {
+                
+                // Additional check: make sure we're not checking too frequently
+                const lastCheck = parseInt(container.dataset.lastChecked || '0');
+                const now = Date.now();
+                
+                // Only check if it's been at least 5 seconds since the last check
+                if (now - lastCheck >= 5000) {
+                    container.dataset.lastChecked = now.toString();
+                    checkPaymentStatus(container);
+                }
+            }
+        });
     }
 });

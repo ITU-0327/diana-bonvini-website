@@ -288,7 +288,17 @@ class WritingServiceRequestsController extends AppController
         $writingServiceRequest = $this->WritingServiceRequests->newEmptyEntity();
 
         if ($this->request->is('post')) {
-            $data   = $this->request->getData();
+            $data = $this->request->getData();
+
+            // Make sure we have required fields
+            $data['user_id'] = $user->user_id;
+            $data['request_status'] = 'pending';
+            $data['is_deleted'] = false;
+            
+            // Handle appointment_id - make it nullable
+            if (empty($data['appointment_id'])) {
+                unset($data['appointment_id']);
+            }
 
             // Handle file upload
             $documentPath = $this->_handleDocumentUpload($data['document'] ?? null, 'add');
@@ -301,8 +311,6 @@ class WritingServiceRequestsController extends AppController
                 unset($data['document']);
             }
 
-            $data['user_id'] = $user->user_id;
-
             $writingServiceRequest = $this->WritingServiceRequests->patchEntity($writingServiceRequest, $data);
 
             if ($this->WritingServiceRequests->save($writingServiceRequest)) {
@@ -310,6 +318,8 @@ class WritingServiceRequestsController extends AppController
 
                 return $this->redirect(['action' => 'index']);
             }
+            
+            $this->log('Error saving writing service request: ' . json_encode($writingServiceRequest->getErrors()), 'error');
             $this->Flash->error(__('The writing service request could not be saved. Please, try again.'));
         }
 
@@ -588,7 +598,7 @@ class WritingServiceRequestsController extends AppController
                     // Create payment details if missing
                     if (!$paymentDetails) {
                         $paymentDetails = [
-                            'transaction_id' => 'WSR-' . substr($id, -6),
+                            'transaction_id' => 'R-' . substr($id, -7),
                             'amount' => $writingServiceRequest->final_price,
                             'date' => time(),
                             'status' => 'paid',
@@ -1337,14 +1347,14 @@ class WritingServiceRequestsController extends AppController
             // Get amount from the request
             $amount = $writingServiceRequest->final_price ?? '0.00';
 
-            // Generate a unique session payment ID if not exists
-            $sessionPaymentId = 'admin_paid_' . uniqid();
-
-            // Create payment details
+            // Generate a transaction ID based on request ID 
             $paymentDetails = [
-                'transaction_id' => 'ADMIN-' . substr(md5($sessionPaymentId . time()), 0, 8),
                 'amount' => $amount,
-                'date' => time(),
+                'customer_id' => $user->user_id,
+                'payment_date' => gmdate('Y-m-d H:i:s'),
+                'payment_method' => 'cash',
+                'transaction_id' => 'R-' . substr($id, -7),
+                'receipt_number' => uniqid('rcpt_'),
                 'status' => 'paid',
             ];
 

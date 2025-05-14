@@ -7,6 +7,8 @@ use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
+use Cake\Event\Event;
+use ArrayObject;
 
 /**
  * WritingServiceRequests Model
@@ -51,7 +53,7 @@ class WritingServiceRequestsTable extends Table
         ]);
         $this->belongsTo('Appointments', [
             'foreignKey' => 'appointment_id',
-            'joinType' => 'INNER',
+            'joinType' => 'LEFT',
         ]);
         
         // Add the missing associations
@@ -78,15 +80,16 @@ class WritingServiceRequestsTable extends Table
 
         $validator
             ->uuid('appointment_id')
-            ->notEmptyString('appointment_id');
+            ->allowEmptyString('appointment_id');
 
         $validator
             ->scalar('service_title')
             ->maxLength('service_title', 100)
-            ->allowEmptyString('service_title');
+            ->notEmptyString('service_title');
 
         $validator
             ->scalar('service_type')
+            ->inList('service_type', ['creative_writing', 'editing', 'proofreading'])
             ->requirePresence('service_type', 'create')
             ->notEmptyString('service_type');
 
@@ -101,6 +104,7 @@ class WritingServiceRequestsTable extends Table
 
         $validator
             ->scalar('request_status')
+            ->inList('request_status', ['pending', 'in_progress', 'completed', 'canceled'])
             ->notEmptyString('request_status');
 
         $validator
@@ -114,11 +118,11 @@ class WritingServiceRequestsTable extends Table
 
         $validator
             ->dateTime('created_at')
-            ->notEmptyDateTime('created_at');
+            ->allowEmptyDateTime('created_at');
 
         $validator
             ->dateTime('updated_at')
-            ->notEmptyDateTime('updated_at');
+            ->allowEmptyDateTime('updated_at');
 
         return $validator;
     }
@@ -133,8 +137,44 @@ class WritingServiceRequestsTable extends Table
     public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->existsIn(['user_id'], 'Users'), ['errorField' => 'user_id']);
-        $rules->add($rules->existsIn(['appointment_id'], 'Appointments'), ['errorField' => 'appointment_id']);
+        
+        // Only check appointment_id if it's set
+        $rules->add(
+            function ($entity, $options) {
+                return empty($entity->appointment_id) || 
+                       $this->Appointments->exists(['appointment_id' => $entity->appointment_id]);
+            },
+            'appointmentExists',
+            ['errorField' => 'appointment_id', 'message' => __('Invalid appointment.')]
+        );
 
         return $rules;
+    }
+
+    /**
+     * Built-in CakePHP event for before save operations
+     *
+     * @param \Cake\Event\Event $event The event being processed
+     * @param \App\Model\Entity\WritingServiceRequest $entity The entity being saved
+     * @param \ArrayObject $options The options passed to the save method
+     * @return bool Whether the save should continue
+     */
+    public function beforeSave($event, $entity, $options)
+    {
+        // Ensure entity has a writing_service_request_id
+        if (empty($entity->writing_service_request_id)) {
+            $entity->initializeWritingServiceRequestId();
+        }
+        
+        // Set default values for required fields if not provided
+        if (!isset($entity->request_status)) {
+            $entity->request_status = 'pending';
+        }
+        
+        if (!isset($entity->is_deleted)) {
+            $entity->is_deleted = false;
+        }
+        
+        return true;
     }
 }

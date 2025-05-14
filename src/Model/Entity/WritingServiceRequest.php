@@ -10,7 +10,7 @@ use Cake\ORM\Entity;
  *
  * @property string $writing_service_request_id
  * @property string $user_id
- * @property string $appointment_id
+ * @property string|null $appointment_id
  * @property string|null $service_title
  * @property string $service_type
  * @property string|null $notes
@@ -22,6 +22,7 @@ use Cake\ORM\Entity;
  * @property \Cake\I18n\DateTime $updated_at
  *
  * @property \App\Model\Entity\User $user
+ * @property \App\Model\Entity\Appointment $appointment
  * @property \App\Model\Entity\RequestMessage[] $request_messages
  * @property \App\Model\Entity\WritingServicePayment[] $writing_service_payments
  */
@@ -52,4 +53,27 @@ class WritingServiceRequest extends Entity
         'request_messages' => true,
         'writing_service_payments' => true,
     ];
+    
+    /**
+     * Generate a unique 9-character ID for writing service requests
+     * Called automatically by CakePHP when the entity is created or when explicitly called
+     *
+     * @return string The generated ID
+     */
+    public function initializeWritingServiceRequestId(): string
+    {
+        if (empty($this->writing_service_request_id)) {
+            // Generate a random 2-letter string for the middle part
+            $letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            $randomLetters = $letters[rand(0, 25)] . $letters[rand(0, 25)];
+            
+            // Generate a 5-digit number - cast to string before str_pad
+            $randomDigits = str_pad((string)rand(0, 99999), 5, '0', STR_PAD_LEFT);
+            
+            // Format: R-XX12345
+            $this->writing_service_request_id = 'R-' . $randomLetters . $randomDigits;
+        }
+        
+        return $this->writing_service_request_id;
+    }
 }
