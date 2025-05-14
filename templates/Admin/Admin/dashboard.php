@@ -18,6 +18,8 @@
  * @var int $upcomingBookingsCount
  * @var int $pendingQuotesCount
  * @var int $completedServicesCount
+ * @var array $monthlyArtworkData
+ * @var array $monthlyWritingData
  */
 
 use Cake\Utility\Inflector;
@@ -389,24 +391,11 @@ $this->assign('title', 'Dashboard');
         // Revenue Chart
         const ctx = document.getElementById('revenueChart').getContext('2d');
 
-        // Use actual monthly revenue for the current month and generate realistic data for previous months
-        const currentMonth = new Date().getMonth(); // 0-indexed (0 = January, 11 = December)
+        // Chart labels for months
         const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-        // Initialize arrays with calculated values based on the current month's revenue
-        const artworkSalesData = Array(12).fill(0);
-        const writingServicesData = Array(12).fill(0);
-
-        // Set current month's actual values
-        artworkSalesData[currentMonth] = <?= $totalRevenueMonth * 0.7 ?>;
-        writingServicesData[currentMonth] = <?= $totalRevenueMonth * 0.3 ?>;
-
-        // Calculate previous months with a logical trend (slightly lower than the current)
-        for (let i = 0; i < currentMonth; i++) {
-            const factor = 0.7 + (i / currentMonth * 0.3); // Earlier months have lower values
-            artworkSalesData[i] = Math.round(artworkSalesData[currentMonth] * factor * (0.7 + (Math.random() * 0.3)));
-            writingServicesData[i] = Math.round(writingServicesData[currentMonth] * factor * (0.7 + (Math.random() * 0.3)));
-        }
+        // Data provided by the controller
+        const artworkSalesData = <?= json_encode($monthlyArtworkData) ?>;
+        const writingServicesData = <?= json_encode($monthlyWritingData) ?>;
 
         const revenueData = {
             labels: monthLabels,

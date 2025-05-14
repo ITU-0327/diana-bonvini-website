@@ -5,7 +5,6 @@ namespace App\Controller\Admin;
 
 use App\Controller\AppController;
 use DateTime;
-use Exception;
 
 /**
  * Admin Controller
@@ -145,6 +144,43 @@ class AdminController extends AppController
             ->limit(5)
             ->all();
 
+        // Monthly breakdown for last 12 months
+        $firstOfPeriod = (new DateTime('first day of this month'))->modify('-11 months');
+        $ordersMonthly = $ordersTable->find()
+            ->select([
+                'month' => $ordersTable->find()->func()->extract('MONTH', 'created_at', ['identifier' => true]),
+                'revenue' => $ordersTable->find()->func()->sum('total_amount'),
+            ])
+            ->where([
+                'created_at >=' => $firstOfPeriod->format('Y-m-01 00:00:00'),
+                'order_status !=' => 'cancelled',
+            ])
+            ->groupBy(['month'])
+            ->enableHydration(false)
+            ->toArray();
+
+        $writingMonthly = $writingTable->find()
+            ->select([
+                'month' => $writingTable->find()->func()->extract('MONTH', 'created_at', ['identifier' => true]),
+                'revenue' => $writingTable->find()->func()->sum('final_price'),
+            ])
+            ->where([
+                'created_at >=' => $firstOfPeriod->format('Y-m-01 00:00:00'),
+                'request_status !=' => 'cancelled',
+            ])
+            ->groupBy(['month'])
+            ->enableHydration(false)
+            ->toArray();
+
+        $monthlyArtworkData = array_fill(0, 12, 0.0);
+        $monthlyWritingData = array_fill(0, 12, 0.0);
+        foreach ($ordersMonthly as $row) {
+            $monthlyArtworkData[$row['month'] - 1] = (float)$row['revenue'];
+        }
+        foreach ($writingMonthly as $row) {
+            $monthlyWritingData[$row['month'] - 1] = (float)$row['revenue'];
+        }
+
         // Pass data to the view
         $this->set(compact(
             'artworksCount',
@@ -162,6 +198,8 @@ class AdminController extends AppController
             'upcomingBookingsCount',
             'pendingQuotesCount',
             'completedServicesCount',
+            'monthlyArtworkData',
+            'monthlyWritingData',
         ));
     }
 
