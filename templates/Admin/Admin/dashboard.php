@@ -2,28 +2,26 @@
 /**
  * Admin Dashboard View
  *
- * @var \App\View\AppView $this
+ * @var \Cake\View\View $this
  * @var int $artworksCount
  * @var int $ordersCount
  * @var int $processingOrdersCount
  * @var int $completedOrdersCount
- * @var int $writingRequestsCount
  * @var int $usersCount
- * @var int $adminCount
- * @var int $customerCount
  * @var int $activeServicesCount
  * @var array $recentOrders
  * @var array $recentRequests
- * @var array $recentUsers
  * @var float $totalRevenueToday
  * @var float $totalRevenueWeek
  * @var float $totalRevenueMonth
  * @var int $lowStockCount
- * @var int $pendingApprovalCount
  * @var int $upcomingBookingsCount
  * @var int $pendingQuotesCount
  * @var int $completedServicesCount
  */
+
+use Cake\Utility\Inflector;
+
 $this->assign('title', 'Dashboard');
 ?>
 
@@ -260,7 +258,7 @@ $this->assign('title', 'Dashboard');
                 <div class="card-body">
                     <?php if (count($recentOrders) > 0) : ?>
                         <div class="table-responsive">
-                            <table class="table table-bordered" width="100%" cellspacing="0">
+                            <table class="table table-bordered">
                                 <thead>
                                     <tr>
                                         <th>Order #</th>
@@ -271,36 +269,34 @@ $this->assign('title', 'Dashboard');
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($recentOrders as $order) : ?>
+                                    <?php foreach ($recentOrders as $order) :
+                                        /** @var \App\Model\Entity\Order $order **/
+                                        ?>
                                         <tr>
                                             <td>
-                                                <a href="<?= $this->Url->build(['controller' => 'Orders', 'action' => 'view', $order->order_id]) ?>">
-                                                    #<?= h(substr($order->order_id, 0, 8)) ?>
-                                                </a>
+                                                <?= $this->Html->link(
+                                                    '#' . h($order->order_id),
+                                                    ['controller' => 'Orders', 'action' => 'view', $order->order_id],
+                                                ) ?>
                                             </td>
                                             <td>
-                                                <?php if (isset($order->user) && $order->user) : ?>
-                                                    <?= h($order->user->first_name . ' ' . $order->user->last_name) ?>
-                                                <?php else : ?>
-                                                    <?= h($order->customer_name) ?>
-                                                <?php endif; ?>
+                                                <?= h($order->user->first_name . ' ' . $order->user->last_name) ?>
                                             </td>
                                             <td>$<?= number_format($order->total_amount, 2) ?></td>
                                             <td>
                                                 <?php
-                                                $statusClass = match ($order->status) {
-                                                    'processing' => 'info',
+                                                $statusClass = match ($order->order_status) {
+                                                    'pending' => 'info',
+                                                    'confirmed' => 'primary',
                                                     'completed' => 'success',
                                                     'cancelled' => 'danger',
-                                                    'confirmed' => 'primary',
                                                     default => 'secondary'
-                                                };
-    ?>
+                                                }; ?>
                                                 <span class="badge badge-<?= $statusClass ?>">
-                                                    <?= ucfirst(h($order->status)) ?>
+                                                    <?= h(Inflector::humanize($order->order_status)) ?>
                                                 </span>
                                             </td>
-                                            <td><?= $order->created->format('M d, Y') ?></td>
+                                            <td><?= $order->created_at->format('M d, Y') ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
@@ -330,7 +326,7 @@ $this->assign('title', 'Dashboard');
                 <div class="card-body">
                     <?php if (count($recentRequests) > 0) : ?>
                         <div class="table-responsive">
-                            <table class="table table-bordered" width="100%" cellspacing="0">
+                            <table class="table table-bordered">
                                 <thead>
                                     <tr>
                                         <th>Request #</th>
@@ -341,37 +337,34 @@ $this->assign('title', 'Dashboard');
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($recentRequests as $request) : ?>
+                                    <?php foreach ($recentRequests as $request) :
+                                        /** @var \App\Model\Entity\WritingServiceRequest $request **/
+                                        ?>
                                         <tr>
                                             <td>
-                                                <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'view', $request->writing_service_request_id]) ?>">
-                                                    #<?= h(substr($request->writing_service_request_id, 0, 8)) ?>
-                                                </a>
+                                                <?= $this->Html->link(
+                                                    '#' . h($request->writing_service_request_id),
+                                                    ['controller' => 'WritingServiceRequests', 'action' => 'view', $request->writing_service_request_id],
+                                                ) ?>
                                             </td>
                                             <td>
-                                                <?php if (isset($request->user) && $request->user) : ?>
-                                                    <?= h($request->user->first_name . ' ' . $request->user->last_name) ?>
-                                                <?php else : ?>
-                                                    <?= h($request->client_name) ?>
-                                                <?php endif; ?>
+                                                <?= h($request->user->first_name . ' ' . $request->user->last_name) ?>
                                             </td>
-                                            <td><?= h($request->service_type) ?></td>
+                                            <td><?= h(Inflector::humanize($request->service_type)) ?></td>
                                             <td>
                                                 <?php
-                                                $statusClass = match ($request->status) {
-                                                    'pending_quote' => 'warning',
-                                                    'scheduled' => 'info',
+                                                $statusClass = match ($request->request_status) {
+                                                    'pending' => 'warning',
                                                     'in_progress' => 'primary',
                                                     'completed' => 'success',
                                                     'cancelled' => 'danger',
                                                     default => 'secondary'
-                                                };
-    ?>
+                                                }; ?>
                                                 <span class="badge badge-<?= $statusClass ?>">
-                                                    <?= ucfirst(str_replace('_', ' ', h($request->status))) ?>
+                                                    <?= h(Inflector::humanize($request->request_status)) ?>
                                                 </span>
                                             </td>
-                                            <td><?= $request->created->format('M d, Y') ?></td>
+                                            <td><?= $request->created_at->format('M d, Y') ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
@@ -399,22 +392,22 @@ $this->assign('title', 'Dashboard');
         // Use actual monthly revenue for the current month and generate realistic data for previous months
         const currentMonth = new Date().getMonth(); // 0-indexed (0 = January, 11 = December)
         const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        
-        // Initialize arrays with calculated values based on current month's revenue
+
+        // Initialize arrays with calculated values based on the current month's revenue
         const artworkSalesData = Array(12).fill(0);
         const writingServicesData = Array(12).fill(0);
-        
+
         // Set current month's actual values
         artworkSalesData[currentMonth] = <?= $totalRevenueMonth * 0.7 ?>;
         writingServicesData[currentMonth] = <?= $totalRevenueMonth * 0.3 ?>;
-        
-        // Calculate previous months with a logical trend (slightly lower than current)
+
+        // Calculate previous months with a logical trend (slightly lower than the current)
         for (let i = 0; i < currentMonth; i++) {
             const factor = 0.7 + (i / currentMonth * 0.3); // Earlier months have lower values
             artworkSalesData[i] = Math.round(artworkSalesData[currentMonth] * factor * (0.7 + (Math.random() * 0.3)));
             writingServicesData[i] = Math.round(writingServicesData[currentMonth] * factor * (0.7 + (Math.random() * 0.3)));
         }
-        
+
         const revenueData = {
             labels: monthLabels,
             datasets: [
@@ -479,7 +472,7 @@ $this->assign('title', 'Dashboard');
                         beginAtZero: true,
                         ticks: {
                             // Include a dollar sign in the ticks
-                            callback: function(value, index, values) {
+                            callback: function(value) {
                                 return '$' + value.toLocaleString();
                             }
                         }

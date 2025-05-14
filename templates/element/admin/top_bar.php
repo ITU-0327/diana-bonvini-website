@@ -2,7 +2,7 @@
 /**
  * Admin top bar element
  *
- * @var \App\View\AppView $this
+ * @var \Cake\View\View $this
  */
 ?>
 <div class="top-bar-container">
@@ -64,4 +64,4 @@
             </div>
         </div>
     </div>
-</div> 
+</div>

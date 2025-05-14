@@ -118,7 +118,7 @@ class OrdersController extends AppController
         }
 
         // Complete the order data.
-        $data['total_amount'] = (string)$total;
+        $data['total_amount'] = $total;
         $data['artwork_variant_orders'] = $orderItems;
         $data['order_status'] = 'pending';
         $data['order_date'] = date('Y-m-d H:i:s');
@@ -379,7 +379,7 @@ class OrdersController extends AppController
              */
             function (float $sum, ArtworkVariantCart $item): float {
                 // artwork->price * quantity
-                $price = $item->artwork->price ?? 0.0;
+                $price = $item->artwork_variant->price ?? 0.0;
                 $quantity = (float)$item->quantity;
 
                 return $sum + ($price * $quantity);

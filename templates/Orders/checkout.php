@@ -207,12 +207,13 @@ $googleMapsApiKey = Configure::read('GoogleMaps.key');
                     <!-- Totals -->
                     <div class="mt-6 border-t pt-4">
                         <?php
+                        /** @var \App\Model\Entity\ArtworkVariantCart $cartItem */
                         $subtotal = array_reduce(
                             $cart->artwork_variant_carts,
-                            fn($sum, $ci) => $sum + ($ci->artwork_variant->price * $ci->quantity),
-                            0,
+                            fn($sum, $cartItem) => $sum + ($cartItem->artwork_variant->price * $cartItem->quantity),
+                            0.0,
                         );
-                        $shippingCost = 0.00;
+                        $shippingCost = 0.0;
                         $totalCost = $subtotal + $shippingCost;
                         ?>
                         <p class="text-gray-700 text-lg">Subtotal: $<?= number_format($subtotal, 2) ?></p>
