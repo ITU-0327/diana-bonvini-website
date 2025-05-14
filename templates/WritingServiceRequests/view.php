@@ -105,9 +105,6 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                             'placeholder' => 'Reply',
                             'required' => true,
                         ]) ?>
-                        <div class="absolute right-3 bottom-2 text-gray-400">
-                            <i class="fas fa-paperclip opacity-60 text-sm"></i>
-                        </div>
                     </div>
                     <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-2 flex items-center justify-center transition-colors shadow-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
