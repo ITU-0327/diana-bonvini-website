@@ -1,112 +1,95 @@
 <?php
 /**
  * Admin sidebar navigation element
+ * 
+ * @var \App\View\AppView $this
  */
 ?>
-<div class="sidebar-nav">
-    <ul class="nav-list">
-        <li class="nav-item">
+<nav class="sidebar">
+    <div class="sidebar-header">
+        <h3>Diana Bonvini</h3>
+    </div>
+
+    <div class="sidebar-menu">
+        <div class="menu-group">
+            <?php
+            // Helper to determine if menu item is active
+            $isActive = function ($controller, $action = null) {
+                $currentController = $this->request->getParam('controller');
+                $currentAction = $this->request->getParam('action');
+
+                if ($controller === $currentController) {
+                    if ($action === null || $action === $currentAction) {
+                        return 'active';
+                    }
+                }
+
+                return '';
+            };
+            ?>
+
             <?= $this->Html->link(
                 '<i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>',
-                ['controller' => 'Admin', 'action' => 'dashboard', 'prefix' => 'Admin'],
-                ['escape' => false, 'class' => $this->request->getParam('action') === 'dashboard' ? 'active' : ''],
+                ['prefix' => 'Admin', 'controller' => 'Admin', 'action' => 'dashboard'],
+                ['class' => 'menu-item ' . $isActive('Admin', 'dashboard'), 'escape' => false]
             ) ?>
-        </li>
 
-        <!-- Artworks Management -->
-        <li class="nav-item">
+            <div class="menu-title"><span>Content Management</span></div>
+
             <?= $this->Html->link(
                 '<i class="fas fa-paint-brush"></i> <span>Artworks</span>',
-                ['controller' => 'Artworks', 'action' => 'index', 'prefix' => 'Admin'],
-                ['escape' => false, 'class' => $this->request->getParam('controller') === 'Artworks' ? 'active' : ''],
+                ['prefix' => 'Admin', 'controller' => 'Artworks', 'action' => 'index'],
+                ['class' => 'menu-item ' . $isActive('Artworks'), 'escape' => false]
             ) ?>
-        </li>
 
-        <!-- Orders Management -->
-        <li class="nav-item">
+            <?= $this->Html->link(
+                '<i class="fas fa-file-alt"></i> <span>Content Blocks</span>',
+                ['prefix' => 'Admin', 'controller' => 'ContentBlocks', 'action' => 'index'],
+                ['class' => 'menu-item ' . $isActive('ContentBlocks'), 'escape' => false]
+            ) ?>
+        </div>
+
+        <div class="menu-group">
+            <div class="menu-title"><span>Business</span></div>
+
             <?= $this->Html->link(
                 '<i class="fas fa-shopping-cart"></i> <span>Orders</span>',
-                ['controller' => 'Orders', 'action' => 'index', 'prefix' => 'Admin'],
-                ['escape' => false, 'class' => $this->request->getParam('controller') === 'Orders' ? 'active' : ''],
+                ['prefix' => 'Admin', 'controller' => 'Orders', 'action' => 'index'],
+                ['class' => 'menu-item ' . $isActive('Orders'), 'escape' => false]
             ) ?>
-        </li>
 
-        <!-- Writing Service Requests -->
-        <li class="nav-item">
-            <?php
-            // Access RequestMessages table directly in the view
-            try {
-                $unreadCount = 0;
-                if (class_exists('\Cake\ORM\TableRegistry')) {
-                    $requestMessagesTable = \Cake\ORM\TableRegistry::getTableLocator()->get('RequestMessages');
-                    $usersTable = \Cake\ORM\TableRegistry::getTableLocator()->get('Users');
-                    
-                    // Count all unread messages from non-admin users
-                    $unreadCount = $requestMessagesTable->find()
-                        ->where([
-                            'RequestMessages.is_read' => false,
-                            'RequestMessages.user_id NOT IN' => $usersTable->find()
-                                ->select(['user_id'])
-                                ->where(['user_type' => 'admin'])
-                        ])
-                        ->count();
-                }
-            } catch (Exception $e) {
-                $unreadCount = 0;
-            }
-            
-            echo $this->Html->link(
-                '<i class="fas fa-pen"></i> <span>Writing Services</span>' . 
-                ($unreadCount > 0 ? '<span class="badge badge-danger ml-1">' . $unreadCount . '</span>' : ''),
-                ['controller' => 'WritingServiceRequests', 'action' => 'index', 'prefix' => 'Admin'],
-                ['escape' => false, 'class' => $this->request->getParam('controller') === 'WritingServiceRequests' ? 'active' : '']
-            );
-            ?>
-        </li>
-
-        <!-- Content Management -->
-        <li class="nav-item">
             <?= $this->Html->link(
-                '<i class="fas fa-newspaper"></i> <span>Content Blocks</span>',
-                ['controller' => 'ContentBlocks', 'action' => 'index', 'prefix' => 'Admin'],
-                ['escape' => false, 'class' => $this->request->getParam('controller') === 'ContentBlocks' ? 'active' : ''],
+                '<i class="fas fa-pen"></i> <span>Writing Services</span>',
+                ['prefix' => 'Admin', 'controller' => 'WritingServiceRequests', 'action' => 'index'],
+                ['class' => 'menu-item ' . $isActive('WritingServiceRequests'), 'escape' => false]
             ) ?>
-        </li>
+        </div>
 
-        <!-- Pages Management -->
-        <li class="nav-item">
-            <?= $this->Html->link(
-                '<i class="fas fa-file-alt"></i> <span>Pages</span>',
-                ['controller' => 'Pages', 'action' => 'index', 'prefix' => 'Admin'],
-                ['escape' => false, 'class' => $this->request->getParam('controller') === 'Pages' ? 'active' : ''],
-            ) ?>
-        </li>
+        <div class="menu-group">
+            <div class="menu-title"><span>Administration</span></div>
 
-        <!-- Users Management -->
-        <li class="nav-item">
             <?= $this->Html->link(
                 '<i class="fas fa-users"></i> <span>Users</span>',
-                ['controller' => 'Users', 'action' => 'index', 'prefix' => 'Admin'],
-                ['escape' => false, 'class' => $this->request->getParam('controller') === 'Users' ? 'active' : ''],
+                ['prefix' => 'Admin', 'controller' => 'Users', 'action' => 'index'],
+                ['class' => 'menu-item ' . $isActive('Users'), 'escape' => false]
             ) ?>
-        </li>
 
-        <!-- Settings -->
-        <li class="nav-item">
-            <?= $this->Html->link(
-                '<i class="fas fa-cogs"></i> <span>Settings</span>',
-                ['controller' => 'Settings', 'action' => 'index', 'prefix' => 'Admin'],
-                ['escape' => false, 'class' => $this->request->getParam('controller') === 'Settings' ? 'active' : ''],
-            ) ?>
-        </li>
+        </div>
 
-        <!-- View Website -->
-        <li class="nav-item">
+        <div class="menu-group">
+            <div class="menu-title"><span>Quick Links</span></div>
+
             <?= $this->Html->link(
                 '<i class="fas fa-external-link-alt"></i> <span>View Website</span>',
-                ['controller' => 'Pages', 'action' => 'display', 'home', 'prefix' => false],
-                ['escape' => false, 'target' => '_blank'],
+                ['_name' => 'home'],
+                ['class' => 'menu-item', 'escape' => false, 'target' => '_blank']
             ) ?>
-        </li>
-    </ul>
-</div>
+
+            <?= $this->Html->link(
+                '<i class="fas fa-sign-out-alt"></i> <span>Logout</span>',
+                ['prefix' => false, 'controller' => 'Users', 'action' => 'logout'],
+                ['class' => 'menu-item', 'escape' => false]
+            ) ?>
+        </div>
+    </div>
+</nav>
