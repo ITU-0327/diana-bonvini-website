@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Controller\AppController;
+use Cake\Http\Response;
 use DateTime;
 use Exception;
 
@@ -11,6 +12,8 @@ use Exception;
  * Admin Controller
  *
  * Main controller for admin dashboard
+ *
+ * @property \Authentication\Controller\Component\AuthenticationComponent $Authentication
  */
 class AdminController extends AppController
 {
@@ -18,21 +21,14 @@ class AdminController extends AppController
      * Initialize method
      *
      * @return void
+     * @throws \Exception
      */
     public function initialize(): void
     {
         parent::initialize();
 
-        // Use admin layout for all admin actions
         $this->viewBuilder()->setLayout('admin');
-
-        // Load components as needed
-        $this->loadComponent('Flash');
-
-        // Check for authentication
         $this->checkAdminAuth();
-
-        // Load common data for admin section
         $this->loadCommonData();
     }
 
@@ -86,7 +82,7 @@ class AdminController extends AppController
 
                 // Recent users
                 $recentUsers = $usersTable->find()
-                    ->order(['created' => 'DESC'])
+                    ->orderBy(['created' => 'DESC'])
                     ->limit(5)
                     ->all();
             } catch (Exception $e) {
@@ -158,7 +154,7 @@ class AdminController extends AppController
                     // Recent orders
                     $recentOrders = $ordersTable->find()
                         ->contain(['Users'])
-                        ->order(['Orders.created' => 'DESC'])
+                        ->orderBy(['Orders.created' => 'DESC'])
                         ->limit(5)
                         ->all();
                 } catch (Exception $e) {
@@ -196,7 +192,7 @@ class AdminController extends AppController
                 // Recent requests
                 $recentRequests = $writingTable->find()
                     ->contain(['Users'])
-                    ->order(['WritingServiceRequests.created' => 'DESC'])
+                    ->orderBy(['WritingServiceRequests.created' => 'DESC'])
                     ->limit(5)
                     ->all();
             } catch (Exception $e) {
@@ -236,21 +232,18 @@ class AdminController extends AppController
     /**
      * Check admin authentication
      *
-     * @return \Cake\Http\Response|null
+     * @return void
      */
-    private function checkAdminAuth()
+    private function checkAdminAuth(): void
     {
-        // Get the authenticated user
+        /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
 
-        // Check if user is logged in and is an admin
         if (!$user || $user->user_type !== 'admin') {
             $this->Flash->error('You must be logged in as an administrator to access this area.');
 
-            return $this->redirect(['controller' => 'Users', 'action' => 'login', 'prefix' => false]);
+            $this->redirect(['controller' => 'Users', 'action' => 'login', 'prefix' => false]);
         }
-
-        return null;
     }
 
     /**
@@ -261,34 +254,25 @@ class AdminController extends AppController
     private function loadCommonData(): void
     {
         try {
-            // Get unread message count for writing service requests
-            $writingServiceUnreadCount = 0;
+            $requestMessagesTable = $this->getTableLocator()->get('RequestMessages');
+            $usersTable = $this->getTableLocator()->get('Users');
 
-            // Get the RequestMessages table
-            try {
-                $requestMessagesTable = $this->getTableLocator()->get('RequestMessages');
-                $usersTable = $this->getTableLocator()->get('Users');
-
-                // Count all unread messages from non-admin users
-                $writingServiceUnreadCount = $requestMessagesTable->find()
-                    ->where([
-                        'RequestMessages.is_read' => false,
-                        'RequestMessages.user_id IN' => $usersTable->find()
-                            ->select(['user_id'])
-                            ->where(['user_type !=' => 'admin']),
-                    ])
-                    ->count();
-            } catch (Exception $e) {
-                // Table might not exist
-                $this->log($e->getMessage(), 'error');
-                $writingServiceUnreadCount = 0;
-            }
-
-            // Set common view variables
-            $this->set('writingServiceUnreadCount', $writingServiceUnreadCount);
+            // Count all unread messages from non-admin users
+            $writingServiceUnreadCount = $requestMessagesTable->find()
+                ->where([
+                    'RequestMessages.is_read' => false,
+                    'RequestMessages.user_id IN' => $usersTable->find()
+                        ->select(['user_id'])
+                        ->where(['user_type !=' => 'admin']),
+                ])
+                ->count();
         } catch (Exception $e) {
-            // Log the error
-            $this->log('Error loading common data: ' . $e->getMessage(), 'error');
+            // Table might not exist
+            $this->log($e->getMessage(), 'error');
+            $writingServiceUnreadCount = 0;
         }
+
+        // Set common view variables
+        $this->set('writingServiceUnreadCount', $writingServiceUnreadCount);
     }
 }

@@ -92,8 +92,6 @@ return function (RouteBuilder $routes): void {
 
     // Admin Routes – for CMS management and other admin functions.
     // These routes will be accessible via URLs like /admin/cms-blocks, /admin/users, etc.
-    // They provide administrative access to manage the system, content, users, orders, and other
-    // business operations for users with admin privileges.
     $routes->prefix('Admin', function (RouteBuilder $builder): void {
         // Connect the base path for the admin area to the Admin dashboard
         // This will be the first page an admin user sees after login

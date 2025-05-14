@@ -4,370 +4,28 @@
  *
  * @var \App\View\AppView $this
  */
+$siteTitle = 'Diana Bonvini Admin';
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <?= $this->Html->charset() ?>
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>
-        Diana Bonvini Admin | <?= $this->fetch('title') ?>
+        <?= $siteTitle ?> | <?= $this->fetch('title') ?>
     </title>
-    <?= $this->Html->meta('icon') ?>
+    <?= $this->Html->meta('icon', '/favicon-16x16.ico', ['sizes' => '16x16']) ?>
+    <?= $this->Html->meta('icon', '/favicon-32x32.ico', ['sizes' => '32x32']) ?>
 
     <!-- Core CSS -->
     <?= $this->Html->css('normalize.min') ?>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <?= $this->Html->css('admin-style') ?>
-
-    <style>
-        :root {
-            --primary-color: #2A9D8F;
-            --secondary-color: #E76F51;
-            --success-color: #2ecc71;
-            --info-color: #3498db;
-            --warning-color: #f39c12;
-            --danger-color: #e74c3c;
-            --text-color: #333;
-            --bg-color: #f8f9fc;
-            --sidebar-width: 260px;
-            --topbar-height: 70px;
-        }
-
-        body {
-            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-size: 14px;
-            margin: 0;
-            padding: 0;
-        }
-
-        /* Layout */
-        .wrapper {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: linear-gradient(180deg, #2A9D8F 0%, #207268 100%);
-            color: #fff;
-            min-height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            transition: width 0.3s;
-        }
-
-        .sidebar-header {
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .sidebar-header h3 {
-            margin: 0;
-            font-size: 20px;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        .sidebar-menu {
-            padding: 15px 0;
-        }
-
-        .menu-group {
-            margin-bottom: 15px;
-        }
-
-        .menu-title {
-            padding: 5px 20px;
-            font-size: 12px;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.5);
-            font-weight: 600;
-        }
-
-        .menu-item {
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            color: rgba(255, 255, 255, 0.8);
-            text-decoration: none;
-            transition: all 0.2s;
-            border-left: 4px solid transparent;
-        }
-
-        .menu-item:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            text-decoration: none;
-            border-left-color: rgba(255, 255, 255, 0.5);
-        }
-
-        .menu-item.active {
-            background-color: rgba(255, 255, 255, 0.2);
-            color: #fff;
-            border-left-color: #fff;
-            font-weight: 600;
-        }
-
-        .menu-item i {
-            margin-right: 10px;
-            width: 20px;
-            text-align: center;
-            font-size: 16px;
-        }
-
-        /* Main Content */
-        .content {
-            margin-left: var(--sidebar-width);
-            width: calc(100% - var(--sidebar-width));
-            padding: 0;
-            background-color: #F7F9FC;
-            min-height: 100vh;
-            transition: margin-left 0.3s, width 0.3s;
-        }
-
-        /* Header */
-        .top-bar-container {
-            position: sticky;
-            top: 0;
-            z-index: 99;
-            background-color: #FFFFFF;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            width: 100%;
-        }
-
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 25px;
-            height: var(--topbar-height);
-        }
-
-        .sidebar-toggle {
-            font-size: 18px;
-            color: #555;
-            cursor: pointer;
-        }
-
-        .page-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-color);
-            margin: 0;
-        }
-
-        .user-menu {
-            display: flex;
-            align-items: center;
-        }
-
-        .user-menu-item {
-            margin-left: 15px;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f8f9fc;
-            color: #555;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .user-menu-item:hover {
-            background-color: #eef1f6;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-left: 15px;
-            cursor: pointer;
-            object-fit: cover;
-        }
-
-        .user-dropdown {
-            position: relative;
-        }
-
-        .dropdown-menu {
-            min-width: 200px;
-            border: none;
-            border-radius: 5px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            padding: 0;
-            overflow: hidden;
-        }
-
-        .dropdown-item {
-            padding: 12px 15px;
-            font-size: 14px;
-            color: var(--text-color);
-            transition: background-color 0.2s;
-        }
-
-        .dropdown-item:hover {
-            background-color: #f8f9fc;
-        }
-
-        .dropdown-item i {
-            margin-right: 10px;
-            width: 20px;
-            text-align: center;
-            color: var(--primary-color);
-        }
-
-        /* Content wrapper */
-        .content-wrapper {
-            padding: 25px;
-        }
-
-        /* Responsive Sidebar */
-        .sidebar-collapsed .sidebar {
-            width: 70px;
-        }
-
-        .sidebar-collapsed .sidebar .sidebar-header h3,
-        .sidebar-collapsed .sidebar .menu-item span,
-        .sidebar-collapsed .sidebar .menu-title {
-            display: none;
-        }
-
-        .sidebar-collapsed .sidebar .menu-item {
-            justify-content: center;
-            padding: 15px 0;
-        }
-
-        .sidebar-collapsed .sidebar .menu-item i {
-            margin-right: 0;
-            font-size: 18px;
-        }
-
-        .sidebar-collapsed .content {
-            margin-left: 70px;
-            width: calc(100% - 70px);
-        }
-
-        /* Custom Styles for Components */
-        .card {
-            border: none;
-            border-radius: 8px;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
-            margin-bottom: 25px;
-        }
-
-        .card-header {
-            background-color: #f8f9fc;
-            border-bottom: 1px solid #e3e6f0;
-            padding: 15px 20px;
-        }
-
-        .card-header h6 {
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-
-        .btn-primary:hover, .btn-primary:focus {
-            background-color: #218a7e;
-            border-color: #1e7d71;
-        }
-
-        .badge-primary {
-            background-color: var(--primary-color);
-        }
-
-        .pagination .page-item.active .page-link {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-
-        .pagination .page-link {
-            color: var(--primary-color);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 70px;
-            }
-
-            .sidebar .sidebar-header h3,
-            .sidebar .menu-item span,
-            .sidebar .menu-title {
-                display: none;
-            }
-
-            .sidebar .menu-item {
-                justify-content: center;
-                padding: 15px 0;
-            }
-
-            .sidebar .menu-item i {
-                margin-right: 0;
-                font-size: 18px;
-            }
-
-            .content {
-                margin-left: 70px;
-                width: calc(100% - 70px);
-            }
-
-            .sidebar.expanded {
-                width: var(--sidebar-width);
-                z-index: 1050;
-            }
-
-            .sidebar.expanded .sidebar-header h3,
-            .sidebar.expanded .menu-item span,
-            .sidebar.expanded .menu-title {
-                display: block;
-            }
-
-            .sidebar.expanded .menu-item {
-                justify-content: flex-start;
-                padding: 12px 20px;
-            }
-
-            .sidebar.expanded .menu-item i {
-                margin-right: 10px;
-                font-size: 16px;
-            }
-
-            .overlay {
-                display: none;
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background-color: rgba(0, 0, 0, 0.5);
-                z-index: 1040;
-            }
-
-            .sidebar.expanded + .overlay {
-                display: block;
-            }
-        }
-    </style>
+    <?= $this->Html->css('https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css'); ?>
+    <?= $this->Html->css('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'); ?>
+    <?= $this->Html->css('admin-styles') ?>
 
     <?= $this->fetch('meta') ?>
     <?= $this->fetch('css') ?>
+    <?= $this->fetch('script') ?>
 </head>
 <body>
 <div class="wrapper <?= isset($_COOKIE['sidebar_collapsed']) && $_COOKIE['sidebar_collapsed'] === 'true' ? 'sidebar-collapsed' : '' ?>">
@@ -381,7 +39,7 @@
             <div class="menu-group">
                 <?php
                 // Helper to determine if menu item is active
-                $isActive = function($controller, $action = null) {
+                $isActive = function ($controller, $action = null) {
                     $currentController = $this->request->getParam('controller');
                     $currentAction = $this->request->getParam('action');
 
@@ -390,6 +48,7 @@
                             return 'active';
                         }
                     }
+
                     return '';
                 };
                 ?>
@@ -474,7 +133,7 @@
                         <?php
                         $identity = $this->request->getAttribute('identity');
                         $userName = $identity ? ($identity->first_name . ' ' . $identity->last_name) : 'Admin User';
-                        $userInitials = $identity ? (substr($identity->first_name, 0, 1) . substr($identity->last_name, 0, 1)) : 'AU';
+                        $userInitials = $identity ? substr($identity->first_name, 0, 1) . substr($identity->last_name, 0, 1) : 'AU';
                         ?>
                         <div class="user-avatar dropdown-toggle d-flex align-items-center justify-content-center bg-primary text-white"
                              id="userDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -492,16 +151,22 @@
                                 </div>
                             </div>
                             <div class="dropdown-divider m-0"></div>
-                            <a class="dropdown-item" href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Users', 'action' => 'profile']) ?>">
-                                <i class="fas fa-user-circle"></i> My Profile
-                            </a>
-                            <a class="dropdown-item" href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'Settings', 'action' => 'index']) ?>">
-                                <i class="fas fa-cog"></i> Settings
-                            </a>
+                            <?= $this->Html->link(
+                                '<i class="fas fa-user-circle"></i> My Profile',
+                                ['prefix' => 'Admin', 'controller' => 'Users', 'action' => 'profile'],
+                                ['class' => 'dropdown-item', 'escape' => false]
+                            ) ?>
+                            <?= $this->Html->link(
+                                '<i class="fas fa-cog"></i> Settings',
+                                ['prefix' => 'Admin', 'controller' => 'Settings', 'action' => 'index'],
+                                ['class' => 'dropdown-item', 'escape' => false]
+                            ) ?>
                             <div class="dropdown-divider m-0"></div>
-                            <a class="dropdown-item" href="<?= $this->Url->build(['prefix' => false, 'controller' => 'Users', 'action' => 'logout']) ?>">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                            </a>
+                            <?= $this->Html->link(
+                                '<i class="fas fa-sign-out-alt"></i> Logout',
+                                ['prefix' => false, 'controller' => 'Users', 'action' => 'logout'],
+                                ['class' => 'dropdown-item', 'escape' => false]
+                            ) ?>
                         </div>
                     </div>
                 </div>
@@ -520,9 +185,10 @@
 </div>
 
 <!-- Scripts -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<?= $this->fetch('scriptBottom') ?>
+<?= $this->Html->script('https://code.jquery.com/jquery-3.6.0.min.js') ?>
+<?= $this->Html->script('https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js') ?>
+<?= $this->Html->script('https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js') ?>
 
 <script>
     $(document).ready(function() {
@@ -561,7 +227,5 @@
         }, 5000);
     });
 </script>
-
-<?= $this->fetch('script') ?>
 </body>
 </html>
