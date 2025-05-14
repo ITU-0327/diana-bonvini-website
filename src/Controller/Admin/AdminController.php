@@ -72,53 +72,12 @@ class AdminController extends AppController
             ->where(['order_status' => 'completed'])
             ->count();
 
-        // Revenue calculations
-        /** @var array<\App\Model\Entity\Order> $todayOrders */
-        $todayOrders = $ordersTable->find()
-            ->where([
-                'created_at >=' => $today->format('Y-m-d 00:00:00'),
-                'order_status !=' => 'cancelled',
-            ]);
+        // Revenue calculations (orders + writing services)
+        $totalRevenueToday = $this->getCombinedRevenueSince($today);
+        $totalRevenueWeek = $this->getCombinedRevenueSince($weekStart);
+        $totalRevenueMonth = $this->getCombinedRevenueSince($monthStart);
 
-        /** @var array<\App\Model\Entity\Order> $weekOrders */
-        $weekOrders = $ordersTable->find()
-            ->where([
-                'created_at >=' => $weekStart->format('Y-m-d 00:00:00'),
-                'order_status !=' => 'cancelled',
-            ]);
-
-        /** @var array<\App\Model\Entity\Order> $monthOrders */
-        $monthOrders = $ordersTable->find()
-            ->where([
-                'created_at >=' => $monthStart->format('Y-m-d 00:00:00'),
-                'order_status !=' => 'cancelled',
-            ]);
-
-        // Calculate revenue
-        $totalRevenueToday = 0.0;
-        foreach ($todayOrders as $order) {
-            $totalRevenueToday += $order->total_amount;
-        }
-
-        $totalRevenueWeek = 0.0;
-        foreach ($weekOrders as $order) {
-            $totalRevenueWeek += $order->total_amount;
-        }
-
-        $totalRevenueMonth = 0.0;
-        foreach ($monthOrders as $order) {
-            $totalRevenueMonth += $order->total_amount;
-        }
-
-        // Recent orders
-        /** @var array<\App\Model\Entity\Order> $recentOrders */
-        $recentOrders = $ordersTable->find()
-            ->contain(['Users'])
-            ->orderBy(['Orders.created_at' => 'DESC'])
-            ->limit(5)
-            ->all();
-
-        // Writing Service Requests
+        // Writing Service Requests table for service stats
         $writingTable = $this->getTableLocator()->get('WritingServiceRequests');
 
         // Service counts by status
@@ -136,6 +95,14 @@ class AdminController extends AppController
 
         // Count active services
         $activeServicesCount = $pendingQuotesCount + $upcomingBookingsCount;
+
+        // Recent orders
+        /** @var array<\App\Model\Entity\Order> $recentOrders */
+        $recentOrders = $ordersTable->find()
+            ->contain(['Users'])
+            ->orderBy(['Orders.created_at' => 'DESC'])
+            ->limit(5)
+            ->all();
 
         // Recent requests
         $recentRequests = $writingTable->find()
@@ -218,5 +185,49 @@ class AdminController extends AppController
 
             $this->redirect(['controller' => 'Users', 'action' => 'login', 'prefix' => false]);
         }
+    }
+
+    /**
+     * Get total revenue from orders since the given date.
+     */
+    private function getOrderRevenueSince(DateTime $since): float
+    {
+        $ordersTable = $this->getTableLocator()->get('Orders');
+        $result = $ordersTable->find()
+            ->select(['sum' => $ordersTable->find()->func()->sum('total_amount')])
+            ->where([
+                'created_at >=' => $since->format('Y-m-d 00:00:00'),
+                'order_status !=' => 'cancelled',
+            ])
+            ->enableHydration(false)
+            ->first();
+
+        return isset($result['sum']) ? (float)$result['sum'] : 0.0;
+    }
+
+    /**
+     * Get total revenue from writing services since the given date.
+     */
+    private function getServiceRevenueSince(DateTime $since): float
+    {
+        $writingTable = $this->getTableLocator()->get('WritingServiceRequests');
+        $result = $writingTable->find()
+            ->select(['sum' => $writingTable->find()->func()->sum('final_price')])
+            ->where([
+                'created_at >=' => $since->format('Y-m-d 00:00:00'),
+                'request_status !=' => 'cancelled',
+            ])
+            ->enableHydration(false)
+            ->first();
+
+        return isset($result['sum']) ? (float)$result['sum'] : 0.0;
+    }
+
+    /**
+     * Get combined revenue from orders and writing services since the given date.
+     */
+    private function getCombinedRevenueSince(DateTime $since): float
+    {
+        return $this->getOrderRevenueSince($since) + $this->getServiceRevenueSince($since);
     }
 }
