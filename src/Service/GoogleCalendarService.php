@@ -658,6 +658,8 @@ class GoogleCalendarService
      */
     public function getFreeTimeSlots(string $adminUserId, DateTime $date, array $workingHours, int $slotDuration = 30): array
     {
+        \Cake\Log\Log::debug('getFreeTimeSlots called for date: ' . $date->format('Y-m-d') . ', admin user ID: ' . $adminUserId);
+        
         $timezone = new DateTimeZone(date_default_timezone_get());
         $date->setTimezone($timezone);
 
@@ -669,6 +671,7 @@ class GoogleCalendarService
         $endDate->setTime(23, 59, 59);
 
         // Get all events for the date
+        \Cake\Log\Log::debug('Getting calendar events for date range: ' . $startDate->format('Y-m-d H:i:s') . ' to ' . $endDate->format('Y-m-d H:i:s'));
         $events = $this->getCalendarEvents($adminUserId, $startDate, $endDate);
 
         // Default working hours if not provided
@@ -679,6 +682,8 @@ class GoogleCalendarService
             ];
         }
 
+        \Cake\Log\Log::debug('Working hours: ' . $workingHours['start'] . ' to ' . $workingHours['end']);
+
         // Calculate available time slots
         $startTime = clone $date;
         $startParts = explode(':', $workingHours['start']);
@@ -688,8 +693,11 @@ class GoogleCalendarService
         $endParts = explode(':', $workingHours['end']);
         $endTime->setTime((int)$endParts[0], (int)$endParts[1], 0);
 
+        \Cake\Log\Log::debug('Time range for slots: ' . $startTime->format('H:i') . ' to ' . $endTime->format('H:i'));
+
         // If Google Calendar API failed or settings not found, provide sample time slots for demo
         if ($events === false) {
+            \Cake\Log\Log::debug('Google Calendar API failed or settings not found, generating mock time slots');
             // Return mock time slots for demonstration
             $freeSlots = [];
             $currentTime = clone $startTime;
@@ -720,8 +728,11 @@ class GoogleCalendarService
                 $currentTime->modify("+{$slotDuration} minutes");
             }
 
+            \Cake\Log\Log::debug('Generated ' . count($freeSlots) . ' mock time slots');
             return $freeSlots;
         }
+
+        \Cake\Log\Log::debug('Found ' . count($events) . ' calendar events for the date');
 
         // Convert events to busy slots
         $busySlots = [];
@@ -733,6 +744,8 @@ class GoogleCalendarService
                 'start' => $eventStart,
                 'end' => $eventEnd,
             ];
+            
+            \Cake\Log\Log::debug('Busy slot: ' . $eventStart->format('H:i') . ' to ' . $eventEnd->format('H:i') . ' - ' . ($event['title'] ?? 'No title'));
         }
 
         // Find free slots
@@ -785,6 +798,7 @@ class GoogleCalendarService
             $currentTime->modify("+{$slotDuration} minutes");
         }
 
+        \Cake\Log\Log::debug('Found ' . count($freeSlots) . ' free time slots');
         return $freeSlots;
     }
 }

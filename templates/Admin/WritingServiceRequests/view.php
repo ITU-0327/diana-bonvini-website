@@ -307,6 +307,12 @@ $this->assign('title', __('Writing Service Request Details'));
                             ['class' => 'btn btn-info btn-block', 'escape' => false]
                         ) ?>
                         <p class="text-sm text-muted mt-1">View and manage your Google Calendar appointments</p>
+                        
+                        <!-- Send Time Slots Button -->
+                        <button type="button" class="btn btn-primary btn-block mt-2" data-toggle="modal" data-target="#timeSlotsModal">
+                            <i class="fas fa-calendar-alt mr-1"></i> Send Time Slots
+                        </button>
+                        <p class="text-sm text-muted mt-1">Send available time slots to the client</p>
                     </div>
 
                     <!-- Payment Request Button -->
@@ -530,7 +536,7 @@ $this->assign('title', __('Writing Service Request Details'));
 
 <!-- Load jQuery UI for datepicker -->
 <?= $this->Html->css('https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css') ?>
-<?= $this->Html->script('https://code.jquery.com/ui/1.12.1/jquery-ui.min.js') ?>
+<?= $this->Html->script('https://code.jquery.com/ui/1.12.1/jquery-ui.min.js', ['block' => true]) ?>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -539,7 +545,49 @@ $this->assign('title', __('Writing Service Request Details'));
         if (chatContainer) {
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
+        
+        // Initialize datepicker when the modal is shown
+        $('#timeSlotsModal').on('shown.bs.modal', function() {
+            console.log('Time slots modal shown, initializing datepicker');
+            initDatepicker();
+        });
 
+        // Initialize datepicker
+        function initDatepicker() {
+            try {
+                $('#datepicker').datepicker({
+                    minDate: 0, // Today
+                    maxDate: '+60d', // Allow up to 60 days in the future
+                    dateFormat: 'yy-mm-dd',
+                    firstDay: 1, // Start week on Monday
+                    showOtherMonths: true,
+                    selectOtherMonths: true,
+                    beforeShowDay: $.datepicker.noWeekends, // Disable weekends
+                    onSelect: function(dateText) {
+                        console.log('Date selected:', dateText);
+                        $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+                        $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
+                        $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
+                    }
+                });
+                console.log('Datepicker initialized');
+            } catch (e) {
+                console.error('Failed to initialize datepicker:', e);
+            }
+        }
+        
+        // Helper function for debugging
+        function debugLog(message, data) {
+            const debugging = true; // Set to false in production
+            if (debugging && console) {
+                if (data) {
+                    console.log(`[TimeSlots] ${message}:`, data);
+                } else {
+                    console.log(`[TimeSlots] ${message}`);
+                }
+            }
+        }
+        
         // Focus on message input when clicking reply button
         document.getElementById('messageText').focus();
 
@@ -668,6 +716,29 @@ $this->assign('title', __('Writing Service Request Details'));
                         }
                     }
 
+                    // Process calendar booking links
+                    if (text.includes('[CALENDAR_BOOKING_LINK]')) {
+                        const bookingLinkPattern = /\[CALENDAR_BOOKING_LINK\]([\s\S]*?)\[\/CALENDAR_BOOKING_LINK\]/;
+                        const match = text.match(bookingLinkPattern);
+
+                        if (match && match[1]) {
+                            const linkText = match[1].trim();
+
+                            // Create booking link HTML
+                            const bookingHtml = `
+                                <div class="mt-3 mb-1">
+                                    <a href="/calendar/availability?request_id=<?= $writingServiceRequest->writing_service_request_id ?>" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-calendar-alt mr-1"></i> View Available Time Slots
+                                    </a>
+                                </div>
+                                <div class="text-muted small">${linkText}</div>
+                            `;
+
+                            // Replace the tag with the button
+                            content.innerHTML = text.replace(bookingLinkPattern, bookingHtml);
+                        }
+                    }
+
                     // Process payment confirmations
                     if (text.includes('[PAYMENT_CONFIRMATION]')) {
                         const confirmPattern = /\[PAYMENT_CONFIRMATION\](.*?)\[\/PAYMENT_CONFIRMATION\]/;
@@ -792,7 +863,12 @@ $this->assign('title', __('Writing Service Request Details'));
                 });
 
                 // Poll for new messages
-                fetch(`<?= $this->Url->build(['action' => 'fetchMessages', $writingServiceRequest->writing_service_request_id]) ?>?lastMessageId=${lastMessageId || ''}`)
+                fetch(`<?= $this->Url->build(['action' => 'fetchMessages', $writingServiceRequest->writing_service_request_id]) ?>?lastMessageId=${lastMessageId || ''}`, {
+                    headers: {
+                        'X-CSRF-Token': document.querySelector('input[name="_csrfToken"]').value,
+                        'Accept': 'application/json'
+                    }
+                })
                     .then(response => response.json())
                     .then(data => {
                         if (data.success && data.messages.length > 0) {
@@ -900,6 +976,217 @@ $this->assign('title', __('Writing Service Request Details'));
                 return true;
             });
         }
+        
+        // Time slots selection functionality
+        const loadTimeSlotsBtn = document.getElementById('loadTimeSlots');
+        const timeSlotsLoading = document.getElementById('timeSlots-loading');
+        const timeSlotsEmpty = document.getElementById('timeSlots-empty');
+        const timeSlotsNone = document.getElementById('timeSlots-none');
+        const timeSlotsContainer = document.getElementById('time-slots-container');
+        const timeSlotsListContainer = document.getElementById('timeSlots-list');
+        const selectedDateDisplay = document.getElementById('selected-date-display');
+        const selectedTimeSlotsJson = document.getElementById('selectedTimeSlotsJson');
+        const selectAllCheckbox = document.getElementById('selectAllTimeSlots');
+        const sendTimeSlotsBtn = document.getElementById('sendTimeSlots');
+        
+        // Load time slots when the button is clicked
+        if (loadTimeSlotsBtn) {
+            loadTimeSlotsBtn.addEventListener('click', function() {
+                const selectedDate = $('#datepicker').datepicker('getDate');
+                console.log('Load button clicked, selected date:', selectedDate);
+
+                if (!selectedDate) {
+                    alert('Please select a date first');
+                    return;
+                }
+
+                // Format date as YYYY-MM-DD
+                const year = selectedDate.getFullYear();
+                const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                const day = String(selectedDate.getDate()).padStart(2, '0');
+                const formattedDate = `${year}-${month}-${day}`;
+
+                loadTimeSlots(formattedDate);
+            });
+        }
+
+        // Function to load time slots for a selected date
+        function loadTimeSlots(date) {
+            debugLog(`Loading time slots for date: ${date}`);
+            
+            // Show loading, hide other elements
+            timeSlotsEmpty.classList.add('d-none');
+            timeSlotsNone.classList.add('d-none');
+            timeSlotsListContainer.classList.add('d-none');
+            timeSlotsLoading.classList.remove('d-none');
+
+            // Format the date for display
+            const formattedDate = new Date(date);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            selectedDateDisplay.textContent = formattedDate.toLocaleDateString('en-US', options);
+
+            // Get CSRF token from the document
+            let csrfToken;
+            try {
+                const csrfElement = document.querySelector('input[name="_csrfToken"]');
+                csrfToken = csrfElement ? csrfElement.value : '<?= $this->request->getAttribute('csrfToken') ?>';
+                debugLog('Using CSRF token', csrfToken.substring(0, 10) + '...');
+            } catch (e) {
+                console.error('Error getting CSRF token:', e);
+                csrfToken = '<?= $this->request->getAttribute('csrfToken') ?>';
+            }
+
+            // Build the URL
+            const url = `<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'getAvailableTimeSlots', 'prefix' => 'Admin']) ?>?date=${date}`;
+            debugLog('Fetching from URL', url);
+
+            // Fetch available time slots
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-Token': csrfToken,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.json().catch(error => {
+                        console.error('Error parsing JSON response:', error);
+                        throw new Error('Invalid JSON response');
+                    });
+                })
+                .then(data => {
+                    console.log('Time slots data:', data);
+                    timeSlotsLoading.classList.add('d-none');
+
+                    if (data.success && data.timeSlots && data.timeSlots.length > 0) {
+                        // Show time slots container
+                        timeSlotsListContainer.classList.remove('d-none');
+
+                        // Populate time slots
+                        timeSlotsContainer.innerHTML = '';
+
+                        data.timeSlots.forEach(slot => {
+                            const slotDiv = document.createElement('div');
+                            slotDiv.className = 'custom-control custom-checkbox time-slot-item mb-2';
+
+                            const id = `slot-${slot.date}-${slot.start.replace(':', '-')}`;
+
+                            slotDiv.innerHTML = `
+                                <input type="checkbox" class="custom-control-input time-slot-checkbox" id="${id}" data-slot='${JSON.stringify(slot)}'>
+                                <label class="custom-control-label" for="${id}">
+                                    ${slot.formatted}
+                                </label>
+                            `;
+
+                            timeSlotsContainer.appendChild(slotDiv);
+                        });
+
+                        // Setup the checkboxes for selecting time slots
+                        setupTimeSlotCheckboxes();
+                    } else {
+                        console.log('No time slots available or success is false');
+                        // Show no time slots message
+                        timeSlotsNone.classList.remove('d-none');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading time slots:', error);
+                    timeSlotsLoading.classList.add('d-none');
+                    timeSlotsNone.classList.remove('d-none');
+                    alert('Error loading time slots: ' + error.message);
+                });
+        }
+
+        // Setup time slot checkboxes
+        function setupTimeSlotCheckboxes() {
+            const timeSlotCheckboxes = document.querySelectorAll('.time-slot-checkbox');
+
+            // Handle individual checkbox changes
+            timeSlotCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectedTimeSlots);
+            });
+
+            // Handle select all checkbox
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    timeSlotCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
+
+                    updateSelectedTimeSlots();
+                });
+            }
+
+            // Clear previous selection
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = false;
+            }
+            updateSelectedTimeSlots();
+        }
+
+        // Update selected time slots
+        function updateSelectedTimeSlots() {
+            const selectedTimeSlots = [];
+            const timeSlotCheckboxes = document.querySelectorAll('.time-slot-checkbox:checked');
+
+            timeSlotCheckboxes.forEach(checkbox => {
+                const slotData = JSON.parse(checkbox.dataset.slot);
+                selectedTimeSlots.push(slotData);
+            });
+
+            // Update hidden input with selected time slots
+            if (selectedTimeSlotsJson) {
+                selectedTimeSlotsJson.value = JSON.stringify(selectedTimeSlots);
+            }
+
+            // Enable/disable send button based on selection
+            if (sendTimeSlotsBtn) {
+                sendTimeSlotsBtn.disabled = selectedTimeSlots.length === 0;
+            }
+
+            // Update select all checkbox state
+            const allCheckboxes = document.querySelectorAll('.time-slot-checkbox');
+            if (selectAllCheckbox && allCheckboxes.length > 0) {
+                selectAllCheckbox.checked = timeSlotCheckboxes.length > 0 && 
+                                        timeSlotCheckboxes.length === allCheckboxes.length;
+            }
+        }
+
+        // Send time slots button
+        if (sendTimeSlotsBtn) {
+            sendTimeSlotsBtn.addEventListener('click', function() {
+                const messageText = document.getElementById('timeSlotMessageText').value.trim();
+                const selectedTimeSlots = selectedTimeSlotsJson ? selectedTimeSlotsJson.value : '[]';
+
+                if (!messageText) {
+                    alert('Please enter a message to accompany the time slots');
+                    return;
+                }
+
+                if (!selectedTimeSlots || selectedTimeSlots === '[]') {
+                    alert('Please select at least one time slot');
+                    return;
+                }
+
+                try {
+                    // Show loading state
+                    sendTimeSlotsBtn.disabled = true;
+                    sendTimeSlotsBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
+                    
+                    // Submit the form
+                    document.getElementById('timeSlotsForm').submit();
+                } catch (error) {
+                    console.error('Error submitting form:', error);
+                    alert('An error occurred while sending time slots. Please try again.');
+                    
+                    // Reset button state
+                    sendTimeSlotsBtn.disabled = false;
+                    sendTimeSlotsBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Send Time Slots';
+                }
+            });
+        }
     });
 </script>
 
@@ -963,12 +1250,14 @@ $this->assign('title', __('Writing Service Request Details'));
     </div>
 </div>
 
-<!-- Time Slots Modal -->
+<!-- Select Available Time Slots Modal -->
 <div class="modal fade" id="timeSlotsModal" tabindex="-1" role="dialog" aria-labelledby="timeSlotsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="timeSlotsModalLabel"><i class="fas fa-calendar-alt mr-2"></i> Select Available Time Slots</h5>
+                <h5 class="modal-title" id="timeSlotsModalLabel">
+                    <i class="far fa-clock mr-1"></i> Select Available Time Slots
+                </h5>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -977,52 +1266,72 @@ $this->assign('title', __('Writing Service Request Details'));
                 <?= $this->Form->create(null, [
                     'url' => ['action' => 'sendTimeSlots', $writingServiceRequest->writing_service_request_id],
                     'id' => 'timeSlotsForm',
+                    'type' => 'post'
                 ]) ?>
-
+                
                 <div class="row">
+                    <!-- Date Selection Column -->
                     <div class="col-md-5">
-                        <!-- Calendar -->
-                        <h6 class="font-weight-bold mb-3">Select a Date</h6>
-                        <div id="datepicker"></div>
-
-                        <div class="text-center mt-3 mb-3">
-                            <button type="button" id="loadTimeSlots" class="btn btn-primary">
-                                <i class="fas fa-clock mr-1"></i> Load Time Slots
-                            </button>
+                        <h5 class="font-weight-bold mb-3">Select a Date</h5>
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-body p-2">
+                                <!-- Improved datepicker with larger display -->
+                                <div id="datepicker" class="border p-2 rounded"></div>
+                            </div>
                         </div>
+                        
+                        <!-- Clear visual call to action for loading time slots -->
+                        <button type="button" id="loadTimeSlots" class="btn btn-primary btn-block">
+                            <i class="fas fa-clock mr-1"></i> Load Time Slots
+                        </button>
+                        
+                        <!-- Add helper text -->
+                        <p class="small text-muted mt-2 text-center">
+                            First select a date, then click "Load Time Slots" to see available times
+                        </p>
                     </div>
-
+                    
+                    <!-- Time Slots Selection Column -->
                     <div class="col-md-7">
-                        <!-- Time Slots Selection -->
-                        <h6 class="font-weight-bold mb-3">Select Time Slots to Offer</h6>
-
+                        <h5 class="font-weight-bold mb-3">Select Time Slots to Offer</h5>
+                        <div class="selected-date-container mb-2">
+                            <span class="text-muted">Selected Date: </span>
+                            <span id="selected-date-display" class="font-weight-bold">None selected</span>
+                        </div>
+                        
+                        <!-- Empty State -->
+                        <div id="timeSlots-empty" class="text-center py-4">
+                            <i class="fas fa-calendar-day fa-3x text-gray-300 mb-3"></i>
+                            <p class="text-gray-500">Select a date and click "Load Time Slots"</p>
+                            <p class="text-sm text-gray-400">Available time slots will appear here</p>
+                        </div>
+                        
+                        <!-- Loading State -->
                         <div id="timeSlots-loading" class="text-center py-4 d-none">
-                            <div class="spinner-border text-primary" role="status">
+                            <div class="spinner-border text-primary mb-3" role="status">
                                 <span class="sr-only">Loading...</span>
                             </div>
-                            <p class="mt-2 text-muted">Loading available time slots...</p>
+                            <p class="text-gray-500">Loading available time slots...</p>
                         </div>
-
-                        <div id="timeSlots-empty" class="text-center py-4">
-                            <i class="far fa-clock fa-3x text-gray-300 mb-3"></i>
-                            <p class="text-gray-500">Select a date and click "Load Time Slots" to view available times</p>
-                        </div>
-
-                        <div id="timeSlots-list" class="d-none">
-                            <div id="selected-date-display" class="font-weight-bold mb-3 text-primary"></div>
-
-                            <div id="time-slots-container">
-                                <!-- Time slots will be populated via JavaScript -->
-                            </div>
-
-                            <div class="mt-3">
+                        
+                        <!-- Time Slots List -->
+                        <div id="timeSlots-list" class="card shadow-sm mb-3 d-none">
+                            <div class="card-header py-2">
                                 <div class="custom-control custom-checkbox">
                                     <input type="checkbox" class="custom-control-input" id="selectAllTimeSlots">
-                                    <label class="custom-control-label" for="selectAllTimeSlots">Select All Time Slots</label>
+                                    <label class="custom-control-label font-weight-bold" for="selectAllTimeSlots">
+                                        Select All Time Slots
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="card-body p-3" style="max-height: 250px; overflow-y: auto;">
+                                <div id="time-slots-container">
+                                    <!-- Time slots will be populated here -->
                                 </div>
                             </div>
                         </div>
 
+                        <!-- No Time Slots State -->
                         <div id="timeSlots-none" class="text-center py-4 d-none">
                             <i class="fas fa-calendar-times fa-3x text-gray-300 mb-3"></i>
                             <p class="text-gray-500">No available time slots for this date</p>
@@ -1034,9 +1343,18 @@ $this->assign('title', __('Writing Service Request Details'));
                 <!-- Message Text Area -->
                 <div class="form-group mt-4">
                     <h6 class="font-weight-bold mb-2">Message to Client</h6>
-                    <textarea name="message_text" class="form-control" rows="3" id="timeSlotMessageText" placeholder="Enter a message to accompany the time slots...">I'd like to schedule a consultation to discuss your writing service request. Here are some available time slots. Please click the link below to book one of these times or select another time that works for you."></textarea>
-
-                    <input type="hidden" name="time_slots" id="selectedTimeSlotsJson" value="">
+                    <?= $this->Form->textarea('message_text', [
+                        'class' => 'form-control',
+                        'rows' => 3,
+                        'id' => 'timeSlotMessageText',
+                        'placeholder' => 'Enter a message to accompany the time slots...',
+                        'value' => 'I\'d like to schedule a consultation to discuss your writing service request. Here are some available time slots. Please click the link below to book one of these times or select another time that works for you.'
+                    ]) ?>
+                    
+                    <?= $this->Form->hidden('time_slots', [
+                        'id' => 'selectedTimeSlotsJson', 
+                        'value' => '[]'
+                    ]) ?>
                 </div>
 
                 <?= $this->Form->end() ?>
@@ -1065,32 +1383,52 @@ $this->assign('title', __('Writing Service Request Details'));
         const selectedTimeSlotsJson = document.getElementById('selectedTimeSlotsJson');
         const selectAllCheckbox = document.getElementById('selectAllTimeSlots');
         const sendTimeSlotsBtn = document.getElementById('sendTimeSlots');
-
+        
         // Initialize datepicker
-        datepicker.datepicker({
-            minDate: 0, // Today
-            maxDate: '+60d', // Allow up to 60 days in the future
-            dateFormat: 'yy-mm-dd',
-            firstDay: 1, // Start week on Monday
-            showOtherMonths: true,
-            selectOtherMonths: true,
-            beforeShowDay: $.datepicker.noWeekends // Disable weekends
-        });
+        try {
+            datepicker.datepicker({
+                minDate: 0, // Today
+                maxDate: '+60d', // Allow up to 60 days in the future
+                dateFormat: 'yy-mm-dd',
+                firstDay: 1, // Start week on Monday
+                showOtherMonths: true,
+                selectOtherMonths: true,
+                beforeShowDay: $.datepicker.noWeekends, // Disable weekends
+                onSelect: function(dateText) {
+                    console.log('Date selected:', dateText);
+                    $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+                    $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
+                    $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
+                }
+            });
+            console.log('Datepicker initialized');
+        } catch (e) {
+            console.error('Failed to initialize datepicker:', e);
+        }
 
         // Load time slots when the button is clicked
         loadTimeSlotsBtn.addEventListener('click', function() {
-            const selectedDate = datepicker.val();
+            const selectedDate = datepicker.datepicker('getDate');
+            console.log('Load button clicked, selected date:', selectedDate);
 
             if (!selectedDate) {
                 alert('Please select a date first');
                 return;
             }
 
-            loadTimeSlots(selectedDate);
+            // Format date as YYYY-MM-DD
+            const year = selectedDate.getFullYear();
+            const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+            const day = String(selectedDate.getDate()).padStart(2, '0');
+            const formattedDate = `${year}-${month}-${day}`;
+
+            loadTimeSlots(formattedDate);
         });
 
         // Function to load time slots for a selected date
         function loadTimeSlots(date) {
+            debugLog(`Loading time slots for date: ${date}`);
+            
             // Show loading, hide other elements
             timeSlotsEmpty.classList.add('d-none');
             timeSlotsNone.classList.add('d-none');
@@ -1102,10 +1440,39 @@ $this->assign('title', __('Writing Service Request Details'));
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             selectedDateDisplay.textContent = formattedDate.toLocaleDateString('en-US', options);
 
+            // Get CSRF token from the document
+            let csrfToken;
+            try {
+                const csrfElement = document.querySelector('input[name="_csrfToken"]');
+                csrfToken = csrfElement ? csrfElement.value : '<?= $this->request->getAttribute('csrfToken') ?>';
+                debugLog('Using CSRF token', csrfToken.substring(0, 10) + '...');
+            } catch (e) {
+                console.error('Error getting CSRF token:', e);
+                csrfToken = '<?= $this->request->getAttribute('csrfToken') ?>';
+            }
+
+            // Build the URL
+            const url = `<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'getAvailableTimeSlots', 'prefix' => 'Admin']) ?>?date=${date}`;
+            debugLog('Fetching from URL', url);
+
             // Fetch available time slots
-            fetch(`/admin/writing-service-requests/get-available-time-slots?date=${date}`)
-                .then(response => response.json())
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-Token': csrfToken,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.json().catch(error => {
+                        console.error('Error parsing JSON response:', error);
+                        throw new Error('Invalid JSON response');
+                    });
+                })
                 .then(data => {
+                    console.log('Time slots data:', data);
                     timeSlotsLoading.classList.add('d-none');
 
                     if (data.success && data.timeSlots && data.timeSlots.length > 0) {
@@ -1134,6 +1501,7 @@ $this->assign('title', __('Writing Service Request Details'));
                         // Setup the checkboxes for selecting time slots
                         setupTimeSlotCheckboxes();
                     } else {
+                        console.log('No time slots available or success is false');
                         // Show no time slots message
                         timeSlotsNone.classList.remove('d-none');
                     }
@@ -1142,6 +1510,7 @@ $this->assign('title', __('Writing Service Request Details'));
                     console.error('Error loading time slots:', error);
                     timeSlotsLoading.classList.add('d-none');
                     timeSlotsNone.classList.remove('d-none');
+                    alert('Error loading time slots: ' + error.message);
                 });
         }
 
@@ -1192,7 +1561,7 @@ $this->assign('title', __('Writing Service Request Details'));
         // Send time slots button
         sendTimeSlotsBtn.addEventListener('click', function() {
             const messageText = document.getElementById('timeSlotMessageText').value.trim();
-            const selectedTimeSlots = selectedTimeSlotsJson.value;
+            const selectedTimeSlots = selectedTimeSlotsJson ? selectedTimeSlotsJson.value : '[]';
 
             if (!messageText) {
                 alert('Please enter a message to accompany the time slots');
@@ -1204,8 +1573,21 @@ $this->assign('title', __('Writing Service Request Details'));
                 return;
             }
 
-            // Submit the form
-            document.getElementById('timeSlotsForm').submit();
+            try {
+                // Show loading state
+                sendTimeSlotsBtn.disabled = true;
+                sendTimeSlotsBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
+                
+                // Submit the form
+                document.getElementById('timeSlotsForm').submit();
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                alert('An error occurred while sending time slots. Please try again.');
+                
+                // Reset button state
+                sendTimeSlotsBtn.disabled = false;
+                sendTimeSlotsBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Send Time Slots';
+            }
         });
     });
 </script>
@@ -1356,6 +1738,29 @@ Thank you for your payment. We'll now begin work on your writing service request
                         }
                     }
 
+                    // Process calendar booking links
+                    if (text.includes('[CALENDAR_BOOKING_LINK]')) {
+                        const bookingLinkPattern = /\[CALENDAR_BOOKING_LINK\]([\s\S]*?)\[\/CALENDAR_BOOKING_LINK\]/;
+                        const match = text.match(bookingLinkPattern);
+
+                        if (match && match[1]) {
+                            const linkText = match[1].trim();
+
+                            // Create booking link HTML
+                            const bookingHtml = `
+                                <div class="mt-3 mb-1">
+                                    <a href="/calendar/availability?request_id=<?= $writingServiceRequest->writing_service_request_id ?>" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-calendar-alt mr-1"></i> View Available Time Slots
+                                    </a>
+                                </div>
+                                <div class="text-muted small">${linkText}</div>
+                            `;
+
+                            // Replace the tag with the button
+                            content.innerHTML = text.replace(bookingLinkPattern, bookingHtml);
+                        }
+                    }
+
                     // Process payment confirmations
                     if (text.includes('[PAYMENT_CONFIRMATION]')) {
                         const confirmPattern = /\[PAYMENT_CONFIRMATION\](.*?)\[\/PAYMENT_CONFIRMATION\]/;
@@ -1428,132 +1833,6 @@ Thank you for your payment. We'll now begin work on your writing service request
         }
     });
 </script>
-<style>
-    .bg-success-light {
-        background-color: rgba(40, 167, 69, 0.1);
-    }
-    .message-bubble {
-        background-color: #f8f9fa;
-        border-radius: 0.5rem;
-    }
-    .admin-message .message-bubble {
-        background-color: #e3f2fd;
-        border-left: 4px solid #2196f3;
-    }
-    .client-message .message-bubble {
-        border-left: 4px solid #4caf50;
-    }
-    .avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-    }
-
-    /* Payment Card Styles */
-    .payment-card {
-        transition: all 0.3s ease;
-    }
-
-    .payment-card:hover {
-        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
-    }
-
-    .payment-card.border-success {
-        border-width: 1px !important;
-    }
-
-    .payment-card-header {
-        position: relative;
-        transition: background-color 0.3s ease;
-    }
-
-    .payment-card-header .badge {
-        font-size: 75%;
-    }
-
-    .payment-status-indicator {
-        margin-bottom: 0.5rem;
-    }
-
-    .status-dot {
-        width: 24px;
-        display: flex;
-        justify-content: center;
-    }
-
-    .payment-confirmation-card {
-        transition: all 0.3s ease;
-    }
-
-    .payment-confirmation-card:hover {
-        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
-    }
-
-    .payment-confirmation-content {
-        line-height: 1.5;
-    }
-
-    .payment-confirmation-content strong {
-        color: #28a745;
-        font-weight: 600;
-    }
-
-    /* Status Badge Styles */
-    .status-badge.badge-success {
-        background-color: #28a745;
-    }
-
-    .status-badge.badge-warning {
-        background-color: #ffc107;
-        color: #212529;
-    }
-
-    .status-badge.badge-danger {
-        background-color: #dc3545;
-    }
-
-    .payment-date {
-        font-size: 0.85rem;
-    }
-
-    /* Retry button styling */
-    .retry-payment-check {
-        transition: all 0.2s ease;
-        border-radius: 20px;
-        padding: 2px 8px;
-        font-size: 0.8rem;
-    }
-
-    .retry-payment-check:hover {
-        background-color: #4e73df;
-        color: white;
-        transform: translateY(-1px);
-    }
-
-    /* Payment status animation */
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-        100% { transform: scale(1); }
-    }
-
-    .payment-status-indicator i.fa-check-circle {
-        animation: pulse 2s ease-in-out;
-    }
-
-    .payment-status-indicator i.fa-sync-alt {
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-</style>
 <?php $this->end(); ?>
 
 <?php
@@ -1568,5 +1847,4 @@ function getStatusClass(string $status): string
         default => 'secondary'
     };
 }
-
 ?>

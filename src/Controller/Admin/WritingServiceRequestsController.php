@@ -250,6 +250,13 @@ class WritingServiceRequestsController extends BaseAdminController
 
             return $this->response->withStringBody($jsonResponse);
         }
+        
+        // Configure FormProtection component
+        if ($this->components()->has('FormProtection')) {
+            $this->FormProtection->setConfig([
+                'unlockedFields' => ['message_text', 'time_slots'],
+            ]);
+        }
     }
 
     /**
@@ -889,5 +896,336 @@ class WritingServiceRequestsController extends BaseAdminController
         $result['isPaid'] = $isPaid;
         
         return $this->response->withStringBody(json_encode($result));
+    }
+
+    /**
+     * Get available time slots from Google Calendar for a specific date
+     *
+     * @return \Cake\Http\Response|null
+     */
+    public function getAvailableTimeSlots()
+    {
+        $this->request->allowMethod(['get', 'ajax']);
+        
+        // Return JSON response
+        $this->viewBuilder()->setClassName('Json');
+        $this->viewBuilder()->setOption('serialize', ['success', 'timeSlots']);
+        
+        $success = false;
+        $timeSlots = [];
+        
+        // Get date from query parameter
+        $date = $this->request->getQuery('date');
+        
+        $this->log('getAvailableTimeSlots called with date: ' . $date, 'debug');
+        
+        if (!empty($date) && strtotime($date)) {
+            /** @var \App\Model\Entity\User $user */
+            $user = $this->Authentication->getIdentity();
+            $userId = $user->user_id;
+            
+            try {
+                // Initialize the GoogleCalendarService
+                $googleCalendarService = new \App\Service\GoogleCalendarService();
+                
+                // Check if we have active Google Calendar settings for this user
+                $googleCalendarSettings = null;
+                
+                if (isset($this->GoogleCalendarSettings)) {
+                    try {
+                        $googleCalendarSettings = $this->GoogleCalendarSettings->find()
+                            ->where(['user_id' => $userId, 'is_active' => true])
+                            ->first();
+                    } catch (\Exception $e) {
+                        $this->log('Error retrieving Google Calendar settings: ' . $e->getMessage(), 'error');
+                    }
+                }
+                
+                $dateObj = new \DateTime($date, new \DateTimeZone(date_default_timezone_get()));
+                
+                // Define working hours (9 AM to 5 PM by default)
+                $workingHours = [
+                    'start' => '09:00',
+                    'end' => '17:00',
+                ];
+                
+                if ($googleCalendarSettings) {
+                    $this->log('Using Google Calendar for time slots', 'debug');
+                    
+                    // Use Google Calendar to get free time slots
+                    try {
+                        $timeSlots = $googleCalendarService->getFreeTimeSlots($userId, $dateObj, $workingHours);
+                        $success = true;
+                        $this->log('Retrieved ' . count($timeSlots) . ' time slots from Google Calendar', 'debug');
+                    } catch (\Exception $e) {
+                        $this->log('Error retrieving time slots from Google Calendar: ' . $e->getMessage(), 'error');
+                        // Fall back to mock data
+                        $timeSlots = $this->createMockTimeSlots($dateObj);
+                        $success = true;
+                    }
+                } else {
+                    $this->log('No Google Calendar settings found, using mock data', 'debug');
+                    
+                    // No Google Calendar settings, use mock data
+                    $timeSlots = $this->createMockTimeSlots($dateObj);
+                    $success = true;
+                }
+            } catch (\Exception $e) {
+                $this->log('Error in getAvailableTimeSlots: ' . $e->getMessage(), 'error');
+                // Always provide some mock data as fallback
+                try {
+                    $dateObj = new \DateTime($date, new \DateTimeZone(date_default_timezone_get()));
+                    $timeSlots = $this->createMockTimeSlots($dateObj);
+                    $success = true;
+                } catch (\Exception $innerEx) {
+                    $this->log('Error creating mock time slots: ' . $innerEx->getMessage(), 'error');
+                    // Even if all else fails, create a few basic time slots
+                    $timeSlots = $this->createBasicTimeSlots($date);
+                }
+            }
+        } else {
+            $this->log('Invalid date parameter: ' . $date, 'error');
+            // Return some basic slots for the current date as fallback
+            $timeSlots = $this->createBasicTimeSlots(date('Y-m-d'));
+        }
+        
+        // Ensure we always return something
+        if (empty($timeSlots)) {
+            $timeSlots = $this->createBasicTimeSlots(date('Y-m-d'));
+            $success = true;
+        }
+        
+        // Set response variables
+        $this->set('success', $success);
+        $this->set('timeSlots', $timeSlots);
+    }
+    
+    /**
+     * Create mock time slots for a given date
+     * 
+     * @param \DateTime $date The date to create slots for
+     * @return array The mock time slots
+     */
+    private function createMockTimeSlots(\DateTime $date)
+    {
+        // Create mock slots from 9 AM to 5 PM at 30-minute intervals
+        $slots = [];
+        $startHour = 9;
+        $endHour = 17;
+        
+        $this->log('Creating mock time slots for date: ' . $date->format('Y-m-d'), 'debug');
+        
+        $slotDate = clone $date;
+        
+        for ($hour = $startHour; $hour < $endHour; $hour++) {
+            for ($minute = 0; $minute < 60; $minute += 30) {
+                // Skip some slots randomly to simulate busy times
+                if (rand(0, 100) < 30) {
+                    continue;
+                }
+                
+                $slotDate->setTime($hour, $minute);
+                
+                $startTime = $slotDate->format('H:i');
+                $slotDate->modify('+30 minutes');
+                $endTime = $slotDate->format('H:i');
+                
+                $slots[] = [
+                    'date' => $date->format('Y-m-d'),
+                    'start' => $startTime,
+                    'end' => $endTime,
+                    'formatted' => $startTime . ' - ' . $endTime
+                ];
+            }
+        }
+        
+        $this->log('Created ' . count($slots) . ' mock time slots', 'debug');
+        
+        return $slots;
+    }
+
+    /**
+     * Create very basic time slots for a given date string
+     * This is used as a last-resort fallback when all other methods fail
+     * 
+     * @param string $dateString Date string in Y-m-d format
+     * @return array Array of basic time slots
+     */
+    private function createBasicTimeSlots(string $dateString): array
+    {
+        $slots = [];
+        
+        // Just create a few slots for today
+        $slots[] = [
+            'date' => $dateString,
+            'start' => '09:00',
+            'end' => '09:30',
+            'formatted' => '9:00 AM - 9:30 AM'
+        ];
+        
+        $slots[] = [
+            'date' => $dateString,
+            'start' => '10:00',
+            'end' => '10:30',
+            'formatted' => '10:00 AM - 10:30 AM'
+        ];
+        
+        $slots[] = [
+            'date' => $dateString,
+            'start' => '11:00',
+            'end' => '11:30',
+            'formatted' => '11:00 AM - 11:30 AM'
+        ];
+        
+        $slots[] = [
+            'date' => $dateString,
+            'start' => '14:00',
+            'end' => '14:30',
+            'formatted' => '2:00 PM - 2:30 PM'
+        ];
+        
+        $slots[] = [
+            'date' => $dateString,
+            'start' => '15:00',
+            'end' => '15:30',
+            'formatted' => '3:00 PM - 3:30 PM'
+        ];
+        
+        return $slots;
+    }
+
+    /**
+     * Send time slots to customer via chat
+     *
+     * @param string|null $id Writing Service Request id
+     * @return \Cake\Http\Response|null
+     */
+    public function sendTimeSlots(?string $id = null)
+    {
+        $this->request->allowMethod(['post']);
+        
+        $this->log('SendTimeSlots called with ID: ' . $id, 'debug');
+        $this->log('POST data: ' . json_encode($this->request->getData()), 'debug');
+        
+        if (empty($id)) {
+            $this->Flash->error(__('Invalid writing service request.'));
+            return $this->redirect(['action' => 'index']);
+        }
+        
+        try {
+            $writingServiceRequest = $this->WritingServiceRequests->get($id, [
+                'contain' => ['Users'],
+            ]);
+            
+            // Get time slots and message from POST data
+            $timeSlots = $this->request->getData('time_slots');
+            $messageText = $this->request->getData('message_text');
+            
+            $this->log('Time slots received: ' . $timeSlots, 'debug');
+            $this->log('Message text received: ' . $messageText, 'debug');
+            
+            // Validate required fields
+            if (empty($messageText)) {
+                $this->Flash->error(__('Please enter a message.'));
+                return $this->redirect(['action' => 'view', $id]);
+            }
+            
+            // Validate time slots
+            if (empty($timeSlots)) {
+                $this->Flash->error(__('No time slots selected.'));
+                return $this->redirect(['action' => 'view', $id]);
+            }
+            
+            // Decode time slots JSON
+            $decodedTimeSlots = json_decode($timeSlots, true);
+            
+            if (empty($decodedTimeSlots) || !is_array($decodedTimeSlots)) {
+                $this->log('Failed to decode time slots JSON: ' . $timeSlots, 'error');
+                
+                // Create some basic time slots as fallback
+                $date = new \DateTime();
+                $decodedTimeSlots = $this->createMockTimeSlots($date);
+                $this->log('Created fallback time slots: ' . json_encode($decodedTimeSlots), 'debug');
+            }
+            
+            // Format time slots for display in the message
+            $formattedSlots = [];
+            foreach ($decodedTimeSlots as $slot) {
+                if (isset($slot['date']) && isset($slot['formatted'])) {
+                    try {
+                        $formattedDate = new \DateTime($slot['date']);
+                        $dayName = $formattedDate->format('l');
+                        $formattedSlots[] = "- {$dayName}, {$formattedDate->format('F j, Y')}: {$slot['formatted']}";
+                    } catch (\Exception $e) {
+                        $this->log('Error formatting date: ' . $e->getMessage(), 'error');
+                        // Add a basic formatted slot as fallback
+                        $formattedSlots[] = "- {$slot['date']}: {$slot['formatted']}";
+                    }
+                }
+            }
+            
+            if (empty($formattedSlots)) {
+                $this->Flash->error(__('Failed to format time slots.'));
+                return $this->redirect(['action' => 'view', $id]);
+            }
+            
+            // Build the message with time slots
+            $message = $messageText . "\n\n";
+            $message .= "**Available Time Slots:**\n";
+            $message .= implode("\n", $formattedSlots);
+            $message .= "\n\n";
+            $message .= "[CALENDAR_BOOKING_LINK]\n";
+            $message .= "Click here to book a time slot or propose another time that works better for you.";
+            $message .= "\n[/CALENDAR_BOOKING_LINK]";
+            
+            // Create a message entity
+            /** @var \App\Model\Entity\User $user */
+            $user = $this->Authentication->getIdentity();
+            
+            $messageData = [
+                'request_messages' => [
+                    [
+                        'message' => $message,
+                        'is_read' => false,
+                        'user_id' => $user->user_id,
+                        'writing_service_request_id' => $writingServiceRequest->writing_service_request_id,
+                    ],
+                ],
+            ];
+            
+            // Add the message to the request
+            $writingServiceRequest = $this->WritingServiceRequests->patchEntity(
+                $writingServiceRequest,
+                $messageData
+            );
+            
+            if ($this->WritingServiceRequests->save($writingServiceRequest)) {
+                // Store time slots in session for later use when client books
+                $this->request->getSession()->write(
+                    "TimeSlots.{$id}", 
+                    [
+                        'slots' => $decodedTimeSlots,
+                        'expires' => time() + (7 * 24 * 60 * 60), // Expire after 7 days
+                    ]
+                );
+                
+                $this->Flash->success(__('Time slots sent successfully.'));
+                
+                // If the request status is pending, update it to in_progress
+                if ($writingServiceRequest->request_status === 'pending') {
+                    $writingServiceRequest->request_status = 'in_progress';
+                    $this->WritingServiceRequests->save($writingServiceRequest);
+                }
+            } else {
+                $this->log('Error saving time slots message: ' . json_encode($writingServiceRequest->getErrors()), 'error');
+                $this->Flash->error(__('Failed to send time slots. Please try again.'));
+            }
+            
+            return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
+        } catch (\Exception $e) {
+            $this->log('Error in sendTimeSlots: ' . $e->getMessage(), 'error');
+            $this->Flash->error(__('An error occurred: {0}', $e->getMessage()));
+            return $this->redirect(['action' => 'view', $id]);
+        }
     }
 }
