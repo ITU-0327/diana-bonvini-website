@@ -186,58 +186,15 @@ class UsersController extends AppController
         $user = $this->Users->get($id);
 
         if ($this->request->is(['patch', 'post', 'put'])) {
-            $data = $this->request->getData();
+            $user = $this->Users->patchEntity($user, $this->request->getData());
 
-            // If the password field is set but is empty (after trimming), remove it.
-            if (isset($data['password']) && trim($data['password']) === '') {
-                unset($data['password']);
-            }
-
-            // Determine which submit button was pressed.
-            if (isset($data['info_submit'])) {
-                // Info update: remove password fields when not updating password.
-                unset($data['password'], $data['password_confirm'], $data['password_submit']);
-                // (If you need to combine address fields into one column, you can do it here.)
-            } elseif (isset($data['password_submit'])) {
-                // Password update: if a new password is provided, validate it.
-                if (!empty($data['password'])) {
-                    if ($data['password'] !== $data['password_confirm']) {
-                        $this->Flash->error(__('Passwords do not match. Please try again.'));
-
-                        return $this->redirect($this->referer());
-                    }
-                } else {
-                    // No new password provided – remove the password so it remains unchanged.
-                    unset($data['password']);
-                }
-                // Remove billing/personal fields so that only the password is updated.
-                unset(
-                    $data['first_name'],
-                    $data['last_name'],
-                    $data['phone_number'],
-                    $data['email'],
-                    $data['street_address'],
-                    $data['street_address2'],
-                    $data['suburb'],
-                    $data['state'],
-                    $data['postcode'],
-                    $data['country'],
-                    $data['info_submit'],
-                );
-            }
-            // Remove both submit buttons from the data.
-            unset($data['info_submit'], $data['password_submit']);
-
-            $user = $this->Users->patchEntity($user, $data);
             if ($this->Users->save($user)) {
-                $this->Flash->success(__('Your account has been updated.'));
+                $this->Flash->success(__('Your details were updated.'));
 
                 return $this->redirect(['action' => 'edit', $user->user_id]);
             }
 
-            debug($user->getErrors());
-
-            $this->Flash->error(__('The account could not be updated. Please, try again.'));
+            $this->Flash->error(__('Changes could not be saved. Please, try again.'));
         }
 
         $this->set(compact('user'));

@@ -108,6 +108,28 @@ class UsersFixture extends TestFixture
                 'created_at' => '2025-03-07 10:00:00',
                 'updated_at' => '2025-03-07 10:00:00',
             ],
+            [
+                'user_id' => 'no-cart-user',
+                'first_name' => 'No',
+                'last_name' => 'Cart',
+                'email' => 'nocart@example.com',
+                'password' => 'password',
+                'phone_number' => '1234567890',
+                'street_address' => '123 Main St',
+                'street_address2' => '',
+                'suburb' => 'Clayton',
+                'state' => 'VIC',
+                'postcode' => '3168',
+                'country' => 'AU',
+                'user_type' => 'customer',
+                'password_reset_token' => null,
+                'is_verified' => 1,
+                'token_expiration' => null,
+                'last_login' => null,
+                'is_deleted' => 0,
+                'created_at' => '2025-03-07 10:00:00',
+                'updated_at' => '2025-03-07 10:00:00',
+            ],
         ];
         parent::init();
     }
