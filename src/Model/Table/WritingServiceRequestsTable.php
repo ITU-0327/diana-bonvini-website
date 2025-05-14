@@ -3,10 +3,7 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
-use App\Model\Entity\WritingServiceRequest;
-use ArrayObject;
-use Cake\Datasource\EntityInterface;
-use Cake\Event\EventInterface;
+use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
@@ -16,6 +13,8 @@ use Cake\Validation\Validator;
  *
  * @property \App\Model\Table\UsersTable&\Cake\ORM\Association\BelongsTo $Users
  * @property \App\Model\Table\RequestMessagesTable&\Cake\ORM\Association\HasMany $RequestMessages
+ * @property \App\Model\Table\WritingServicePaymentsTable&\Cake\ORM\Association\HasMany $WritingServicePayments
+ *
  * @method \App\Model\Entity\WritingServiceRequest newEmptyEntity()
  * @method \App\Model\Entity\WritingServiceRequest newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\WritingServiceRequest> newEntities(array $data, array $options = [])
@@ -50,51 +49,19 @@ class WritingServiceRequestsTable extends Table
             'foreignKey' => 'user_id',
             'joinType' => 'INNER',
         ]);
-
+        $this->belongsTo('Appointments', [
+            'foreignKey' => 'appointment_id',
+            'joinType' => 'INNER',
+        ]);
+        
+        // Add the missing associations
         $this->hasMany('RequestMessages', [
             'foreignKey' => 'writing_service_request_id',
-            'sort' => ['RequestMessages.created_at' => 'DESC'],
         ]);
-
+        
         $this->hasMany('WritingServicePayments', [
             'foreignKey' => 'writing_service_request_id',
         ]);
-    }
-
-    /**
-     * Before save event callback.
-     *
-     * @param \Cake\Event\EventInterface<\App\Model\Entity\WritingServiceRequest> $event The event object.
-     * @param \App\Model\Entity\WritingServiceRequest $entity The entity being saved.
-     * @param \ArrayObject<string, mixed> $options Options passed to the save method.
-     * @return void
-     * @throws \Random\RandomException
-     */
-    public function beforeSave(EventInterface $event, WritingServiceRequest $entity, ArrayObject $options): void
-    {
-        if ($entity->isNew() && empty($entity->writing_service_request_id)) {
-            $entity->writing_service_request_id = $this->generateRequestId();
-        }
-    }
-
-    /**
-     * Generates a unique request ID.
-     *
-     * @return string
-     * @throws \Random\RandomException
-     */
-    private function generateRequestId(): string
-    {
-        do {
-            $letters = '';
-            for ($i = 0; $i < 2; $i++) {
-                $letters .= chr(random_int(65, 90));
-            }
-            $digits = str_pad((string)random_int(0, 99999), 5, '0', STR_PAD_LEFT);
-            $requestId = 'R-' . $letters . $digits;
-        } while ($this->exists(['writing_service_request_id' => $requestId]));
-
-        return $requestId;
     }
 
     /**
@@ -110,10 +77,13 @@ class WritingServiceRequestsTable extends Table
             ->notEmptyString('user_id');
 
         $validator
+            ->uuid('appointment_id')
+            ->notEmptyString('appointment_id');
+
+        $validator
             ->scalar('service_title')
-            ->maxLength('service_title', 100, 'Title must be no more than 100 characters.')
-            ->requirePresence('service_title', 'create')
-            ->notEmptyString('service_title');
+            ->maxLength('service_title', 100)
+            ->allowEmptyString('service_title');
 
         $validator
             ->scalar('service_type')
@@ -122,7 +92,7 @@ class WritingServiceRequestsTable extends Table
 
         $validator
             ->scalar('notes')
-            ->maxLength('notes', 1000, 'Notes must be no more than 1000 characters.')
+            ->maxLength('notes', 1000)
             ->allowEmptyString('notes');
 
         $validator
@@ -163,34 +133,8 @@ class WritingServiceRequestsTable extends Table
     public function buildRules(RulesChecker $rules): RulesChecker
     {
         $rules->add($rules->existsIn(['user_id'], 'Users'), ['errorField' => 'user_id']);
+        $rules->add($rules->existsIn(['appointment_id'], 'Appointments'), ['errorField' => 'appointment_id']);
 
         return $rules;
-    }
-
-    /**
-     * Override delete() to conditionally soft-delete service requests,
-     * cascading to request_messages when needed.
-     *
-     * @param \Cake\Datasource\EntityInterface $entity The service request entity.
-     * @param array<string,mixed> $options Options passed from controller.
-     * @return bool True on success, false on failure.
-     */
-    public function delete(EntityInterface $entity, array $options = []): bool
-    {
-        $reqId = $entity->get('writing_service_request_id');
-        $hasMsgs = $this->RequestMessages->exists(['writing_service_request_id' => $reqId]);
-
-        if ($hasMsgs) {
-            $rows = $this->updateAll(['is_deleted' => true], ['writing_service_request_id' => $reqId]);
-            if ($rows < 1) {
-                return false;
-            }
-
-            $this->RequestMessages->updateAll(['is_deleted' => true], ['writing_service_request_id' => $reqId]);
-
-            return true;
-        }
-
-        return parent::delete($entity, $options);
     }
 }

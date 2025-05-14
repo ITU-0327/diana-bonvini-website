@@ -8,9 +8,9 @@ use Cake\ORM\Entity;
 /**
  * WritingServicePayment Entity
  *
- * @property string $writing_service_payment_id
+ * @property int $writing_service_payment_id
  * @property string $writing_service_request_id
- * @property float $amount
+ * @property string $amount
  * @property string|null $transaction_id
  * @property \Cake\I18n\DateTime $payment_date
  * @property string $payment_method

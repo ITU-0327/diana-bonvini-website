@@ -10,7 +10,8 @@ use Cake\ORM\Entity;
  *
  * @property string $writing_service_request_id
  * @property string $user_id
- * @property string $service_title
+ * @property string $appointment_id
+ * @property string|null $service_title
  * @property string $service_type
  * @property string|null $notes
  * @property float $final_price
@@ -37,6 +38,7 @@ class WritingServiceRequest extends Entity
      */
     protected array $_accessible = [
         'user_id' => true,
+        'appointment_id' => true,
         'service_title' => true,
         'service_type' => true,
         'notes' => true,

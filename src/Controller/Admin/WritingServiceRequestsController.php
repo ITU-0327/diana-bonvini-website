@@ -546,7 +546,8 @@ class WritingServiceRequestsController extends BaseAdminController
         $amount = $data['amount'] ?? $writingServiceRequest->final_price;
         $description = $data['description'] ?? 'Writing service fee';
 
-        if (empty($amount) || !is_numeric($amount) || $amount <= 0) {
+        // Only validate that amount is numeric and positive
+        if (empty($amount) || !is_numeric($amount) || (float)$amount <= 0) {
             $this->Flash->error(__('Please provide a valid payment amount.'));
 
             return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
@@ -652,5 +653,241 @@ class WritingServiceRequestsController extends BaseAdminController
         }
 
         return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
+    }
+
+    /**
+     * Send message to client
+     *
+     * @param string|null $id Writing Service Request id.
+     * @return \Cake\Http\Response|null
+     */
+    public function sendMessage(?string $id = null)
+    {
+        $this->request->allowMethod(['post']);
+
+        /** @var \App\Model\Entity\User $admin */
+        $admin = $this->Authentication->getIdentity();
+        
+        if (!$admin || $admin->user_type !== 'admin') {
+            $this->Flash->error(__('You are not authorized to perform this action.'));
+            return $this->redirect(['controller' => 'Admin', 'action' => 'dashboard']);
+        }
+
+        $writingServiceRequest = $this->WritingServiceRequests->get($id, [
+            'contain' => ['Users']
+        ]);
+
+        $data = $this->request->getData();
+        $messageText = $data['message_text'] ?? '';
+
+        if (empty(trim($messageText))) {
+            $this->Flash->error(__('Please enter a message.'));
+            return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
+        }
+
+        // Prepare message data
+        $messageData = [
+            'request_messages' => [
+                [
+                    'user_id' => $admin->user_id,
+                    'message' => $messageText,
+                    'is_read' => false, // Initially not read by the client
+                    'writing_service_request_id' => $writingServiceRequest->writing_service_request_id,
+                ],
+            ],
+        ];
+
+        // Add the message to the request
+        $writingServiceRequest = $this->WritingServiceRequests->patchEntity(
+            $writingServiceRequest,
+            $messageData
+        );
+
+        if ($this->WritingServiceRequests->save($writingServiceRequest)) {
+            $this->Flash->success(__('Message sent successfully.'));
+            
+            // If the request status is pending, update it to in_progress
+            if ($writingServiceRequest->request_status === 'pending') {
+                $writingServiceRequest->request_status = 'in_progress';
+                $this->WritingServiceRequests->save($writingServiceRequest);
+            }
+        } else {
+            $this->Flash->error(__('Failed to send message. Please try again.'));
+        }
+
+        return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
+    }
+
+    /**
+     * Fetch new messages via AJAX
+     * 
+     * @param string|null $id Writing Service Request id
+     * @param string|null $lastMessageId Last message ID for incremental fetching
+     * @return \Cake\Http\Response|null
+     */
+    public function fetchMessages(?string $id = null, ?string $lastMessageId = null)
+    {
+        $this->request->allowMethod(['get', 'ajax']);
+
+        if ($this->request->is('ajax')) {
+            $this->disableAutoRender();
+            $this->response = $this->response->withType('application/json');
+
+            if (empty($id)) {
+                return $this->response->withStringBody(json_encode([
+                    'success' => false,
+                    'message' => 'Request ID is required',
+                ]));
+            }
+
+            /** @var \App\Model\Entity\User|null $user */
+            $user = $this->Authentication->getIdentity();
+
+            if (!$user || $user->user_type !== 'admin') {
+                return $this->response->withStringBody(json_encode([
+                    'success' => false,
+                    'message' => 'Authentication required',
+                ]));
+            }
+
+            // Get the lastMessageId from query parameter if not provided as route parameter
+            if (empty($lastMessageId)) {
+                $lastMessageId = $this->request->getQuery('lastMessageId');
+            }
+
+            try {
+                $writingServiceRequest = $this->WritingServiceRequests->get($id, [
+                    'contain' => [
+                        'RequestMessages' => function ($q) use ($lastMessageId) {
+                            $query = $q->contain(['Users'])
+                                ->order(['RequestMessages.created_at' => 'ASC']);
+
+                            if (!empty($lastMessageId)) {
+                                // Only get messages newer than the lastMessageId
+                                $query->where(['RequestMessages.request_message_id >' => $lastMessageId]);
+                            }
+
+                            return $query;
+                        },
+                    ],
+                ]);
+
+                // Format messages for JSON response
+                $messages = [];
+                if (!empty($writingServiceRequest->request_messages)) {
+                    foreach ($writingServiceRequest->request_messages as $message) {
+                        $isAdmin = isset($message->user) && $message->user->user_type === 'admin';
+                        $timeFormatted = $message->created_at->format('M j, Y g:i A');
+
+                        $messages[] = [
+                            'id' => $message->request_message_id,
+                            'content' => $message->message,
+                            'sender' => $isAdmin ? 'admin' : 'client',
+                            'senderName' => $isAdmin ? 'Admin' : ($message->user->first_name . ' ' . $message->user->last_name),
+                            'timestamp' => $timeFormatted,
+                            'is_read' => (bool)$message->is_read,
+                            'created_at' => $message->created_at->format('c'),
+                        ];
+
+                        // Mark the message as read if it's not from the current user
+                        if ($message->user_id !== $user->user_id && !$message->is_read) {
+                            $message->is_read = true;
+                            $this->WritingServiceRequests->RequestMessages->save($message);
+                        }
+                    }
+                }
+
+                return $this->response->withStringBody(json_encode([
+                    'success' => true,
+                    'messages' => $messages,
+                    'count' => count($messages),
+                ]));
+            } catch (\Exception $e) {
+                return $this->response->withStringBody(json_encode([
+                    'success' => false,
+                    'message' => 'Error: ' . $e->getMessage(),
+                ]));
+            }
+        }
+
+        return $this->response->withStringBody(json_encode([
+            'success' => false,
+            'message' => 'Invalid request',
+        ]));
+    }
+
+    /**
+     * Test method to check payment status by ID
+     * This is a development/debugging endpoint
+     *
+     * @param string|null $paymentId The payment ID to check
+     * @return \Cake\Http\Response|null
+     */
+    public function testPaymentStatus(?string $paymentId = null)
+    {
+        $this->disableAutoRender();
+        $this->response = $this->response->withType('application/json');
+        
+        if (!$paymentId) {
+            return $this->response->withStringBody(json_encode([
+                'success' => false,
+                'message' => 'No payment ID provided',
+            ]));
+        }
+        
+        // Check if this is a combined ID
+        $parts = explode('|', $paymentId);
+        $sessionPaymentId = $parts[0] ?? null;
+        $dbPaymentId = $parts[1] ?? null;
+        
+        $result = [
+            'paymentId' => $paymentId,
+            'sessionId' => $sessionPaymentId,
+            'dbId' => $dbPaymentId,
+            'sessionData' => null,
+            'dbData' => null,
+        ];
+        
+        // Check session data
+        if ($sessionPaymentId) {
+            $sessionData = $this->request->getSession()->read("WsrPayments.$sessionPaymentId");
+            $result['sessionData'] = $sessionData;
+        }
+        
+        // Check database data
+        if ($dbPaymentId && $dbPaymentId !== 'pending') {
+            try {
+                $paymentTable = $this->fetchTable('WritingServicePayments');
+                $payment = $paymentTable->find()
+                    ->where(['writing_service_payment_id' => $dbPaymentId])
+                    ->first();
+                
+                if ($payment) {
+                    $result['dbData'] = [
+                        'id' => $payment->writing_service_payment_id,
+                        'request_id' => $payment->writing_service_request_id,
+                        'amount' => $payment->amount,
+                        'status' => $payment->status,
+                        'payment_date' => $payment->payment_date,
+                        'transaction_id' => $payment->transaction_id,
+                    ];
+                }
+            } catch (\Exception $e) {
+                $result['error'] = $e->getMessage();
+            }
+        }
+        
+        // Determine overall status
+        $isPaid = false;
+        
+        if (isset($result['dbData']['status']) && $result['dbData']['status'] === 'paid') {
+            $isPaid = true;
+        } elseif (isset($result['sessionData']['status']) && $result['sessionData']['status'] === 'paid') {
+            $isPaid = true;
+        }
+        
+        $result['isPaid'] = $isPaid;
+        
+        return $this->response->withStringBody(json_encode($result));
     }
 }

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
@@ -11,6 +12,7 @@ use Cake\Validation\Validator;
  * WritingServicePayments Model
  *
  * @property \App\Model\Table\WritingServiceRequestsTable&\Cake\ORM\Association\BelongsTo $WritingServiceRequests
+ *
  * @method \App\Model\Entity\WritingServicePayment newEmptyEntity()
  * @method \App\Model\Entity\WritingServicePayment newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\WritingServicePayment> newEntities(array $data, array $options = [])
@@ -68,8 +70,7 @@ class WritingServicePaymentsTable extends Table
         $validator
             ->scalar('transaction_id')
             ->maxLength('transaction_id', 255)
-            ->allowEmptyString('transaction_id')
-            ->add('transaction_id', 'unique', ['rule' => 'validateUnique', 'provider' => 'table']);
+            ->allowEmptyString('transaction_id');
 
         $validator
             ->dateTime('payment_date')
@@ -77,16 +78,25 @@ class WritingServicePaymentsTable extends Table
 
         $validator
             ->scalar('payment_method')
+            ->maxLength('payment_method', 255)
             ->notEmptyString('payment_method');
 
         $validator
             ->scalar('status')
-            ->requirePresence('status', 'create')
+            ->maxLength('status', 255)
             ->notEmptyString('status');
 
         $validator
             ->boolean('is_deleted')
             ->notEmptyString('is_deleted');
+
+        $validator
+            ->dateTime('created_at')
+            ->notEmptyDateTime('created_at');
+
+        $validator
+            ->dateTime('updated_at')
+            ->notEmptyDateTime('updated_at');
 
         return $validator;
     }
@@ -100,7 +110,6 @@ class WritingServicePaymentsTable extends Table
      */
     public function buildRules(RulesChecker $rules): RulesChecker
     {
-        $rules->add($rules->isUnique(['transaction_id'], ['allowMultipleNulls' => true]), ['errorField' => 'transaction_id']);
         $rules->add($rules->existsIn(['writing_service_request_id'], 'WritingServiceRequests'), ['errorField' => 'writing_service_request_id']);
 
         return $rules;
