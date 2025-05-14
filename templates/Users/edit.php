@@ -6,6 +6,14 @@
  * @var \App\Model\Entity\User $user
  */
 ?>
+
+<link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/css/intlTelInput.css"
+/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/intlTelInput.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/utils.js"></script>
+
 <div class="max-w-4xl mx-auto space-y-8">
 
     <!-- 1. Begin the form. Give it an explicit ID so an external button can reference it -->
@@ -32,8 +40,14 @@
                 'class' => 'form-input w-full border rounded px-3 py-2',
             ]) ?>
             <?= $this->Form->control('phone_number', [
-                'label' => 'Phone Number',
-                'class' => 'form-input w-full border rounded px-3 py-2',
+                'type'  => 'tel',
+                'id'    => 'phone_number',
+                'label' => [
+                    'text'  => 'Phone Number',
+                    'class' => 'block mb-2',
+                ],
+                'class'       => 'form-input w-full border rounded px-3 py-2',
+                'placeholder' => '+61 412 345 677',
             ]) ?>
         </div>
     </div>
@@ -162,5 +176,21 @@
             });
         }
         init();
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+        var input = document.querySelector('#phone_number');
+        if (!input || !window.intlTelInput) return;
+
+        var iti = intlTelInput(input, {
+            separateDialCode: true,
+            nationalMode: false,
+            utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.19/js/utils.js'
+        });
+
+        var form = document.querySelector('#user-edit-form');
+        form.addEventListener('submit', function() {
+            var full = iti.getNumber();   // e.g. "+61412345677"
+            if (full) input.value = full;
+        });
     });
 </script>
