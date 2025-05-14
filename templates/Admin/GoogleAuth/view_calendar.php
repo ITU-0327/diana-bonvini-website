@@ -58,7 +58,7 @@ $this->Html->script('https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.j
         </div>
     </div>
 
-    <\!-- Event Details Modal -->
+    <!-- Event Details Modal -->
     <div class="modal fade" id="eventDetailsModal" tabindex="-1" role="dialog" aria-labelledby="eventDetailsModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -176,7 +176,7 @@ $this->Html->script('https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.j
         
         // Helper function to format date and time
         function formatDateTime(date) {
-            if (\!date) return '';
+            if (!date) return '';
             return new Date(date).toLocaleString('en-US', {
                 weekday: 'short',
                 month: 'short',

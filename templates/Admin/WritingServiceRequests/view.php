@@ -306,6 +306,7 @@ $this->assign('title', __('Writing Service Request Details'));
                             ['controller' => 'GoogleAuth', 'action' => 'viewCalendar'],
                             ['class' => 'btn btn-info btn-block', 'escape' => false]
                         ) ?>
+                        <p class="text-sm text-muted mt-1">View and manage your Google Calendar appointments</p>
                     </div>
 
                     <!-- Payment Request Button -->

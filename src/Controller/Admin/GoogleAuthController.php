@@ -247,12 +247,19 @@ class GoogleAuthController extends AppController
 
         // Get calendar events from Google or use mock data
         if ($isConnected) {
-            $events = $this->googleCalendarService->getCalendarEvents($user->user_id, $startDate, $endDate);
+            try {
+                $events = $this->googleCalendarService->getCalendarEvents($user->user_id, $startDate, $endDate);
 
-            // If no events were returned (could be false or empty array), use mock data
-            if ($events === false || empty($events)) {
+                // If no events were returned (could be false or empty array), use mock data
+                if ($events === false || empty($events)) {
+                    $events = $this->getMockCalendarEvents($startDate, $endDate);
+                    $this->Flash->info(__('No events found in your Google Calendar for this period. Showing sample events.'));
+                }
+            } catch (\Exception $e) {
+                // Log the error and use mock data
+                \Cake\Log\Log::error('Error getting calendar events: ' . $e->getMessage());
                 $events = $this->getMockCalendarEvents($startDate, $endDate);
-                $this->Flash->info(__('No events found in your Google Calendar for this period. Showing sample events.'));
+                $this->Flash->warning(__('Error retrieving events from Google Calendar. Showing sample events.'));
             }
         } else {
             // Use mock data for demo mode
@@ -263,6 +270,7 @@ class GoogleAuthController extends AppController
         // Format events for calendar view
         $calendarEvents = $this->formatCalendarEvents($events);
 
+        // Set variables for the view
         $this->set(compact('settings', 'isConnected', 'useDemoMode', 'month', 'year', 'today', 'calendarEvents'));
     }
 
