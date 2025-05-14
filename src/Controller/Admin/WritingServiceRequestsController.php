@@ -22,6 +22,7 @@ class WritingServiceRequestsController extends BaseWritingServiceRequestsControl
      * Initialize method
      *
      * @return void
+     * @throws \Exception
      */
     public function initialize(): void
     {
@@ -48,6 +49,7 @@ class WritingServiceRequestsController extends BaseWritingServiceRequestsControl
         $this->Authentication->addUnauthenticatedActions([]);
 
         // Check for admin user
+        /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
         if (!$user || $user->user_type !== 'admin') {
             $this->Flash->error('You must be logged in as an administrator to access this area.');

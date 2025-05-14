@@ -88,86 +88,87 @@ class ArtworksController extends BaseArtworksController
                 // Get the data before we modify it
                 $data = $this->request->getData();
                 $file = $data['image_path'] ?? null;
-                
+
                 // Debug uploaded file info
                 if ($file instanceof UploadedFileInterface) {
-                    $this->log('Received file: ' . $file->getClientFilename() . 
-                               ', size: ' . $file->getSize() . 
-                               ', type: ' . $file->getClientMediaType() . 
+                    $this->log('Received file: ' . $file->getClientFilename() .
+                               ', size: ' . $file->getSize() .
+                               ', type: ' . $file->getClientMediaType() .
                                ', error: ' . $file->getError(), 'debug');
                 } else {
                     $this->log('No file uploaded or invalid file', 'debug');
                 }
-                
+
                 // Check if we have an image
                 if (!$file instanceof UploadedFileInterface || $file->getError() !== UPLOAD_ERR_OK) {
                     $this->Flash->error(__('Please upload a valid image file.'));
+
                     return;
                 }
-                
+
                 // Prepare the artwork data
                 unset($data['image_path']);
-                
+
                 // Remove fields that don't exist in the database
                 unset($data['featured']);
                 $data['availability_status'] = $data['availability_status'] ?? 'available';
                 $data['is_deleted'] = 0;
-                
+
                 // Let CakePHP handle timestamps automatically
-                
+
                 // Create the entity
                 $artwork = $this->Artworks->patchEntity($artwork, $data);
-                
+
                 // Debug information
                 $this->log('Attempting to save artwork with data: ' . json_encode($data), 'debug');
                 $this->log('Validation errors (if any): ' . json_encode($artwork->getErrors()), 'debug');
-                
+
                 // Save the artwork
                 if (!$this->Artworks->save($artwork)) {
                     $this->log('Failed to save artwork. Errors: ' . json_encode($artwork->getErrors()), 'error');
                     $this->Flash->error(__('Unable to save artwork. Please check the form and try again.'));
                     $this->set('errors', $artwork->getErrors());
+
                     return;
                 }
-                
+
                 $this->log('Artwork saved with ID: ' . $artwork->artwork_id, 'debug');
-                
+
                 // Process the image
                 try {
                     // Save the image locally first
                     $localPath = $this->_saveOriginalLocal($file, $artwork->artwork_id);
                     $this->log('Image saved locally to: ' . $localPath, 'debug');
-                    
+
                     // Process image (create watermark and upload to R2 if possible)
                     try {
                         $this->_processImageUpload($file, $artwork->artwork_id, $r2StorageService);
                         $this->Flash->success(__('Artwork has been saved successfully with image.'));
-                        
+
                         // Verify watermarked file exists
                         $watermarkedPath = WWW_ROOT . 'img' . DS . 'watermarked' . DS . "{$artwork->artwork_id}.jpg";
                         if (file_exists($watermarkedPath) && is_readable($watermarkedPath)) {
                             $this->log('Verified watermarked image exists at: ' . $watermarkedPath, 'debug');
-                            
+
                             // Set appropriate file permissions to ensure web server can read it
                             chmod($watermarkedPath, 0644);
-                            
+
                             // Clear browser cache for this image by appending a timestamp
                             $this->set('imageTimestamp', time());
                         } else {
                             $this->log('WARNING: Watermarked image not found at: ' . $watermarkedPath, 'warning');
                         }
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         $this->log('R2 storage processing failed: ' . $e->getMessage(), 'error');
                         $this->Flash->success(__('Artwork has been saved successfully. Note: Cloud storage of the image failed, but the image was saved locally.'));
                     }
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->log('Image processing failed: ' . $e->getMessage(), 'error');
                     $this->Flash->error(__('Artwork saved but image processing failed: {0}', $e->getMessage()));
                 }
-                
+
                 return $this->redirect(['action' => 'index']);
-                
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->log('Unexpected error in add artwork: ' . $e->getMessage(), 'error');
                 $this->Flash->error(__('An unexpected error occurred: {0}', $e->getMessage()));
             }
@@ -193,13 +194,12 @@ class ArtworksController extends BaseArtworksController
             // Get the data before we modify it
             $data = $this->request->getData();
             $file = $data['image_path'] ?? null;
-            
+
             // Remove image_path from data before patching
             if (isset($data['image_path'])) {
                 unset($data['image_path']);
             }
-            
-            
+
             // Update entity with form data
             $artwork = $this->Artworks->patchEntity($artwork, $data);
 
@@ -209,11 +209,11 @@ class ArtworksController extends BaseArtworksController
             } else {
                 $this->Flash->success(__('Artwork has been updated successfully.'));
                 $this->log('Artwork updated with ID: ' . $artwork->artwork_id, 'debug');
-                
+
                 // Process image upload if present
                 if ($file instanceof UploadedFileInterface) {
                     $this->log('Processing uploaded image for artwork: ' . $artwork->artwork_id, 'debug');
-                    
+
                     if ($file->getError() !== UPLOAD_ERR_OK) {
                         $this->Flash->error(__('Image upload failed with code {0}.', $file->getError()));
                         $this->log('Image upload error: ' . $file->getError(), 'error');
@@ -222,30 +222,30 @@ class ArtworksController extends BaseArtworksController
                         try {
                             $localPath = $this->_saveOriginalLocal($file, $artwork->artwork_id);
                             $this->log('Image saved locally to: ' . $localPath, 'debug');
-                            
+
                             // Process image (create watermark and upload to R2 if possible)
                             try {
                                 $this->_processImageUpload($file, $artwork->artwork_id, $r2StorageService);
                                 $this->Flash->success(__('Image updated successfully.'));
-                                
+
                                 // Verify watermarked file exists
                                 $watermarkedPath = WWW_ROOT . 'img' . DS . 'watermarked' . DS . "{$artwork->artwork_id}.jpg";
                                 if (file_exists($watermarkedPath) && is_readable($watermarkedPath)) {
                                     $this->log('Verified watermarked image exists at: ' . $watermarkedPath, 'debug');
-                                    
+
                                     // Set appropriate file permissions to ensure web server can read it
                                     chmod($watermarkedPath, 0644);
-                                    
+
                                     // Clear browser cache for this image by appending a timestamp
                                     $this->set('imageTimestamp', time());
                                 } else {
                                     $this->log('WARNING: Watermarked image not found at: ' . $watermarkedPath, 'warning');
                                 }
-                            } catch (\Exception $e) {
+                            } catch (Exception $e) {
                                 $this->log('R2 storage processing failed: ' . $e->getMessage(), 'error');
                                 $this->Flash->warning(__('Artwork updated but cloud storage of the image failed. The image was saved locally.'));
                             }
-                        } catch (\Exception $e) {
+                        } catch (Exception $e) {
                             $this->log('Image processing failed: ' . $e->getMessage(), 'error');
                             $this->Flash->error(__('Image processing failed: {0}', $e->getMessage()));
                         }
@@ -271,19 +271,19 @@ class ArtworksController extends BaseArtworksController
     public function view(?string $id = null): void
     {
         $this->set('title', 'View Artwork');
-        
+
         // Get the artwork with any related orders
         $artwork = $this->Artworks->get($id, [
             'contain' => [],
         ]);
-        
+
         // Try to find any orders related to this artwork
         $ArtworkOrders = TableRegistry::getTableLocator()->get('ArtworkOrders');
         $artworkOrders = $ArtworkOrders->find()
             ->where(['artwork_id' => $id])
             ->contain(['Orders' => ['Users']])
             ->all();
-        
+
         $this->set(compact('artwork', 'artworkOrders'));
     }
 
@@ -310,7 +310,7 @@ class ArtworksController extends BaseArtworksController
 
         return $this->redirect(['action' => 'index']);
     }
-    
+
     /**
      * Update the availability status of an artwork
      *
@@ -322,13 +322,13 @@ class ArtworksController extends BaseArtworksController
     {
         $this->request->allowMethod(['post']);
         $artwork = $this->Artworks->get($id);
-        
+
         $newStatus = $this->request->getData('availability_status');
         $validStatuses = ['available', 'sold', 'pending', 'reserved'];
-        
+
         if (in_array($newStatus, $validStatuses)) {
             $artwork->availability_status = $newStatus;
-            
+
             if ($this->Artworks->save($artwork)) {
                 $this->Flash->success(__('The artwork status has been updated to {0}.', ucfirst($newStatus)));
             } else {
@@ -337,10 +337,10 @@ class ArtworksController extends BaseArtworksController
         } else {
             $this->Flash->error(__('Invalid status provided.'));
         }
-        
+
         return $this->redirect(['action' => 'view', $id]);
     }
-    
+
     /**
      * Handles moving the uploaded file, validating it, adding a tiled watermark,
      * and returning the relative path for storage (or null on failure).
@@ -357,7 +357,7 @@ class ArtworksController extends BaseArtworksController
         try {
             // We'll reuse a file that's already saved by _saveOriginalLocal
             $localPath = WWW_ROOT . 'img' . DS . 'Artworks' . DS . "{$artworkId}.jpg";
-            
+
             if (!file_exists($localPath)) {
                 throw new Exception("Original file not found at: {$localPath}");
             }
@@ -380,30 +380,30 @@ class ArtworksController extends BaseArtworksController
                 }
                 $this->log("Created watermarked directory at {$watermarkedPath}", 'debug');
             }
-            
+
             $watermarkedFilePath = $watermarkedPath . "{$artworkId}.jpg";
             $bytesWritten = file_put_contents($watermarkedFilePath, $jpeg);
             if ($bytesWritten === false) {
-                throw new Exception("Failed to save watermarked image locally");
+                throw new Exception('Failed to save watermarked image locally');
             } else {
                 $this->log("Successfully saved watermarked image to {$watermarkedFilePath} ({$bytesWritten} bytes)", 'debug');
                 // Ensure file permissions are correct
                 chmod($watermarkedFilePath, 0644);
             }
-            
+
             // Try to upload to R2, but continue even if it fails (we already have local copies)
             try {
                 if (!$r2StorageService->put($wmKey, $jpeg)) {
-                    $this->log("Warning: Failed to upload watermark to R2 storage", 'warning');
+                    $this->log('Warning: Failed to upload watermark to R2 storage', 'warning');
                 } else {
                     $this->log("Successfully uploaded watermark to R2 storage with key {$wmKey}", 'debug');
                 }
             } catch (Exception $e) {
                 // Just log the error, don't rethrow as we have local copies
-                $this->log("R2 upload error: " . $e->getMessage(), 'warning');
+                $this->log('R2 upload error: ' . $e->getMessage(), 'warning');
             }
         } catch (Exception $e) {
-            $this->log("Error in _processImageUpload: " . $e->getMessage(), 'error');
+            $this->log('Error in _processImageUpload: ' . $e->getMessage(), 'error');
             throw $e; // Rethrow for higher level error handling
         }
     }
@@ -430,20 +430,20 @@ class ArtworksController extends BaseArtworksController
             $target = $dir . DS . "{$artworkId}.jpg";
             // moveTo will overwrite if file exists
             $file->moveTo($target);
-            
+
             // Set appropriate permissions
             chmod($target, 0644);
-            
+
             $this->log("Successfully saved original image to {$target}", 'debug');
-            
+
             // Verify the file actually exists and is readable
             if (!file_exists($target) || !is_readable($target)) {
                 throw new Exception("File was moved but cannot be verified at: {$target}");
             }
-            
+
             return $target;
         } catch (Exception $e) {
-            $this->log("Error in _saveOriginalLocal: " . $e->getMessage(), 'error');
+            $this->log('Error in _saveOriginalLocal: ' . $e->getMessage(), 'error');
             throw $e; // Rethrow for higher level error handling
         }
     }

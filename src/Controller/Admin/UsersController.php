@@ -21,6 +21,7 @@ class UsersController extends BaseUsersController
      * Initialize method
      *
      * @return void
+     * @throws \Exception
      */
     public function initialize(): void
     {
@@ -47,6 +48,7 @@ class UsersController extends BaseUsersController
         $this->Authentication->addUnauthenticatedActions([]);
 
         // Check for admin user
+        /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
         if (!$user || $user->user_type !== 'admin') {
             $this->Flash->error('You must be logged in as an administrator to access this area.');
@@ -163,19 +165,20 @@ class UsersController extends BaseUsersController
         $this->set('title', 'My Profile');
 
         // Get the current logged in user
+        /** @var \App\Model\Entity\User|null $identity */
         $identity = $this->Authentication->getIdentity();
-        
+
         try {
             // Use direct property access which is more reliable in this codebase
             $userId = $identity->user_id;
-            
+
             if (!$userId) {
-                throw new \Exception("User ID not found in identity");
+                throw new Exception('User ID not found in identity');
             }
-            
+
             $user = $this->Users->get($userId);
             $this->set(compact('user'));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->Flash->error('Could not load user profile. Please try again.');
             $this->redirect(['controller' => 'Admin', 'action' => 'dashboard']);
         }
@@ -191,14 +194,15 @@ class UsersController extends BaseUsersController
         $this->request->allowMethod(['post', 'put']);
 
         // Get the current logged in user
+        /** @var \App\Model\Entity\User|null $identity */
         $identity = $this->Authentication->getIdentity();
         $userId = $identity->user_id;
-        
+
         try {
             if (!$userId) {
-                throw new \Exception("User ID not found in identity");
+                throw new Exception('User ID not found in identity');
             }
-            
+
             $user = $this->Users->get($userId);
             $user = $this->Users->patchEntity($user, $this->request->getData(), [
                 'fields' => ['first_name', 'last_name', 'email', 'phone_number'],
@@ -209,7 +213,7 @@ class UsersController extends BaseUsersController
             } else {
                 $this->Flash->error(__('Unable to update your profile. Please, try again.'));
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->Flash->error(__('Unable to update your profile. Please, try again.'));
         }
 
@@ -227,11 +231,12 @@ class UsersController extends BaseUsersController
 
         try {
             // Get the current logged in user
+            /** @var \App\Model\Entity\User|null $identity */
             $identity = $this->Authentication->getIdentity();
             $userId = $identity->user_id;
-            
+
             if (!$userId) {
-                throw new \Exception("User ID not found in identity");
+                throw new Exception('User ID not found in identity');
             }
 
             $user = $this->Users->get($userId);
@@ -243,6 +248,7 @@ class UsersController extends BaseUsersController
 
             if (!$hasher->check($currentPassword, $user->password)) {
                 $this->Flash->error(__('Current password is incorrect.'));
+
                 return $this->redirect(['action' => 'profile']);
             }
 
@@ -252,6 +258,7 @@ class UsersController extends BaseUsersController
 
             if ($newPassword !== $confirmPassword) {
                 $this->Flash->error(__('New password and confirmation do not match.'));
+
                 return $this->redirect(['action' => 'profile']);
             }
 
@@ -263,7 +270,7 @@ class UsersController extends BaseUsersController
             } else {
                 $this->Flash->error(__('Unable to change your password. Please, try again.'));
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->Flash->error(__('Unable to change your password. Please, try again.'));
         }
 

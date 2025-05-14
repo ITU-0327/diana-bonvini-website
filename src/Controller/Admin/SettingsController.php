@@ -25,7 +25,7 @@ class SettingsController extends AppController
 
         // Use admin layout
         $this->viewBuilder()->setLayout('admin');
-        
+
         // Set the template path to Admin/Settings
         $this->viewBuilder()->setTemplatePath('Admin/Settings');
     }
@@ -59,7 +59,7 @@ class SettingsController extends AppController
     public function index(): void
     {
         $this->set('title', 'Site Settings');
-        
+
         // Example settings - In a real application, these would be fetched from the database
         $settings = [
             'site' => [
@@ -86,24 +86,24 @@ class SettingsController extends AppController
                 'low_stock' => true,
                 'new_user' => true,
                 'writing_request' => true,
-            ]
+            ],
         ];
-        
+
         $this->set(compact('settings'));
     }
 
     /**
      * Update settings
-     * 
+     *
      * @return \Cake\Http\Response|null
      */
     public function update(): ?Response
     {
         $this->request->allowMethod(['post', 'put']);
-        
+
         // In a real application, you would validate and save the settings to a database or config file
         $this->Flash->success('Settings have been saved successfully.');
-        
+
         return $this->redirect(['action' => 'index']);
     }
 }
