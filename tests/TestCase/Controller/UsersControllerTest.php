@@ -340,7 +340,7 @@ class UsersControllerTest extends TestCase
         $this->post('/users/forgot-password', $data);
 
         $this->assertResponseSuccess();
-        $this->assertFlashMessage('A password reset link has been sent to your email address.');
+        $this->assertFlashMessage('A reset link has been sent to tony.hsieh@example.com.');
 
         // Check if the reset token was generated
         $usersTable = TableRegistry::getTableLocator()->get('Users');

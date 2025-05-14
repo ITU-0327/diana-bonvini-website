@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Mailer\UserMailer;
+use App\Model\Entity\User;
 use App\Service\TwoFactorService;
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
@@ -223,12 +224,12 @@ class UsersController extends AppController
     /**
      * Forgot Password method
      *
-     * @return \Cake\Http\Response|null|void
+     * @return \Cake\Http\Response|null
      */
-    public function forgotPassword()
+    public function forgotPassword(): ?Response
     {
         if ($this->request->is('get')) {
-            return;
+            return null;
         }
 
         if ($this->request->is('post')) {
@@ -241,33 +242,15 @@ class UsersController extends AppController
             if (!$user) {
                 $this->Flash->error('No user found with that email address.');
 
-                return;
+                return null;
             }
 
-            // Generate a secure token & save to DB
-            $token = Security::hash(Text::uuid(), 'sha256', true);
-            $user->password_reset_token = $token;
-            $user->token_expiration = new DateTime('+1 hour');
-
-            if ($this->Users->save($user)) {
-                // Build a reset link
-                $resetLink = Router::url([
-                    'controller' => 'Users',
-                    'action' => 'resetPassword',
-                    $token,
-                ], true);
-
-                $mailer = new UserMailer('default');
-                $mailer->resetPassword($user, $resetLink);
-                $mailer->deliver();
-
-                $this->Flash->success('A password reset link has been sent to your email address.');
-
+            if ($this->_generateToken($user)) {
                 return $this->redirect(['action' => 'login']);
-            } else {
-                $this->Flash->error('Unable to save reset token. Please try again.');
             }
         }
+
+        return null;
     }
 
     /**
@@ -331,5 +314,55 @@ class UsersController extends AppController
         // Clear the password field for security
         $user->password = '';
         $this->set(compact('user'));
+    }
+
+    /**
+     * Change Password method
+     *
+     * @return \Cake\Http\Response|null
+     */
+    public function changePassword(): ?Response
+    {
+        $this->request->allowMethod(['post']);
+
+        /** @var \App\Model\Entity\User $identity */
+        $identity = $this->request->getAttribute('identity');
+        $user = $this->Users->get($identity->user_id);
+
+        $this->_generateToken($user);
+
+        return $this->redirect($this->referer());
+    }
+
+    /**
+     * Generates a password reset token for the given user, saves it, and emails the reset link.
+     *
+     * @param \App\Model\Entity\User $user The user entity to generate the token for.
+     * @return bool True if the token was successfully generated and emailed, false otherwise.
+     */
+    private function _generateToken(User $user): bool
+    {
+        $token = Security::hash(Text::uuid(), 'sha256', true);
+        $user->password_reset_token = $token;
+        $user->token_expiration = new DateTime('+1 hour');
+
+        if ($this->Users->save($user)) {
+            $resetLink = Router::url([
+                'controller' => 'Users',
+                'action' => 'resetPassword',
+                $token,
+            ], true);
+
+            $mailer = new UserMailer('default');
+            $mailer->resetPassword($user, $resetLink);
+            $mailer->deliver();
+
+            $this->Flash->success(__('A reset link has been sent to {0}.', $user->email));
+
+            return true;
+        }
+        $this->Flash->error(__('Unable to generate reset link. Please try again later.'));
+
+        return false;
     }
 }
