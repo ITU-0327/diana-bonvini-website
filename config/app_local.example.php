@@ -25,7 +25,7 @@ return [
      *   You should treat it as extremely sensitive data.
      */
     'Security' => [
-        'salt' => env('SECURITY_SALT', '__SALT__'),
+        'salt' => 'REPLACE_WITH_A_SECURE_SALT',
     ],
 
     /*
@@ -79,16 +79,22 @@ return [
      *
      * Host and credential configuration in case you are using SmtpTransport
      *
+     * To use Gmail SMTP:
+     * 1. Set up 2-Step Verification on your Google account
+     * 2. Create an App Password: https://myaccount.google.com/apppasswords
+     * 3. Use your Gmail address as username and the App Password as password
+     *
      * See app.php for more configuration options.
      */
     'EmailTransport' => [
         'default' => [
             'className' => 'Smtp',
-            'host' => 'smtp-relay.gmail.com',
+            'host' => 'smtp.gmail.com',
             'port' => 587,
+            'username' => 'your.email@gmail.com',  // Your Gmail address
+            'password' => 'your-app-password',     // Your App Password (not your Gmail password)
             'tls' => true,
             'timeout' => 30,
-            'client' => 'dianabonvini.com',
         ],
     ],
 
@@ -122,5 +128,16 @@ return [
         'accessKeyId' => env('CF_R2_ACCESS_KEY_ID', null),
         'secretAccessKey' => env('CF_R2_SECRET_ACCESS_KEY', null),
         'bucket' => env('CF_R2_BUCKET', null),
+    ],
+
+    /*
+     * Google Calendar API configuration for appointment scheduling
+     */
+    'GoogleCalendar' => [
+        'clientId' => 'YOUR_GOOGLE_CLIENT_ID',
+        'clientSecret' => 'YOUR_GOOGLE_CLIENT_SECRET',
+        'projectId' => 'YOUR_GOOGLE_PROJECT_ID',
+        'redirectUri' => 'http://localhost:8080/admin/google-auth/callback',
+        // IMPORTANT: This redirect URI must exactly match what's configured in the Google Cloud Console
     ],
 ];

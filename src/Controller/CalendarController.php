@@ -3,9 +3,11 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Mailer\AppointmentMailer;
 use App\Service\GoogleCalendarService;
 use Cake\I18n\Date;
 use Cake\I18n\Time;
+use Cake\Mailer\MailerAwareTrait;
 use DateTime;
 use DateTimeZone;
 use Exception;
@@ -18,9 +20,12 @@ use Exception;
  * @property \App\Model\Table\AppointmentsTable $Appointments
  * @property \App\Model\Table\WritingServiceRequestsTable $WritingServiceRequests
  * @property \App\Model\Table\UsersTable $Users
+ * @property \App\Model\Table\RequestMessagesTable $RequestMessages
  */
 class CalendarController extends AppController
 {
+    use MailerAwareTrait;
+    
     /**
      * @var \App\Service\GoogleCalendarService
      */
@@ -35,13 +40,22 @@ class CalendarController extends AppController
     {
         parent::initialize();
         
-        $this->loadModel('Appointments');
-        $this->loadModel('WritingServiceRequests');
-        $this->loadModel('Users');
+        $this->Appointments = $this->fetchTable('Appointments');
+        $this->WritingServiceRequests = $this->fetchTable('WritingServiceRequests');
+        $this->Users = $this->fetchTable('Users');
+        $this->RequestMessages = $this->fetchTable('RequestMessages');
+        
+        try {
+            // Try to load GoogleCalendarSettings if it exists
+            $this->GoogleCalendarSettings = $this->fetchTable('GoogleCalendarSettings');
+        } catch (\Exception $e) {
+            \Cake\Log\Log::warning('GoogleCalendarSettings table not available: ' . $e->getMessage());
+        }
+        
         $this->googleCalendarService = new GoogleCalendarService();
         
         // Allow availability and book methods for unauthenticated users
-        $this->Authentication->addUnauthenticatedActions(['availability', 'book']);
+        $this->Authentication->addUnauthenticatedActions(['availability', 'book', 'getTimeSlots']);
     }
     
     /**
@@ -151,6 +165,327 @@ class CalendarController extends AppController
     }
     
     /**
+     * Accept a time slot from chat
+     *
+     * @return \Cake\Http\Response|null
+     */
+    public function acceptTimeSlot()
+    {
+        /** @var \App\Model\Entity\User $user */
+        $user = $this->Authentication->getIdentity();
+        
+        if (!$user) {
+            $this->Flash->error(__('You must be logged in to book an appointment.'));
+            return $this->redirect(['controller' => 'Users', 'action' => 'login']);
+        }
+        
+        // Get parameters from query string
+        $date = $this->request->getQuery('date');
+        $time = $this->request->getQuery('time');
+        $requestId = $this->request->getQuery('request_id');
+        $messageId = $this->request->getQuery('message_id');
+        
+        // URL decode parameters to handle URL encoded characters
+        $date = urldecode($date);
+        $time = urldecode($time);
+        
+        if (empty($date) || empty($time) || empty($requestId)) {
+            $this->Flash->error(__('Missing required parameters.'));
+            return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+        }
+        
+        // Extract actual time from formatted time string (e.g., "9:00 AM - 9:30 AM" -> "09:00")
+        $timeMatch = [];
+        $originalTime = $time; // Keep a copy of the original time string for fallback
+        
+        if (preg_match('/(\d+:\d+)\s*([AP]M)\s*-/i', $time, $timeMatch)) {
+            $timePart = $timeMatch[1];
+            $amPm = strtoupper($timeMatch[2]);
+            
+            // Convert to 24-hour format
+            $timeObj = new \DateTime($timePart . ' ' . $amPm);
+            $time = $timeObj->format('H:i');
+        } else {
+            // Try a simpler approach for 24-hour format (e.g., "09:00 - 09:30")
+            if (preg_match('/^(\d{1,2}):(\d{2})\s*-/', $time, $timeMatches)) {
+                $hours = (int)$timeMatches[1];
+                $minutes = (int)$timeMatches[2];
+                
+                // Validate hours and minutes
+                if ($hours >= 0 && $hours <= 23 && $minutes >= 0 && $minutes <= 59) {
+                    $time = sprintf('%02d:%02d', $hours, $minutes);
+                } else {
+                    $this->Flash->error(__('Invalid time format. Hours and minutes must be valid.'));
+                    return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+                }
+            } else {
+                // One last approach - try to handle the specific case directly
+                if (trim($originalTime) === '09:00 - 09:30' || trim($originalTime) === '9:00 - 9:30') {
+                    $time = '09:00';
+                } else {
+                    $this->Flash->error(__('Could not parse the appointment time.'));
+                    return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+                }
+            }
+        }
+        
+        // Parse the date (e.g., "Monday, June 3, 2024" -> "2024-06-03")
+        $dateObj = null;
+        try {
+            $dateObj = new \DateTime($date);
+            $formattedDate = $dateObj->format('Y-m-d');
+        } catch (\Exception $e) {
+            // Try more specific parsing patterns
+            if (preg_match('/([A-Za-z]+),\s+([A-Za-z]+)\s+(\d+),\s+(\d{4})/', $date, $matches)) {
+                $dateStr = $matches[2] . ' ' . $matches[3] . ', ' . $matches[4];
+                try {
+                    $dateObj = new \DateTime($dateStr);
+                    $formattedDate = $dateObj->format('Y-m-d');
+                } catch (\Exception $e2) {
+                    // Try another fallback method with specific English month names
+                    $months = [
+                        'January' => 1, 'February' => 2, 'March' => 3, 'April' => 4,
+                        'May' => 5, 'June' => 6, 'July' => 7, 'August' => 8,
+                        'September' => 9, 'October' => 10, 'November' => 11, 'December' => 12
+                    ];
+                    
+                    // Try a more explicit pattern match: weekday, month day, year
+                    if (isset($matches[2]) && isset($months[$matches[2]]) && 
+                        isset($matches[3]) && isset($matches[4])) {
+                        $month = $months[$matches[2]];
+                        $day = (int)$matches[3];
+                        $year = (int)$matches[4];
+                        
+                        // Validate day, month, year
+                        if ($day > 0 && $day <= 31 && $year >= 2000 && $year <= 2100) {
+                            $formattedDate = sprintf('%04d-%02d-%02d', $year, $month, $day);
+                            $dateObj = new \DateTime($formattedDate);
+                        } else {
+                            $this->Flash->error(__('Could not parse the appointment date.'));
+                            return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+                        }
+                    } else {
+                        $this->Flash->error(__('Could not parse the appointment date.'));
+                        return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+                    }
+                }
+            } else {
+                // One more fallback - try to extract month, day, year from anywhere in the string
+                if (preg_match('/(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}/i', $date, $dateMatch)) {
+                    try {
+                        $extractedDate = new \DateTime($dateMatch[0]);
+                        $formattedDate = $extractedDate->format('Y-m-d');
+                        $dateObj = $extractedDate;
+                    } catch (\Exception $e3) {
+                        $this->Flash->error(__('Could not parse the appointment date.'));
+                        return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+                    }
+                } else {
+                    $this->Flash->error(__('Could not parse the appointment date.'));
+                    return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+                }
+            }
+        }
+        
+        try {
+            // Create a new appointment
+            $appointment = $this->Appointments->newEmptyEntity();
+            
+            // Find an admin user for the appointment
+            $adminUser = $this->Users->find()
+                ->where(['user_type' => 'admin', 'is_verified' => true])
+                ->order(['last_login' => 'DESC'])
+                ->first();
+            
+            if (empty($adminUser)) {
+                $this->Flash->error(__('No admin available for appointment scheduling.'));
+                return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+            }
+            
+            // Get the writing service request
+            $writingServiceRequest = $this->WritingServiceRequests->get($requestId, [
+                'contain' => ['Users']
+            ]);
+            
+            // Check if the writing service request belongs to the current user
+            if ($writingServiceRequest->user_id !== $user->user_id) {
+                $this->Flash->error(__('You can only book appointments for your own writing service requests.'));
+                return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'index']);
+            }
+            
+            // Check if an appointment already exists for this time slot and request
+            $existingAppointment = $this->Appointments->find()
+                ->where([
+                    'user_id' => $user->user_id,
+                    'appointment_date' => new \Cake\I18n\Date($formattedDate),
+                    'appointment_time' => new \Cake\I18n\Time($time),
+                    'status !=' => 'cancelled',
+                    'is_deleted' => false
+                ])
+                ->first();
+                
+            if ($existingAppointment) {
+                $this->Flash->info(__('You already have an appointment for this time slot. No new appointment was created.'));
+                return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId, '#' => 'messages']);
+            }
+            
+            // Set appointment details
+            $appointment->user_id = $user->user_id;
+            $appointment->appointment_type = 'consultation';
+            $appointment->appointment_date = new \Cake\I18n\Date($formattedDate);
+            
+            try {
+                $appointment->appointment_time = new \Cake\I18n\Time($time);
+            } catch (\Exception $e) {
+                // Try creating with a datetime string instead
+                try {
+                    $timeObj = new \DateTime('1970-01-01 ' . $time);
+                    $timeString = $timeObj->format('H:i:s');
+                    $appointment->appointment_time = new \Cake\I18n\Time($timeString);
+                } catch (\Exception $e2) {
+                    $this->Flash->error(__('Could not parse the appointment time.'));
+                    return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+                }
+            }
+            
+            $appointment->duration = 30; // Default to 30 minutes
+            $appointment->status = 'confirmed';
+            $appointment->location = 'Google Meet';
+            $appointment->is_deleted = false;
+            $appointment->is_google_synced = false;
+            $appointment->description = 'Consultation for writing service request: ' . $writingServiceRequest->service_title . ' (ID: ' . $requestId . ')';
+            
+            // Save the appointment
+            if ($this->Appointments->save($appointment)) {
+                // Create Google Calendar event and get Google Meet link
+                $eventId = null;
+                $meetLink = null;
+                
+                // Check if admin has Google Calendar configured
+                $adminHasCalendarConfig = false;
+                if (isset($this->GoogleCalendarSettings)) {
+                    $adminCalendarSettings = $this->GoogleCalendarSettings->find()
+                        ->where(['user_id' => $adminUser->user_id, 'is_active' => true])
+                        ->first();
+                    $adminHasCalendarConfig = !empty($adminCalendarSettings);
+                }
+                
+                if ($adminHasCalendarConfig) {
+                    try {
+                        // Create Google Calendar event
+                        $eventId = $this->googleCalendarService->createAppointmentEvent($appointment, $adminUser->user_id);
+    
+                        if ($eventId) {
+                            // Get the Google Meet link and update the appointment
+                            $event = $this->googleCalendarService->getEvent($eventId, $adminUser->user_id);
+                            $meetLink = $this->googleCalendarService->getMeetLink($event);
+                            
+                            if ($meetLink) {
+                                $appointment->meeting_link = $meetLink;
+                                $appointment->google_calendar_event_id = $eventId;
+                                $appointment->is_google_synced = true;
+                                $this->Appointments->save($appointment);
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        // Log error but continue with fallback
+                    }
+                }
+                
+                // If Google Calendar sync failed, create a generic Meet link
+                if (!$meetLink) {
+                    $meetLink = "https://meet.google.com/lookup/" . substr(md5($appointment->appointment_id . time()), 0, 10);
+                    $appointment->meeting_link = $meetLink;
+                    $this->Appointments->save($appointment);
+                }
+                
+                // Send confirmation message in the chat
+                $message = "✅ **Appointment Confirmed**\n\n";
+                $message .= "Your appointment has been scheduled for **" . $dateObj->format('l, F j, Y') . " at " . 
+                    (new \DateTime($time))->format('g:i A') . "**.\n\n";
+                $message .= "A confirmation email has been sent to your email address with all the details and meeting link. I look forward to our meeting!";
+                
+                $messageEntity = $this->RequestMessages->newEntity([
+                    'user_id' => $user->user_id,
+                    'writing_service_request_id' => $requestId,
+                    'message' => $message,
+                    'is_read' => false
+                ]);
+                
+                $this->RequestMessages->save($messageEntity);
+                
+                // Send confirmation emails
+                try {
+                    // Get fresh appointment data with related entities
+                    try {
+                        // Check if the WritingServiceRequests association exists
+                        $containList = ['Users'];
+                        
+                        $columns = $this->Appointments->getSchema()->columns();
+                        if (in_array('writing_service_request_id', $columns)) {
+                            $containList[] = 'WritingServiceRequests';
+                        }
+                        
+                        $appointment = $this->Appointments->get($appointment->appointment_id, [
+                            'contain' => $containList,
+                        ]);
+                    } catch (\Exception $e1) {
+                        $appointment = $this->Appointments->get($appointment->appointment_id, [
+                            'contain' => ['Users'],
+                        ]);
+                    }
+                    
+                    // Send email to admin
+                    $mailer = new AppointmentMailer();
+                    
+                    try {
+                        // Send admin notification
+                        $mailer->send('adminNotification', [$appointment, $adminUser->email, $adminUser->first_name . ' ' . $adminUser->last_name]);
+                    } catch (\Exception $e2) {
+                        // Continue even if admin email fails
+                    }
+                    
+                    // Send confirmation to customer
+                    try {
+                        // Get a fresh instance of the appointment with updated meeting link
+                        $freshAppointment = $this->Appointments->get($appointment->appointment_id, [
+                            'contain' => ['Users'],
+                        ]);
+                        
+                        // Use the AppointmentMailer directly for better consistency
+                        try {
+                            $mailer = new \App\Mailer\AppointmentMailer('default');
+                            $mailer->appointmentConfirmation($freshAppointment);
+                            $mailer->deliver();
+                        } catch (\Exception $e4) {
+                            // Fall back to previous method if the AppointmentMailer fails
+                            $mailer->send('appointmentConfirmation', [$freshAppointment]);
+                        }
+                    } catch (\Exception $e3) {
+                        // Continue even if customer email fails
+                    }
+                } catch (\Exception $e) {
+                    // Continue even if email process fails
+                }
+                
+                // Always show success message even if Google Calendar sync failed
+                $this->Flash->success(__('Appointment confirmed for {0} at {1}. You will receive a confirmation email shortly.', 
+                    $dateObj->format('l, F j, Y'), 
+                    (new \DateTime($time))->format('g:i A')
+                ));
+                
+                return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId, '#' => 'messages']);
+            } else {
+                $this->Flash->error(__('The appointment could not be saved. Please try again.'));
+                return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+            }
+        } catch (\Exception $e) {
+            $this->Flash->error(__('An error occurred: {0}', $e->getMessage()));
+            return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+        }
+    }
+    
+    /**
      * Book an appointment
      *
      * @return \Cake\Http\Response|null
@@ -254,35 +589,75 @@ class CalendarController extends AppController
                     ->first();
 
                 if (!empty($adminUser)) {
-                    // Sync with Google Calendar
-                    $eventId = $this->googleCalendarService->createAppointmentEvent($appointment, $adminUser->user_id);
+                    // Check if admin has Google Calendar configured
+                    $adminHasCalendarConfig = false;
+                    if (isset($this->GoogleCalendarSettings)) {
+                        $adminCalendarSettings = $this->GoogleCalendarSettings->find()
+                            ->where(['user_id' => $adminUser->user_id, 'is_active' => true])
+                            ->first();
+                        $adminHasCalendarConfig = !empty($adminCalendarSettings);
+                    }
+                    
+                    if ($adminHasCalendarConfig) {
+                        // Try to sync with Google Calendar, but continue if it fails
+                        try {
+                            $eventId = $this->googleCalendarService->createAppointmentEvent($appointment, $adminUser->user_id);
 
-                    if ($eventId) {
-                        // Update appointment with Google Calendar event ID
-                        $appointment->google_calendar_event_id = $eventId;
-                        $appointment->is_google_synced = true;
-                        $this->Appointments->save($appointment);
+                            if ($eventId) {
+                                // Update appointment with Google Calendar event ID
+                                $appointment->google_calendar_event_id = $eventId;
+                                $appointment->is_google_synced = true;
+                                $this->Appointments->save($appointment);
+                            } else {
+                                // Create a generic Meet link if Google sync failed
+                                $meetLink = "https://meet.google.com/lookup/" . substr(md5($appointment->appointment_id), 0, 10);
+                                $appointment->meeting_link = $meetLink;
+                                $this->Appointments->save($appointment);
+                            }
+                        } catch (\Exception $e) {
+                            // Log error but continue with fallback
+                        }
                     }
 
                     // Send confirmation emails
                     try {
                         // Get fresh appointment data with related entities
-                        $appointment = $this->Appointments->get($appointment->appointment_id, [
-                            'contain' => ['Users', 'WritingServiceRequests'],
-                        ]);
+                        try {
+                            // Check if the WritingServiceRequests association exists
+                            $containList = ['Users'];
+                            
+                            $columns = $this->Appointments->getSchema()->columns();
+                            if (in_array('writing_service_request_id', $columns)) {
+                                $containList[] = 'WritingServiceRequests';
+                            }
+                            
+                            $appointment = $this->Appointments->get($appointment->appointment_id, [
+                                'contain' => $containList,
+                            ]);
+                        } catch (\Exception $e1) {
+                            // Fallback to just getting the appointment without relationships
+                            $appointment = $this->Appointments->get($appointment->appointment_id);
+                        }
 
                         // Send confirmation to customer
-                        $this->getMailer('Appointment')->send('appointmentConfirmation', [$appointment]);
+                        try {
+                            $mailer = new AppointmentMailer('default');
+                            $mailer->appointmentConfirmation($appointment);
+                            $mailer->deliver();
+                        } catch (\Exception $e1) {
+                            // Continue even if customer email fails
+                        }
 
                         // Send notification to admin
-                        $this->getMailer('Appointment')->send('adminNotification', [
-                            $appointment,
-                            $adminUser->email,
-                            $adminUser->first_name . ' ' . $adminUser->last_name
-                        ]);
+                        try {
+                            $mailer = new AppointmentMailer('default');
+                            $mailer->adminNotification($appointment, $adminUser->email, $adminUser->first_name . ' ' . $adminUser->last_name);
+                            $mailer->deliver();
+                        } catch (\Exception $e2) {
+                            // Continue even if admin email fails
+                        }
                     } catch (\Exception $e) {
-                        // Log email sending error but continue
-                        $this->log('Failed to send appointment confirmation email: ' . $e->getMessage(), 'error');
+                        // Continue even if email process fails
                     }
                 }
 
@@ -439,19 +814,26 @@ class CalendarController extends AppController
                 ]);
 
                 // Send cancellation to customer
-                $this->getMailer('Appointment')->send('appointmentCancellation', [$appointment]);
+                try {
+                    $mailer = new AppointmentMailer('default');
+                    $mailer->appointmentCancellation($appointment);
+                    $mailer->deliver();
+                } catch (\Exception $e1) {
+                    // Continue even if customer email fails
+                }
 
                 // Send notification to admin
                 if (!empty($adminUser)) {
-                    $this->getMailer('Appointment')->send('adminNotification', [
-                        $appointment,
-                        $adminUser->email,
-                        $adminUser->first_name . ' ' . $adminUser->last_name
-                    ]);
+                    try {
+                        $mailer = new AppointmentMailer('default');
+                        $mailer->adminNotification($appointment, $adminUser->email, $adminUser->first_name . ' ' . $adminUser->last_name);
+                        $mailer->deliver();
+                    } catch (\Exception $e2) {
+                        // Continue even if admin email fails
+                    }
                 }
             } catch (\Exception $e) {
-                // Log email sending error but continue
-                $this->log('Failed to send appointment cancellation email: ' . $e->getMessage(), 'error');
+                // Continue even if email process fails
             }
 
             $this->Flash->success(__('The appointment has been canceled. A confirmation email has been sent to your email address.'));

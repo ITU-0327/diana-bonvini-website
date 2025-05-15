@@ -37,7 +37,7 @@ use Cake\I18n\Time;
                 <div>
                     <h4 class="alert-heading"><?= __('Google Calendar Not Connected') ?></h4>
                     <p class="mb-0">
-                        <?= __('Your Google Calendar account is not connected. Connect now to sync appointments.') ?>
+                        <?= __('Your Google Calendar account is not connected. Connect now to sync appointments with your calendar and ensure customers can see your availability.') ?>
                         <a href="<?= h($authUrl) ?>" class="btn btn-sm btn-primary ml-2">
                             <i class="fab fa-google mr-1"></i><?= __('Connect Google Calendar') ?>
                         </a>

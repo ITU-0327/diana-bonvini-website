@@ -31,10 +31,16 @@
             <?php if (!empty($appointment->meeting_link)): ?>
             <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Meeting Link:</td>
-                <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;"><a href="<?= $appointment->meeting_link ?>" style="color: #3b82f6; text-decoration: none;">Google Meet Link</a></td>
+                <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">
+                    <a href="<?= $appointment->meeting_link ?>" style="display: inline-block; background-color: #34A853; color: white; text-decoration: none; padding: 10px 15px; border-radius: 5px; font-weight: bold;">
+                        <span style="display: inline-flex; align-items: center;">
+                            <span style="margin-right: 8px;">Join Google Meet</span>
+                        </span>
+                    </a>
+                </td>
             </tr>
             <?php endif; ?>
-            <?php if (!empty($appointment->writing_service_request)): ?>
+            <?php if (!empty($appointment->writing_service_request) && isset($appointment->writing_service_request->writing_service_request_id) && isset($appointment->writing_service_request->service_title)): ?>
             <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Related Request:</td>
                 <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;"><?= h($appointment->writing_service_request->writing_service_request_id) ?> - <?= h($appointment->writing_service_request->service_title) ?></td>

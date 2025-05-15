@@ -28,7 +28,7 @@
                 <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Type:</td>
                 <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; color: #6b7280;"><del><?= ucfirst(str_replace('_', ' ', $appointment->appointment_type)) ?></del></td>
             </tr>
-            <?php if (!empty($appointment->writing_service_request)): ?>
+            <?php if (!empty($appointment->writing_service_request) && isset($appointment->writing_service_request->writing_service_request_id) && isset($appointment->writing_service_request->service_title)): ?>
             <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Related Request:</td>
                 <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; color: #6b7280;"><?= h($appointment->writing_service_request->writing_service_request_id) ?> - <?= h($appointment->writing_service_request->service_title) ?></td>

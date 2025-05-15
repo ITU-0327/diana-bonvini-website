@@ -84,6 +84,15 @@ class WritingServiceRequestsController extends AppController
             ],
         );
 
+        // Fetch appointments for this request to check if time slots have been accepted
+        $appointmentsTable = $this->fetchTable('Appointments');
+        $appointments = $appointmentsTable->find()
+            ->where([
+                'user_id' => $user->user_id,
+                'is_deleted' => false,
+            ])
+            ->toArray();
+
         // Mark messages from admin as read when customer views them
         $this->markMessagesAsRead($writingServiceRequest, $user->user_id);
 
@@ -118,7 +127,7 @@ class WritingServiceRequestsController extends AppController
             }
         }
 
-        $this->set(compact('writingServiceRequest'));
+        $this->set(compact('writingServiceRequest', 'appointments'));
     }
 
     /**
@@ -1344,6 +1353,9 @@ class WritingServiceRequestsController extends AppController
             // Get the writing service request
             $writingServiceRequest = $this->WritingServiceRequests->get($id);
 
+            // Generate a unique session payment ID
+            $sessionPaymentId = 'pay_' . uniqid();
+            
             // Get amount from the request
             $amount = $writingServiceRequest->final_price ?? '0.00';
 

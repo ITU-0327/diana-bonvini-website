@@ -76,31 +76,30 @@ class CalendarController extends AppController
         /** @var \App\Model\Entity\User $user */
         $user = $this->Authentication->getIdentity();
         
+        $month = (int)$this->request->getQuery('month', date('n'));
+        $year = (int)$this->request->getQuery('year', date('Y'));
+        
+        if ($month < 1 || $month > 12) {
+            $month = (int)date('n');
+        }
+        
+        if ($year < date('Y') || $year > date('Y') + 2) {
+            $year = (int)date('Y');
+        }
+        
         // Check if Google Calendar is connected
         $settings = $this->GoogleCalendarSettings->find()
             ->where(['user_id' => $user->user_id, 'is_active' => true])
             ->first();
         
         $isConnected = !empty($settings);
-        $authUrl = '';
+        $authUrl = $this->googleCalendarService->getAuthUrl();
         
         if (!$isConnected) {
-            $authUrl = $this->googleCalendarService->getAuthUrl();
+            $this->Flash->warning(__('Your Google Calendar is not connected. Appointment bookings may not show correctly in your calendar. Please connect your Google Calendar.'));
         }
         
         // Get current month/year or from query parameters
-        $month = (int)$this->request->getQuery('month', date('n'));
-        $year = (int)$this->request->getQuery('year', date('Y'));
-        
-        // Ensure valid month/year values
-        if ($month < 1 || $month > 12) {
-            $month = (int)date('n');
-        }
-        if ($year < 2020 || $year > 2030) {
-            $year = (int)date('Y');
-        }
-        
-        // Current week start/end dates
         $today = new DateTime('now', new DateTimeZone(date_default_timezone_get()));
         $startOfWeek = clone $today;
         $startOfWeek->modify('monday this week');

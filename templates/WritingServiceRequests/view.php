@@ -68,7 +68,90 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                 <div class="max-w-[90%] <?= $msgClasses ?> px-2 py-0.5 rounded-xl shadow-sm">
                                     <div class="flex flex-col">
                                         <div class="<?= $textColor ?> text-sm break-words whitespace-pre-wrap message-content leading-tight text-center">
-                                            <?= nl2br(h($msg->message)) ?>
+                                            <?php
+                                            // Check if this message contains time slots
+                                            $messageText = $msg->message;
+                                            if ($isAdmin && strpos($messageText, '**Available Time Slots:**') !== false) {
+                                                // This is a time slots message, format it specially
+                                                $parts = explode('**Available Time Slots:**', $messageText, 2);
+                                                echo nl2br(h($parts[0])) . '<br>';
+                                                echo '<div class="font-bold mt-1 mb-0.5">Available Time Slots:</div>';
+                                                
+                                                // Parse time slots
+                                                $timeSlotLines = [];
+                                                if (preg_match_all('/- ([^:]+): ([^\n]+)/', $parts[1], $matches, PREG_SET_ORDER)) {
+                                                    echo '<div class="time-slots-list space-y-1.5 mt-1">';
+                                                    
+                                                    foreach ($matches as $match) {
+                                                        $date = trim($match[1]);
+                                                        $time = trim($match[2]);
+                                                        
+                                                        // Check if an appointment for this time slot already exists
+                                                        $hasAppointment = false;
+                                                        
+                                                        // Only do this query if we have appointments loaded
+                                                        if (isset($appointments)) {
+                                                            foreach ($appointments as $appointment) {
+                                                                // Check if this specific time slot has been booked
+                                                                if ($appointment->appointment_date->format('l, F j, Y') == $date &&
+                                                                    $appointment->appointment_time->format('g:i A') == substr($time, 0, 7) &&
+                                                                    $appointment->status != 'cancelled' &&
+                                                                    $appointment->is_deleted == false)
+                                                                {
+                                                                    $hasAppointment = true;
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                        
+                                                        // Create accept button for each time slot
+                                                        echo '<div class="flex justify-between items-center p-1.5 bg-gray-100 dark:bg-gray-700 rounded text-left">';
+                                                        echo '<div class="text-xs">';
+                                                        echo '<div class="font-semibold">' . h($date) . '</div>';
+                                                        echo '<div>' . h($time) . '</div>';
+                                                        echo '</div>';
+                                                        
+                                                        if ($hasAppointment) {
+                                                            // Show confirmed badge if appointment exists
+                                                            echo '<span class="text-xs bg-blue-500 text-white py-1 px-2.5 rounded shadow-sm">';
+                                                            echo '<i class="fas fa-calendar-check mr-1"></i> Confirmed';
+                                                            echo '</span>';
+                                                        } else {
+                                                            // Show accept button if no appointment exists
+                                                            echo '<a href="' . $this->Url->build(['controller' => 'Calendar', 'action' => 'acceptTimeSlot', '?' => [
+                                                                'date' => urlencode($date),
+                                                                'time' => urlencode($time),
+                                                                'request_id' => $writingServiceRequest->writing_service_request_id,
+                                                                'message_id' => $msg->request_message_id
+                                                            ]]) . '" class="text-xs bg-green-500 hover:bg-green-600 text-white py-1 px-2.5 rounded transition-colors duration-200 shadow-sm">';
+                                                            echo '<i class="fas fa-check mr-1"></i> Accept';
+                                                            echo '</a>';
+                                                        }
+                                                        
+                                                        echo '</div>';
+                                                    }
+                                                    
+                                                    echo '</div>';
+                                                    
+                                                    // Skip the calendar booking link part
+                                                    if (strpos($parts[1], '[CALENDAR_BOOKING_LINK]') !== false) {
+                                                        $bookingLinkParts = explode('[CALENDAR_BOOKING_LINK]', $parts[1], 2);
+                                                        if (isset($bookingLinkParts[1]) && strpos($bookingLinkParts[1], '[/CALENDAR_BOOKING_LINK]') !== false) {
+                                                            $afterBookingLink = explode('[/CALENDAR_BOOKING_LINK]', $bookingLinkParts[1], 2);
+                                                            if (isset($afterBookingLink[1])) {
+                                                                echo '<div class="mt-1.5 text-xs">' . nl2br(h(trim($afterBookingLink[1]))) . '</div>';
+                                                            }
+                                                        }
+                                                    }
+                                                } else {
+                                                    // If parsing fails, just show the raw text
+                                                    echo nl2br(h($parts[1]));
+                                                }
+                                            } else {
+                                                // Standard message, just show the text
+                                                echo nl2br(h($messageText));
+                                            }
+                                            ?>
                                         </div>
                                         <div class="text-[8px] <?= $timeColor ?> self-end opacity-70">
                                             <?php if (!empty($msg->created_at)) : ?>
