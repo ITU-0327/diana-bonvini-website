@@ -724,17 +724,15 @@ $this->assign('title', __('Writing Service Request Details'));
                         if (match && match[1]) {
                             const linkText = match[1].trim();
 
-                            // Create booking link HTML
+                            // Create booking link HTML - for admin view, just show the text without button
                             const bookingHtml = `
-                                <div class="mt-3 mb-1">
-                                    <a href="/calendar/availability?request_id=<?= $writingServiceRequest->writing_service_request_id ?>" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-calendar-alt mr-1"></i> View Available Time Slots
-                                    </a>
+                                <div class="mt-2 mb-1 text-muted font-italic">
+                                    <small><i class="fas fa-info-circle mr-1"></i> ${linkText}</small>
+                                    <small class="d-block mt-1">Note: Button to view time slots only appears for clients</small>
                                 </div>
-                                <div class="text-muted small">${linkText}</div>
                             `;
 
-                            // Replace the tag with the button
+                            // Replace the tag with the text
                             content.innerHTML = text.replace(bookingLinkPattern, bookingHtml);
                         }
                     }
@@ -1269,6 +1267,11 @@ $this->assign('title', __('Writing Service Request Details'));
                     'type' => 'post'
                 ]) ?>
                 
+                <!-- Include hidden writing_service_request_id field to ensure it's passed -->
+                <?= $this->Form->hidden('writing_service_request_id', [
+                    'value' => $writingServiceRequest->writing_service_request_id
+                ]) ?>
+                
                 <div class="row">
                     <!-- Date Selection Column -->
                     <div class="col-md-5">
@@ -1384,6 +1387,18 @@ $this->assign('title', __('Writing Service Request Details'));
         const selectAllCheckbox = document.getElementById('selectAllTimeSlots');
         const sendTimeSlotsBtn = document.getElementById('sendTimeSlots');
         
+        // Helper function for debugging
+        function debugLog(message, data) {
+            const debugging = true; // Set to false in production
+            if (debugging && console) {
+                if (data) {
+                    console.log(`[TimeSlots] ${message}:`, data);
+                } else {
+                    console.log(`[TimeSlots] ${message}`);
+                }
+            }
+        }
+        
         // Initialize datepicker
         try {
             datepicker.datepicker({
@@ -1407,23 +1422,25 @@ $this->assign('title', __('Writing Service Request Details'));
         }
 
         // Load time slots when the button is clicked
-        loadTimeSlotsBtn.addEventListener('click', function() {
-            const selectedDate = datepicker.datepicker('getDate');
-            console.log('Load button clicked, selected date:', selectedDate);
+        if (loadTimeSlotsBtn) {
+            loadTimeSlotsBtn.addEventListener('click', function() {
+                const selectedDate = datepicker.datepicker('getDate');
+                console.log('Load button clicked, selected date:', selectedDate);
 
-            if (!selectedDate) {
-                alert('Please select a date first');
-                return;
-            }
+                if (!selectedDate) {
+                    alert('Please select a date first');
+                    return;
+                }
 
-            // Format date as YYYY-MM-DD
-            const year = selectedDate.getFullYear();
-            const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-            const day = String(selectedDate.getDate()).padStart(2, '0');
-            const formattedDate = `${year}-${month}-${day}`;
+                // Format date as YYYY-MM-DD
+                const year = selectedDate.getFullYear();
+                const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                const day = String(selectedDate.getDate()).padStart(2, '0');
+                const formattedDate = `${year}-${month}-${day}`;
 
-            loadTimeSlots(formattedDate);
-        });
+                loadTimeSlots(formattedDate);
+            });
+        }
 
         // Function to load time slots for a selected date
         function loadTimeSlots(date) {
@@ -1524,16 +1541,20 @@ $this->assign('title', __('Writing Service Request Details'));
             });
 
             // Handle select all checkbox
-            selectAllCheckbox.addEventListener('change', function() {
-                timeSlotCheckboxes.forEach(checkbox => {
-                    checkbox.checked = this.checked;
-                });
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    timeSlotCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
 
-                updateSelectedTimeSlots();
-            });
+                    updateSelectedTimeSlots();
+                });
+            }
 
             // Clear previous selection
-            selectAllCheckbox.checked = false;
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = false;
+            }
             updateSelectedTimeSlots();
         }
 
@@ -1548,47 +1569,70 @@ $this->assign('title', __('Writing Service Request Details'));
             });
 
             // Update hidden input with selected time slots
-            selectedTimeSlotsJson.value = JSON.stringify(selectedTimeSlots);
+            if (selectedTimeSlotsJson) {
+                selectedTimeSlotsJson.value = JSON.stringify(selectedTimeSlots);
+            }
 
             // Enable/disable send button based on selection
-            sendTimeSlotsBtn.disabled = selectedTimeSlots.length === 0;
+            if (sendTimeSlotsBtn) {
+                sendTimeSlotsBtn.disabled = selectedTimeSlots.length === 0;
+            }
 
             // Update select all checkbox state
             const allCheckboxes = document.querySelectorAll('.time-slot-checkbox');
-            selectAllCheckbox.checked = timeSlotCheckboxes.length > 0 && timeSlotCheckboxes.length === allCheckboxes.length;
+            if (selectAllCheckbox && allCheckboxes.length > 0) {
+                selectAllCheckbox.checked = timeSlotCheckboxes.length > 0 && 
+                                        timeSlotCheckboxes.length === allCheckboxes.length;
+            }
         }
 
         // Send time slots button
-        sendTimeSlotsBtn.addEventListener('click', function() {
-            const messageText = document.getElementById('timeSlotMessageText').value.trim();
-            const selectedTimeSlots = selectedTimeSlotsJson ? selectedTimeSlotsJson.value : '[]';
-
-            if (!messageText) {
-                alert('Please enter a message to accompany the time slots');
-                return;
-            }
-
-            if (!selectedTimeSlots || selectedTimeSlots === '[]') {
-                alert('Please select at least one time slot');
-                return;
-            }
-
-            try {
-                // Show loading state
-                sendTimeSlotsBtn.disabled = true;
-                sendTimeSlotsBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
+        if (sendTimeSlotsBtn) {
+            sendTimeSlotsBtn.addEventListener('click', function() {
+                const messageText = document.getElementById('timeSlotMessageText');
+                const selectedTimeSlots = selectedTimeSlotsJson;
                 
-                // Submit the form
-                document.getElementById('timeSlotsForm').submit();
-            } catch (error) {
-                console.error('Error submitting form:', error);
-                alert('An error occurred while sending time slots. Please try again.');
-                
-                // Reset button state
-                sendTimeSlotsBtn.disabled = false;
-                sendTimeSlotsBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Send Time Slots';
-            }
-        });
+                if (!messageText || !messageText.value.trim()) {
+                    alert('Please enter a message to accompany the time slots');
+                    return;
+                }
+
+                if (!selectedTimeSlots || selectedTimeSlots.value === '[]') {
+                    alert('Please select at least one time slot');
+                    return;
+                }
+
+                const form = document.getElementById('timeSlotsForm');
+                if (!form) {
+                    console.error('Form not found');
+                    alert('Error: Form not found');
+                    return;
+                }
+
+                try {
+                    // Show loading state
+                    sendTimeSlotsBtn.disabled = true;
+                    sendTimeSlotsBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
+                    
+                    // Log form data before submission (for debugging only)
+                    console.log('Submitting form with data:', {
+                        message_text: messageText.value,
+                        time_slots: selectedTimeSlots.value,
+                        request_id: '<?= $writingServiceRequest->writing_service_request_id ?>'
+                    });
+                    
+                    // Submit the form
+                    form.submit();
+                } catch (error) {
+                    console.error('Error submitting form:', error);
+                    alert('An error occurred while sending time slots. Please try again.');
+                    
+                    // Reset button state
+                    sendTimeSlotsBtn.disabled = false;
+                    sendTimeSlotsBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Send Time Slots';
+                }
+            });
+        }
     });
 </script>
 
@@ -1746,17 +1790,15 @@ Thank you for your payment. We'll now begin work on your writing service request
                         if (match && match[1]) {
                             const linkText = match[1].trim();
 
-                            // Create booking link HTML
+                            // Create booking link HTML - for admin view, just show the text without button
                             const bookingHtml = `
-                                <div class="mt-3 mb-1">
-                                    <a href="/calendar/availability?request_id=<?= $writingServiceRequest->writing_service_request_id ?>" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-calendar-alt mr-1"></i> View Available Time Slots
-                                    </a>
+                                <div class="mt-2 mb-1 text-muted font-italic">
+                                    <small><i class="fas fa-info-circle mr-1"></i> ${linkText}</small>
+                                    <small class="d-block mt-1">Note: Button to view time slots only appears for clients</small>
                                 </div>
-                                <div class="text-muted small">${linkText}</div>
                             `;
 
-                            // Replace the tag with the button
+                            // Replace the tag with the text
                             content.innerHTML = text.replace(bookingLinkPattern, bookingHtml);
                         }
                     }
