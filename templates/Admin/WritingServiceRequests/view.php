@@ -224,8 +224,72 @@ $this->assign('title', __('Writing Service Request Details'));
                     <h6 class="m-0 font-weight-bold text-primary">Request Actions</h6>
                 </div>
                 <div class="card-body">
-                    <!-- Payment Request Button -->
+                    <!-- Document Upload Section -->
                     <div class="mb-4">
+                        <h6 class="font-weight-bold mb-2">Document Management</h6>
+                        <div class="card bg-light border mb-3">
+                            <div class="card-body p-3">
+                                <?= $this->Form->create(null, [
+                                    'url' => ['prefix' => 'Admin', 'controller' => 'WritingServiceRequests', 'action' => 'uploadDocument', $writingServiceRequest->writing_service_request_id],
+                                    'type' => 'file',
+                                    'class' => 'document-upload-form',
+                                ]) ?>
+                                <div class="form-group mb-2">
+                                    <label class="small font-weight-bold">Upload Document</label>
+                                    <?= $this->Form->control('document', [
+                                        'type' => 'file',
+                                        'class' => 'form-control-file',
+                                        'label' => false,
+                                        'required' => true,
+                                        'accept' => '.pdf,.doc,.docx,.txt,.jpg,.jpeg',
+                                    ]) ?>
+                                    <small class="form-text text-muted">Accepted: PDF, Word, TXT, or JPEG files</small>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-sm btn-block">
+                                    <i class="fas fa-upload mr-1"></i> Upload Document
+                                </button>
+                                <?= $this->Form->end() ?>
+                            </div>
+                        </div>
+                        
+                        <!-- Document List -->
+                        <?php if (isset($requestDocuments) && !empty($requestDocuments)): ?>
+                            <h6 class="font-weight-bold mb-2">Uploaded Documents</h6>
+                            <div class="list-group">
+                                <?php foreach($requestDocuments as $document): ?>
+                                    <div class="list-group-item list-group-item-action p-2 d-flex align-items-center">
+                                        <div class="document-icon mr-2">
+                                            <i class="<?= getDocumentIcon($document->file_type) ?> fa-lg text-primary"></i>
+                                        </div>
+                                        <div class="flex-grow-1 overflow-hidden">
+                                            <div class="text-truncate font-weight-bold small">
+                                                <?= h($document->document_name) ?>
+                                            </div>
+                                            <div class="small text-muted">
+                                                <span><?= h(strtoupper($document->file_extension)) ?></span> • 
+                                                <span><?= h($document->formatted_size) ?></span> •
+                                                <span>
+                                                    <?php 
+                                                    if (!empty($document->created_at)) {
+                                                        echo h($document->created_at->format('M j, Y'));
+                                                    }
+                                                    ?>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <a href="<?= '/' . h($document->document_path) ?>" 
+                                           class="btn btn-sm btn-outline-primary ml-2" 
+                                           target="_blank">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <!-- Payment Request Button -->
+                    <div class="mb-4 pt-3 border-top">
                         <h6 class="font-weight-bold mb-2">Payment Options</h6>
                         <button type="button" class="btn btn-warning btn-block" id="paymentOptionsBtn" data-toggle="modal" data-target="#paymentRequestModal">
                             <i class="fas fa-credit-card mr-1"></i> Send Payment Request
@@ -1625,10 +1689,33 @@ function getStatusClass(string $status): string
 {
     return match ($status) {
         'pending' => 'warning',
-        'in_progress' => 'primary',
+        'in_progress' => 'info',
         'completed' => 'success',
         'cancelled' => 'danger',
-        default => 'secondary'
+        default => 'secondary',
     };
+}
+
+function getDocumentIcon(string $mimeType): string
+{
+    return match ($mimeType) {
+        'application/pdf' => 'fas fa-file-pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'fas fa-file-word',
+        'application/msword' => 'fas fa-file-word',
+        'text/plain' => 'fas fa-file-alt',
+        'image/jpeg', 'image/png', 'image/gif' => 'fas fa-file-image',
+        default => 'fas fa-file',
+    };
+}
+
+function formatFileSize(int $bytes): string
+{
+    if ($bytes < 1024) {
+        return $bytes . ' B';
+    } elseif ($bytes < 1048576) {
+        return round($bytes / 1024, 1) . ' KB';
+    } else {
+        return round($bytes / 1048576, 1) . ' MB';
+    }
 }
 ?>

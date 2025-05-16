@@ -413,7 +413,71 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                     </h3>
                 </div>
                 <div class="p-5">
-                    <?php if (!empty($writingServiceRequest->document)) : ?>
+                    <!-- Upload Document Form -->
+                    <div class="mb-4">
+                        <?= $this->Form->create(null, [
+                            'url' => ['action' => 'uploadDocument', $writingServiceRequest->writing_service_request_id],
+                            'type' => 'file',
+                            'class' => 'document-upload-form',
+                        ]) ?>
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-4">
+                            <div class="font-medium text-blue-800 mb-2">Upload New Document</div>
+                            <div class="flex flex-wrap items-end gap-3">
+                                <?= $this->Form->control('document', [
+                                    'type' => 'file',
+                                    'class' => 'form-control py-1.5 px-2 border border-gray-300 rounded text-sm',
+                                    'label' => false,
+                                    'required' => true,
+                                    'accept' => '.pdf,.doc,.docx,.txt',
+                                ]) ?>
+                                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-1.5 px-4 rounded text-sm inline-flex items-center">
+                                    <i class="fas fa-upload mr-2"></i> Upload
+                                </button>
+                            </div>
+                            <div class="text-xs text-blue-700 mt-2">
+                                Accepted file types: PDF, Word (DOCX), or TXT files.
+                            </div>
+                        </div>
+                        <?= $this->Form->end() ?>
+                    </div>
+                    
+                    <!-- Document List -->
+                    <?php if (isset($requestDocuments) && !empty($requestDocuments)): ?>
+                        <div class="space-y-3">
+                            <?php foreach($requestDocuments as $document): ?>
+                                <div class="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
+                                    <div class="<?= getDocumentIconClass($document->file_type) ?> p-2.5 rounded-lg mr-3 text-white">
+                                        <i class="<?= getDocumentIcon($document->file_type) ?>"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900 truncate">
+                                            <?= h($document->document_name) ?>
+                                        </p>
+                                        <div class="flex items-center text-xs text-gray-500">
+                                            <span class="mr-2"><?= h(strtoupper($document->file_extension)) ?></span>
+                                            <span class="mr-2">&bull;</span>
+                                            <span><?= h($document->formatted_size) ?></span>
+                                            <span class="mr-2">&bull;</span>
+                                            <span>
+                                                <?php 
+                                                if (!empty($document->created_at)) {
+                                                    echo h($document->created_at->format('M j, Y h:i A'));
+                                                }
+                                                ?>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <a href="<?= '/' . h($document->document_path) ?>" 
+                                           class="text-blue-600 hover:text-blue-800 p-1.5 bg-white rounded-full shadow-sm transition-colors mr-2" 
+                                           target="_blank">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php elseif (!empty($writingServiceRequest->document)): ?>
                         <div class="flex items-center p-3.5 bg-blue-50 rounded-lg border border-blue-100">
                             <div class="bg-blue-500 p-2.5 rounded-lg mr-3 text-white">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -436,7 +500,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                 ) ?>
                             </div>
                         </div>
-                    <?php else : ?>
+                    <?php else: ?>
                         <div class="text-center py-6 text-gray-400 bg-gray-50 rounded-lg border border-dashed border-gray-200">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto mb-2 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1040,5 +1104,55 @@ function getStatusBadgeColor(string $status): string
         'cancelled' => 'red-500',
         default => 'gray-500'
     };
+}
+
+/**
+ * Get CSS class for document icon based on mime type
+ */
+function getDocumentIconClass(string $mimeType): string
+{
+    if (strpos($mimeType, 'pdf') !== false) {
+        return 'bg-red-500';
+    } elseif (strpos($mimeType, 'word') !== false || strpos($mimeType, 'doc') !== false) {
+        return 'bg-blue-600';
+    } elseif (strpos($mimeType, 'excel') !== false || strpos($mimeType, 'sheet') !== false) {
+        return 'bg-green-600';
+    } elseif (strpos($mimeType, 'image') !== false) {
+        return 'bg-purple-500';
+    } else {
+        return 'bg-gray-500';
+    }
+}
+
+/**
+ * Get icon for document based on mime type
+ */
+function getDocumentIcon(string $mimeType): string
+{
+    if (strpos($mimeType, 'pdf') !== false) {
+        return 'fas fa-file-pdf';
+    } elseif (strpos($mimeType, 'word') !== false || strpos($mimeType, 'doc') !== false) {
+        return 'fas fa-file-word';
+    } elseif (strpos($mimeType, 'excel') !== false || strpos($mimeType, 'sheet') !== false) {
+        return 'fas fa-file-excel';
+    } elseif (strpos($mimeType, 'image') !== false) {
+        return 'fas fa-file-image';
+    } else {
+        return 'fas fa-file-alt';
+    }
+}
+
+/**
+ * Format file size to human-readable format
+ */
+function formatFileSize(int $bytes): string
+{
+    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    $bytes = max($bytes, 0);
+    $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+    $pow = min($pow, count($units) - 1);
+    $bytes /= pow(1024, $pow);
+    
+    return round($bytes, 1) . ' ' . $units[$pow];
 }
 ?>

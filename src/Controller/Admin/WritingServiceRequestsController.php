@@ -8,6 +8,7 @@ use App\Model\Entity\WritingServiceRequest;
 use Cake\Http\Response;
 use Cake\Utility\Inflector;
 use Exception;
+use Cake\Utility\Text;
 
 /**
  * WritingServiceRequests Controller (Admin prefix)
@@ -1225,6 +1226,92 @@ class WritingServiceRequestsController extends BaseAdminController
         } catch (\Exception $e) {
             $this->log('Error in sendTimeSlots: ' . $e->getMessage(), 'error');
             $this->Flash->error(__('An error occurred: {0}', $e->getMessage()));
+            return $this->redirect(['action' => 'view', $id]);
+        }
+    }
+
+    /**
+     * Upload document for a writing service request (Admin)
+     *
+     * @param string|null $id Writing Service Request id
+     * @return \Cake\Http\Response|null
+     */
+    public function uploadDocument(?string $id = null)
+    {
+        $this->request->allowMethod(['post']);
+        
+        /** @var \App\Model\Entity\User|null $user */
+        $user = $this->Authentication->getIdentity();
+
+        if (!$user || $user->user_type !== 'admin') {
+            $this->Flash->error(__('You need to be an admin to upload documents.'));
+            return $this->redirect(['controller' => 'Users', 'action' => 'login']);
+        }
+
+        try {
+            $writingServiceRequest = $this->WritingServiceRequests->get($id);
+            
+            // Handle file upload
+            $file = $this->request->getUploadedFile('document');
+            
+            if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
+                $this->Flash->error(__('No document uploaded or upload failed.'));
+                return $this->redirect(['action' => 'view', $id]);
+            }
+            
+            // Process the document upload
+            $documentPath = $this->_handleDocumentUpload($file, 'view');
+            
+            if ($documentPath) {
+                // Create a RequestDocument entity
+                $requestDocumentsTable = $this->fetchTable('RequestDocuments');
+                $requestDocument = $requestDocumentsTable->newEmptyEntity();
+                
+                $data = [
+                    'request_document_id' => \Cake\Utility\Text::uuid(),
+                    'writing_service_request_id' => $id,
+                    'user_id' => $user->user_id,
+                    'document_path' => $documentPath,
+                    'document_name' => $file->getClientFilename(),
+                    'file_type' => $file->getClientMediaType(),
+                    'file_size' => $file->getSize(),
+                    'uploaded_by' => 'admin',
+                    'is_deleted' => false,
+                    'created_at' => new \DateTime('now')
+                ];
+                
+                // Skip validation for the writing_service_request_id field
+                $requestDocument = $requestDocumentsTable->patchEntity($requestDocument, $data, [
+                    'validate' => false
+                ]);
+                
+                if ($requestDocumentsTable->save($requestDocument)) {
+                    // Add a message to the chat about the upload
+                    $message = "Uploaded document: **" . $file->getClientFilename() . "**";
+                    $requestMessagesTable = $this->fetchTable('RequestMessages');
+                    $newMessage = $requestMessagesTable->newEntity([
+                        'writing_service_request_id' => $id,
+                        'user_id' => $user->user_id,
+                        'message' => $message,
+                        'is_read' => false,
+                    ]);
+                    $requestMessagesTable->save($newMessage);
+                    
+                    $this->Flash->success(__('Document uploaded successfully.'));
+                } else {
+                    // Log the validation errors for debugging
+                    $this->log('Document upload validation errors: ' . json_encode($requestDocument->getErrors()), 'error');
+                    $this->Flash->error(__('Document uploaded but could not be saved in the database. Please check file type and size.'));
+                }
+            } else {
+                $this->Flash->error(__('Failed to upload document. Please try again.'));
+            }
+            
+            return $this->redirect(['action' => 'view', $id]);
+            
+        } catch (\Exception $e) {
+            $this->log('Error in admin document upload: ' . $e->getMessage(), 'error');
+            $this->Flash->error(__('Error: {0}', $e->getMessage()));
             return $this->redirect(['action' => 'view', $id]);
         }
     }

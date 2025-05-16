@@ -12,6 +12,7 @@ use Psr\Http\Message\UploadedFileInterface;
 use RuntimeException;
 use Stripe\Checkout\Session;
 use Stripe\Stripe;
+use Cake\Utility\Text;
 
 /**
  * WritingServiceRequests Controller
@@ -94,6 +95,16 @@ class WritingServiceRequestsController extends AppController
                 'is_deleted' => false,
             ])
             ->toArray();
+            
+        // Fetch request documents
+        $requestDocumentsTable = $this->fetchTable('RequestDocuments');
+        $requestDocuments = $requestDocumentsTable->find()
+            ->where([
+                'writing_service_request_id' => $id,
+                'is_deleted' => false,
+            ])
+            ->order(['created_at' => 'DESC'])
+            ->toArray();
 
         // Mark messages from admin as read when customer views them
         $this->markMessagesAsRead($writingServiceRequest, $user->user_id);
@@ -159,7 +170,7 @@ class WritingServiceRequestsController extends AppController
             }
         }
 
-        $this->set(compact('writingServiceRequest', 'appointments'));
+        $this->set(compact('writingServiceRequest', 'appointments', 'requestDocuments'));
     }
 
     /**
@@ -1250,6 +1261,16 @@ class WritingServiceRequestsController extends AppController
             ],
         );
 
+        // Fetch request documents
+        $requestDocumentsTable = $this->fetchTable('RequestDocuments');
+        $requestDocuments = $requestDocumentsTable->find()
+            ->where([
+                'writing_service_request_id' => $id,
+                'is_deleted' => false,
+            ])
+            ->order(['created_at' => 'DESC'])
+            ->toArray();
+
         if ($this->request->is(['post', 'put', 'patch'])) {
             $data = $this->request->getData();
 
@@ -1274,7 +1295,7 @@ class WritingServiceRequestsController extends AppController
             }
         }
 
-        $this->set(compact('writingServiceRequest'));
+        $this->set(compact('writingServiceRequest', 'requestDocuments'));
     }
 
     /**
@@ -1389,10 +1410,12 @@ class WritingServiceRequestsController extends AppController
             'application/pdf',  // PDF
             'image/jpeg',       // JPG/JPEG
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
+            'application/msword', // DOC
+            'text/plain',       // TXT
         ];
 
         if (!in_array($file->getClientMediaType(), $allowedMimeTypes)) {
-            $this->Flash->error(__('Invalid file type. Please upload txt, pdf, or Word documents only.'));
+            $this->Flash->error(__('Invalid file type. Please upload PDF, Word, or TXT documents only.'));
 
             return $this->redirect(['action' => $redirectAction]);
         }
@@ -1691,6 +1714,97 @@ class WritingServiceRequestsController extends AppController
             $this->log('payDirect error: ' . $e->getMessage(), 'error');
             $this->Flash->error('Error processing payment: ' . $e->getMessage());
 
+            return $this->redirect(['action' => 'view', $id]);
+        }
+    }
+
+    /**
+     * Upload document for a writing service request
+     *
+     * @param string|null $id Writing Service Request id
+     * @return \Cake\Http\Response|null
+     */
+    public function uploadDocument(?string $id = null)
+    {
+        $this->request->allowMethod(['post']);
+        
+        /** @var \App\Model\Entity\User|null $user */
+        $user = $this->Authentication->getIdentity();
+
+        if (!$user) {
+            $this->Flash->error(__('You need to be logged in.'));
+            return $this->redirect(['controller' => 'Users', 'action' => 'login']);
+        }
+
+        try {
+            $writingServiceRequest = $this->WritingServiceRequests->get($id);
+            
+            // Check permissions - admin or owner of the request
+            if ($user->user_type !== 'admin' && $user->user_id !== $writingServiceRequest->user_id) {
+                $this->Flash->error(__('You do not have permission to upload documents to this request.'));
+                return $this->redirect(['action' => 'index']);
+            }
+            
+            $data = $this->request->getData();
+            
+            // Handle file upload
+            $file = $this->request->getUploadedFile('document');
+            
+            if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
+                $this->Flash->error(__('No document uploaded or upload failed.'));
+                return $this->redirect(['action' => 'view', $id]);
+            }
+            
+            // Process the document upload
+            $documentPath = $this->_handleDocumentUpload($file, 'view');
+            
+            if ($documentPath) {
+                // Create a RequestDocument entity
+                $requestDocumentsTable = $this->fetchTable('RequestDocuments');
+                $requestDocument = $requestDocumentsTable->newEmptyEntity();
+                
+                $data = [
+                    'request_document_id' => Text::uuid(),
+                    'writing_service_request_id' => $id,
+                    'user_id' => $user->user_id,
+                    'document_path' => $documentPath,
+                    'document_name' => $file->getClientFilename(),
+                    'file_type' => $file->getClientMediaType(),
+                    'file_size' => $file->getSize(),
+                    'uploaded_by' => $user->user_type,
+                    'is_deleted' => false,
+                    'created_at' => new \DateTime('now')
+                ];
+                
+                // Skip validation for the writing_service_request_id field
+                $requestDocument = $requestDocumentsTable->patchEntity($requestDocument, $data, [
+                    'validate' => false
+                ]);
+                
+                if ($requestDocumentsTable->save($requestDocument)) {
+                    // Add a message to the chat about the upload
+                    $message = "Uploaded document: **" . $file->getClientFilename() . "**";
+                    $requestMessagesTable = $this->fetchTable('RequestMessages');
+                    $newMessage = $requestMessagesTable->newEntity([
+                        'writing_service_request_id' => $id,
+                        'user_id' => $user->user_id,
+                        'message' => $message,
+                        'is_read' => false,
+                    ]);
+                    $requestMessagesTable->save($newMessage);
+                    
+                    $this->Flash->success(__('Document uploaded successfully.'));
+                } else {
+                    $this->Flash->error(__('Document uploaded but could not be saved in the database.'));
+                }
+            } else {
+                $this->Flash->error(__('Failed to upload document. Please try again.'));
+            }
+            
+            return $this->redirect(['action' => 'view', $id]);
+            
+        } catch (\Exception $e) {
+            $this->Flash->error(__('Error: {0}', $e->getMessage()));
             return $this->redirect(['action' => 'view', $id]);
         }
     }
