@@ -91,24 +91,33 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                 // Parse time slots
                                                 if (preg_match_all('/- ([^:]+): ([^\n]+)/', $parts[1], $matches, PREG_SET_ORDER)) {
                                                     echo '<div class="time-slots-list">';
+                                                    
+                                                    // Check if ANY appointment exists for this request
+                                                    $hasAnyAppointment = false;
+                                                    if (isset($appointments)) {
+                                                        foreach ($appointments as $appointment) {
+                                                            if ($appointment->writing_service_request_id == $writingServiceRequest->writing_service_request_id &&
+                                                                $appointment->status != 'cancelled' &&
+                                                                $appointment->is_deleted == false) {
+                                                                $hasAnyAppointment = true;
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
 
                                                     foreach ($matches as $match) {
                                                         $date = trim($match[1]);
                                                         $time = trim($match[2]);
 
-                                                        // Check if an appointment for this time slot already exists
-                                                        $hasAppointment = false;
-
-                                                        // Only do this query if we have appointments loaded
+                                                        // Check if this specific slot matches the confirmed appointment
+                                                        $isThisSlotBooked = false;
                                                         if (isset($appointments)) {
                                                             foreach ($appointments as $appointment) {
-                                                                // Check if this specific time slot has been booked
                                                                 if ($appointment->appointment_date->format('l, F j, Y') == $date &&
                                                                     $appointment->appointment_time->format('g:i A') == substr($time, 0, 7) &&
                                                                     $appointment->status != 'cancelled' &&
-                                                                    $appointment->is_deleted == false)
-                                                                {
-                                                                    $hasAppointment = true;
+                                                                    $appointment->is_deleted == false) {
+                                                                    $isThisSlotBooked = true;
                                                                     break;
                                                                 }
                                                             }
@@ -121,13 +130,20 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                         echo '<div class="timeslot-time">' . h($time) . '</div>';
                                                         echo '</div>';
 
-                                                        if ($hasAppointment) {
-                                                            // Show confirmed badge if appointment exists
-                                                            echo '<span class="timeslot-confirmed">';
-                                                            echo '<i class="fas fa-calendar-check"></i> Confirmed';
-                                                            echo '</span>';
+                                                        if ($hasAnyAppointment) {
+                                                            // If this is the booked slot, show it as confirmed
+                                                            if ($isThisSlotBooked) {
+                                                                echo '<a href="javascript:void(0)" class="timeslot-confirmed-button">';
+                                                                echo '<i class="fas fa-calendar-check"></i> Booking Confirmed';
+                                                                echo '</a>';
+                                                            } else {
+                                                                // For other slots, show as unavailable
+                                                                echo '<a href="javascript:void(0)" class="timeslot-unavailable-button">';
+                                                                echo '<i class="fas fa-calendar-times"></i> Unavailable';
+                                                                echo '</a>';
+                                                            }
                                                         } else {
-                                                            // Show accept button if no appointment exists
+                                                            // No appointment exists yet, show normal accept button
                                                             echo '<a href="' . $this->Url->build(['controller' => 'Calendar', 'action' => 'acceptTimeSlot', '?' => [
                                                                 'date' => urlencode($date),
                                                                 'time' => urlencode($time),
@@ -168,15 +184,53 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                 // Process payment buttons
                                                 if (strpos($messageContent, '[PAYMENT_BUTTON]') !== false) {
                                                     $buttonPattern = '/\[PAYMENT_BUTTON\](.*?)\[\/PAYMENT_BUTTON\]/';
-                                                    $messageContent = preg_replace_callback($buttonPattern, function($matches) {
+                                                    $messageContent = preg_replace_callback($buttonPattern, function($matches) use ($writingServiceRequest) {
                                                         $paymentId = $matches[1];
-                                                        return '<div class="payment-button-container" data-payment-container="'.$paymentId.'">
-                                                            <div class="payment-button-label">Payment request:</div>
-                                                            <div class="payment-button-wrapper">
-                                                                <button class="payment-action-button" id="pay-button-'.$paymentId.'">
-                                                                    <i class="fas fa-credit-card"></i> Make Payment
-                                                                </button>
-                                                                <span class="payment-status">PENDING</span>
+                                                        $requestId = $writingServiceRequest->writing_service_request_id;
+                                                        $baseUrl = '';  // Base URL will be determined by JS
+                                                        
+                                                        // Check if this payment is already paid
+                                                        $isPaid = false;
+                                                        if (!empty($writingServiceRequest->writing_service_payments)) {
+                                                            foreach ($writingServiceRequest->writing_service_payments as $payment) {
+                                                                if ($payment->writing_service_payment_id == $paymentId && $payment->status === 'paid') {
+                                                                    $isPaid = true;
+                                                                    break;
+                                                                }
+                                                            }
+                                                        }
+                                                        
+                                                        // Create payment container HTML that matches what the JS expects
+                                                        // but with additional classes for paid status if needed
+                                                        $containerClass = $isPaid ? 'payment-container mt-3 paid-payment' : 'payment-container mt-3';
+                                                        $buttonClass = $isPaid ? 
+                                                            'bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded inline-flex items-center text-sm payment-button' : 
+                                                            'bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded inline-flex items-center text-sm payment-button';
+                                                        $buttonText = $isPaid ? 'Payment Complete' : 'Make Payment';
+                                                        $buttonIcon = $isPaid ? 
+                                                            '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : 
+                                                            '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>';
+                                                        
+                                                        // Status class and initial visibility
+                                                        $statusClass = $isPaid ? 'payment-status mt-2 text-sm flex items-center payment-completed' : 'payment-status hidden mt-2 text-sm flex items-center';
+                                                        $statusIcon = $isPaid ? '✅' : '⏳';
+                                                        $statusText = $isPaid ? 'Payment received' : 'Checking payment status...';
+                                                        
+                                                        return '<div class="'.$containerClass.'" data-payment-container="'.$paymentId.'">
+                                                            <!-- Payment button -->
+                                                            <div class="payment-button-container '.($isPaid ? 'paid-container' : '').'">
+                                                                <a href="'.($isPaid ? 'javascript:void(0)' : '/writing-service-requests/payDirect?id='.$requestId.'&paymentId='.urlencode($paymentId)).'"
+                                                                   class="'.$buttonClass.'"
+                                                                   '.($isPaid ? 'disabled="disabled"' : 'data-payment-id="'.$paymentId.'"').'>
+                                                                    '.$buttonIcon.'
+                                                                    '.$buttonText.'
+                                                                </a>
+                                                            </div>
+                                                            <!-- Payment status indicator -->
+                                                            <div class="'.$statusClass.'">
+                                                                <span class="status-icon mr-1">'.$statusIcon.'</span>
+                                                                <span class="status-text '.($isPaid ? 'text-green-600 font-medium' : '').'">'.$statusText.'</span>
+                                                                <span class="status-date ml-2"></span>
                                                             </div>
                                                         </div>';
                                                     }, $messageContent);
@@ -816,6 +870,27 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
         gap: 4px;
     }
 
+    .timeslot-confirmed-button {
+        background-color: #1cc88a;
+        color: white;
+        padding: 5px 12px;
+        border-radius: 16px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        cursor: default;
+        box-shadow: 0 2px 4px rgba(28, 200, 138, 0.25);
+    }
+
+    .timeslot-confirmed-button:hover {
+        background-color: #1cc88a;
+        color: white;
+        text-decoration: none;
+    }
+
     .timeslot-accept {
         background-color: #1cc88a;
         color: white;
@@ -851,47 +926,33 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
         border: 1px dashed #f6c23e;
         border-radius: 8px;
         padding: 10px;
+        transition: all 0.3s ease;
     }
-
-    .payment-button-label {
-        font-size: 0.8rem;
-        color: #7f8c8d;
-        margin-bottom: 5px;
+    
+    /* Paid container styling */
+    .payment-button-container.paid-container {
+        background-color: rgba(28, 200, 138, 0.1);
+        border: 1px dashed #1cc88a;
     }
-
-    .payment-button-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 10px;
+    
+    /* Paid payment container */
+    .paid-payment .payment-button-container {
+        border-color: #1cc88a;
+        background-color: rgba(28, 200, 138, 0.1);
     }
-
-    .payment-action-button {
-        background: linear-gradient(135deg, #f6c23e 0%, #e4a526 100%);
-        color: white;
-        border: none;
-        border-radius: 16px;
-        padding: 6px 14px;
-        font-size: 0.8rem;
+    
+    /* Payment status when completed */
+    .payment-status.payment-completed {
+        color: #1cc88a;
         font-weight: 600;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.2s;
     }
-
-    .payment-action-button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(246, 194, 62, 0.3);
+    
+    .payment-status.payment-completed .status-icon {
+        color: #1cc88a;
     }
-
-    .payment-status {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #7f8c8d;
-        background-color: #f8f9fa;
-        padding: 3px 8px;
-        border-radius: 12px;
+    
+    .payment-status.payment-completed .status-text {
+        color: #1cc88a !important;
     }
 
     .payment-confirmation {
@@ -940,6 +1001,29 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
     .payment-confirmation-content strong {
         color: #1cc88a;
         font-weight: 700;
+    }
+
+    /* Unavailable time slot button */
+    .timeslot-unavailable-button {
+        background-color: #e74a3b;
+        color: white;
+        padding: 5px 12px;
+        border-radius: 16px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        cursor: default;
+        box-shadow: 0 2px 4px rgba(231, 74, 59, 0.25);
+        opacity: 0.9;
+    }
+    
+    .timeslot-unavailable-button:hover {
+        background-color: #e74a3b;
+        color: white;
+        text-decoration: none;
     }
 </style>
 
