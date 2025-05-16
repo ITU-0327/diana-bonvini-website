@@ -30,9 +30,12 @@ $this->assign('title', __('Writing Service Request Details'));
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary">Request Information</h6>
-                    <span class="badge badge-<?= getStatusClass($writingServiceRequest->request_status) ?> py-2 px-3">
-                        <?= ucfirst(str_replace('_', ' ', h($writingServiceRequest->request_status))) ?>
-                    </span>
+                    <div>
+                        <span class="badge badge-secondary mr-2">ID: <?= h(substr($writingServiceRequest->writing_service_request_id, 0, 12)) ?></span>
+                        <span class="badge badge-<?= getStatusClass($writingServiceRequest->request_status) ?> py-2 px-3">
+                            <?= ucfirst(str_replace('_', ' ', h($writingServiceRequest->request_status))) ?>
+                        </span>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="row mb-4">
@@ -45,6 +48,10 @@ $this->assign('title', __('Writing Service Request Details'));
                             <p class="text-muted">
                                 <i class="fas fa-tag mr-2"></i>
                                 Service Type: <?= h(Inflector::humanize($writingServiceRequest->service_type)) ?>
+                            </p>
+                            <p class="text-muted">
+                                <i class="fas fa-fingerprint mr-2"></i>
+                                Request ID: <?= h($writingServiceRequest->writing_service_request_id) ?>
                             </p>
                         </div>
                         <div class="col-md-6">
@@ -211,44 +218,15 @@ $this->assign('title', __('Writing Service Request Details'));
                     <h6 class="m-0 font-weight-bold text-primary">Request Actions</h6>
                 </div>
                 <div class="card-body">
-                    <!-- Schedule Consultation -->
+                    <!-- Payment Request Button -->
                     <div class="mb-4">
-                        <h6 class="font-weight-bold mb-2">Schedule Consultation</h6>
-                        <button type="button" class="btn btn-success btn-block" data-toggle="modal" data-target="#timeSlotsModal">
-                            <i class="fas fa-calendar-alt mr-1"></i> Offer Available Time Slots
+                        <h6 class="font-weight-bold mb-2">Payment Options</h6>
+                        <button type="button" class="btn btn-warning btn-block" id="paymentOptionsBtn" data-toggle="modal" data-target="#paymentRequestModal">
+                            <i class="fas fa-credit-card mr-1"></i> Send Payment Request
                         </button>
-                        <p class="mt-2 text-sm text-muted">Select and send available time slots to the client</p>
+                        <p class="text-sm text-muted mt-1">Send a payment request link to the client</p>
                     </div>
-                    <!-- Update Status -->
-                    <div class="mb-4">
-                        <h6 class="font-weight-bold mb-2">Update Status</h6>
-                        <?= $this->Form->create(null, [
-                            'url' => ['action' => 'updateStatus', $writingServiceRequest->writing_service_request_id],
-                            'id' => 'statusForm',
-                        ]) ?>
-
-                        <div class="form-group mb-3">
-                            <?= $this->Form->select('status', [
-                                'pending' => 'Pending',
-                                'in_progress' => 'In Progress',
-                                'completed' => 'Completed',
-                                'cancelled' => 'Cancelled',
-                            ], [
-                                'default' => $writingServiceRequest->request_status,
-                                'class' => 'form-control',
-                                'empty' => false,
-                            ]) ?>
-                        </div>
-
-                        <div class="form-group">
-                            <button type="submit" class="btn btn-primary btn-block">
-                                <i class="fas fa-sync-alt mr-1"></i> Update Status
-                            </button>
-                        </div>
-
-                        <?= $this->Form->end() ?>
-                    </div>
-
+                    
                     <!-- Payment History -->
                     <div class="mb-4 pt-2 border-top">
                         <h6 class="font-weight-bold mb-2 d-flex justify-content-between">
@@ -300,7 +278,7 @@ $this->assign('title', __('Writing Service Request Details'));
 
                     <!-- Google Calendar Link -->
                     <div class="mb-4 pt-2 border-top">
-                        <h6 class="font-weight-bold mb-2">Google Calendar</h6>
+                        <h6 class="font-weight-bold mb-2">Calendar Management</h6>
                         <?= $this->Html->link(
                             '<i class="fab fa-google mr-1"></i> View My Calendar',
                             ['controller' => 'GoogleAuth', 'action' => 'viewCalendar'],
@@ -308,20 +286,43 @@ $this->assign('title', __('Writing Service Request Details'));
                         ) ?>
                         <p class="text-sm text-muted mt-1">View and manage your Google Calendar appointments</p>
                         
-                        <!-- Send Time Slots Button -->
-                        <button type="button" class="btn btn-primary btn-block mt-2" data-toggle="modal" data-target="#timeSlotsModal">
-                            <i class="fas fa-calendar-alt mr-1"></i> Send Time Slots
-                        </button>
-                        <p class="text-sm text-muted mt-1">Send available time slots to the client</p>
+                        <!-- Schedule Consultation -->
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-primary btn-block" data-toggle="modal" data-target="#timeSlotsModal">
+                                <i class="fas fa-calendar-alt mr-1"></i> Offer Available Time Slots
+                            </button>
+                            <p class="text-sm text-muted mt-1">Select and send available time slots to the client</p>
+                        </div>
                     </div>
 
-                    <!-- Payment Request Button -->
+                    <!-- Update Status -->
                     <div class="mb-4 pt-2 border-top">
-                        <h6 class="font-weight-bold mb-2">Payment Options</h6>
-                        <button type="button" class="btn btn-warning btn-block" id="paymentOptionsBtn" data-toggle="modal" data-target="#paymentRequestModal">
-                            <i class="fas fa-credit-card mr-1"></i> Send Payment Request
-                        </button>
-                        <p class="text-sm text-muted mt-1">Send a payment request link to the client</p>
+                        <h6 class="font-weight-bold mb-2">Update Status</h6>
+                        <?= $this->Form->create(null, [
+                            'url' => ['action' => 'updateStatus', $writingServiceRequest->writing_service_request_id],
+                            'id' => 'statusForm',
+                        ]) ?>
+
+                        <div class="form-group mb-3">
+                            <?= $this->Form->select('status', [
+                                'pending' => 'Pending',
+                                'in_progress' => 'In Progress',
+                                'completed' => 'Completed',
+                                'cancelled' => 'Cancelled',
+                            ], [
+                                'default' => $writingServiceRequest->request_status,
+                                'class' => 'form-control',
+                                'empty' => false,
+                            ]) ?>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-sync-alt mr-1"></i> Update Status
+                            </button>
+                        </div>
+
+                        <?= $this->Form->end() ?>
                     </div>
                 </div>
             </div>
