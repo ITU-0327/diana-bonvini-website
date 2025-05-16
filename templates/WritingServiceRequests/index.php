@@ -18,7 +18,7 @@ $this->assign('title', __('Writing Service Requests'));
                 <th class="py-3 px-6 text-left">Request ID</th>
                 <th class="py-3 px-6 text-left">Request Title</th>
                 <th class="py-3 px-6 text-left">Service Type</th>
-                <th class="py-3 px-6 text-left">Final Price</th>
+                <th class="py-3 px-6 text-left">Total Paid</th>
                 <th class="py-3 px-6 text-left">Status</th>
                 <th class="py-3 px-6 text-left">Submitted At</th>
                 <th class="py-3 px-6 text-center">Details</th>
@@ -31,7 +31,7 @@ $this->assign('title', __('Writing Service Requests'));
                     <td class="py-3 px-6"><?= h($request->service_title) ?></td>
                     <td class="py-3 px-6"><?= h(Inflector::humanize($request->service_type)) ?></td>
                     <td class="py-3 px-6">
-                        <?= $request->final_price !== null ? '$' . $this->Number->format($request->final_price) : '-' ?>
+                        <?= h($request->getFormattedTotalPaid()) ?>
                     </td>
                     <td class="py-3 px-6"><?= h(Inflector::humanize($request->request_status)) ?></td>
                     <td class="py-3 px-6">

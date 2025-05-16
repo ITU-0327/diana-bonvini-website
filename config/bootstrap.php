@@ -215,3 +215,27 @@ ServerRequest::addDetector('tablet', function ($request) {
 // and https://unicode-org.github.io/icu/userguide/format_parse/datetime/#datetime-format-syntax
 // \Cake\I18n\Date::setToStringFormat('dd.MM.yyyy');
 // \Cake\I18n\Time::setToStringFormat('dd.MM.yyyy HH:mm');
+
+// Raise the default level of log messages if in production
+if (Configure::read('debug') == false) {
+    // Only update level, don't create a new configuration
+    $log = Log::getConfig('default');
+    if ($log) {
+        Log::drop('default');
+        $log['level'] = 'warning';
+        Log::setConfig('default', $log);
+    }
+    
+    // Optimize template caching
+    Configure::write('App.templateCacheTime', '+1 day');
+    
+    // Disable error messages display
+    Configure::write('Error.level', E_ALL & ~E_DEPRECATED);
+    Configure::write('Error.trace', false);
+    Configure::write('Error.errorLevel', E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED & ~E_STRICT);
+    Configure::write('Error.skipLog', [
+        'Cake\Http\Exception\NotFoundException',
+        'Cake\Http\Exception\MissingControllerException',
+        'Cake\Http\Exception\MissingActionException'
+    ]);
+}

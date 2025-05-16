@@ -39,7 +39,9 @@ class WritingServiceRequestsController extends AppController
         }
 
         $query = $this->WritingServiceRequests->find()
-            ->contain(['Users'])
+            ->contain(['Users', 'WritingServicePayments' => function ($q) {
+                return $q->where(['status' => 'paid']);
+            }])
             ->where(['WritingServiceRequests.user_id' => $userId]);
 
         $this->paginate = [
@@ -118,6 +120,36 @@ class WritingServiceRequestsController extends AppController
                     if ($writingServiceRequest->request_status === 'pending') {
                         $writingServiceRequest->request_status = 'in_progress';
                         $this->WritingServiceRequests->save($writingServiceRequest);
+                    }
+                    
+                    // Send notification email to admin
+                    try {
+                        // Get the latest message that was just added
+                        $latestMessage = end($writingServiceRequest->request_messages);
+                        
+                        if ($latestMessage) {
+                            // Get a fresh copy of the request with user data
+                            $requestWithUser = $this->WritingServiceRequests->get($id, [
+                                'contain' => ['Users'],
+                            ]);
+                            
+                            // Fixed admin email
+                            $adminEmail = 'diana@dianabonvini.com';
+                            $adminName = 'Diana Bonvini';
+                            
+                            // Send admin notification
+                            $mailer = new \App\Mailer\PaymentMailer('default');
+                            $mailer->newMessageNotification(
+                                $requestWithUser, 
+                                $data['reply_message'], 
+                                $adminEmail, 
+                                $adminName
+                            );
+                            $mailer->deliverAsync();
+                        }
+                    } catch (\Exception $e) {
+                        // Log critical errors only
+                        $this->log('Error sending message notification: ' . $e->getMessage(), 'error');
                     }
 
                     return $this->redirect(['action' => 'view', $id]);
@@ -324,6 +356,26 @@ class WritingServiceRequestsController extends AppController
 
             if ($this->WritingServiceRequests->save($writingServiceRequest)) {
                 $this->Flash->success(__('The writing service request has been saved.'));
+                
+                // Send notification email to admin
+                try {
+                    // Get the writing service request with user information
+                    $writingServiceRequest = $this->WritingServiceRequests->get($writingServiceRequest->writing_service_request_id, [
+                        'contain' => ['Users'],
+                    ]);
+                    
+                    // Fixed admin email
+                    $adminEmail = 'diana@dianabonvini.com';
+                    $adminName = 'Diana Bonvini';
+                    
+                    // Send admin notification
+                    $mailer = new \App\Mailer\PaymentMailer('default');
+                    $mailer->newRequestNotification($writingServiceRequest, $adminEmail, $adminName);
+                    $mailer->deliverAsync();
+                } catch (\Exception $e) {
+                    // Log critical errors only
+                    $this->log('Error sending new writing service request notification: ' . $e->getMessage(), 'error');
+                }
 
                 return $this->redirect(['action' => 'index']);
             }
@@ -676,13 +728,13 @@ class WritingServiceRequestsController extends AppController
                 $dbPaymentId = (string)$dbPaymentId;
             }
 
-            // Get the writing service request to ensure we have the correct final price
-            $writingServiceRequest = $this->WritingServiceRequests->get($requestId);
+            // Get the writing service request with payment data
+            $writingServiceRequest = $this->WritingServiceRequests->get($requestId, [
+                'contain' => ['WritingServicePayments']
+            ]);
 
-            // Use the final price from the request as the authoritative source
-            $amount = !empty($writingServiceRequest->final_price)
-                ? (string)$writingServiceRequest->final_price
-                : ($paymentDetails['amount'] ?? '0.00');
+            // Use the amount from payment details
+            $amount = $paymentDetails['amount'] ?? '0.00';
 
             $writingServicePaymentsTable = $this->fetchTable('WritingServicePayments');
 
@@ -712,7 +764,7 @@ class WritingServiceRequestsController extends AppController
                 // Update existing payment record
                 $paymentEntity->status = 'paid';
                 $paymentEntity->transaction_id = $paymentDetails['transaction_id'] ?? $paymentEntity->transaction_id;
-                $paymentEntity->amount = $amount; // Always use the authoritative amount
+                $paymentEntity->amount = $amount;
             }
 
             // Save the payment record
@@ -760,8 +812,7 @@ class WritingServiceRequestsController extends AppController
                 'id' => $id,
                 'paymentId' => $paymentId,
                 'user' => $user ? $user->user_id : 'not logged in',
-                'request_url' => $this->request->getRequestTarget(),
-            ]), 'debug');
+            ]), 'info');
 
         if (!$user) {
             $this->Flash->info(__('Please log in to make this payment.'));
@@ -935,11 +986,60 @@ class WritingServiceRequestsController extends AppController
     }
 
     /**
-     * Add a payment confirmation message to the chat
+     * Helper method to send emails asynchronously
      *
-     * @param string $requestId The writing service request ID
+     * @param \App\Model\Entity\WritingServiceRequest $request The writing service request
+     * @param \App\Model\Entity\WritingServicePayment $payment The payment entity
      * @param array $paymentDetails Payment details
-     * @return bool True if successful, false otherwise
+     * @return void
+     */
+    protected function _sendPaymentEmails(WritingServiceRequest $request, \App\Model\Entity\WritingServicePayment $payment, array $paymentDetails): void
+    {
+        // Fixed admin email
+        $adminEmail = 'diana@dianabonvini.com';
+        $adminName = 'Diana Bonvini';
+        
+        // Send customer email first - wrap in try-catch to prevent errors from blocking process
+        try {
+            $customerMailer = new \App\Mailer\PaymentMailer('default');
+            $customerMailer->paymentConfirmation($request, $payment, $paymentDetails);
+            $result = $customerMailer->deliverAsync();
+            
+            if (!$result) {
+                $this->log('Customer payment confirmation email failed to send', 'warning');
+            }
+        } catch (\Exception $e) {
+            // Log error but don't let it prevent admin notification
+            $this->log('Error sending customer confirmation email: ' . $e->getMessage(), 'error');
+        }
+        
+        // Send admin notification in a separate try-catch
+        try {
+            $adminMailer = new \App\Mailer\PaymentMailer('default');
+            $adminMailer->adminPaymentNotification(
+                $request, 
+                $payment, 
+                $adminEmail, 
+                $adminName,
+                $paymentDetails
+            );
+            $result = $adminMailer->deliverAsync();
+            
+            if (!$result) {
+                $this->log('Admin payment notification email failed to send', 'warning');
+            }
+        } catch (\Exception $e) {
+            // Log critical errors only
+            $this->log('Error sending admin notification email: ' . $e->getMessage(), 'error');
+        }
+    }
+
+    /**
+     * Add payment confirmation message to the chat
+     *
+     * @param string $requestId Writing Service Request ID
+     * @param array $paymentDetails Payment details
+     * @return bool Success flag
      */
     protected function _addPaymentConfirmationMessage(string $requestId, array $paymentDetails): bool
     {
@@ -949,8 +1049,10 @@ class WritingServiceRequestsController extends AppController
         }
 
         try {
-            // Get the request
-            $writingServiceRequest = $this->WritingServiceRequests->get($requestId);
+            // Get the request with user relationship
+            $writingServiceRequest = $this->WritingServiceRequests->get($requestId, [
+                'contain' => ['Users'],
+            ]);
 
             // Format amount
             $amount = !empty($paymentDetails['amount'])
@@ -990,15 +1092,77 @@ class WritingServiceRequestsController extends AppController
             // Add the message
             $writingServiceRequest = $this->WritingServiceRequests->patchEntity(
                 $writingServiceRequest,
-                $messageData,
+                $messageData
             );
 
-            // Save the message
-            return (bool)$this->WritingServiceRequests->save($writingServiceRequest);
+            // Save the entity
+            if (!$this->WritingServiceRequests->save($writingServiceRequest)) {
+                $this->log('Failed to save payment confirmation message: ' . json_encode($writingServiceRequest->getErrors()), 'error');
+                return false;
+            }
+            
+            // Handle email sending separately from message saving to prevent failures
+            $this->_processPaymentConfirmationEmails($writingServiceRequest, $paymentDetails, $paymentId);
+
+            return true;
         } catch (\Exception $e) {
             $this->log('Error adding payment confirmation message: ' . $e->getMessage(), 'error');
-
             return false;
+        }
+    }
+    
+    /**
+     * Helper method to handle email processing separately from message saving
+     * 
+     * @param \App\Model\Entity\WritingServiceRequest $writingServiceRequest The writing service request
+     * @param array $paymentDetails Payment details
+     * @param string $paymentId The payment ID
+     * @return void
+     */
+    protected function _processPaymentConfirmationEmails(
+        WritingServiceRequest $writingServiceRequest, 
+        array $paymentDetails, 
+        string $paymentId
+    ): void {
+        try {
+            // Get payment details from database if available
+            $payment = null;
+            $dbPaymentId = !empty($paymentDetails['payment_id']) ? $paymentDetails['payment_id'] : null;
+            
+            if ($dbPaymentId) {
+                try {
+                    $writingServicePaymentsTable = $this->fetchTable('WritingServicePayments');
+                    $payment = $writingServicePaymentsTable->get($dbPaymentId);
+                    
+                    // Ensure we're using the current payment amount
+                    if (isset($paymentDetails['amount'])) {
+                        $payment->amount = (float)$paymentDetails['amount'];
+                    }
+                } catch (\Exception $e) {
+                    // Log error but continue with a temporary payment object
+                    $this->log('Error retrieving payment record: ' . $e->getMessage(), 'warning');
+                }
+            }
+            
+            // If we don't have a valid payment record, create a temporary one
+            if (!$payment) {
+                // Create a temporary payment object for email
+                $payment = new \App\Model\Entity\WritingServicePayment([
+                    'writing_service_request_id' => $writingServiceRequest->writing_service_request_id,
+                    'amount' => (float)($paymentDetails['amount'] ?? 0.00),
+                    'transaction_id' => $paymentId,
+                    'payment_date' => new \DateTime(),
+                    'payment_method' => 'online',
+                    'status' => 'paid',
+                ]);
+            }
+            
+            // Send emails using the helper method
+            $this->_sendPaymentEmails($writingServiceRequest, $payment, $paymentDetails);
+            
+        } catch (\Exception $e) {
+            // Log error but don't halt execution
+            $this->log('Error in payment confirmation email processing: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -1019,7 +1183,9 @@ class WritingServiceRequestsController extends AppController
         }
 
         $query = $this->WritingServiceRequests->find()
-            ->contain(['Users']);
+            ->contain(['Users', 'WritingServicePayments' => function ($q) {
+                return $q->where(['status' => 'paid']);
+            }]);
 
         $serviceType = $this->request->getQuery('service_type');
         $requestStatus = $this->request->getQuery('request_status');
@@ -1351,13 +1517,21 @@ class WritingServiceRequestsController extends AppController
 
         try {
             // Get the writing service request
-            $writingServiceRequest = $this->WritingServiceRequests->get($id);
+            $writingServiceRequest = $this->WritingServiceRequests->get($id, [
+                'contain' => ['WritingServicePayments']
+            ]);
 
             // Generate a unique session payment ID
             $sessionPaymentId = 'pay_' . uniqid();
             
-            // Get amount from the request
-            $amount = $writingServiceRequest->final_price ?? '0.00';
+            // Get amount from the request data or prompt for it
+            $amount = $this->request->getData('amount');
+            if (empty($amount) || !is_numeric($amount) || (float)$amount <= 0) {
+                return $this->response->withStringBody(json_encode([
+                    'success' => false,
+                    'message' => 'Please provide a valid payment amount',
+                ]));
+            }
 
             // Generate a transaction ID based on request ID 
             $paymentDetails = [

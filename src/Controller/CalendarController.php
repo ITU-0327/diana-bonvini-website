@@ -439,8 +439,10 @@ class CalendarController extends AppController
                     $mailer = new AppointmentMailer();
                     
                     try {
-                        // Send admin notification
-                        $mailer->send('adminNotification', [$appointment, $adminUser->email, $adminUser->first_name . ' ' . $adminUser->last_name]);
+                        // Send admin notification with fixed email
+                        $adminEmail = 'diana@dianabonvini.com';
+                        $adminName = 'Diana Bonvini';
+                        $mailer->send('adminNotification', [$appointment, $adminEmail, $adminName]);
                     } catch (\Exception $e2) {
                         // Continue even if admin email fails
                     }
@@ -651,7 +653,9 @@ class CalendarController extends AppController
                         // Send notification to admin
                         try {
                             $mailer = new AppointmentMailer('default');
-                            $mailer->adminNotification($appointment, $adminUser->email, $adminUser->first_name . ' ' . $adminUser->last_name);
+                            $adminEmail = 'diana@dianabonvini.com';
+                            $adminName = 'Diana Bonvini';
+                            $mailer->adminNotification($appointment, $adminEmail, $adminName);
                             $mailer->deliver();
                         } catch (\Exception $e2) {
                             // Continue even if admin email fails
@@ -826,7 +830,9 @@ class CalendarController extends AppController
                 if (!empty($adminUser)) {
                     try {
                         $mailer = new AppointmentMailer('default');
-                        $mailer->adminNotification($appointment, $adminUser->email, $adminUser->first_name . ' ' . $adminUser->last_name);
+                        $adminEmail = 'diana@dianabonvini.com';
+                        $adminName = 'Diana Bonvini';
+                        $mailer->adminNotification($appointment, $adminEmail, $adminName);
                         $mailer->deliver();
                     } catch (\Exception $e2) {
                         // Continue even if admin email fails
