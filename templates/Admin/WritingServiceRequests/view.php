@@ -126,7 +126,7 @@ $this->assign('title', __('Writing Service Request Details'));
                     <h6 class="m-0 font-weight-bold text-primary">Client Conversation</h6>
                     <span class="badge badge-info px-3 py-2"><?= count($writingServiceRequest->request_messages) ?> Messages</span>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-2">
                     <div class="chat-container" style="max-height: 500px; overflow-y: auto; scroll-behavior: smooth;">
                         <?php if (!empty($writingServiceRequest->request_messages)) : ?>
                             <div class="chat-messages">
@@ -134,7 +134,7 @@ $this->assign('title', __('Writing Service Request Details'));
                                     <?php
                                     $isAdmin = isset($message->user) && $message->user->user_type === 'admin';
                                     ?>
-                                    <div class="chat-message mb-3 <?= $isAdmin ? 'admin-message' : 'client-message' ?>" data-message-id="<?= h($message->request_message_id) ?>">
+                                    <div class="chat-message <?= $isAdmin ? 'admin-message' : 'client-message' ?>" data-message-id="<?= h($message->request_message_id) ?>">
                                         <div class="message-header d-flex align-items-center mb-1">
                                             <div class="message-avatar mr-2">
                                                 <?php if ($isAdmin) : ?>
@@ -159,8 +159,14 @@ $this->assign('title', __('Writing Service Request Details'));
                                         </div>
                                         <div class="message-content">
                                             <div class="message-bubble p-3 rounded">
-                                                <div class="message-text message-content">
-                                                    <?= nl2br(h($message->message)) ?>
+                                                <div class="message-text">
+                                                    <?php 
+                                                    // Process message content to properly handle markdown-style formatting
+                                                    $messageContent = nl2br(h($message->message));
+                                                    // Convert **bold** to actual bold text
+                                                    $messageContent = preg_replace('/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $messageContent);
+                                                    echo $messageContent;
+                                                    ?>
                                                 </div>
                                             </div>
                                         </div>
@@ -176,7 +182,7 @@ $this->assign('title', __('Writing Service Request Details'));
                     </div>
 
                     <!-- New Message Form -->
-                    <div class="new-message-form mt-4 pt-3 border-top">
+                    <div class="new-message-form mt-3 pt-3 border-top">
                         <?= $this->Form->create(null, [
                             'url' => ['action' => 'sendMessage', $writingServiceRequest->writing_service_request_id],
                             'id' => 'replyForm',
@@ -342,104 +348,81 @@ $this->assign('title', __('Writing Service Request Details'));
 <style>
     /* Chat Styles */
     .chat-container {
-        padding: 10px;
+        padding: 8px;
     }
 
     .chat-message {
-        margin-bottom: 20px;
+        margin-bottom: 12px;
+        position: relative;
     }
 
     .client-message .message-content {
-        margin-right: 25%;
+        margin-right: 15%;
     }
 
     .admin-message .message-content {
-        margin-left: 25%;
+        margin-left: 15%;
     }
 
     .admin-message .message-bubble {
         background-color: #e3f2fd;
-        border-left: 4px solid #4e73df;
+        border-left: 3px solid #4e73df;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
 
     .client-message .message-bubble {
         background-color: #e8f5e9;
-        border-left: 4px solid #1cc88a;
+        border-left: 3px solid #1cc88a;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
 
     .message-avatar .avatar {
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: bold;
+        font-size: 0.8rem;
     }
 
-    /* Timeline Styles */
-    .timeline {
-        position: relative;
-        padding-left: 25px;
-    }
-
-    .timeline:before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 9px;
-        height: 100%;
-        width: 2px;
-        background-color: #e9ecef;
-    }
-
-    .bg-light-yellow {
-        background-color: #fff8e1;
-    }
-
-    /* Form focus styles */
-    .form-control:focus {
-        border-color: #4e73df;
-        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
-    }
-
-    /* Quick action buttons hover */
-    .btn-outline-primary:hover {
-        transform: translateY(-2px);
-        transition: transform 0.2s;
-    }
-
-    .bg-success-light {
-        background-color: rgba(40, 167, 69, 0.1);
-    }
     .message-bubble {
         background-color: #f8f9fa;
         border-radius: 0.5rem;
+        padding: 10px 12px !important;
     }
-    .admin-message .message-bubble {
-        background-color: #e3f2fd;
-        border-left: 4px solid #2196f3;
+    
+    .message-text {
+        font-size: 0.95rem;
+        line-height: 1.4;
     }
-    .client-message .message-bubble {
-        border-left: 4px solid #4caf50;
+    
+    .message-text strong {
+        font-weight: 600;
+        color: #333;
     }
+
     .avatar {
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: bold;
+        font-size: 0.8rem;
     }
 
-    /* Payment Card Styles */
+    /* Payment Card Styles - More compact and professional */
     .payment-card {
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
+        margin-top: 8px;
+        margin-bottom: 8px;
     }
 
     .payment-card:hover {
-        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+        box-shadow: 0 .25rem 0.5rem rgba(0,0,0,.1)!important;
     }
 
     .payment-card.border-success {
@@ -448,33 +431,39 @@ $this->assign('title', __('Writing Service Request Details'));
 
     .payment-card-header {
         position: relative;
-        transition: background-color 0.3s ease;
+        padding: 8px 12px !important;
     }
 
     .payment-card-header .badge {
-        font-size: 75%;
+        font-size: 70%;
     }
 
     .payment-status-indicator {
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.25rem;
     }
 
-    .status-dot {
-        width: 24px;
-        display: flex;
-        justify-content: center;
-    }
-
+    /* Payment confirmation card - more compact */
     .payment-confirmation-card {
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
+        margin-top: 8px;
+        margin-bottom: 8px;
     }
 
     .payment-confirmation-card:hover {
-        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+        box-shadow: 0 .25rem 0.5rem rgba(0,0,0,.1)!important;
+    }
+
+    .payment-confirmation-header {
+        padding: 8px 12px !important;
+    }
+
+    .payment-confirmation-body {
+        padding: 10px 12px !important;
     }
 
     .payment-confirmation-content {
-        line-height: 1.5;
+        line-height: 1.4;
+        font-size: 0.95rem;
     }
 
     .payment-confirmation-content strong {
@@ -482,56 +471,132 @@ $this->assign('title', __('Writing Service Request Details'));
         font-weight: 600;
     }
 
-    /* Status Badge Styles */
-    .status-badge.badge-success {
-        background-color: #28a745;
-    }
+    /* Process payment elements in existing messages */
+    function processPaymentElements() {
+        // Process payment buttons
+        document.querySelectorAll('.message-bubble').forEach(message => {
+            // First check for existing payment containers and initialize them
+            const existingContainers = message.querySelectorAll('[data-payment-container]');
+            existingContainers.forEach(container => {
+                const paymentId = container.dataset.paymentContainer;
+                if (paymentId) {
+                    // Check the payment status from our payment history
+                    const isPaid = checkPaymentPaidStatus(paymentId);
 
-    .status-badge.badge-warning {
-        background-color: #ffc107;
-        color: #212529;
-    }
+                    // Update the UI based on payment status
+                    const button = container.querySelector('.payment-button');
+                    if (button) {
+                        button.classList.remove('btn-warning', 'btn-success');
+                        button.classList.add(isPaid ? 'btn-success' : 'btn-warning');
+                        button.innerHTML = `<i class="fas fa-${isPaid ? 'check-circle' : 'credit-card'} mr-1"></i> ${isPaid ? 'Payment Complete' : 'Payment Button'}`;
+                    }
 
-    .status-badge.badge-danger {
-        background-color: #dc3545;
-    }
+                    // Update the badge
+                    const badge = container.querySelector('.badge');
+                    if (badge) {
+                        badge.classList.remove('badge-light', 'badge-success');
+                        badge.classList.add(isPaid ? 'badge-success' : 'badge-light');
+                        badge.textContent = isPaid ? 'PAID' : 'PENDING';
+                    }
+                }
+            });
 
-    .payment-date {
-        font-size: 0.85rem;
-    }
+            // Now process any message text for new payment buttons or confirmations
+            const content = message.querySelector('.message-text');
+            if (content) {
+                const text = content.innerHTML;
 
-    /* Retry button styling */
-    .retry-payment-check {
-        transition: all 0.2s ease;
-        border-radius: 20px;
-        padding: 2px 8px;
-        font-size: 0.8rem;
-    }
+                // Process payment buttons
+                if (text.includes('[PAYMENT_BUTTON]')) {
+                    // Extract payment ID
+                    const buttonPattern = /\[PAYMENT_BUTTON\](.*?)\[\/PAYMENT_BUTTON\]/;
+                    const match = text.match(buttonPattern);
 
-    .retry-payment-check:hover {
-        background-color: #4e73df;
-        color: white;
-        transform: translateY(-1px);
-    }
+                    if (match && match[1]) {
+                        const paymentId = match[1];
 
-    /* Payment status animation */
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-        100% { transform: scale(1); }
-    }
+                        // Check payment history for this payment ID
+                        const isPaid = checkPaymentPaidStatus(paymentId);
 
-    .payment-status-indicator i.fa-check-circle {
-        animation: pulse 2s ease-in-out;
-    }
+                        // Create payment button HTML with appropriate status
+                        const buttonHtml = `
+                            <div class="mt-2" data-payment-container="${paymentId}">
+                                <span class="text-muted small">Payment request status:</span>
+                                <div class="d-flex align-items-center mt-1">
+                                    <button class="btn ${isPaid ? 'btn-success' : 'btn-warning'} btn-sm payment-button" disabled>
+                                        <i class="fas fa-${isPaid ? 'check-circle' : 'credit-card'} mr-1"></i>
+                                        ${isPaid ? 'Payment Complete' : 'Payment Button'}
+                                    </button>
+                                    <span class="badge badge-${isPaid ? 'success' : 'light'} ml-2">
+                                        ${isPaid ? 'PAID' : 'PENDING'}
+                                    </span>
+                                </div>
+                            </div>
+                        `;
 
-    .payment-status-indicator i.fa-sync-alt {
-        animation: spin 1s linear infinite;
-    }
+                        // Replace the tag with the button
+                        content.innerHTML = text.replace(buttonPattern, buttonHtml);
+                    }
+                }
 
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+                // Process calendar booking links
+                if (text.includes('[CALENDAR_BOOKING_LINK]')) {
+                    const bookingLinkPattern = /\[CALENDAR_BOOKING_LINK\]([\s\S]*?)\[\/CALENDAR_BOOKING_LINK\]/;
+                    const match = text.match(bookingLinkPattern);
+
+                    if (match && match[1]) {
+                        const linkText = match[1].trim();
+
+                        // Create booking link HTML - for admin view, just show the text without button
+                        const bookingHtml = `
+                            <div class="mt-2 text-muted font-italic">
+                                <small><i class="fas fa-info-circle mr-1"></i> ${linkText}</small>
+                                <small class="d-block mt-1">Note: Button to view time slots only appears for clients</small>
+                            </div>
+                        `;
+
+                        // Replace the tag with the text
+                        content.innerHTML = text.replace(bookingLinkPattern, bookingHtml);
+                    }
+                }
+
+                // Process payment confirmations
+                if (text.includes('[PAYMENT_CONFIRMATION]')) {
+                    const confirmPattern = /\[PAYMENT_CONFIRMATION\](.*?)\[\/PAYMENT_CONFIRMATION\]/;
+                    const match = text.match(confirmPattern);
+
+                    if (match) {
+                        // Get the content and format it
+                        let confirmationContent = match[1];
+                        // Format the confirmation message (convert markdown bold to HTML)
+                        confirmationContent = confirmationContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+                        // Create an elegant payment confirmation card
+                        const confirmationHtml = `
+                            <div class="payment-confirmation-card mt-2 border border-success rounded shadow-sm">
+                                <div class="payment-confirmation-header d-flex align-items-center bg-success-light border-bottom border-success">
+                                    <i class="fas fa-check-circle text-success mr-2"></i>
+                                    <span class="font-weight-bold text-success">Payment Confirmation</span>
+                                    <span class="badge badge-pill badge-success ml-auto">PAID</span>
+                                </div>
+                                <div class="payment-confirmation-body">
+                                    <div class="payment-confirmation-content">
+                                        ${confirmationContent}
+                                    </div>
+                                    <div class="d-flex align-items-center mt-2 pt-2 border-top">
+                                        <i class="fas fa-info-circle text-primary mr-2"></i>
+                                        <span class="text-muted small">This payment has been recorded and the client has been notified</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
+                        // Replace the tag with the confirmation
+                        content.innerHTML = text.replace(confirmPattern, confirmationHtml);
+                    }
+                }
+            }
+        });
     }
 </style>
 
@@ -649,333 +714,9 @@ $this->assign('title', __('Writing Service Request Details'));
             });
         }
 
-        // Process payment elements in existing messages
-        function processPaymentElements() {
-            // Process payment buttons
-            document.querySelectorAll('.message-bubble').forEach(message => {
-                // First check for existing payment containers and initialize them
-                const existingContainers = message.querySelectorAll('[data-payment-container]');
-                existingContainers.forEach(container => {
-                    const paymentId = container.dataset.paymentContainer;
-                    if (paymentId) {
-                        // Check the payment status from our payment history
-                        const isPaid = checkPaymentPaidStatus(paymentId);
-
-                        // Update the UI based on payment status
-                        const button = container.querySelector('.payment-button');
-                        if (button) {
-                            button.classList.remove('btn-warning', 'btn-success');
-                            button.classList.add(isPaid ? 'btn-success' : 'btn-warning');
-                            button.innerHTML = `<i class="fas fa-${isPaid ? 'check-circle' : 'credit-card'} mr-1"></i> ${isPaid ? 'Payment Complete' : 'Payment Button'}`;
-                        }
-
-                        // Update the badge
-                        const badge = container.querySelector('.badge');
-                        if (badge) {
-                            badge.classList.remove('badge-light', 'badge-success');
-                            badge.classList.add(isPaid ? 'badge-success' : 'badge-light');
-                            badge.textContent = isPaid ? 'PAID' : 'PENDING';
-                        }
-                    }
-                });
-
-                // Now process any message text for new payment buttons or confirmations
-                const content = message.querySelector('.message-text');
-                if (content) {
-                    const text = content.innerHTML;
-
-                    // Process payment buttons
-                    if (text.includes('[PAYMENT_BUTTON]')) {
-                        // Extract payment ID
-                        const buttonPattern = /\[PAYMENT_BUTTON\](.*?)\[\/PAYMENT_BUTTON\]/;
-                        const match = text.match(buttonPattern);
-
-                        if (match && match[1]) {
-                            const paymentId = match[1];
-
-                            // Check payment history for this payment ID
-                            const isPaid = checkPaymentPaidStatus(paymentId);
-
-                            // Create payment button HTML with appropriate status
-                            const buttonHtml = `
-                                <div class="mt-3" data-payment-container="${paymentId}">
-                                    <span class="text-muted small">Payment request status:</span>
-                                    <div class="d-flex align-items-center mt-1">
-                                        <button class="btn ${isPaid ? 'btn-success' : 'btn-warning'} btn-sm payment-button" disabled>
-                                            <i class="fas fa-${isPaid ? 'check-circle' : 'credit-card'} mr-1"></i>
-                                            ${isPaid ? 'Payment Complete' : 'Payment Button'}
-                                        </button>
-                                        <span class="badge badge-${isPaid ? 'success' : 'light'} ml-2">
-                                            ${isPaid ? 'PAID' : 'PENDING'}
-                                        </span>
-                                    </div>
-                                </div>
-                            `;
-
-                            // Replace the tag with the button
-                            content.innerHTML = text.replace(buttonPattern, buttonHtml);
-                        }
-                    }
-
-                    // Process calendar booking links
-                    if (text.includes('[CALENDAR_BOOKING_LINK]')) {
-                        const bookingLinkPattern = /\[CALENDAR_BOOKING_LINK\]([\s\S]*?)\[\/CALENDAR_BOOKING_LINK\]/;
-                        const match = text.match(bookingLinkPattern);
-
-                        if (match && match[1]) {
-                            const linkText = match[1].trim();
-
-                            // Create booking link HTML - for admin view, just show the text without button
-                            const bookingHtml = `
-                                <div class="mt-2 mb-1 text-muted font-italic">
-                                    <small><i class="fas fa-info-circle mr-1"></i> ${linkText}</small>
-                                    <small class="d-block mt-1">Note: Button to view time slots only appears for clients</small>
-                                </div>
-                            `;
-
-                            // Replace the tag with the text
-                            content.innerHTML = text.replace(bookingLinkPattern, bookingHtml);
-                        }
-                    }
-
-                    // Process payment confirmations
-                    if (text.includes('[PAYMENT_CONFIRMATION]')) {
-                        const confirmPattern = /\[PAYMENT_CONFIRMATION\](.*?)\[\/PAYMENT_CONFIRMATION\]/;
-                        const match = text.match(confirmPattern);
-
-                        if (match) {
-                            // Get the content and format it
-                            let confirmationContent = match[1];
-                            // Format the confirmation message (convert markdown bold to HTML)
-                            confirmationContent = confirmationContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-
-                            // Create an elegant payment confirmation card
-                            const confirmationHtml = `
-                                <div class="payment-confirmation-card mt-3 border border-success rounded shadow-sm">
-                                    <div class="payment-confirmation-header d-flex align-items-center p-3 bg-success-light border-bottom border-success">
-                                        <i class="fas fa-check-circle text-success mr-2"></i>
-                                        <span class="font-weight-bold text-success">Payment Confirmation</span>
-                                        <span class="badge badge-pill badge-success ml-auto">PAID</span>
-                                    </div>
-                                    <div class="payment-confirmation-body p-3">
-                                        <div class="payment-confirmation-content">
-                                            ${confirmationContent}
-                                        </div>
-                                        <div class="d-flex align-items-center mt-3 pt-2 border-top">
-                                            <i class="fas fa-info-circle text-primary mr-2"></i>
-                                            <span class="text-muted small">This payment has been recorded and the client has been notified</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-
-                            // Replace the tag with the confirmation
-                            content.innerHTML = text.replace(confirmPattern, confirmationHtml);
-                        }
-                    }
-                }
-            });
-        }
-
-        // Function to check if a payment ID corresponds to a paid payment in payment history
-        function checkPaymentPaidStatus(paymentId) {
-            // Extract the database payment ID from the combined ID
-            const parts = paymentId.split('|');
-            const dbPaymentId = parts[1] || null;
-
-            // If we don't have a database ID, we can't match it
-            if (!dbPaymentId || dbPaymentId === 'pending') return false;
-
-            // Get all payment history rows from the table
-            const paymentRows = document.querySelectorAll('#payment-history-table tbody tr');
-            let isPaid = false;
-
-            paymentRows.forEach(row => {
-                // Get the payment ID from the first column (may be wrapped in an element)
-                const idCell = row.querySelector('td:nth-child(1)');
-                const statusCell = row.querySelector('td:nth-child(4)'); // Status is in column 4
-
-                if (!idCell || !statusCell) return;
-
-                const rowId = idCell.textContent.trim();
-                const status = statusCell.textContent.trim();
-
-                // Check if the ID in this row matches our payment ID and the status is 'Paid'
-                if (rowId.includes(dbPaymentId) && status.toLowerCase() === 'paid') {
-                    isPaid = true;
-                }
-            });
-
-            return isPaid;
-        }
-
         // Set up real-time message polling
         setupMessagePolling();
 
-        // Handle payment request button
-        const paymentRequestBtn = document.getElementById('paymentRequestBtn');
-        if (paymentRequestBtn) {
-            paymentRequestBtn.addEventListener('click', function() {
-                // Show payment request modal
-                $('#paymentRequestModal').modal('show');
-            });
-        }
-
-        // Template insertion function for quick replies
-        function insertTemplate(text) {
-            const textarea = document.getElementById('messageText');
-            textarea.value = text;
-            textarea.focus();
-        }
-
-        // Set up real-time message polling
-        function setupMessagePolling() {
-            const chatContainer = document.querySelector('.chat-container');
-            if (!chatContainer) return;
-
-            const requestId = '<?= $writingServiceRequest->writing_service_request_id ?>';
-            let lastMessageId = null;
-
-            // Get the last message ID if there are messages
-            const messages = document.querySelectorAll('.chat-message');
-            if (messages.length > 0) {
-                lastMessageId = messages[messages.length - 1].dataset.messageId;
-            }
-
-            // Keep track of payment containers we've seen to avoid rechecking too frequently
-            let paymentCheckTimers = {};
-
-            // Set up polling interval
-            const pollMessages = () => {
-                // Get all existing payment containers and refresh their status
-                // But only check each one every 10 seconds to avoid overwhelming the server
-                document.querySelectorAll('[data-payment-container]').forEach(container => {
-                    const paymentId = container.dataset.paymentContainer;
-                    if (paymentId) {
-                        const now = Date.now();
-                        if (!paymentCheckTimers[paymentId] || (now - paymentCheckTimers[paymentId] > 10000)) {
-                            // For admin view, automatically check payment status
-                            checkPaymentStatus(paymentId, 0);
-                            paymentCheckTimers[paymentId] = now;
-                        }
-                    }
-                });
-
-                // Poll for new messages
-                fetch(`<?= $this->Url->build(['action' => 'fetchMessages', $writingServiceRequest->writing_service_request_id]) ?>?lastMessageId=${lastMessageId || ''}`, {
-                    headers: {
-                        'X-CSRF-Token': document.querySelector('input[name="_csrfToken"]').value,
-                        'Accept': 'application/json'
-                    }
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success && data.messages.length > 0) {
-                            // Update the last message ID
-                            lastMessageId = data.messages[data.messages.length - 1].id;
-
-                            // Add new messages to the chat
-                            const chatMessages = document.querySelector('.chat-messages');
-
-                            // Create messages
-                            data.messages.forEach(message => {
-                                const isAdmin = message.sender === 'admin';
-
-                                const messageDiv = document.createElement('div');
-                                messageDiv.className = `chat-message mb-3 ${isAdmin ? 'admin-message' : 'client-message'}`;
-                                messageDiv.dataset.messageId = message.id;
-
-                                // Create message header
-                                const header = document.createElement('div');
-                                header.className = 'message-header d-flex align-items-center mb-1';
-
-                                header.innerHTML = `
-                                    <div class="message-avatar mr-2">
-                                        ${isAdmin ?
-                                            '<div class="avatar bg-primary text-white">A</div>' :
-                                            `<div class="avatar bg-success text-white">${message.senderName.charAt(0)}</div>`
-                                        }
-                                    </div>
-                                    <div class="message-info">
-                                        <span class="message-sender font-weight-bold">
-                                            ${isAdmin ? 'You (Admin)' : message.senderName}
-                                        </span>
-                                        <span class="message-time text-muted ml-2">
-                                            <i class="far fa-clock"></i> ${message.timestamp}
-                                        </span>
-                                        ${(!isAdmin && !message.is_read) ? '<span class="badge badge-warning ml-2">New</span>' : ''}
-                                    </div>
-                                `;
-
-                                // Create message content
-                                const content = document.createElement('div');
-                                content.className = 'message-content';
-
-                                content.innerHTML = `
-                                    <div class="message-bubble p-3 rounded">
-                                        <div class="message-text message-content">
-                                            ${message.content.replace(/\n/g, '<br>')}
-                                        </div>
-                                    </div>
-                                `;
-
-                                // Add to message div
-                                messageDiv.appendChild(header);
-                                messageDiv.appendChild(content);
-
-                                // Add to chat
-                                chatMessages.appendChild(messageDiv);
-                            });
-
-                            // Scroll to bottom
-                            chatContainer.scrollTop = chatContainer.scrollHeight;
-
-                            // Process new messages for payment buttons or confirmations
-                            processPaymentElements();
-
-                            // Reset the check timers for any new payment containers to ensure they get checked
-                            document.querySelectorAll('[data-payment-container]').forEach(container => {
-                                const paymentId = container.dataset.paymentContainer;
-                                if (paymentId && !paymentCheckTimers[paymentId]) {
-                                    setTimeout(() => {
-                                        checkPaymentStatus(paymentId, 0);
-                                        paymentCheckTimers[paymentId] = Date.now();
-                                    }, 500); // Small delay to ensure DOM is fully updated
-                                }
-                            });
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching messages:', error);
-                    });
-            };
-
-            // Initial poll and then every 5 seconds
-            pollMessages();
-            setInterval(pollMessages, 5000);
-        }
-
-        // Add validation for sidebar payment form
-        const sidebarPaymentForm = document.querySelector('form[action*="sendPaymentRequest"]');
-        if (sidebarPaymentForm) {
-            sidebarPaymentForm.addEventListener('submit', function(e) {
-                const amountInput = document.getElementById('amount');
-                if (amountInput) {
-                    // Get the amount value, strip currency symbols and commas
-                    let amountValue = amountInput.value.replace(/[$,]/g, '').trim();
-                    const amount = parseFloat(amountValue);
-
-                    // Validate the amount
-                    if (!amountValue || isNaN(amount) || amount <= 0) {
-                        e.preventDefault();
-                        alert('Please enter a valid payment amount greater than 0.');
-                        return false;
-                    }
-                }
-                return true;
-            });
-        }
-        
         // Time slots selection functionality
         const loadTimeSlotsBtn = document.getElementById('loadTimeSlots');
         const timeSlotsLoading = document.getElementById('timeSlots-loading');
@@ -1764,7 +1505,7 @@ Thank you for your payment. We'll now begin work on your writing service request
 
                             // Create payment button HTML with appropriate status
                             const buttonHtml = `
-                                <div class="mt-3" data-payment-container="${paymentId}">
+                                <div class="mt-2" data-payment-container="${paymentId}">
                                     <span class="text-muted small">Payment request status:</span>
                                     <div class="d-flex align-items-center mt-1">
                                         <button class="btn ${isPaid ? 'btn-success' : 'btn-warning'} btn-sm payment-button" disabled>
@@ -1793,7 +1534,7 @@ Thank you for your payment. We'll now begin work on your writing service request
 
                             // Create booking link HTML - for admin view, just show the text without button
                             const bookingHtml = `
-                                <div class="mt-2 mb-1 text-muted font-italic">
+                                <div class="mt-2 text-muted font-italic">
                                     <small><i class="fas fa-info-circle mr-1"></i> ${linkText}</small>
                                     <small class="d-block mt-1">Note: Button to view time slots only appears for clients</small>
                                 </div>
@@ -1817,17 +1558,17 @@ Thank you for your payment. We'll now begin work on your writing service request
 
                             // Create an elegant payment confirmation card
                             const confirmationHtml = `
-                                <div class="payment-confirmation-card mt-3 border border-success rounded shadow-sm">
-                                    <div class="payment-confirmation-header d-flex align-items-center p-3 bg-success-light border-bottom border-success">
+                                <div class="payment-confirmation-card mt-2 border border-success rounded shadow-sm">
+                                    <div class="payment-confirmation-header d-flex align-items-center bg-success-light border-bottom border-success">
                                         <i class="fas fa-check-circle text-success mr-2"></i>
                                         <span class="font-weight-bold text-success">Payment Confirmation</span>
                                         <span class="badge badge-pill badge-success ml-auto">PAID</span>
                                     </div>
-                                    <div class="payment-confirmation-body p-3">
+                                    <div class="payment-confirmation-body">
                                         <div class="payment-confirmation-content">
                                             ${confirmationContent}
                                         </div>
-                                        <div class="d-flex align-items-center mt-3 pt-2 border-top">
+                                        <div class="d-flex align-items-center mt-2 pt-2 border-top">
                                             <i class="fas fa-info-circle text-primary mr-2"></i>
                                             <span class="text-muted small">This payment has been recorded and the client has been notified</span>
                                         </div>

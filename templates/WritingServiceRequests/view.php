@@ -29,66 +29,76 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Chat Section - takes up 2/3 of the space on large screens -->
         <div class="lg:col-span-2">
-            <div class="bg-white rounded-xl shadow-md overflow-hidden flex flex-col h-[650px] border border-gray-100">
-                <!-- Chat Header -->
-                <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-5 py-4 border-b flex justify-between items-center text-white">
-                    <div class="flex items-center space-x-3">
-                        <div class="relative">
-                            <div class="w-2.5 h-2.5 rounded-full bg-green-300 absolute right-0 bottom-0 animate-pulse"></div>
-                            <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                                <i class="fas fa-headset text-xl"></i>
-                            </div>
-                        </div>
-                        <div>
-                            <h2 class="font-bold text-lg">Service Support</h2>
-                            <p class="text-xs text-blue-100 opacity-80">We typically reply within 1-2 hours</p>
-                        </div>
+            <!-- Messages and Communication Log -->
+            <div class="card shadow mb-4" id="messages">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center bg-gradient-primary text-white" style="background: linear-gradient(120deg, #4e73df 30%, #224abe 100%);">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-comments mr-2 fa-lg"></i>
+                        <h6 class="m-0 font-weight-bolder text-uppercase letter-spacing-1" style="font-weight: 800;">Writing Service Enquiry</h6>
                     </div>
-                    <div class="text-sm bg-white/10 px-3 py-1.5 rounded-full">
-                        ID: <?= h(substr($writingServiceRequest->writing_service_request_id, 0, 8)) ?>...
+                    <div class="request-id-badge">
+                        <div class="request-id-label">REQUEST ID</div>
+                        <div class="request-id-value"><?= h(substr($writingServiceRequest->writing_service_request_id, 0, 12)) ?></div>
                     </div>
                 </div>
-
-                <!-- Chat Messages - scrollable area -->
-                <div class="flex-1 overflow-y-auto p-1 space-y-0.5 bg-gray-50" id="chat-messages">
+                <div class="card-body p-2">
+                    <div class="chat-container" style="max-height: 500px; overflow-y: auto; scroll-behavior: smooth;" id="chat-messages">
                     <?php if (!empty($writingServiceRequest->request_messages)) : ?>
+                            <div class="chat-messages">
                         <?php foreach ($writingServiceRequest->request_messages as $msg) : ?>
                             <?php
                             $isAdmin = isset($msg->user) && strtolower($msg->user->user_type) === 'admin';
-                            // Extremely tight bubbles with minimal padding
-                            $msgClasses = $isAdmin
-                                ? 'bg-gray-200 border-0 ml-0 lg:ml-1'
-                                : 'bg-blue-600 text-white border-0 mr-0 lg:mr-1';
-                            $textColor = $isAdmin ? 'text-gray-800' : 'text-white';
-                            $timeColor = $isAdmin ? 'text-gray-400' : 'text-blue-100';
-                            $alignmentClasses = $isAdmin ? 'items-start' : 'items-end flex-row-reverse';
-                            ?>
-                            <div class="flex <?= $alignmentClasses ?>" data-message-id="<?= h($msg->request_message_id) ?>">
-                                <!-- Message Content - tight bubbles with minimal padding -->
-                                <div class="max-w-[90%] <?= $msgClasses ?> px-2 py-0.5 rounded-xl shadow-sm">
-                                    <div class="flex flex-col">
-                                        <div class="<?= $textColor ?> text-sm break-words whitespace-pre-wrap message-content leading-tight text-center">
+                                    ?>
+                                    <div class="chat-message <?= $isAdmin ? 'admin-message' : 'client-message' ?>" data-message-id="<?= h($msg->request_message_id) ?>">
+                                        <div class="message-header d-flex align-items-center mb-1">
+                                            <div class="message-avatar mr-2">
+                                                <?php if ($isAdmin) : ?>
+                                                    <div class="avatar admin-avatar">A</div>
+                                                <?php else : ?>
+                                                    <div class="avatar client-avatar">
+                                                        <?= substr($msg->user->first_name ?? 'C', 0, 1) ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="message-info">
+                                                <span class="message-sender">
+                                                    <?= $isAdmin ? 'Admin' : 'You' ?>
+                                                </span>
+                                                <span class="message-time">
+                                                    <?php if (!empty($msg->created_at)) : ?>
+                                                        <?= h($msg->created_at->format('M j, Y h:i A')) ?>
+                                                    <?php endif; ?>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="message-content">
+                                            <div class="message-bubble">
+                                                <div class="message-text">
                                             <?php
                                             // Check if this message contains time slots
                                             $messageText = $msg->message;
                                             if ($isAdmin && strpos($messageText, '**Available Time Slots:**') !== false) {
                                                 // This is a time slots message, format it specially
                                                 $parts = explode('**Available Time Slots:**', $messageText, 2);
-                                                echo nl2br(h($parts[0])) . '<br>';
-                                                echo '<div class="font-bold mt-1 mb-0.5">Available Time Slots:</div>';
-                                                
+
+                                                // Process the first part with proper bold formatting
+                                                $firstPart = nl2br(h($parts[0]));
+                                                $firstPart = preg_replace('/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $firstPart);
+                                                echo $firstPart . '<br>';
+
+                                                echo '<div class="timeslots-header">Available Time Slots:</div>';
+
                                                 // Parse time slots
-                                                $timeSlotLines = [];
                                                 if (preg_match_all('/- ([^:]+): ([^\n]+)/', $parts[1], $matches, PREG_SET_ORDER)) {
-                                                    echo '<div class="time-slots-list space-y-1.5 mt-1">';
-                                                    
+                                                    echo '<div class="time-slots-list">';
+
                                                     foreach ($matches as $match) {
                                                         $date = trim($match[1]);
                                                         $time = trim($match[2]);
-                                                        
+
                                                         // Check if an appointment for this time slot already exists
                                                         $hasAppointment = false;
-                                                        
+
                                                         // Only do this query if we have appointments loaded
                                                         if (isset($appointments)) {
                                                             foreach ($appointments as $appointment) {
@@ -103,18 +113,18 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                                 }
                                                             }
                                                         }
-                                                        
+
                                                         // Create accept button for each time slot
-                                                        echo '<div class="flex justify-between items-center p-1.5 bg-gray-100 dark:bg-gray-700 rounded text-left">';
-                                                        echo '<div class="text-xs">';
-                                                        echo '<div class="font-semibold">' . h($date) . '</div>';
-                                                        echo '<div>' . h($time) . '</div>';
+                                                        echo '<div class="timeslot-item">';
+                                                        echo '<div class="timeslot-info">';
+                                                        echo '<div class="timeslot-date">' . h($date) . '</div>';
+                                                        echo '<div class="timeslot-time">' . h($time) . '</div>';
                                                         echo '</div>';
-                                                        
+
                                                         if ($hasAppointment) {
                                                             // Show confirmed badge if appointment exists
-                                                            echo '<span class="text-xs bg-blue-500 text-white py-1 px-2.5 rounded shadow-sm">';
-                                                            echo '<i class="fas fa-calendar-check mr-1"></i> Confirmed';
+                                                            echo '<span class="timeslot-confirmed">';
+                                                            echo '<i class="fas fa-calendar-check"></i> Confirmed';
                                                             echo '</span>';
                                                         } else {
                                                             // Show accept button if no appointment exists
@@ -123,78 +133,119 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                                 'time' => urlencode($time),
                                                                 'request_id' => $writingServiceRequest->writing_service_request_id,
                                                                 'message_id' => $msg->request_message_id
-                                                            ]]) . '" class="text-xs bg-green-500 hover:bg-green-600 text-white py-1 px-2.5 rounded transition-colors duration-200 shadow-sm">';
-                                                            echo '<i class="fas fa-check mr-1"></i> Accept';
+                                                            ]]) . '" class="timeslot-accept">';
+                                                            echo '<i class="fas fa-check"></i> Accept';
                                                             echo '</a>';
                                                         }
-                                                        
+
                                                         echo '</div>';
                                                     }
-                                                    
+
                                                     echo '</div>';
-                                                    
+
                                                     // Skip the calendar booking link part
                                                     if (strpos($parts[1], '[CALENDAR_BOOKING_LINK]') !== false) {
                                                         $bookingLinkParts = explode('[CALENDAR_BOOKING_LINK]', $parts[1], 2);
                                                         if (isset($bookingLinkParts[1]) && strpos($bookingLinkParts[1], '[/CALENDAR_BOOKING_LINK]') !== false) {
                                                             $afterBookingLink = explode('[/CALENDAR_BOOKING_LINK]', $bookingLinkParts[1], 2);
                                                             if (isset($afterBookingLink[1])) {
-                                                                echo '<div class="mt-1.5 text-xs">' . nl2br(h(trim($afterBookingLink[1]))) . '</div>';
+                                                                echo '<div class="timeslot-footer">' . nl2br(h(trim($afterBookingLink[1]))) . '</div>';
                                                             }
                                                         }
                                                     }
                                                 } else {
                                                     // If parsing fails, just show the raw text
-                                                    echo nl2br(h($parts[1]));
+                                                    $secondPart = nl2br(h($parts[1]));
+                                                    $secondPart = preg_replace('/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $secondPart);
+                                                    echo $secondPart;
                                                 }
                                             } else {
-                                                // Standard message, just show the text
-                                                echo nl2br(h($messageText));
+                                                // Standard message, process for bold formatting
+                                                $messageContent = nl2br(h($messageText));
+                                                // Convert **bold** to actual bold text
+                                                $messageContent = preg_replace('/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $messageContent);
+
+                                                // Process payment buttons
+                                                if (strpos($messageContent, '[PAYMENT_BUTTON]') !== false) {
+                                                    $buttonPattern = '/\[PAYMENT_BUTTON\](.*?)\[\/PAYMENT_BUTTON\]/';
+                                                    $messageContent = preg_replace_callback($buttonPattern, function($matches) {
+                                                        $paymentId = $matches[1];
+                                                        return '<div class="payment-button-container" data-payment-container="'.$paymentId.'">
+                                                            <div class="payment-button-label">Payment request:</div>
+                                                            <div class="payment-button-wrapper">
+                                                                <button class="payment-action-button" id="pay-button-'.$paymentId.'">
+                                                                    <i class="fas fa-credit-card"></i> Make Payment
+                                                                </button>
+                                                                <span class="payment-status">PENDING</span>
+                                                            </div>
+                                                        </div>';
+                                                    }, $messageContent);
+                                                }
+
+                                                // Process payment confirmations
+                                                if (strpos($messageContent, '[PAYMENT_CONFIRMATION]') !== false) {
+                                                    $confirmPattern = '/\[PAYMENT_CONFIRMATION\](.*?)\[\/PAYMENT_CONFIRMATION\]/s';
+                                                    $messageContent = preg_replace_callback($confirmPattern, function($matches) {
+                                                        $content = $matches[1];
+                                                        $content = preg_replace('/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $content);
+                                                        return '<div class="payment-confirmation">
+                                                            <div class="payment-confirmation-header">
+                                                                <i class="fas fa-check-circle"></i>
+                                                                <span>Payment Confirmation</span>
+                                                                <span class="payment-confirmation-status">PAID</span>
+                                                            </div>
+                                                            <div class="payment-confirmation-body">
+                                                                <div class="payment-confirmation-content">'.$content.'</div>
+                                                            </div>
+                                                        </div>';
+                                                    }, $messageContent);
+                                                }
+
+                                                echo $messageContent;
                                             }
                                             ?>
                                         </div>
-                                        <div class="text-[8px] <?= $timeColor ?> self-end opacity-70">
-                                            <?php if (!empty($msg->created_at)) : ?>
-                                                <span class="local-time" data-datetime="<?= h($msg->created_at->format('c')) ?>"></span>
-                                            <?php endif; ?>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                <?php endforeach; ?>
                             </div>
-                        <?php endforeach; ?>
                     <?php else : ?>
-                        <div class="flex items-center justify-center h-full flex-col gap-4 text-gray-400">
-                            <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                                </svg>
-                            </div>
-                            <p class="text-center">No messages yet.<br>Start the conversation with your request details.</p>
+                            <div class="empty-chat">
+                                <div class="empty-chat-icon">
+                                    <i class="fas fa-comments"></i>
+                                </div>
+                                <p>No messages yet. Start the conversation with your request details.</p>
                         </div>
                     <?php endif; ?>
                 </div>
 
-                <!-- Message Input Form -->
-                <div class="px-3 py-2 border-t border-gray-200 bg-white">
+                    <!-- New Message Form -->
+                    <div class="message-form-container">
                     <?= $this->Form->create(null, [
                         'url' => ['action' => 'view', $writingServiceRequest->writing_service_request_id],
                         'id' => 'message-form',
-                        'class' => 'flex items-end gap-2',
-                    ]) ?>
-                    <div class="flex-1 relative">
-                        <?= $this->Form->textarea('reply_message', [
-                            'class' => 'w-full border border-gray-200 rounded-3xl p-2 pr-8 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 resize-none shadow-sm text-sm',
-                            'rows' => '1',
-                            'placeholder' => 'Reply',
-                            'required' => true,
                         ]) ?>
+
+                        <div class="message-textarea-container">
+                            <?= $this->Form->textarea('reply_message', [
+                                'rows' => 3,
+                                'class' => 'message-textarea',
+                                'placeholder' => 'Type your message here...',
+                                'required' => true,
+                                'id' => 'messageText',
+                            ]) ?>
+                        </div>
+
+                        <div class="message-submit-container">
+                            <button type="submit" class="message-submit-button" id="sendButton">
+                                <i class="fas fa-paper-plane"></i>
+                                Send Message
+                            </button>
+                        </div>
+
+                        <?= $this->Form->end() ?>
                     </div>
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-2 flex items-center justify-center transition-colors shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" transform="rotate(90, 12, 12)" />
-                        </svg>
-                    </button>
-                    <?= $this->Form->end() ?>
                 </div>
             </div>
         </div>
@@ -390,22 +441,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Format dates to local time
-        function formatLocalTimes() {
-            const timeElements = document.querySelectorAll('.local-time');
-            timeElements.forEach(el => {
-                const isoTime = el.dataset.datetime;
-                const date = new Date(isoTime);
-                // Super simple time format (1:41 pm)
-                el.textContent = date.toLocaleTimeString(undefined, {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true
-                }).toLowerCase();
-            });
-        }
-
-        formatLocalTimes();
+        // Removed local time formatting function since we now use server-side formatting
 
         // Scroll chat to bottom
         const chatMessages = document.getElementById('chat-messages');
@@ -454,6 +490,458 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
         // The functionality has been moved there to keep all AJAX and UI updates in one place
     });
 </script>
+
+<style>
+    /* Updated Chat Styles */
+    .chat-container {
+        padding: 15px;
+        background-color: #f8f9fc;
+        background-image: linear-gradient(120deg, #fdfbfb 0%, #f9f7fa 100%);
+        border-radius: 8px;
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.03);
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    /* Card styling */
+    #messages.card {
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+        border: none;
+        transition: all 0.3s;
+    }
+
+    #messages.card:hover {
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+    }
+
+    /* Card header styles */
+    .card-header.bg-gradient-primary {
+        padding: 14px 20px !important;
+        border-bottom: none !important;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header .text-uppercase {
+        font-size: 1rem;
+        letter-spacing: 1px;
+    }
+
+    /* Request ID Badge styling */
+    .request-id-badge {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        padding: 4px 12px;
+        backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s;
+    }
+
+    .request-id-badge:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    .request-id-label {
+        font-size: 0.6rem;
+        font-weight: 700;
+        opacity: 0.85;
+        letter-spacing: 0.5px;
+    }
+
+    .request-id-value {
+        font-family: monospace;
+        font-size: 0.9rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
+    /* Message styles */
+    .chat-message {
+        margin-bottom: 16px;
+        position: relative;
+        transition: all 0.3s ease;
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .client-message .message-content {
+        margin-right: 20%;
+    }
+
+    .admin-message .message-content {
+        margin-left: 20%;
+    }
+
+    /* Message headers */
+    .message-header {
+        margin-bottom: 6px;
+    }
+
+    .message-sender {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #2c3e50;
+    }
+
+    /* Updated styles for the message time to make it more visible */
+    .message-time {
+        font-size: 0.75rem;
+        color: #5a6268;
+        margin-left: 8px;
+        background-color: rgba(0,0,0,0.06);
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-weight: 500;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        transition: all 0.2s;
+    }
+
+    .message-time:hover {
+        background-color: rgba(0,0,0,0.1);
+    }
+
+    /* Avatar styles */
+    .message-avatar {
+        margin-right: 6px;
+    }
+
+    .avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.7rem;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        transition: transform 0.2s;
+    }
+
+    .avatar:hover {
+        transform: scale(1.1);
+    }
+
+    .admin-avatar {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+    }
+
+    .client-avatar {
+        background: linear-gradient(135deg, #1cc88a 0%, #13855c 100%);
+        color: white;
+    }
+
+    /* Message bubbles */
+    .message-bubble {
+        padding: 12px 16px;
+        border-radius: 12px;
+        position: relative;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        max-width: 100%;
+        word-wrap: break-word;
+        transition: all 0.2s;
+    }
+
+    .message-bubble:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        transform: translateY(-1px);
+    }
+
+    .admin-message .message-bubble {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        border-left: 3px solid #4e73df;
+    }
+
+    .client-message .message-bubble {
+        background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+        border-left: 3px solid #1cc88a;
+    }
+
+    .message-text {
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: #34495e;
+    }
+
+    .message-text strong {
+        font-weight: 700;
+        color: #1a1a2e;
+    }
+
+    /* Empty chat state */
+    .empty-chat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        text-align: center;
+        color: #a0aec0;
+    }
+
+    .empty-chat-icon {
+        font-size: 3rem;
+        margin-bottom: 16px;
+        opacity: 0.6;
+    }
+
+    .empty-chat p {
+        font-size: 0.95rem;
+    }
+
+    /* New Message Form */
+    .message-form-container {
+        padding: 16px;
+        background: linear-gradient(to bottom, #ffffff, #f8f9fc);
+        border-top: 1px solid #e3e6f0;
+        border-radius: 0 0 12px 12px;
+    }
+
+    .message-textarea-container {
+        margin-bottom: 14px;
+    }
+
+    .message-textarea {
+        width: 100%;
+        border: 1px solid #d1d9e6;
+        border-radius: 10px;
+        padding: 12px 16px;
+        resize: none;
+        font-size: 0.95rem;
+        transition: all 0.25s;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+
+    .message-textarea:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.25);
+        outline: none;
+    }
+
+    .message-submit-container {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .message-submit-button {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 24px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.25s;
+        box-shadow: 0 4px 10px rgba(78, 115, 223, 0.3);
+    }
+
+    .message-submit-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(78, 115, 223, 0.35);
+        background: linear-gradient(135deg, #4668c5 0%, #1c3ea1 100%);
+    }
+
+    .message-submit-button i {
+        margin-right: 10px;
+        font-size: 1rem;
+    }
+
+    .message-submit-button:active {
+        transform: translateY(1px);
+        box-shadow: 0 2px 6px rgba(78, 115, 223, 0.3);
+    }
+
+    /* Time slots styling */
+    .timeslots-header {
+        font-weight: 700;
+        margin: 12px 0 8px;
+        color: #2c3e50;
+        font-size: 0.95rem;
+    }
+
+    .time-slots-list {
+        margin-top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .timeslot-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: rgba(255, 255, 255, 0.7);
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid #e3e6f0;
+    }
+
+    .timeslot-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .timeslot-date {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #2c3e50;
+    }
+
+    .timeslot-time {
+        font-size: 0.8rem;
+        color: #7f8c8d;
+    }
+
+    .timeslot-confirmed {
+        background-color: #4e73df;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 16px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .timeslot-accept {
+        background-color: #1cc88a;
+        color: white;
+        padding: 5px 12px;
+        border-radius: 16px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.2s;
+    }
+
+    .timeslot-accept:hover {
+        background-color: #169c6a;
+        color: white;
+        transform: translateY(-1px);
+        text-decoration: none;
+    }
+
+    .timeslot-footer {
+        margin-top: 8px;
+        font-size: 0.8rem;
+        color: #7f8c8d;
+        font-style: italic;
+    }
+
+    /* Payment styling */
+    .payment-button-container {
+        margin-top: 12px;
+        background-color: rgba(255, 231, 217, 0.2);
+        border: 1px dashed #f6c23e;
+        border-radius: 8px;
+        padding: 10px;
+    }
+
+    .payment-button-label {
+        font-size: 0.8rem;
+        color: #7f8c8d;
+        margin-bottom: 5px;
+    }
+
+    .payment-button-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .payment-action-button {
+        background: linear-gradient(135deg, #f6c23e 0%, #e4a526 100%);
+        color: white;
+        border: none;
+        border-radius: 16px;
+        padding: 6px 14px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .payment-action-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(246, 194, 62, 0.3);
+    }
+
+    .payment-status {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #7f8c8d;
+        background-color: #f8f9fa;
+        padding: 3px 8px;
+        border-radius: 12px;
+    }
+
+    .payment-confirmation {
+        margin-top: 12px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #1cc88a;
+        box-shadow: 0 2px 8px rgba(28, 200, 138, 0.15);
+    }
+
+    .payment-confirmation-header {
+        background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        font-weight: 600;
+        color: #1e824c;
+        border-bottom: 1px solid #c8e6c9;
+    }
+
+    .payment-confirmation-header i {
+        margin-right: 8px;
+        color: #1cc88a;
+    }
+
+    .payment-confirmation-status {
+        margin-left: auto;
+        background-color: #1cc88a;
+        color: white;
+        font-size: 0.7rem;
+        padding: 3px 8px;
+        border-radius: 12px;
+    }
+
+    .payment-confirmation-body {
+        padding: 10px 12px;
+        background-color: white;
+    }
+
+    .payment-confirmation-content {
+        font-size: 0.9rem;
+        line-height: 1.4;
+        color: #2c3e50;
+    }
+
+    .payment-confirmation-content strong {
+        color: #1cc88a;
+        font-weight: 700;
+    }
+</style>
 
 <?php
 /**
