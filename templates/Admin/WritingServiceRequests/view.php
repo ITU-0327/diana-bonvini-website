@@ -371,10 +371,12 @@ $this->assign('title', __('Writing Service Request Details'));
                         <?= $this->Form->create(null, [
                             'url' => ['action' => 'updateStatus', $writingServiceRequest->writing_service_request_id],
                             'id' => 'statusForm',
+                            'type' => 'post'
                         ]) ?>
 
                         <div class="form-group mb-3">
-                            <?= $this->Form->select('status', [
+                            <?= $this->Form->hidden('writing_service_request_id', ['value' => $writingServiceRequest->writing_service_request_id]) ?>
+                            <?= $this->Form->select('request_status', [
                                 'pending' => 'Pending',
                                 'in_progress' => 'In Progress',
                                 'completed' => 'Completed',
@@ -387,7 +389,7 @@ $this->assign('title', __('Writing Service Request Details'));
                         </div>
 
                         <div class="form-group">
-                            <button type="submit" class="btn btn-primary btn-block">
+                            <button type="submit" class="btn btn-primary btn-block" id="updateStatusBtn">
                                 <i class="fas fa-sync-alt mr-1"></i> Update Status
                             </button>
                         </div>
@@ -1569,7 +1571,7 @@ Thank you for your payment. We'll now begin work on your writing service request
 
                             // Create payment button HTML with appropriate status
                             const buttonHtml = `
-                                <div class="mt-2" data-payment-container="${paymentId}">
+                            <div class="mt-2" data-payment-container="${paymentId}">
                                     <span class="text-muted small">Payment request status:</span>
                                     <div class="d-flex align-items-center mt-1">
                                         <button class="btn ${isPaid ? 'btn-success' : 'btn-warning'} btn-sm payment-button" disabled>
@@ -1598,7 +1600,7 @@ Thank you for your payment. We'll now begin work on your writing service request
 
                             // Create booking link HTML - for admin view, just show the text without button
                             const bookingHtml = `
-                                <div class="mt-2 text-muted font-italic">
+                            <div class="mt-2 text-muted font-italic">
                                     <small><i class="fas fa-info-circle mr-1"></i> ${linkText}</small>
                                     <small class="d-block mt-1">Note: Button to view time slots only appears for clients</small>
                                 </div>
@@ -1622,17 +1624,17 @@ Thank you for your payment. We'll now begin work on your writing service request
 
                             // Create an elegant payment confirmation card
                             const confirmationHtml = `
-                                <div class="payment-confirmation-card mt-2 border border-success rounded shadow-sm">
+                            <div class="payment-confirmation-card mt-2 border border-success rounded shadow-sm">
                                     <div class="payment-confirmation-header d-flex align-items-center bg-success-light border-bottom border-success">
                                         <i class="fas fa-check-circle text-success mr-2"></i>
                                         <span class="font-weight-bold text-success">Payment Confirmation</span>
                                         <span class="badge badge-pill badge-success ml-auto">PAID</span>
                                     </div>
-                                    <div class="payment-confirmation-body">
+                                <div class="payment-confirmation-body">
                                         <div class="payment-confirmation-content">
                                             ${confirmationContent}
                                         </div>
-                                        <div class="d-flex align-items-center mt-2 pt-2 border-top">
+                                    <div class="d-flex align-items-center mt-2 pt-2 border-top">
                                             <i class="fas fa-info-circle text-primary mr-2"></i>
                                             <span class="text-muted small">This payment has been recorded and the client has been notified</span>
                                         </div>
@@ -1678,6 +1680,16 @@ Thank you for your payment. We'll now begin work on your writing service request
             });
 
             return isPaid;
+        }
+        
+        // Status update form handling
+        const statusForm = document.getElementById('statusForm');
+        if (statusForm) {
+            statusForm.addEventListener('submit', function(e) {
+                const button = document.getElementById('updateStatusBtn');
+                button.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Updating...';
+                button.disabled = true;
+            });
         }
     });
 </script>

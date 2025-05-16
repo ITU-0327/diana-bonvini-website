@@ -104,7 +104,7 @@ class WritingServiceRequestsTable extends Table
 
         $validator
             ->scalar('request_status')
-            ->inList('request_status', ['pending', 'in_progress', 'completed', 'canceled'])
+            ->inList('request_status', ['pending', 'in_progress', 'completed', 'canceled', 'cancelled'])
             ->notEmptyString('request_status');
 
         $validator

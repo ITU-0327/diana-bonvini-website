@@ -1239,7 +1239,7 @@ class WritingServiceRequestsController extends BaseAdminController
     public function uploadDocument(?string $id = null)
     {
         $this->request->allowMethod(['post']);
-        
+
         /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
 
@@ -1250,23 +1250,23 @@ class WritingServiceRequestsController extends BaseAdminController
 
         try {
             $writingServiceRequest = $this->WritingServiceRequests->get($id);
-            
+
             // Handle file upload
             $file = $this->request->getUploadedFile('document');
-            
+
             if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
                 $this->Flash->error(__('No document uploaded or upload failed.'));
                 return $this->redirect(['action' => 'view', $id]);
             }
-            
+
             // Process the document upload
             $documentPath = $this->_handleDocumentUpload($file, 'view');
-            
+
             if ($documentPath) {
                 // Create a RequestDocument entity
                 $requestDocumentsTable = $this->fetchTable('RequestDocuments');
                 $requestDocument = $requestDocumentsTable->newEmptyEntity();
-                
+
                 $data = [
                     'request_document_id' => \Cake\Utility\Text::uuid(),
                     'writing_service_request_id' => $id,
@@ -1279,12 +1279,12 @@ class WritingServiceRequestsController extends BaseAdminController
                     'is_deleted' => false,
                     'created_at' => new \DateTime('now')
                 ];
-                
+
                 // Skip validation for the writing_service_request_id field
                 $requestDocument = $requestDocumentsTable->patchEntity($requestDocument, $data, [
                     'validate' => false
                 ]);
-                
+
                 if ($requestDocumentsTable->save($requestDocument)) {
                     // Add a message to the chat about the upload
                     $message = "Uploaded document: **" . $file->getClientFilename() . "**";
@@ -1296,7 +1296,7 @@ class WritingServiceRequestsController extends BaseAdminController
                         'is_read' => false,
                     ]);
                     $requestMessagesTable->save($newMessage);
-                    
+
                     $this->Flash->success(__('Document uploaded successfully.'));
                 } else {
                     // Log the validation errors for debugging
@@ -1306,9 +1306,9 @@ class WritingServiceRequestsController extends BaseAdminController
             } else {
                 $this->Flash->error(__('Failed to upload document. Please try again.'));
             }
-            
+
             return $this->redirect(['action' => 'view', $id]);
-            
+
         } catch (\Exception $e) {
             $this->log('Error in admin document upload: ' . $e->getMessage(), 'error');
             $this->Flash->error(__('Error: {0}', $e->getMessage()));
