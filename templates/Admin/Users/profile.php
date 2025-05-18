@@ -59,37 +59,6 @@ $this->assign('title', __('My Profile'));
                 </div>
             </div>
 
-            <!-- Activity Log -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Recent Activity</h6>
-                </div>
-                <div class="card-body p-0">
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item py-3">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">Logged in</h6>
-                                <small class="text-muted">3 hours ago</small>
-                            </div>
-                            <p class="mb-1 small text-muted">Successfully logged in from Chrome on macOS</p>
-                        </li>
-                        <li class="list-group-item py-3">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">Updated an artwork</h6>
-                                <small class="text-muted">Yesterday</small>
-                            </div>
-                            <p class="mb-1 small text-muted">Modified "Ocean Sunset" artwork details</p>
-                        </li>
-                        <li class="list-group-item py-3">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">Processed an order</h6>
-                                <small class="text-muted">2 days ago</small>
-                            </div>
-                            <p class="mb-1 small text-muted">Marked order #12345 as completed</p>
-                        </li>
-                    </ul>
-                </div>
-            </div>
         </div>
 
         <!-- Account Settings -->
@@ -155,61 +124,21 @@ $this->assign('title', __('My Profile'));
                 </div>
             </div>
 
-            <!-- Change Password -->
+            <!-- Password Reset Link - Replaced Change Password Section -->
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Change Password</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">Password Management</h6>
                 </div>
                 <div class="card-body">
-                    <?= $this->Form->create(null, [
-                        'url' => ['action' => 'changePassword'],
-                        'id' => 'passwordForm',
-                    ]) ?>
+                    <p class="mb-3">Need to reset your password? Use our secure password reset system.</p>
 
-                    <div class="form-group">
-                        <label for="current_password" class="font-weight-bold">Current Password</label>
-                        <?= $this->Form->control('current_password', [
-                            'type' => 'password',
-                            'class' => 'form-control',
-                            'label' => false,
-                            'placeholder' => 'Enter your current password',
-                        ]) ?>
+                    <a href="<?= $this->Url->build(['controller' => 'Users', 'action' => 'forgotPassword', 'prefix' => false]) ?>" class="btn btn-primary">
+                        <i class="fas fa-key mr-1"></i> Reset Password
+                    </a>
+
+                    <div class="mt-3 small text-muted">
+                        <p>A password reset link will be sent to your email address. Click the link in the email to set a new password.</p>
                     </div>
-
-                    <div class="form-group">
-                        <label for="new_password" class="font-weight-bold">New Password</label>
-                        <?= $this->Form->control('new_password', [
-                            'type' => 'password',
-                            'class' => 'form-control',
-                            'label' => false,
-                            'placeholder' => 'Enter your new password',
-                        ]) ?>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="confirm_password" class="font-weight-bold">Confirm New Password</label>
-                        <?= $this->Form->control('confirm_password', [
-                            'type' => 'password',
-                            'class' => 'form-control',
-                            'label' => false,
-                            'placeholder' => 'Confirm your new password',
-                        ]) ?>
-                    </div>
-
-                    <div class="form-group">
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="showPassword">
-                            <label class="custom-control-label" for="showPassword">Show Password</label>
-                        </div>
-                    </div>
-
-                    <div class="form-group mt-4">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-key mr-1"></i> Change Password
-                        </button>
-                    </div>
-
-                    <?= $this->Form->end() ?>
                 </div>
             </div>
         </div>
@@ -218,36 +147,11 @@ $this->assign('title', __('My Profile'));
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Show/hide password functionality
-        const showPasswordCheckbox = document.getElementById('showPassword');
-        if (showPasswordCheckbox) {
-            const passwordFields = document.querySelectorAll('input[type="password"]');
-
-            showPasswordCheckbox.addEventListener('change', function() {
-                passwordFields.forEach(function(field) {
-                    field.type = this.checked ? 'text' : 'password';
-                }, this);
-            });
-        }
-
-        // Form validation
-        const passwordForm = document.getElementById('passwordForm');
-        if (passwordForm) {
-            passwordForm.addEventListener('submit', function(event) {
-                const newPassword = document.querySelector('input[name="new_password"]').value;
-                const confirmPassword = document.querySelector('input[name="confirm_password"]').value;
-
-                if (newPassword !== confirmPassword) {
-                    event.preventDefault();
-                    alert('New password and confirmation do not match.');
-                    return false;
-                }
-
-                if (newPassword && newPassword.length < 8) {
-                    event.preventDefault();
-                    alert('New password must be at least 8 characters long.');
-                    return false;
-                }
+        // Form validation for profile form
+        const profileForm = document.getElementById('profileForm');
+        if (profileForm) {
+            profileForm.addEventListener('submit', function(event) {
+                // Add any profile form validation if needed
             });
         }
     });

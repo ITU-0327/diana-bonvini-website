@@ -99,6 +99,20 @@ $isActive = function ($controller, $action = null) {
                 ['class' => 'menu-item ' . $isActive('GoogleAuth'), 'escape' => false],
             ) ?>
 
+<<<<<<< HEAD
+=======
+        <!-- Calendar -->
+        <li class="nav-item">
+            <?= $this->Html->link(
+                '<i class="fas fa-calendar"></i> <span>Calendar</span>',
+                ['controller' => 'Calendar', 'action' => 'index', 'prefix' => 'Admin'],
+                ['escape' => false, 'class' => $this->request->getParam('controller') === 'Calendar' ? 'active' : ''],
+            ) ?>
+        </li>
+
+        <!-- Google Calendar Integration -->
+        <li class="nav-item">
+>>>>>>> 6aed05c (Add calendar link to admin sidebar and enhance user details view with user ID and improved layout)
             <?= $this->Html->link(
                 '<i class="fab fa-google"></i> <span>Calendar</span>',
                 ['controller' => 'GoogleAuth', 'action' => 'index', 'prefix' => 'Admin'],

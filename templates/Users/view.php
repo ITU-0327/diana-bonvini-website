@@ -24,6 +24,10 @@ $this->assign('title', 'User Profile');
             <table class="min-w-full divide-y divide-gray-200">
                 <tbody class="bg-white divide-y divide-gray-200">
                 <tr>
+                    <th class="px-6 py-3 text-left text-sm font-medium text-gray-500"><?= __('User ID') ?></th>
+                    <td class="px-6 py-3 text-sm text-gray-900"><?= $this->Format->userId($user->user_id) ?></td>
+                </tr>
+                <tr>
                     <th class="px-6 py-3 text-left text-sm font-medium text-gray-500"><?= __('First Name') ?></th>
                     <td class="px-6 py-3 text-sm text-gray-900"><?= h($user->first_name) ?></td>
                 </tr>

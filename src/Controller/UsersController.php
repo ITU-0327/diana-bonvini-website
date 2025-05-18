@@ -55,9 +55,10 @@ class UsersController extends AppController
             /** @var \App\Model\Entity\User $user */
             $user = $this->Authentication->getIdentity();
 
-            // No 2FA needed, update last login time
+            // No 2FA needed, update last login time and set active status
             $userEntity = $this->Users->get($user->user_id);
             $userEntity->last_login = DateTime::now();
+            $userEntity->active = true; // Mark user as active when they log in
             $this->Users->save($userEntity);
 
             // Redirect admin users to dashboard, others to home
