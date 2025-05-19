@@ -1,4 +1,5 @@
 <?php
+$this->assign('title', 'Writing Service Requests');
 /**
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\WritingServiceRequest> $writingServiceRequests

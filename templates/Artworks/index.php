@@ -6,6 +6,7 @@
 
 use Cake\Collection\Collection;
 
+$this->assign('title', __('Art Gallery'));
 ?>
 
 <?php
@@ -25,12 +26,6 @@ $userType = $user?->get('user_type');
             Art Sold
         </button>
 
-        <?php if ($userType === 'admin') : ?>
-            <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'add']) ?>"
-               class="px-4 py-2 bg-green-600 text-white rounded-full hover:bg-green-700 transition">
-                ➕ Add New Artwork
-            </a>
-        <?php endif; ?>
     </div>
 
     <!-- Artworks Grid -->

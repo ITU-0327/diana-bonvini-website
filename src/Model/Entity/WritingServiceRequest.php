@@ -13,7 +13,7 @@ use Cake\ORM\Entity;
  * @property string $service_title
  * @property string $service_type
  * @property string|null $notes
- * @property string|null $final_price
+ * @property float $final_price
  * @property string $request_status
  * @property string|null $document
  * @property bool $is_deleted

@@ -3,6 +3,7 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Order $order
  */
+$this->assign('title', __('Order #' . $order->order_id . ' - Confirmation'));
 ?>
 <div class="bg-gray-100 min-h-screen pb-8">
     <!-- Success Message Banner -->
@@ -164,21 +165,44 @@
                 </div>
             </div>
 
-        <!-- Items Ordered -->
-        <div>
-            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Items Ordered</h2>
-            <?php if (!empty($order->artwork_variant_orders)) : ?>
-                <ul class="space-y-4">
-                    <?php foreach ($order->artwork_variant_orders as $item) : ?>
-                        <li class="flex items-center justify-between border-b pb-3">
-                            <div class="flex items-center">
-                                <?= $this->Html->image(
-                                    $item->artwork_variant->artwork->image_url,
-                                    ['alt' => $item->artwork_variant->artwork->title, 'class' => 'w-16 h-16 object-cover rounded-lg mr-4'],
-                                ) ?>
-                                <div>
-                                    <p class="font-bold text-gray-900 text-lg"><?= h($item->artwork_variant->artwork->title) ?></p>
-                                    <p class="text-gray-600 text-sm">Qty: <?= h($item->quantity) ?></p>
+            <!-- Items Ordered -->
+            <div>
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Items Ordered</h2>
+                <?php if (!empty($order->artwork_variant_orders)) : ?>
+                    <ul class="space-y-4">
+                        <?php foreach ($order->artwork_variant_orders as $item) : ?>
+                            <li class="flex items-center justify-between border-b pb-3">
+                                <div class="flex items-center">
+                                    <?= $this->Html->image(
+                                        $item->artwork_variant->artwork->image_url,
+                                        ['alt' => $item->artwork_variant->artwork->title, 'class' => 'w-16 h-16 object-cover rounded-lg mr-4'],
+                                    ) ?>
+                                    <div>
+                                        <p class="font-bold text-gray-900 text-lg"><?= h($item->artwork_variant->artwork->title) ?></p>
+                                        <?php 
+                                        // Handle dimension display with fallbacks
+                                        $dimension = ''; 
+                                        if (!empty($item->artwork_variant->dimension)) {
+                                            $dimension = $item->artwork_variant->dimension;
+                                        } elseif (!empty($item->artwork_variant->dimensions)) {
+                                            $dimension = $item->artwork_variant->dimensions;
+                                        } elseif (!empty($item->dimension)) {
+                                            $dimension = $item->dimension;
+                                        }
+                                        ?>
+                                        <p class="text-gray-600 text-sm">Size: <?= h($dimension) ?></p>
+                                        <?php if (empty($dimension)) : ?>
+                                            <!-- Debug info to help troubleshoot -->
+                                            <p class="text-red-600 text-xs">Debug: 
+                                                Variant ID: <?= h($item->artwork_variant->artwork_variant_id) ?><br>
+                                                Available properties: <?= h(implode(', ', array_keys($item->artwork_variant->toArray()))) ?>
+                                            </p>
+                                        <?php endif; ?>
+                                        <?php if (!empty($item->artwork_variant->description)) : ?>
+                                            <p class="text-gray-600 text-sm"><?= h($item->artwork_variant->description) ?></p>
+                                        <?php endif; ?>
+                                        <p class="text-gray-600 text-sm">Qty: <?= h($item->quantity) ?></p>
+                                    </div>
                                 </div>
                                 <div class="text-right">
                                     <p class="font-bold text-gray-900 text-lg">$<?= number_format($item->price * $item->quantity, 2) ?></p>

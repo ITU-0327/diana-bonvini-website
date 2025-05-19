@@ -3,6 +3,10 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\ContentBlock $contentBlock
  */
+
+$this->assign('title', __('Edit Content Block'));
+$this->Html->script('https://cdn.tailwindcss.com', ['block' => 'script']);
+
 use Cake\ORM\TableRegistry;
 
 // Build maps for JS

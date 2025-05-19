@@ -3,6 +3,8 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\User $user
  */
+
+$this->assign('title', 'User Profile');
 ?>
 <!-- Using flex layout -->
 <div class="flex flex-col md:flex-row">

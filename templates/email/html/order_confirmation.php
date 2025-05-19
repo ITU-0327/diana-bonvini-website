@@ -37,16 +37,30 @@
             <?php foreach ($order->artwork_variant_orders as $item) : ?>
                 <div style="display:flex; padding:10px 0; border-bottom:1px solid #eee;">
                     <div style="flex:0 0 80px;">
-                        <?php if (!empty($item->artwork->image_url)) : ?>
-                            <img src="<?= h($item->artwork->image_url) ?>" alt="<?= h($item->artwork->title) ?>" style="width:80px; height:auto; border:1px solid #ddd; object-fit:cover;">
+                        <?php if (!empty($item->artwork_variant->artwork->image_url)) : ?>
+                            <img src="<?= h($item->artwork_variant->artwork->image_url) ?>" alt="<?= h($item->artwork_variant->artwork->title) ?>" style="width:80px; height:auto; border:1px solid #ddd; object-fit:cover;">
                         <?php else : ?>
                             <div style="width:80px; height:80px; background:#f5f5f5; border:1px solid #ddd; text-align:center; line-height:80px; color:#aaa;">No Image</div>
                         <?php endif ?>
                     </div>
                     <div style="flex:1; padding-left:15px;">
-                        <p style="margin:0 0 5px; font-weight:bold;"><?= h($item->artwork->title) ?></p>
-                        <?php if (!empty($item['dimensions'])) : ?>
-                            <p style="margin:0 0 5px; color:#666;">Dim: <?= h($item['dimensions']) ?></p>
+                        <p style="margin:0 0 5px; font-weight:bold;"><?= h($item->artwork_variant->artwork->title) ?></p>
+                        <p style="margin:0 0 5px; color:#666;">
+                            <?php 
+                            // Handle dimension display with fallbacks
+                            $dimension = ''; 
+                            if (!empty($item->artwork_variant->dimension)) {
+                                $dimension = $item->artwork_variant->dimension;
+                            } elseif (!empty($item->artwork_variant->dimensions)) {
+                                $dimension = $item->artwork_variant->dimensions;
+                            } elseif (!empty($item->dimension)) {
+                                $dimension = $item->dimension;
+                            }
+                            ?>
+                            Size: <?= h($dimension) ?>
+                        </p>
+                        <?php if (!empty($item->artwork_variant->description)) : ?>
+                            <p style="margin:0 0 5px; color:#666;"><?= h($item->artwork_variant->description) ?></p>
                         <?php endif ?>
                         <p style="margin:0 0 5px; color:#666;">Qty: <?= h($item->quantity) ?></p>
                         <p style="margin:0; color:#666;">Unit: $<?= number_format($item->price, 2) ?></p>
