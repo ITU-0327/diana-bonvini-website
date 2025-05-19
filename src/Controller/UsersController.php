@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Mailer\UserMailer;
+use App\Model\Entity\User;
 use App\Service\TwoFactorService;
 use Cake\Event\EventInterface;
 use Cake\Http\Response;
@@ -191,58 +192,17 @@ class UsersController extends AppController
         $user = $this->Users->get($id);
 
         if ($this->request->is(['patch', 'post', 'put'])) {
-            $data = $this->request->getData();
+            $user = $this->Users->patchEntity($user, $this->request->getData());
 
-            // If the password field is set but is empty (after trimming), remove it.
-            if (isset($data['password']) && trim($data['password']) === '') {
-                unset($data['password']);
-            }
-
-            // Determine which submit button was pressed.
-            if (isset($data['info_submit'])) {
-                // Info update: remove password fields when not updating password.
-                unset($data['password'], $data['password_confirm'], $data['password_submit']);
-                // (If you need to combine address fields into one column, you can do it here.)
-            } elseif (isset($data['password_submit'])) {
-                // Password update: if a new password is provided, validate it.
-                if (!empty($data['password'])) {
-                    if ($data['password'] !== $data['password_confirm']) {
-                        $this->Flash->error(__('Passwords do not match. Please try again.'));
-
-                        return $this->redirect($this->referer());
-                    }
-                } else {
-                    // No new password provided – remove the password so it remains unchanged.
-                    unset($data['password']);
-                }
-                // Remove billing/personal fields so that only the password is updated.
-                unset(
-                    $data['first_name'],
-                    $data['last_name'],
-                    $data['phone_number'],
-                    $data['email'],
-                    $data['street_address'],
-                    $data['street_address2'],
-                    $data['suburb'],
-                    $data['state'],
-                    $data['postcode'],
-                    $data['country'],
-                    $data['info_submit'],
-                );
-            }
-            // Remove both submit buttons from the data.
-            unset($data['info_submit'], $data['password_submit']);
-
-            $user = $this->Users->patchEntity($user, $data);
             if ($this->Users->save($user)) {
-                $this->Flash->success(__('Your account has been updated.'));
+                $this->Flash->success(__('Your details were updated.'));
+                // Update the identity in session to reflect changes
+                $this->Authentication->setIdentity($user);
 
                 return $this->redirect(['action' => 'edit', $user->user_id]);
             }
 
-            debug($user->getErrors());
-
-            $this->Flash->error(__('The account could not be updated. Please, try again.'));
+            $this->Flash->error(__('Changes could not be saved. Please, try again.'));
         }
 
         $this->set(compact('user'));
@@ -251,12 +211,12 @@ class UsersController extends AppController
     /**
      * Forgot Password method
      *
-     * @return \Cake\Http\Response|null|void
+     * @return \Cake\Http\Response|null
      */
-    public function forgotPassword()
+    public function forgotPassword(): ?Response
     {
         if ($this->request->is('get')) {
-            return;
+            return null;
         }
 
         if ($this->request->is('post')) {
@@ -269,33 +229,15 @@ class UsersController extends AppController
             if (!$user) {
                 $this->Flash->error('No user found with that email address.');
 
-                return;
+                return null;
             }
 
-            // Generate a secure token & save to DB
-            $token = Security::hash(Text::uuid(), 'sha256', true);
-            $user->password_reset_token = $token;
-            $user->token_expiration = new DateTime('+1 hour');
-
-            if ($this->Users->save($user)) {
-                // Build a reset link
-                $resetLink = Router::url([
-                    'controller' => 'Users',
-                    'action' => 'resetPassword',
-                    $token,
-                ], true);
-
-                $mailer = new UserMailer('default');
-                $mailer->resetPassword($user, $resetLink);
-                $mailer->deliver();
-
-                $this->Flash->success('A password reset link has been sent to your email address.');
-
+            if ($this->_generateToken($user)) {
                 return $this->redirect(['action' => 'login']);
-            } else {
-                $this->Flash->error('Unable to save reset token. Please try again.');
             }
         }
+
+        return null;
     }
 
     /**
@@ -359,5 +301,55 @@ class UsersController extends AppController
         // Clear the password field for security
         $user->password = '';
         $this->set(compact('user'));
+    }
+
+    /**
+     * Change Password method
+     *
+     * @return \Cake\Http\Response|null
+     */
+    public function changePassword(): ?Response
+    {
+        $this->request->allowMethod(['post']);
+
+        /** @var \App\Model\Entity\User $identity */
+        $identity = $this->request->getAttribute('identity');
+        $user = $this->Users->get($identity->user_id);
+
+        $this->_generateToken($user);
+
+        return $this->redirect($this->referer());
+    }
+
+    /**
+     * Generates a password reset token for the given user, saves it, and emails the reset link.
+     *
+     * @param \App\Model\Entity\User $user The user entity to generate the token for.
+     * @return bool True if the token was successfully generated and emailed, false otherwise.
+     */
+    private function _generateToken(User $user): bool
+    {
+        $token = Security::hash(Text::uuid(), 'sha256', true);
+        $user->password_reset_token = $token;
+        $user->token_expiration = new DateTime('+1 hour');
+
+        if ($this->Users->save($user)) {
+            $resetLink = Router::url([
+                'controller' => 'Users',
+                'action' => 'resetPassword',
+                $token,
+            ], true);
+
+            $mailer = new UserMailer('default');
+            $mailer->resetPassword($user, $resetLink);
+            $mailer->deliver();
+
+            $this->Flash->success(__('A reset link has been sent to {0}.', $user->email));
+
+            return true;
+        }
+        $this->Flash->error(__('Unable to generate reset link. Please try again later.'));
+
+        return false;
     }
 }
