@@ -70,13 +70,10 @@ class UsersController extends BaseAdminController
     public function view(?string $id = null): void
     {
         try {
-            $user = $this->Users->get($id, [
-                'contain' => ['Orders'],
-            ]);
+            $user = $this->Users->get($id, contain: ['Orders']);
 
-            $this->set('title', 'User Details: ' . $user->first_name . ' ' . $user->last_name);
             $this->set(compact('user'));
-        } catch (Exception $e) {
+        } catch (Exception) {
             $this->Flash->error(__('The user could not be found.'));
             $this->redirect(['action' => 'index']);
         }
@@ -91,82 +88,44 @@ class UsersController extends BaseAdminController
      */
     public function deactivate(?string $id = null): ?Response
     {
-        $this->request->allowMethod(['post']);
+        $this->request->allowMethod(['post', 'delete']);
         $user = $this->Users->get($id);
-        $user->active = false;
-
-        if ($this->Users->save($user)) {
-            $this->Flash->success(__('The user has been deactivated.'));
+        if ($this->Users->delete($user)) {
+            $this->Flash->success(__('The user has been deleted.'));
         } else {
-            $this->Flash->error(__('The user could not be deactivated. Please, try again.'));
+            $this->Flash->error(__('The user could not be deleted. Please, try again.'));
         }
 
         return $this->redirect(['action' => 'index']);
     }
 
     /**
-     * Display the admin user profile
+     * Display and handle editing of the admin user profile
      *
-     * @return void
+     * @return \Cake\Http\Response|null|void
      */
-    public function profile(): void
+    public function profile()
     {
-        $this->set('title', 'My Profile');
-
         // Get the current logged in user
-        /** @var \App\Model\Entity\User|null $identity */
+        /** @var \App\Model\Entity\User $identity*/
         $identity = $this->Authentication->getIdentity();
+        $user = $this->Users->get($identity->user_id);
 
-        try {
-            // Use direct property access which is more reliable in this codebase
-            $userId = $identity->user_id;
-
-            if (!$userId) {
-                throw new Exception('User ID not found in identity');
-            }
-
-            $user = $this->Users->get($userId);
-            $this->set(compact('user'));
-        } catch (Exception $e) {
-            $this->Flash->error('Could not load user profile. Please try again.');
-            $this->redirect(['controller' => 'Admin', 'action' => 'dashboard']);
-        }
-    }
-
-    /**
-     * Update the admin's profile information
-     *
-     * @return \Cake\Http\Response|null Redirects to profile on success
-     */
-    public function updateProfile(): ?Response
-    {
-        $this->request->allowMethod(['post', 'put']);
-
-        // Get the current logged in user
-        /** @var \App\Model\Entity\User|null $identity */
-        $identity = $this->Authentication->getIdentity();
-        $userId = $identity->user_id;
-
-        try {
-            if (!$userId) {
-                throw new Exception('User ID not found in identity');
-            }
-
-            $user = $this->Users->get($userId);
+        if ($this->request->is(['patch', 'post', 'put'])) {
             $user = $this->Users->patchEntity($user, $this->request->getData(), [
                 'fields' => ['first_name', 'last_name', 'email', 'phone_number'],
             ]);
 
             if ($this->Users->save($user)) {
                 $this->Flash->success(__('Your profile has been updated.'));
-            } else {
-                $this->Flash->error(__('Unable to update your profile. Please, try again.'));
+                $this->Authentication->setIdentity($user);
+
+                return $this->redirect(['action' => 'profile']);
             }
-        } catch (Exception $e) {
             $this->Flash->error(__('Unable to update your profile. Please, try again.'));
         }
 
-        return $this->redirect(['action' => 'profile']);
+        $this->set(compact('user'));
     }
 
     /**
@@ -182,7 +141,7 @@ class UsersController extends BaseAdminController
             // Get the current logged in user
             /** @var \App\Model\Entity\User|null $identity */
             $identity = $this->Authentication->getIdentity();
-            $userId = $identity->user_id;
+            $userId = $identity?->user_id;
 
             if (!$userId) {
                 throw new Exception('User ID not found in identity');

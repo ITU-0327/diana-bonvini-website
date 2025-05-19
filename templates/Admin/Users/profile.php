@@ -20,7 +20,11 @@
                 </div>
                 <div class="card-body">
                     <div class="text-center mb-4">
-                        <img src="https://via.placeholder.com/150" alt="Profile picture" class="img-profile rounded-circle img-thumbnail mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                        <div class="d-flex justify-content-center">
+                            <div class="avatar-circle mb-3" style="width: 150px; height: 150px; background-color: #4a90e2; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 60px; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                <?= substr($user->first_name ?? '', 0, 1) ?><?= substr($user->last_name ?? '', 0, 1) ?>
+                            </div>
+                        </div>
                         <h5 class="mb-0"><?= h($user->first_name . ' ' . $user->last_name) ?></h5>
                         <p class="text-muted">Administrator</p>
                     </div>
@@ -94,7 +98,7 @@
                 </div>
                 <div class="card-body">
                     <?= $this->Form->create($user, [
-                        'url' => ['action' => 'updateProfile'],
+                        'url' => ['action' => 'profile'],
                         'id' => 'profileForm',
                     ]) ?>
 
@@ -216,27 +220,27 @@
         const showPasswordCheckbox = document.getElementById('showPassword');
         if (showPasswordCheckbox) {
             const passwordFields = document.querySelectorAll('input[type="password"]');
-            
+
             showPasswordCheckbox.addEventListener('change', function() {
                 passwordFields.forEach(function(field) {
                     field.type = this.checked ? 'text' : 'password';
                 }, this);
             });
         }
-        
+
         // Form validation
         const passwordForm = document.getElementById('passwordForm');
         if (passwordForm) {
             passwordForm.addEventListener('submit', function(event) {
                 const newPassword = document.querySelector('input[name="new_password"]').value;
                 const confirmPassword = document.querySelector('input[name="confirm_password"]').value;
-                
+
                 if (newPassword !== confirmPassword) {
                     event.preventDefault();
                     alert('New password and confirmation do not match.');
                     return false;
                 }
-                
+
                 if (newPassword && newPassword.length < 8) {
                     event.preventDefault();
                     alert('New password must be at least 8 characters long.');
