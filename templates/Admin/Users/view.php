@@ -44,7 +44,7 @@ $this->assign('title', __('User Details'));
                     <div class="mb-3">
                         <h6 class="font-weight-bold">Status</h6>
                         <p>
-                            <?php 
+                            <?php
                             // Check if logged in within the last 30 days
                             $isActive = false;
                             if (isset($user->last_login) && $user->last_login) {
@@ -94,11 +94,6 @@ $this->assign('title', __('User Details'));
                         </p>
                     </div>
 
-                    <div class="d-flex flex-column">
-                        <a href="<?= $this->Url->build(['action' => 'edit', $user->user_id]) ?>" class="btn btn-primary mb-2">
-                            <i class="fas fa-edit mr-1"></i> Edit User
-                        </a>
-                    </div>
                 </div>
             </div>
 
@@ -137,7 +132,7 @@ $this->assign('title', __('User Details'));
                             <h6 class="font-weight-bold">Account Type</h6>
                             <p><?= $user->user_type === 'admin' ? 'Administrator' : 'Customer' ?></p>
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <h6 class="font-weight-bold">Registration Date</h6>
                             <p>
@@ -150,7 +145,7 @@ $this->assign('title', __('User Details'));
                                 <?php endif; ?>
                             </p>
                         </div>
-                        
+
                         <div class="col-md-4 mb-3">
                             <h6 class="font-weight-bold">Account ID</h6>
                             <p><?= $this->Format->userId($user->user_id) ?></p>
@@ -238,32 +233,32 @@ $this->assign('title', __('User Details'));
         vertical-align: baseline;
         border-radius: 0.25rem;
     }
-    
+
     .bg-primary {
         background-color: #4e73df !important;
         color: #fff;
     }
-    
+
     .bg-secondary {
         background-color: #858796 !important;
         color: #fff;
     }
-    
+
     .bg-success {
         background-color: #1cc88a !important;
         color: #fff;
     }
-    
+
     .bg-danger {
         background-color: #e74a3b !important;
         color: #fff;
     }
-    
+
     .bg-warning {
         background-color: #f6c23e !important;
         color: #212529;
     }
-    
+
     .bg-info {
         background-color: #36b9cc !important;
         color: #fff;
