@@ -26,46 +26,60 @@ class WritingServiceRequestsController extends BaseAdminController
      */
     public function index(): void
     {
-        $this->set('title', 'Writing Service Requests');
-
-        // Use index.php in Admin/WritingServiceRequests folder
-        $this->viewBuilder()->setTemplate('index');
-        $this->viewBuilder()->setTemplatePath('Admin/WritingServiceRequests');
-
-        // Get all writing service requests with users
         $query = $this->WritingServiceRequests->find()
-            ->contain(['Users']);
+            ->contain(['Users' => function ($q) {
+                return $q->where(['Users.is_deleted' => false]);
+            }])
+            ->where(['WritingServiceRequests.is_deleted' => false]);
 
-//        /** @var array<\App\Model\Entity\WritingServiceRequest> $writingServiceRequests */
         $writingServiceRequests = $this->paginate($query);
 
-        // Calculate unread counts manually instead of in the query
-        foreach ($writingServiceRequests as $request) {
-            try {
-                $unreadCount = $this->WritingServiceRequests->RequestMessages->find()
-                    ->where([
-                        'writing_service_request_id' => $request->writing_service_request_id,
-                        'is_read' => false,
-                        'user_id NOT IN' => $this->WritingServiceRequests->Users->find()
-                            ->select(['user_id'])
-                            ->where(['user_type' => 'admin']),
-                    ])
-                    ->count();
+        // Count all unread messages across all requests
+        $totalUnreadCount = $this->WritingServiceRequests->RequestMessages->find()
+            ->where([
+                'is_read' => false,
+                'user_id NOT IN' => $this->WritingServiceRequests->Users->find()
+                    ->select(['user_id'])
+                    ->where(['user_type' => 'admin']),
+            ])
+            ->count();
 
-                $request->unread_count = $unreadCount;
-            } catch (Exception $e) {
-                $this->log('Error calculating unread count: ' . $e->getMessage(), 'error');
-                $request->unread_count = 0;
-            }
-        }
+        // Calculate statistics using fresh queries for each count
+        $totalRequests = $this->WritingServiceRequests->find()
+            ->where(['WritingServiceRequests.is_deleted' => false])
+            ->count();
 
-        // Get total unread messages across all requests
-        $totalUnreadCount = 0;
-        foreach ($writingServiceRequests as $request) {
-            $totalUnreadCount += $request->unread_count ?? 0;
-        }
+        $pendingRequests = $this->WritingServiceRequests->find()
+            ->where([
+                'WritingServiceRequests.is_deleted' => false,
+                'WritingServiceRequests.request_status' => 'pending',
+            ])
+            ->count();
 
-        $this->set(compact('writingServiceRequests', 'totalUnreadCount'));
+        $inProgressRequests = $this->WritingServiceRequests->find()
+            ->where([
+                'WritingServiceRequests.is_deleted' => false,
+                'WritingServiceRequests.request_status' => 'in_progress',
+            ])
+            ->count();
+
+        $totalRevenue = $this->WritingServiceRequests->find()
+            ->where([
+                'WritingServiceRequests.is_deleted' => false,
+                'WritingServiceRequests.final_price IS NOT' => null,
+            ])
+            ->select(['total' => $this->WritingServiceRequests->find()->func()->sum('WritingServiceRequests.final_price')])
+            ->first()
+            ->total ?? 0;
+
+        $this->set(compact(
+            'writingServiceRequests',
+            'totalUnreadCount',
+            'totalRequests',
+            'pendingRequests',
+            'inProgressRequests',
+            'totalRevenue',
+        ));
     }
 
     /**
@@ -77,12 +91,6 @@ class WritingServiceRequestsController extends BaseAdminController
      */
     public function view(?string $id = null)
     {
-        $this->set('title', 'View Service Request');
-
-        // Use view.php in Admin/WritingServiceRequests folder
-        $this->viewBuilder()->setTemplate('view');
-        $this->viewBuilder()->setTemplatePath('Admin/WritingServiceRequests');
-
         /** @var \App\Model\Entity\User $user */
         $user = $this->Authentication->getIdentity();
 

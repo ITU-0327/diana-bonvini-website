@@ -137,12 +137,14 @@
                                     <?= $this->Html->link(
                                         '#' . h($order->order_id),
                                         ['controller' => 'Orders', 'action' => 'view', $order->order_id],
+                                        ['class' => 'text-decoration-none', 'data-bs-toggle' => 'tooltip', 'title' => 'View Order Details'],
                                     ) ?>
                                 </td>
                                 <td class="align-middle">
                                     <?= $this->Html->link(
                                         h($order->user->first_name . ' ' . $order->user->last_name),
                                         ['controller' => 'Users', 'action' => 'view', $order->user->user_id],
+                                        ['class' => 'text-decoration-none', 'data-bs-toggle' => 'tooltip', 'title' => 'View Customer Profile'],
                                     ) ?>
                                 </td>
                                 <td class="align-middle">

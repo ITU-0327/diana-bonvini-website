@@ -1,33 +1,15 @@
 <?php
 /**
  * @var \App\View\AppView $this
- * @var \Cake\Datasource\ResultSetInterface|array<\App\Model\Entity\WritingServiceRequest> $writingServiceRequests
+ * @var array<\App\Model\Entity\WritingServiceRequest> $writingServiceRequests
+ * @var int $totalRequests
+ * @var int $pendingRequests
+ * @var int $inProgressRequests
+ * @var float $totalRevenue
+ * @var int $totalUnreadCount
  */
 
 use Cake\Utility\Inflector;
-
-// Calculate statistics for the dashboard
-$totalRequests = count($writingServiceRequests);
-$pendingQuotes = 0;
-$inProgressRequests = 0;
-$completedRequests = 0;
-$totalRevenue = 0;
-
-foreach ($writingServiceRequests as $request) {
-    $status = $request->request_status ?? 'pending';
-
-    if ($status === 'pending_quote') {
-        $pendingQuotes++;
-    } elseif ($status === 'in_progress') {
-        $inProgressRequests++;
-    } elseif ($status === 'completed') {
-        $completedRequests++;
-    }
-
-    if (!empty($request->final_price)) {
-        $totalRevenue += (float)$request->final_price;
-    }
-}
 ?>
 
 <div class="container-fluid">
@@ -79,8 +61,8 @@ foreach ($writingServiceRequests as $request) {
         <div class="col-lg-3 col-md-6 col-6">
             <div class="small-box bg-warning">
                 <div class="inner">
-                    <h3><?= $pendingQuotes ?></h3>
-                    <p>Pending Quotes</p>
+                    <h3><?= $pendingRequests ?></h3>
+                    <p>Pending Requests</p>
                 </div>
                 <div class="icon">
                     <i class="fas fa-clock"></i>
@@ -114,7 +96,7 @@ foreach ($writingServiceRequests as $request) {
                     <?= $this->Form->create(null, ['type' => 'get']) ?>
                     <div class="row">
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Search Keywords</label>
+                            <label for="q" class="form-label">Search Keywords</label>
                             <input type="text" name="q" id="q" class="form-control"
                                 value="<?= h($this->request->getQuery('q')) ?>"
                                 placeholder="Search by title, content, etc.">
@@ -139,11 +121,9 @@ foreach ($writingServiceRequests as $request) {
                             <label class="form-label">Status</label>
                             <?= $this->Form->select('status', [
                                 'pending' => 'Pending',
-                                'pending_quote' => 'Pending Quote',
-                                'scheduled' => 'Scheduled',
                                 'in_progress' => 'In Progress',
                                 'completed' => 'Completed',
-                                'cancelled' => 'Cancelled',
+                                'canceled' => 'Canceled',
                             ], [
                                 'empty' => 'All Statuses',
                                 'default' => $this->request->getQuery('status'),
@@ -178,35 +158,40 @@ foreach ($writingServiceRequests as $request) {
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered table-striped" id="requestsTable" width="100%" cellspacing="0">
+                        <table class="table table-bordered table-striped" id="requestsTable">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th>Request ID</th>
                                     <th>Title</th>
                                     <th>Client</th>
                                     <th>Service Type</th>
                                     <th>Price</th>
                                     <th>Status</th>
                                     <th>Created</th>
-                                    <th class="text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (count($writingServiceRequests) > 0) : ?>
                                     <?php foreach ($writingServiceRequests as $request) : ?>
                                         <tr class="request-row" data-status="<?= h($request->request_status ?? '') ?>">
-                                            <td class="align-middle"><?= h(substr($request->writing_service_request_id, 0, 8)) ?></td>
+                                            <td class="align-middle">
+                                                <?= $this->Html->link(
+                                                    h($request->writing_service_request_id),
+                                                    ['action' => 'view', $request->writing_service_request_id],
+                                                    ['class' => 'text-decoration-none', 'data-bs-toggle' => 'tooltip', 'title' => 'View Request Details'],
+                                                ) ?>
+                                            </td>
                                             <td class="align-middle font-weight-bold"><?= h($request->service_title) ?></td>
                                             <td class="align-middle">
-                                                <?php if (isset($request->user) && $request->user) : ?>
-                                                    <?= h($request->user->first_name . ' ' . $request->user->last_name) ?>
-                                                <?php else : ?>
-                                                    <?= h($request->client_name ?? 'Unknown') ?>
-                                                <?php endif; ?>
+                                                <?= $this->Html->link(
+                                                    h($request->user->first_name . ' ' . $request->user->last_name),
+                                                    ['controller' => 'Users', 'action' => 'view', $request->user->user_id],
+                                                    ['class' => 'text-decoration-none', 'target' => '_blank', 'data-bs-toggle' => 'tooltip', 'title' => 'View Client Profile'],
+                                                ) ?>
                                             </td>
                                             <td class="align-middle"><?= h(Inflector::humanize($request->service_type ?? 'Other')) ?></td>
                                             <td class="align-middle">
-                                                <?php if (isset($request->final_price) && $request->final_price) : ?>
+                                                <?php if (isset($request->final_price)) : ?>
                                                     <span class="font-weight-bold">$<?= number_format((float)$request->final_price, 2) ?></span>
                                                 <?php else : ?>
                                                     <span class="badge bg-warning">Pending Quote</span>
@@ -214,35 +199,24 @@ foreach ($writingServiceRequests as $request) {
                                             </td>
                                             <td class="align-middle">
                                                 <?php
-                                                $status = $request->request_status ?? 'pending';
-                                                $statusClass = match ($status) {
-                                                    'pending', 'pending_quote' => 'warning',
-                                                    'scheduled' => 'info',
+                                                $statusClass = match ($request->request_status) {
+                                                    'pending' => 'warning',
                                                     'in_progress' => 'primary',
                                                     'completed' => 'success',
-                                                    'cancelled' => 'danger',
+                                                    'canceled' => 'danger',
                                                     default => 'secondary'
                                                 };
-                                                $statusLabel = str_replace('_', ' ', $status);
     ?>
                                                 <span class="badge bg-<?= $statusClass ?>">
-                                                    <?= ucfirst(h($statusLabel)) ?>
+                                                    <?= Inflector::humanize($request->request_status) ?>
                                                 </span>
                                             </td>
                                             <td class="align-middle">
-                                                <?php if (isset($request->created_at) && $request->created_at) : ?>
+                                                <?php if (isset($request->created_at)) : ?>
                                                     <?= $request->created_at->format('M d, Y') ?>
                                                 <?php else : ?>
                                                     -
                                                 <?php endif; ?>
-                                            </td>
-                                            <td class="align-middle text-center">
-                                                <div class="btn-group">
-                                                    <a href="<?= $this->Url->build(['action' => 'view', $request->writing_service_request_id]) ?>" class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="View Details">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-
-                                                </div>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -293,11 +267,9 @@ foreach ($writingServiceRequests as $request) {
                     <?= $this->Form->label('status', 'Status', ['class' => 'form-label']) ?>
                     <?= $this->Form->select('status', [
                         'pending' => 'Pending',
-                        'pending_quote' => 'Pending Quote',
-                        'scheduled' => 'Scheduled',
                         'in_progress' => 'In Progress',
                         'completed' => 'Completed',
-                        'cancelled' => 'Cancelled',
+                        'canceled' => 'Canceled',
                     ], [
                         'class' => 'form-select form-control',
                         'id' => 'modal-status',
