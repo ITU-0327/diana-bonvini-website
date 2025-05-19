@@ -3,9 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Controller\UsersController as BaseUsersController;
+use App\Controller\Admin\AdminController as BaseAdminController;
 use Authentication\PasswordHasher\DefaultPasswordHasher;
-use Cake\Event\EventInterface;
 use Cake\Http\Response;
 use Exception;
 
@@ -15,47 +14,8 @@ use Exception;
  * Manages users from an administrative perspective.
  * Uses dedicated admin templates.
  */
-class UsersController extends BaseUsersController
+class UsersController extends BaseAdminController
 {
-    /**
-     * Initialize method
-     *
-     * @return void
-     * @throws \Exception
-     */
-    public function initialize(): void
-    {
-        parent::initialize();
-
-        // Use admin layout
-        $this->viewBuilder()->setLayout('admin');
-
-        // By default, use the Admin/Users templates for all actions
-        $this->viewBuilder()->setTemplatePath('Admin/Users');
-    }
-
-    /**
-     * Override the beforeFilter to set authentication requirements
-     *
-     * @param \Cake\Event\EventInterface $event The event instance.
-     * @return void
-     */
-    public function beforeFilter(EventInterface $event): void
-    {
-        parent::beforeFilter($event);
-
-        // Remove any unauthenticated actions for admin
-        $this->Authentication->addUnauthenticatedActions([]);
-
-        // Check for admin user
-        /** @var \App\Model\Entity\User|null $user */
-        $user = $this->Authentication->getIdentity();
-        if (!$user || $user->user_type !== 'admin') {
-            $this->Flash->error('You must be logged in as an administrator to access this area.');
-            $this->redirect(['controller' => 'Users', 'action' => 'login', 'prefix' => false]);
-        }
-    }
-
     /**
      * Index method for admin - Shows all users with management capabilities
      *

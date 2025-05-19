@@ -5,6 +5,7 @@ namespace App\Controller\Admin;
 
 use App\Controller\AppController;
 use DateTime;
+use Cake\Event\EventInterface;
 
 /**
  * Admin Controller
@@ -26,6 +27,17 @@ class AdminController extends AppController
         parent::initialize();
 
         $this->viewBuilder()->setLayout('admin');
+    }
+
+    /**
+     * Before filter method.
+     *
+     * @param \Cake\Event\EventInterface<\Cake\Controller\Controller> $event The event object.
+     * @return void
+     */
+    public function beforeFilter(EventInterface $event): void
+    {
+        parent::beforeFilter($event);
         $this->checkAdminAuth();
     }
 

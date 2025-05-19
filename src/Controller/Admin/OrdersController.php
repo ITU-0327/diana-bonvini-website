@@ -3,8 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Controller\OrdersController as BaseOrdersController;
-use Cake\Event\EventInterface;
+use App\Controller\Admin\AdminController as BaseAdminController;
 use Cake\Http\Response;
 use Exception;
 
@@ -13,49 +12,11 @@ use Exception;
  *
  * Provides admin-specific operations for order management.
  * Uses dedicated admin templates.
+ *
+ * @property \App\Model\Table\OrdersTable $Orders
  */
-class OrdersController extends BaseOrdersController
+class OrdersController extends BaseAdminController
 {
-    /**
-     * Initialize method
-     *
-     * @return void
-     */
-    public function initialize(): void
-    {
-        parent::initialize();
-
-        // Use admin layout
-        $this->viewBuilder()->setLayout('admin');
-
-        // By default, use the Admin/Orders templates for all actions
-        $this->viewBuilder()->setTemplatePath('Admin/Orders');
-    }
-
-    /**
-     * Override the beforeFilter to set authentication requirements
-     *
-     * @param \Cake\Event\EventInterface $event The event instance.
-     * @return \Cake\Http\Response|null|void
-     */
-    public function beforeFilter(EventInterface $event): ?Response
-    {
-        parent::beforeFilter($event);
-
-        // Remove any unauthenticated actions for admin
-        $this->Authentication->addUnauthenticatedActions([]);
-
-        // Check for admin user
-        $user = $this->Authentication->getIdentity();
-        if (!$user || $user->user_type !== 'admin') {
-            $this->Flash->error('You must be logged in as an administrator to access this area.');
-
-            return $this->redirect(['controller' => 'Users', 'action' => 'login', 'prefix' => false]);
-        }
-
-        return null;
-    }
-
     /**
      * Index method - Shows all orders with admin functionality
      *
@@ -67,7 +28,7 @@ class OrdersController extends BaseOrdersController
 
         $query = $this->Orders->find()
             ->contain(['Users', 'ArtworkVariantOrders', 'ArtworkVariantOrders.ArtworkVariants', 'ArtworkVariantOrders.ArtworkVariants.Artworks'])
-            ->order(['Orders.created_at' => 'DESC']);
+            ->orderBy(['Orders.created_at' => 'DESC']);
 
         $orders = $this->paginate($query);
 
@@ -75,10 +36,11 @@ class OrdersController extends BaseOrdersController
         $totalOrders = $this->Orders->find()->count();
 
         // Calculate total revenue manually
+        /** @var array<\App\Model\Entity\Order> $allOrders */
         $allOrders = $this->Orders->find()->all();
-        $totalRevenue = 0;
+        $totalRevenue = 0.0;
         foreach ($allOrders as $order) {
-            $totalRevenue += (float)$order->total_amount;
+            $totalRevenue += $order->total_amount;
         }
 
         $this->set(compact('orders', 'totalOrders', 'totalRevenue'));
@@ -94,69 +56,19 @@ class OrdersController extends BaseOrdersController
     public function view(?string $id = null): void
     {
         try {
-            $order = $this->Orders->get($id, [
-                'contain' => [
-                    'Users',
-                    'ArtworkVariantOrders',
-                    'ArtworkVariantOrders.ArtworkVariants',
-                    'ArtworkVariantOrders.ArtworkVariants.Artworks',
-                    'Payments',
-                ],
+            $order = $this->Orders->get($id, contain: [
+                'Users',
+                'ArtworkVariantOrders',
+                'ArtworkVariantOrders.ArtworkVariants',
+                'ArtworkVariantOrders.ArtworkVariants.Artworks',
+                'Payments',
             ]);
 
             $this->set('title', 'Order Details: #' . $order->order_id);
             $this->set(compact('order'));
-        } catch (Exception $e) {
+        } catch (Exception) {
             $this->Flash->error(__('The order could not be found.'));
             $this->redirect(['action' => 'index']);
-        }
-    }
-
-    /**
-     * Edit method - Allows admins to edit order details
-     *
-     * @param string|null $id Order id.
-     * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function edit(?string $id = null)
-    {
-        if (!$id) {
-            $this->Flash->error(__('Invalid order ID.'));
-
-            return $this->redirect(['action' => 'index']);
-        }
-
-        try {
-            $order = $this->Orders->get($id, [
-                'contain' => ['Users', 'ArtworkVariantOrders', 'ArtworkVariantOrders.ArtworkVariants', 'ArtworkVariantOrders.ArtworkVariants.Artworks'],
-            ]);
-
-            if ($this->request->is(['patch', 'post', 'put'])) {
-                $order = $this->Orders->patchEntity($order, $this->request->getData());
-
-                if ($this->Orders->save($order)) {
-                    $this->Flash->success(__('The order has been updated.'));
-
-                    return $this->redirect(['action' => 'view', $id]);
-                }
-
-                $this->Flash->error(__('The order could not be updated. Please, try again.'));
-            }
-
-            $statuses = [
-                'processing' => 'Processing',
-                'completed' => 'Completed',
-                'cancelled' => 'Cancelled',
-                'confirmed' => 'Confirmed',
-            ];
-
-            $this->set('title', 'Edit Order: #' . $order->order_id);
-            $this->set(compact('order', 'statuses'));
-        } catch (Exception $e) {
-            $this->Flash->error(__('The order could not be found.'));
-
-            return $this->redirect(['action' => 'index']);
         }
     }
 
@@ -192,7 +104,7 @@ class OrdersController extends BaseOrdersController
             } else {
                 $this->Flash->error('Unable to update order status.');
             }
-        } catch (Exception $e) {
+        } catch (Exception) {
             $this->Flash->error('Order not found or could not be updated.');
         }
 

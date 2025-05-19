@@ -3,8 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Controller\AppController;
-use Cake\Event\EventInterface;
+use App\Controller\Admin\AdminController as BaseAdminController;
 use Cake\Http\Response;
 
 /**
@@ -12,45 +11,8 @@ use Cake\Http\Response;
  *
  * Manages application settings from an administrative perspective.
  */
-class SettingsController extends AppController
+class SettingsController extends BaseAdminController
 {
-    /**
-     * Initialize method
-     *
-     * @return void
-     */
-    public function initialize(): void
-    {
-        parent::initialize();
-
-        // Use admin layout
-        $this->viewBuilder()->setLayout('admin');
-
-        // Set the template path to Admin/Settings
-        $this->viewBuilder()->setTemplatePath('Admin/Settings');
-    }
-
-    /**
-     * Override the beforeFilter to set authentication requirements
-     *
-     * @param \Cake\Event\EventInterface $event The event instance.
-     * @return void
-     */
-    public function beforeFilter(EventInterface $event): void
-    {
-        parent::beforeFilter($event);
-
-        // Remove any unauthenticated actions for admin
-        $this->Authentication->addUnauthenticatedActions([]);
-
-        // Check for admin user
-        $user = $this->Authentication->getIdentity();
-        if (!$user || $user->user_type !== 'admin') {
-            $this->Flash->error('You must be logged in as an administrator to access this area.');
-            $this->redirect(['controller' => 'Users', 'action' => 'login', 'prefix' => false]);
-        }
-    }
-
     /**
      * Index method - Settings dashboard
      *

@@ -43,7 +43,7 @@
                         ?>
                         <span class="badge badge-<?= $statusClass ?> px-3 py-2"><?= ucfirst(h($status)) ?></span>
                     </div>
-                    
+
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="m-0">Order Date:</h5>
                         <span>
@@ -56,14 +56,14 @@
                             <?php endif; ?>
                         </span>
                     </div>
-                    
+
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="m-0">Total Amount:</h5>
                         <span class="fw-bold fs-5">$<?= $this->Number->format($order->total_amount, ['precision' => 2]) ?></span>
                     </div>
-                    
+
                     <hr>
-                    
+
                     <div class="d-grid gap-2 mt-3">
                         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#updateStatusModal">
                             <i class="fas fa-edit mr-2"></i>Update Status
@@ -71,7 +71,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Customer Information Card -->
             <div class="card shadow mt-4">
                 <div class="card-header py-3">
@@ -88,7 +88,7 @@
                             <?php endif; ?>
                         </p>
                     <?php endif; ?>
-                    
+
                     <h5>Billing Details</h5>
                     <p>
                         <strong>Name:</strong> <?= h($order->billing_first_name . ' ' . $order->billing_last_name) ?><br>
@@ -97,7 +97,7 @@
                             <strong>Company:</strong> <?= h($order->billing_company) ?>
                         <?php endif; ?>
                     </p>
-                    
+
                     <h5>Shipping Address</h5>
                     <p>
                         <?= h($order->shipping_address1) ?><br>
@@ -111,7 +111,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-12 col-md-8">
             <!-- Order Items Card -->
             <div class="card shadow">
@@ -141,8 +141,8 @@
                                                         <?php endif; ?>
                                                         <div>
                                                             <h6 class="mb-0"><?= h($item->artwork_variant->artwork->title) ?></h6>
-                                                            <small class="text-muted"><?= $this->Html->link('View Artwork', ['controller' => 'Artworks', 'action' => 'view', $item->artwork_variant->artwork->artwork_id, 'prefix' => 'Admin']) ?></small>
-                                                            <small class="text-muted d-block">Variant: <?= h($item->artwork_variant->size) ?></small>
+                                                            <small class="text-muted"><?= $this->Html->link('View Artwork', ['controller' => 'Artworks', 'action' => 'edit', $item->artwork_variant->artwork->artwork_id, 'prefix' => 'Admin']) ?></small>
+                                                            <small class="text-muted d-block">Variant: <?= h($item->artwork_variant->dimension) ?></small>
                                                         </div>
                                                     <?php else : ?>
                                                         <div>
@@ -173,7 +173,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Payment Information Card -->
             <div class="card shadow mt-4">
                 <div class="card-header py-3">
@@ -184,28 +184,26 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <p><strong>Payment Method:</strong> <?= h(ucfirst($order->payment->payment_method)) ?></p>
-                                <p><strong>Payment Status:</strong> 
-                                    <?php
-                                    $paymentStatusClass = match ($order->payment->status) {
+                                <p><strong>Payment Status:</strong>
+                                    <?php $paymentStatusClass = match ($order->payment->status) {
                                         'pending' => 'warning',
                                         'confirmed' => 'success',
-                                        'refunded' => 'info',
-                                        'failed' => 'danger',
+                                        'completed' => 'info',
+                                        'cancelled' => 'danger',
                                         default => 'secondary'
-                                    };
-                                    ?>
+                                    }; ?>
                                     <span class="badge badge-<?= $paymentStatusClass ?>"><?= ucfirst(h($order->payment->status)) ?></span>
                                 </p>
                             </div>
                             <div class="col-md-6">
-                                <p><strong>Payment Date:</strong> 
+                                <p><strong>Payment Date:</strong>
                                     <?php if (isset($order->payment->payment_date) && $order->payment->payment_date) : ?>
                                         <?= $order->payment->payment_date->format('M d, Y H:i') ?>
                                     <?php else : ?>
                                         <span class="text-muted">N/A</span>
                                     <?php endif; ?>
                                 </p>
-                                <p><strong>Transaction ID:</strong> 
+                                <p><strong>Transaction ID:</strong>
                                     <?= !empty($order->payment->transaction_id) ? h($order->payment->transaction_id) : '<span class="text-muted">N/A</span>' ?>
                                 </p>
                             </div>
@@ -215,7 +213,7 @@
                     <?php endif; ?>
                 </div>
             </div>
-            
+
             <!-- Order Notes Card -->
             <?php if (!empty($order->order_notes)) : ?>
             <div class="card shadow mt-4">
@@ -249,7 +247,6 @@
                     <?= $this->Form->select('status', [
                         'pending' => 'Pending',
                         'confirmed' => 'Confirmed',
-                        'processing' => 'Processing',
                         'completed' => 'Completed',
                         'cancelled' => 'Cancelled',
                     ], [

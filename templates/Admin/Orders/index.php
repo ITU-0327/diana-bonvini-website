@@ -1,7 +1,7 @@
 <?php
 /**
  * @var \App\View\AppView $this
- * @var iterable<\App\Model\Entity\Order> $orders
+ * @var array<\App\Model\Entity\Order> $orders
  * @var int $totalOrders
  * @var float $totalRevenue
  */
@@ -127,59 +127,60 @@
                             <th>Items</th>
                             <th>Total</th>
                             <th>Status</th>
-                            <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (count($orders) > 0) : ?>
                             <?php foreach ($orders as $order) : ?>
                             <tr class="order-row" data-status="<?= h($order->order_status ?? '') ?>">
-                                <td class="align-middle">#<?= h($order->order_id) ?></td>
                                 <td class="align-middle">
-                                    <?php if (isset($order->user) && !empty($order->user->first_name) && !empty($order->user->last_name)) : ?>
-                                        <?= h($order->user->first_name . ' ' . $order->user->last_name) ?>
-                                    <?php elseif (!empty($order->billing_first_name) && !empty($order->billing_last_name)) : ?>
-                                        <?= h($order->billing_first_name . ' ' . $order->billing_last_name) ?>
-                                    <?php else : ?>
-                                        <span class="text-muted">N/A</span>
-                                    <?php endif; ?>
+                                    <?= $this->Html->link(
+                                        '#' . h($order->order_id),
+                                        ['controller' => 'Orders', 'action' => 'view', $order->order_id],
+                                    ) ?>
                                 </td>
                                 <td class="align-middle">
-                                    <?php if (isset($order->created_at) && $order->created_at) : ?>
-                                        <?= $order->created_at->format('M d, Y') ?>
-                                    <?php elseif (isset($order->order_date) && $order->order_date) : ?>
+                                    <?= $this->Html->link(
+                                        h($order->user->first_name . ' ' . $order->user->last_name),
+                                        ['controller' => 'Users', 'action' => 'view', $order->user->user_id],
+                                    ) ?>
+                                </td>
+                                <td class="align-middle">
+                                    <?php if (isset($order->order_date)) : ?>
                                         <?= $order->order_date->format('M d, Y') ?>
+                                    <?php elseif (isset($order->created_at)) : ?>
+                                        <?= $order->created_at->format('M d, Y') ?>
                                     <?php else : ?>
                                         <span class="text-muted">N/A</span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="align-middle">
-                                    <?php if (isset($order->artwork_variant_orders) && !empty($order->artwork_variant_orders)) : ?>
-                                        <?php 
+                                    <?php if (!empty($order->artwork_variant_orders)) : ?>
+                                        <?php
                                         $totalItems = 0;
                                         $itemSummary = [];
-                                        
+
                                         foreach ($order->artwork_variant_orders as $item) {
                                             $totalItems += $item->quantity;
-                                            
-                                            if (isset($item->artwork_variant) && isset($item->artwork_variant->artwork)) {
+
+                                            if (isset($item->artwork_variant->artwork)) {
                                                 $title = $item->artwork_variant->artwork->title;
                                                 $size = $item->artwork_variant->size ?? '';
-                                                
+
                                                 if (isset($itemSummary[$title])) {
                                                     $itemSummary[$title]['qty'] += $item->quantity;
                                                 } else {
                                                     $itemSummary[$title] = [
                                                         'qty' => $item->quantity,
-                                                        'size' => $size
+                                                        'size' => $size,
                                                     ];
                                                 }
                                             }
                                         }
-                                        
+
                                         if (count($itemSummary) > 0) {
                                             $displayItems = array_slice($itemSummary, 0, 2);
-                                            
+
                                             foreach ($displayItems as $title => $info) {
                                                 echo '<div class="small" title="' . h($title) . '">';
                                                 echo $info['qty'] . 'x ' . h(substr($title, 0, 15)) . (strlen($title) > 15 ? '...' : '');
@@ -188,7 +189,7 @@
                                                 }
                                                 echo '</div>';
                                             }
-                                            
+
                                             if (count($itemSummary) > 2) {
                                                 echo '<div class="small text-muted">+' . (count($itemSummary) - 2) . ' more</div>';
                                             }
@@ -211,15 +212,8 @@
                                         'confirmed' => 'primary',
                                         default => 'secondary'
                                     };
-                                    ?>
+    ?>
                                     <span class="badge badge-<?= $statusClass ?>"><?= ucfirst(h($status)) ?></span>
-                                </td>
-                                <td class="align-middle text-center">
-                                    <div class="btn-group">
-                                        <a href="<?= $this->Url->build(['action' => 'view', $order->order_id]) ?>" class="btn btn-sm btn-info">
-                                            <i class="fas fa-eye mr-1"></i> View
-                                        </a>
-                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -320,12 +314,12 @@
             document.getElementById('date-filter').value = '';
             document.getElementById('search-input').value = '';
             document.getElementById('sort-order').value = 'newest';
-            
+
             // Reset the display of all rows
             document.querySelectorAll('.order-row').forEach(function(row) {
                 row.style.display = '';
             });
-            
+
             // Resort to newest first
             sortOrders();
         });
@@ -348,47 +342,47 @@
             const sortOrder = document.getElementById('sort-order').value;
             const tbody = document.querySelector('#ordersTable tbody');
             const rows = Array.from(tbody.querySelectorAll('tr.order-row'));
-            
+
             // Skip if no rows to sort
             if (rows.length <= 1) return;
-            
+
             // Sort the rows based on the selected sort order
             rows.sort(function(a, b) {
                 if (sortOrder === 'newest' || sortOrder === 'oldest') {
                     // Get dates from the third column (index 2)
                     const dateA = getDateFromCell(a.querySelector('td:nth-child(3)').textContent.trim());
                     const dateB = getDateFromCell(b.querySelector('td:nth-child(3)').textContent.trim());
-                    
+
                     // Sort by date
                     return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
                 } else {
                     // Get amount from the fifth column (index 4)
                     const amountA = getAmountFromCell(a.querySelector('td:nth-child(5)').textContent.trim());
                     const amountB = getAmountFromCell(b.querySelector('td:nth-child(5)').textContent.trim());
-                    
+
                     // Sort by amount
                     return sortOrder === 'amount_high' ? amountB - amountA : amountA - amountB;
                 }
             });
-            
+
             // Reorder the rows in the DOM
             rows.forEach(function(row) {
                 tbody.appendChild(row);
             });
         }
-        
+
         // Helper function to convert displayed date to timestamp for sorting
         function getDateFromCell(dateText) {
             const dateParts = dateText.match(/(\w+)\s+(\d+),\s+(\d+)/);
             if (!dateParts) return 0;
-            
+
             const month = getMonthNumber(dateParts[1]) - 1; // JavaScript months are 0-indexed
             const day = parseInt(dateParts[2]);
             const year = parseInt(dateParts[3]);
-            
+
             return new Date(year, month, day).getTime();
         }
-        
+
         // Helper function to convert displayed amount to number for sorting
         function getAmountFromCell(amountText) {
             // Remove dollar sign and convert to number
@@ -451,7 +445,7 @@
             };
             return months[monthName] || '01';
         }
-        
+
         // Initialize with default sort
         sortOrders();
     });

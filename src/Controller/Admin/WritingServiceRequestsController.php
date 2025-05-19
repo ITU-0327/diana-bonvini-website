@@ -3,9 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Controller\WritingServiceRequestsController as BaseWritingServiceRequestsController;
+use App\Controller\Admin\AdminController as BaseAdminController;
 use App\Model\Entity\WritingServiceRequest;
-use Cake\Event\EventInterface;
 use Cake\Http\Response;
 use Cake\Utility\Inflector;
 use Exception;
@@ -15,49 +14,11 @@ use Exception;
  *
  * Admin interface for managing writing service requests.
  * Uses dedicated admin templates.
+ *
+ * @property \App\Model\Table\WritingServiceRequestsTable $WritingServiceRequests
  */
-class WritingServiceRequestsController extends BaseWritingServiceRequestsController
+class WritingServiceRequestsController extends BaseAdminController
 {
-    /**
-     * Initialize method
-     *
-     * @return void
-     * @throws \Exception
-     */
-    public function initialize(): void
-    {
-        parent::initialize();
-
-        // Use admin layout
-        $this->viewBuilder()->setLayout('admin');
-
-        // By default, use the Admin/WritingServiceRequests templates for all actions
-        $this->viewBuilder()->setTemplatePath('Admin/WritingServiceRequests');
-    }
-
-    /**
-     * Override the beforeFilter to set authentication requirements
-     *
-     * @param \Cake\Event\EventInterface $event The event instance.
-     * @return \Cake\Http\Response|null|void
-     */
-    public function beforeFilter(EventInterface $event)
-    {
-        parent::beforeFilter($event);
-
-        // Remove any unauthenticated actions for admin
-        $this->Authentication->addUnauthenticatedActions([]);
-
-        // Check for admin user
-        /** @var \App\Model\Entity\User|null $user */
-        $user = $this->Authentication->getIdentity();
-        if (!$user || $user->user_type !== 'admin') {
-            $this->Flash->error('You must be logged in as an administrator to access this area.');
-
-            return $this->redirect(['controller' => 'Users', 'action' => 'login', 'prefix' => false]);
-        }
-    }
-
     /**
      * Index method - Shows all writing service requests with admin functionality
      *
@@ -75,6 +36,7 @@ class WritingServiceRequestsController extends BaseWritingServiceRequestsControl
         $query = $this->WritingServiceRequests->find()
             ->contain(['Users']);
 
+//        /** @var array<\App\Model\Entity\WritingServiceRequest> $writingServiceRequests */
         $writingServiceRequests = $this->paginate($query);
 
         // Calculate unread counts manually instead of in the query
