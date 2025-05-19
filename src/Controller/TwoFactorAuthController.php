@@ -87,6 +87,12 @@ class TwoFactorAuthController extends AppController
                 $deviceId = $this->getDeviceId(true);
                 $twoFactorService->addTrustedDevice($user->user_id, $deviceId);
             }
+
+            // Redirect admin users to dashboard, others to home
+            if ($user->user_type === 'admin') {
+                return $this->redirect(['_name' => 'admin_dashboard']);
+            }
+
             $redirect = $session->consume('TwoFactorUser.redirect') ?? ['_name' => 'home'];
 
             return $this->redirect($redirect);
