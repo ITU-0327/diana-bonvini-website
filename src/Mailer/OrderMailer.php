@@ -24,6 +24,21 @@ class OrderMailer extends Mailer
             ? $order->order_date->format('F j, Y')
             : date('F j, Y');
 
+        // Ensure order has artwork variants with dimensions loaded
+        if (!isset($order->artwork_variant_orders) || 
+            empty($order->artwork_variant_orders) || 
+            !isset($order->artwork_variant_orders[0]->artwork_variant)) {
+            
+            // Load the order with complete artwork data if not already loaded
+            $ordersTable = \Cake\ORM\TableRegistry::getTableLocator()->get('Orders');
+            $order = $ordersTable->get($order->order_id, [
+                'contain' => [
+                    'ArtworkVariantOrders.ArtworkVariants.Artworks',
+                    'Payments'
+                ]
+            ]);
+        }
+
         $this
             ->setTo($order->billing_email)
             ->setSubject('Your Order Confirmation - Diana Bonvini')
