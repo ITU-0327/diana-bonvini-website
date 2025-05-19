@@ -124,10 +124,18 @@ $this->assign('title', __('Writing Service Request Details'));
             <div class="card shadow mb-4" id="messages">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary">Client Conversation</h6>
-                    <span class="badge badge-info px-3 py-2"><?= count($writingServiceRequest->request_messages) ?> Messages</span>
+                    <div class="d-flex align-items-center">
+                        <span class="badge badge-info px-3 py-2"><?= count($writingServiceRequest->request_messages) ?> Messages</span>
+                    </div>
                 </div>
                 <div class="card-body p-2">
-                    <div class="chat-container" style="max-height: 500px; overflow-y: auto; scroll-behavior: smooth;">
+                    <div class="chat-container" style="max-height: 500px; overflow-y: auto; scroll-behavior: smooth; scroll-padding: 10px; overscroll-behavior: contain;" id="chat-messages">
+                        <div id="chat-loading" class="chat-loading">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <span>Loading messages...</span>
+                        </div>
                         <?php if (!empty($writingServiceRequest->request_messages)) : ?>
                             <div class="chat-messages">
                                 <?php foreach ($writingServiceRequest->request_messages as $message) : ?>
@@ -661,6 +669,41 @@ $this->assign('title', __('Writing Service Request Details'));
             }
         });
     }
+
+    /* Chat loading indicator */
+    .chat-loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 15px 25px;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+    }
+
+    .chat-loading.active {
+        opacity: 1;
+    }
+
+    .chat-loading span {
+        margin-top: 10px;
+        font-weight: 500;
+        color: #4e73df;
+    }
+
+
+
+    .animate-spin {
+        animation: spin 1s linear infinite;
+    }
 </style>
 
 <!-- Load jQuery UI for datepicker -->
@@ -672,7 +715,19 @@ $this->assign('title', __('Writing Service Request Details'));
         // Scroll to bottom of chat on page load
         const chatContainer = document.querySelector('.chat-container');
         if (chatContainer) {
+            // Scroll immediately and then again after a short delay to ensure images and content are loaded
             chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            // Add a small delay to ensure content is fully rendered before scrolling
+            setTimeout(function() {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+                console.log('Scrolled chat to bottom with delay');
+            }, 500);
+
+            // Add another scroll after 1.5 seconds for any late-loading content
+            setTimeout(function() {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 1500);
         }
 
         // Initialize datepicker when the modal is shown
@@ -989,6 +1044,58 @@ $this->assign('title', __('Writing Service Request Details'));
                     sendTimeSlotsBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Send Time Slots';
                 }
             });
+        }
+
+        // Handle refresh button click
+        const refreshButton = document.getElementById('refresh-chat-button');
+        if (refreshButton) {
+            refreshButton.addEventListener('click', function() {
+                // Add spinning animation to the icon
+                const icon = this.querySelector('i');
+                icon.classList.add('animate-spin');
+
+                // Show loading indicator
+                const loadingIndicator = document.getElementById('chat-loading');
+                if (loadingIndicator) {
+                    loadingIndicator.classList.add('active');
+                }
+
+                // Reload the page after a short delay to show the loading animation
+                setTimeout(function() {
+                    window.location.reload();
+                }, 1000);
+            });
+        }
+
+        // Handle message form submission
+        const messageForm = document.getElementById('replyForm');
+        if (messageForm) {
+            messageForm.addEventListener('submit', function(e) {
+                // Change the button to show loading state
+                const sendButton = document.getElementById('sendButton');
+                if (sendButton) {
+                    sendButton.disabled = true;
+                    sendButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+                }
+
+                // We'll let the form submit normally, but we want to scroll to bottom when we return
+                // Set a flag in sessionStorage to indicate we should scroll to bottom after page loads
+                sessionStorage.setItem('scrollToBottom', 'true');
+            });
+        }
+
+        // Check if we need to scroll to bottom due to form submission
+        if (sessionStorage.getItem('scrollToBottom') === 'true') {
+            // Clear the flag
+            sessionStorage.removeItem('scrollToBottom');
+
+            // Scroll to bottom with a more significant delay to ensure all content is loaded
+            setTimeout(function() {
+                if (chatContainer) {
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                    console.log('Scrolled to bottom after form submission');
+                }
+            }, 500);
         }
     });
 </script>

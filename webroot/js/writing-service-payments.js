@@ -33,6 +33,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // Set up real-time message fetching with AJAX (poll every 3 seconds)
     setupRealtimeMessageFetching();
 
+    // Restore chat scroll position on page load
+    restoreChatScrollPosition();
+
     // Listen for any new payment buttons added to the DOM
     const chatContainer = document.getElementById('chat-messages');
     if (chatContainer) {
@@ -48,6 +51,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Start observing the chat container
         observer.observe(chatContainer, { childList: true, subtree: true });
+
+        // Save scroll position before page unloads/refreshes
+        window.addEventListener('beforeunload', function() {
+            saveChatScrollPosition(chatContainer);
+        });
     }
 
     /**
@@ -502,104 +510,133 @@ document.addEventListener('DOMContentLoaded', function () {
         let lastMessageId = null;
 
         // Get the ID of the last message in the chat initially
-        const allMessages = document.querySelectorAll('#chat-messages .flex');
+        const allMessages = document.querySelectorAll('#chat-messages [data-message-id]');
         if (allMessages && allMessages.length > 0) {
             const lastMessage = allMessages[allMessages.length - 1];
             lastMessageId = lastMessage.dataset.messageId || null;
-        }
-
-        // Function to add a new message to the chat
-        function addMessageToChat(message) {
-            const isAdmin = message.sender === 'admin';
-            // Match the extremely tight styling from the template
-            const msgClasses = isAdmin
-                ? 'bg-gray-200 border-0 ml-0 lg:ml-1'
-                : 'bg-blue-600 text-white border-0 mr-0 lg:mr-1';
-            const textColor = isAdmin ? 'text-gray-800' : 'text-white';
-            const timeColor = isAdmin ? 'text-gray-400' : 'text-blue-100';
-            const alignmentClasses = isAdmin ? 'items-start' : 'items-end flex-row-reverse';
-
-            // Format timestamp to match template style
-            function formatTime(date) {
-                return date.toLocaleTimeString(undefined, {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true
-                }).toLowerCase();
-            }
-
-            const messageTime = formatTime(new Date(message.created_at));
-
-            const newMessageHtml = `
-                <div class="flex ${alignmentClasses}" data-message-id="${message.id}">
-                    <div class="max-w-[90%] ${msgClasses} px-2 py-0.5 rounded-xl shadow-sm">
-                        <div class="flex flex-col">
-                            <div class="${textColor} text-sm break-words whitespace-pre-wrap message-content leading-tight text-center">
-                                ${message.content}
-                            </div>
-                            <div class="text-[8px] ${timeColor} self-end opacity-70">
-                                <span class="local-time" data-datetime="${message.created_at}">${messageTime}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            // If there are no messages, clear the "no messages" placeholder
-            if (allMessages.length === 0) {
-                chatMessages.innerHTML = '';
-            }
-
-            // Add the new message to the chat
-            chatMessages.insertAdjacentHTML('beforeend', newMessageHtml);
-
-            // Update the last message ID
-            lastMessageId = message.id;
-
-            // Process any payment buttons in the new message
-            processPaymentElements();
-
-            // Scroll to the bottom
-            scrollChatToBottom();
-
-            // Play notification sound for admin messages
-            if (isAdmin) {
-                playNotificationSound();
-            }
-        }
-
-        // Function to scroll chat to bottom
-        function scrollChatToBottom() {
-            if (chatMessages) {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
+            console.log('Starting with last message ID:', lastMessageId);
         }
 
         // Function to fetch new messages
         function fetchNewMessages() {
             const baseUrl = getBaseUrl();
-            const url = `${baseUrl}/writing-service-requests/fetch-messages/${requestId}${lastMessageId ? '/' + lastMessageId : ''}`;
-
+            
+            // When we're doing a full refresh, don't include the lastMessageId
+            const includeLastId = window.fullRefreshRequested ? false : Boolean(lastMessageId);
+            
+            // Build URL with or without lastMessageId
+            const url = `${baseUrl}/writing-service-requests/fetch-messages/${requestId}${includeLastId ? '/' + lastMessageId : ''}`;
+            
+            // Show loading indicator for full refreshes or if specifically requested
+            if (window.fullRefreshRequested || window.showLoadingRequested) {
+                showLoadingIndicator();
+                window.showLoadingRequested = false;
+            }
+            
+            // Clear the full refresh flag
+            if (window.fullRefreshRequested) {
+                window.fullRefreshRequested = false;
+            }
+            
+            // Make the fetch request with a timeout
+            const fetchTimeout = setTimeout(() => {
+                console.warn('Fetch timed out, retrying...');
+                hideLoadingIndicator();
+                // Try again soon
+                setTimeout(fetchNewMessages, 2000);
+            }, 8000); // 8 second timeout
+            
             fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.messages && data.messages.length > 0) {
-                        data.messages.forEach(message => {
-                            addMessageToChat(message);
-                        });
+                .then(response => {
+                    clearTimeout(fetchTimeout);
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.status);
                     }
+                    return response.json();
+                })
+                .then(data => {
+                    // Check if we received any messages
+                    if (data.success && data.messages && data.messages.length > 0) {
+                        console.log(`Received ${data.messages.length} new messages from server`);
+                        
+                        // Flag to track if we've added any new messages
+                        let newMessagesAdded = 0;
+                        
+                        // Process each message
+                        data.messages.forEach(message => {
+                            if (addMessageToChat(message)) {
+                                newMessagesAdded++;
+                                
+                                // Update the last message ID to the highest ID we've seen
+                                if (!lastMessageId || message.id > lastMessageId) {
+                                    lastMessageId = message.id;
+                                }
+                            }
+                        });
+                        
+                        // Always scroll to bottom when new messages are added
+                        if (newMessagesAdded > 0) {
+                            console.log(`Added ${newMessagesAdded} new messages to chat`);
+                            
+                            // Scroll immediately and then again after a short delay to ensure it works
+                            scrollChatToBottom();
+                            setTimeout(scrollChatToBottom, 100);
+                            
+                            // Show visible notification 
+                            showNewMessageNotification(newMessagesAdded);
+                            
+                            // Play notification sound for new messages
+                            playNotificationSound();
+                        }
+                    }
+                    
+                    // Hide loading indicator after processing
+                    hideLoadingIndicator();
                 })
                 .catch(error => {
+                    clearTimeout(fetchTimeout);
                     console.error('Error fetching messages:', error);
+                    
+                    // Hide loading indicator on error
+                    hideLoadingIndicator();
+                    
+                    // Try again after a short delay if there was an error
+                    setTimeout(fetchNewMessages, 5000);
                 });
         }
 
-        // Poll for new messages every 3 seconds
-        const pollingInterval = setInterval(fetchNewMessages, 3000);
+        // Initial fetch with loading indicator
+        window.showLoadingRequested = true;
+        fetchNewMessages();
 
-        // Clear interval when page is unloaded
+        // Make the fetchNewMessages function available globally so it can be triggered manually
+        window.fetchNewMessages = fetchNewMessages;
+        
+        // Function to request a full refresh
+        window.refreshChat = function() {
+            console.log('Manual chat refresh requested');
+            lastMessageId = null;
+            window.fullRefreshRequested = true;
+            window.showLoadingRequested = true;
+            fetchNewMessages();
+        };
+        
+        // Poll for new messages more frequently (every 2 seconds)
+        const pollingInterval = setInterval(fetchNewMessages, 2000);
+        
+        // Also set a timer to refresh the entire chat content occasionally to ensure sync
+        const fullRefreshInterval = setInterval(function() {
+            // Reset lastMessageId to get all messages
+            lastMessageId = null;
+            window.fullRefreshRequested = true;
+            fetchNewMessages();
+            console.log('Performing full chat refresh');
+        }, 30000); // Every 30 seconds
+        
+        // Clear intervals when page is unloaded
         window.addEventListener('beforeunload', function() {
             clearInterval(pollingInterval);
+            clearInterval(fullRefreshInterval);
         });
     }
 
@@ -747,5 +784,187 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
         });
+    }
+
+    /**
+     * Save the chat scroll position to sessionStorage
+     * @param {HTMLElement} chatContainer - The chat container element
+     */
+    function saveChatScrollPosition(chatContainer) {
+        if (!chatContainer) return;
+        
+        // Save both scroll position and scroll height to calculate relative position
+        const scrollPosition = chatContainer.scrollTop;
+        const scrollHeight = chatContainer.scrollHeight;
+        const clientHeight = chatContainer.clientHeight;
+        
+        // Save data to sessionStorage
+        try {
+            sessionStorage.setItem('chatScrollPosition', scrollPosition);
+            sessionStorage.setItem('chatScrollHeight', scrollHeight);
+            sessionStorage.setItem('chatClientHeight', clientHeight);
+            
+            // Calculate if we're at the bottom (or close to it)
+            const isAtBottom = (scrollHeight - scrollPosition - clientHeight) < 50;
+            sessionStorage.setItem('chatIsAtBottom', isAtBottom ? 'true' : 'false');
+            
+            console.log(`Saved chat scroll position: ${scrollPosition}, scroll height: ${scrollHeight}, isAtBottom: ${isAtBottom}`);
+        } catch (e) {
+            console.error('Error saving chat scroll position:', e);
+        }
+    }
+    
+    /**
+     * Restore the chat scroll position from sessionStorage
+     */
+    function restoreChatScrollPosition() {
+        const chatContainer = document.getElementById('chat-messages');
+        if (!chatContainer) return;
+        
+        try {
+            // Always scroll to bottom by default
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            console.log('Scrolled chat to bottom');
+            
+            // Set a small delay to ensure scrolling works after DOM is fully rendered
+            setTimeout(function() {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 100);
+        } catch (e) {
+            console.error('Error scrolling chat to bottom:', e);
+        }
+    }
+
+    /**
+     * Add a new message to the chat
+     * @param {Object} message - The message data from the server
+     * @returns {boolean} - Whether the message was added
+     */
+    function addMessageToChat(message) {
+        // Skip if this message already exists in the DOM
+        if (document.querySelector(`[data-message-id="${message.id}"]`)) {
+            return false;
+        }
+        
+        const chatMessages = document.getElementById('chat-messages');
+        if (!chatMessages) return false;
+        
+        const isAdmin = message.sender === 'admin';
+        // Match the extremely tight styling from the template
+        const msgClasses = isAdmin
+            ? 'bg-gray-200 border-0 ml-0 lg:ml-1'
+            : 'bg-blue-600 text-white border-0 mr-0 lg:mr-1';
+        const textColor = isAdmin ? 'text-gray-800' : 'text-white';
+        const timeColor = isAdmin ? 'text-gray-400' : 'text-blue-100';
+        const alignmentClasses = isAdmin ? 'items-start' : 'items-end flex-row-reverse';
+
+        // Format timestamp to match template style
+        function formatTime(date) {
+            return date.toLocaleTimeString(undefined, {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            }).toLowerCase();
+        }
+
+        const messageTime = formatTime(new Date(message.created_at));
+
+        const newMessageHtml = `
+            <div class="flex ${alignmentClasses} chat-message new-message" data-message-id="${message.id}">
+                <div class="max-w-[90%] ${msgClasses} px-2 py-0.5 rounded-xl shadow-sm">
+                    <div class="flex flex-col">
+                        <div class="${textColor} text-sm break-words whitespace-pre-wrap message-content leading-tight text-center">
+                            ${message.content}
+                        </div>
+                        <div class="text-[8px] ${timeColor} self-end opacity-70">
+                            <span class="local-time" data-datetime="${message.created_at}">${messageTime}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Check for any existing messages
+        const existingMessages = chatMessages.querySelectorAll('[data-message-id]');
+        
+        // Clear placeholder if needed
+        const emptyChat = chatMessages.querySelector('.empty-chat');
+        if (emptyChat || existingMessages.length === 0) {
+            // Only clear the empty chat placeholder, not all messages
+            const emptyChatEl = chatMessages.querySelector('.empty-chat');
+            if (emptyChatEl) {
+                emptyChatEl.remove();
+            }
+        }
+
+        // Add the new message to the chat
+        chatMessages.insertAdjacentHTML('beforeend', newMessageHtml);
+
+        // Process any payment buttons in the new message
+        processPaymentElements();
+
+        // Play notification sound for admin messages
+        if (isAdmin) {
+            playNotificationSound();
+        }
+        
+        return true; // Message was added
+    }
+
+    /**
+     * Show the loading indicator
+     */
+    function showLoadingIndicator() {
+        const loadingIndicator = document.getElementById('chat-loading');
+        if (loadingIndicator) {
+            // Add visible class
+            loadingIndicator.classList.add('visible');
+            
+            // Auto-hide after 3 seconds in case the hide call is missed
+            setTimeout(() => {
+                loadingIndicator.classList.remove('visible');
+            }, 3000);
+        }
+    }
+
+    /**
+     * Hide the loading indicator
+     */
+    function hideLoadingIndicator() {
+        const loadingIndicator = document.getElementById('chat-loading');
+        if (loadingIndicator) {
+            // Add a small delay to avoid flickering
+            setTimeout(() => {
+                loadingIndicator.classList.remove('visible');
+            }, 500);
+        }
+    }
+
+    /**
+     * Show a visual notification that new messages have been received
+     * @param {number} count - Number of new messages
+     */
+    function showNewMessageNotification(count) {
+        // Check if notification already exists
+        let notification = document.getElementById('new-message-notification');
+        
+        // If not, create it
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.id = 'new-message-notification';
+            notification.className = 'new-message-notification';
+            document.body.appendChild(notification);
+        }
+        
+        // Set the notification text
+        notification.textContent = `${count} new message${count > 1 ? 's' : ''}`;
+        
+        // Show the notification
+        notification.classList.add('visible');
+        
+        // Hide the notification after 3 seconds
+        setTimeout(() => {
+            notification.classList.remove('visible');
+        }, 3000);
     }
 });

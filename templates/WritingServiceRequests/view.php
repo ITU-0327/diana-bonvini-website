@@ -36,13 +36,18 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                         <i class="fas fa-comments mr-2 fa-lg"></i>
                         <h6 class="m-0 font-weight-bolder text-uppercase letter-spacing-1" style="font-weight: 800;">Writing Service Enquiry</h6>
                     </div>
-                    <div class="request-id-badge">
-                        <div class="request-id-label">REQUEST ID</div>
-                        <div class="request-id-value"><?= h(substr($writingServiceRequest->writing_service_request_id, 0, 12)) ?></div>
+                    <div class="d-flex items-center">
+                        <div class="request-id-badge">
+                            <div class="request-id-label">REQUEST ID</div>
+                            <div class="request-id-value"><?= h(substr($writingServiceRequest->writing_service_request_id, 0, 12)) ?></div>
+                        </div>
                     </div>
                 </div>
                 <div class="card-body p-2">
-                    <div class="chat-container" style="max-height: 500px; overflow-y: auto; scroll-behavior: smooth;" id="chat-messages">
+                    <div class="chat-container" style="max-height: 500px; overflow-y: auto; scroll-behavior: smooth; scroll-padding: 10px; overscroll-behavior: contain;" id="chat-messages">
+                        <div class="chat-loading-indicator" id="chat-loading">
+                            <i class="fas fa-sync-alt fa-spin mr-1"></i> Updating...
+                        </div>
                     <?php if (!empty($writingServiceRequest->request_messages)) : ?>
                             <div class="chat-messages">
                         <?php foreach ($writingServiceRequest->request_messages as $msg) : ?>
@@ -91,7 +96,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                 // Parse time slots
                                                 if (preg_match_all('/- ([^:]+): ([^\n]+)/', $parts[1], $matches, PREG_SET_ORDER)) {
                                                     echo '<div class="time-slots-list">';
-                                                    
+
                                                     // Check if ANY appointment exists for this request
                                                     $hasAnyAppointment = false;
                                                     if (isset($appointments)) {
@@ -188,7 +193,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                         $paymentId = $matches[1];
                                                         $requestId = $writingServiceRequest->writing_service_request_id;
                                                         $baseUrl = '';  // Base URL will be determined by JS
-                                                        
+
                                                         // Check if this payment is already paid
                                                         $isPaid = false;
                                                         if (!empty($writingServiceRequest->writing_service_payments)) {
@@ -199,23 +204,23 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                                 }
                                                             }
                                                         }
-                                                        
+
                                                         // Create payment container HTML that matches what the JS expects
                                                         // but with additional classes for paid status if needed
                                                         $containerClass = $isPaid ? 'payment-container mt-3 paid-payment' : 'payment-container mt-3';
-                                                        $buttonClass = $isPaid ? 
-                                                            'bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded inline-flex items-center text-sm payment-button' : 
+                                                        $buttonClass = $isPaid ?
+                                                            'bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded inline-flex items-center text-sm payment-button' :
                                                             'bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded inline-flex items-center text-sm payment-button';
                                                         $buttonText = $isPaid ? 'Payment Complete' : 'Make Payment';
-                                                        $buttonIcon = $isPaid ? 
-                                                            '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : 
+                                                        $buttonIcon = $isPaid ?
+                                                            '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' :
                                                             '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>';
-                                                        
+
                                                         // Status class and initial visibility
                                                         $statusClass = $isPaid ? 'payment-status mt-2 text-sm flex items-center payment-completed' : 'payment-status hidden mt-2 text-sm flex items-center';
                                                         $statusIcon = $isPaid ? '✅' : '⏳';
                                                         $statusText = $isPaid ? 'Payment received' : 'Checking payment status...';
-                                                        
+
                                                         return '<div class="'.$containerClass.'" data-payment-container="'.$paymentId.'">
                                                             <!-- Payment button -->
                                                             <div class="payment-button-container '.($isPaid ? 'paid-container' : '').'">
@@ -440,7 +445,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                         </div>
                         <?= $this->Form->end() ?>
                     </div>
-                    
+
                     <!-- Document List -->
                     <?php if (isset($requestDocuments) && !empty($requestDocuments)): ?>
                         <div class="space-y-3">
@@ -459,7 +464,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                             <span><?= h($document->formatted_size) ?></span>
                                             <span class="mr-2">&bull;</span>
                                             <span>
-                                                <?php 
+                                                <?php
                                                 if (!empty($document->created_at)) {
                                                     echo h($document->created_at->format('M j, Y h:i A'));
                                                 }
@@ -468,8 +473,8 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                         </div>
                                     </div>
                                     <div class="flex items-center">
-                                        <a href="<?= '/' . h($document->document_path) ?>" 
-                                           class="text-blue-600 hover:text-blue-800 p-1.5 bg-white rounded-full shadow-sm transition-colors mr-2" 
+                                        <a href="<?= '/' . h($document->document_path) ?>"
+                                           class="text-blue-600 hover:text-blue-800 p-1.5 bg-white rounded-full shadow-sm transition-colors mr-2"
                                            target="_blank">
                                             <i class="fas fa-download"></i>
                                         </a>
@@ -593,6 +598,32 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
 
                 // Normal form submission - we don't want to show the payment toast
                 // No need to prevent default, let the form submit normally
+
+                // After form submission, let's refresh the chat to show the new message immediately
+                // This will help keep the chat in sync
+                setTimeout(function() {
+                    if (window.refreshChat) {
+                        window.refreshChat();
+                    }
+                }, 3000); // Wait for the form to be submitted and processed
+            });
+        }
+
+        // Manual refresh button handler
+        const refreshButton = document.getElementById('refresh-chat-button');
+        if (refreshButton) {
+            refreshButton.addEventListener('click', function() {
+                this.classList.add('animate-spin');
+
+                // Use the global refresh function
+                if (window.refreshChat) {
+                    window.refreshChat();
+
+                    // Stop spinning after a short delay
+                    setTimeout(() => {
+                        this.classList.remove('animate-spin');
+                    }, 1000);
+                }
             });
         }
 
@@ -618,6 +649,73 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
         border-radius: 8px;
         box-shadow: inset 0 2px 6px rgba(0,0,0,0.03);
         border: 1px solid rgba(0,0,0,0.05);
+        scroll-behavior: smooth;
+        overscroll-behavior: contain;
+        position: relative;
+        transition: all 0.2s ease;
+    }
+
+    /* Loading indicator styles for real-time updates */
+    .chat-loading-indicator {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.75);
+        color: white;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 10;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .chat-loading-indicator.visible {
+        opacity: 1;
+    }
+
+    /* New message notification */
+    .new-message-notification {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        z-index: 9999;
+        transform: translateY(100px);
+        opacity: 0;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+    }
+
+    .new-message-notification:before {
+        content: '🔔';
+        margin-right: 8px;
+        font-size: 1.2rem;
+    }
+
+    .new-message-notification.visible {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    /* Animation for new messages */
+    @keyframes newMessageHighlight {
+        0% { background-color: rgba(78, 115, 223, 0.3); }
+        100% { background-color: transparent; }
+    }
+
+    .chat-message.new-message {
+        animation: newMessageHighlight 2s ease-out;
     }
 
     /* Card styling */
@@ -992,29 +1090,29 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
         padding: 10px;
         transition: all 0.3s ease;
     }
-    
+
     /* Paid container styling */
     .payment-button-container.paid-container {
         background-color: rgba(28, 200, 138, 0.1);
         border: 1px dashed #1cc88a;
     }
-    
+
     /* Paid payment container */
     .paid-payment .payment-button-container {
         border-color: #1cc88a;
         background-color: rgba(28, 200, 138, 0.1);
     }
-    
+
     /* Payment status when completed */
     .payment-status.payment-completed {
         color: #1cc88a;
         font-weight: 600;
     }
-    
+
     .payment-status.payment-completed .status-icon {
         color: #1cc88a;
     }
-    
+
     .payment-status.payment-completed .status-text {
         color: #1cc88a !important;
     }
@@ -1083,11 +1181,34 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
         box-shadow: 0 2px 4px rgba(231, 74, 59, 0.25);
         opacity: 0.9;
     }
-    
+
     .timeslot-unavailable-button:hover {
         background-color: #e74a3b;
         color: white;
         text-decoration: none;
+    }
+
+    /* Refresh button animation */
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .animate-spin {
+        animation: spin 1s linear infinite;
+    }
+
+    #refresh-chat-button {
+        transition: all 0.2s ease;
+    }
+
+    #refresh-chat-button:hover {
+        transform: scale(1.1);
+        background-color: rgba(255, 255, 255, 0.3);
+    }
+
+    #refresh-chat-button:active {
+        transform: scale(0.95);
     }
 </style>
 
@@ -1152,7 +1273,7 @@ function formatFileSize(int $bytes): string
     $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
     $pow = min($pow, count($units) - 1);
     $bytes /= pow(1024, $pow);
-    
+
     return round($bytes, 1) . ' ' . $units[$pow];
 }
 ?>
