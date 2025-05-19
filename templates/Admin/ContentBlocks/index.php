@@ -4,6 +4,9 @@
  * @var iterable<\App\Model\Entity\ContentBlock> $contentBlocks
  * @var array<string> $parents
  */
+
+$this->assign('title', __('Content Blocks Management'));
+$this->Html->script('https://cdn.tailwindcss.com', ['block' => 'script']);
 ?>
 
 <div class="container-fluid">
@@ -33,16 +36,16 @@
                             }
                             // Output the "Global" button if an empty parent exists.
                             if ($globalExists) :
-                            ?>
+                                ?>
                                 <button type="button" class="filter-btn btn btn-outline-secondary" data-filter="">
                                     Global
                                 </button>
-                            <?php
+                                <?php
                             endif;
                                 // Output buttons for the other parents.
                             foreach ($otherParents as $parent) :
                                 $displayName = ucfirst($parent);
-                            ?>
+                                ?>
                                 <button type="button" class="filter-btn btn btn-outline-secondary" data-filter="<?= h($parent) ?>">
                                     <?= h($displayName) ?>
                                 </button>
@@ -72,7 +75,7 @@
                                         <p class="card-text small text-muted mb-3"><?= h($block->description) ?></p>
 
                                         <!-- Block Value Preview -->
-                                        <div class="content-preview">
+                                        <div class="content-preview cms-content">
                                             <?php if ($block->type === 'image') : ?>
                                                 <?= $this->ContentBlock->image($block->slug, ['class' => 'img-fluid rounded mx-auto d-block', 'style' => 'max-height: 150px;', 'alt' => $block->label]) ?>
                                             <?php elseif ($block->type === 'url') : ?>

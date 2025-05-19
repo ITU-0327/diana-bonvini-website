@@ -22,8 +22,6 @@ class ContentBlocksController extends BaseAdminController
      */
     public function index(): void
     {
-        $this->set('title', 'Content Block Management');
-
         // Prepare a query for distinct parent values.
         $parentsQuery = $this->ContentBlocks->find('list', [
             'keyField' => 'parent',
@@ -32,8 +30,7 @@ class ContentBlocksController extends BaseAdminController
 
         $parents = $parentsQuery->toArray();
 
-        $query = $this->ContentBlocks->find();
-        $contentBlocks = $this->paginate($query);
+        $contentBlocks = $this->ContentBlocks->find();
 
         $this->set(compact('contentBlocks', 'parents'));
     }
@@ -46,8 +43,6 @@ class ContentBlocksController extends BaseAdminController
      */
     public function add()
     {
-        $this->set('title', 'Add Content Block');
-
         $contentBlock = $this->ContentBlocks->newEmptyEntity();
         if ($this->request->is('post')) {
             $data = $this->request->getData();
@@ -80,8 +75,6 @@ class ContentBlocksController extends BaseAdminController
      */
     public function edit(?string $id = null)
     {
-        $this->set('title', 'Edit Content Block');
-
         $contentBlock = $this->ContentBlocks->get($id);
         $oldValue = $contentBlock->value;
 
