@@ -3,6 +3,8 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\User $user
  */
+
+$this->assign('title', __('User Details'));
 ?>
 <div class="content-header">
     <div class="container-fluid">

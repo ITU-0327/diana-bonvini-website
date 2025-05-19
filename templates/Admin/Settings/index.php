@@ -3,6 +3,8 @@
  * @var \App\View\AppView $this
  * @var array $settings
  */
+
+$this->assign('title', __('Site Settings'));
 ?>
 
 <div class="container-fluid">

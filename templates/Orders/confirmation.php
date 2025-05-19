@@ -3,6 +3,7 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Order $order
  */
+$this->assign('title', __('Order #' . $order->order_id . ' - Confirmation'));
 ?>
 <div class="bg-gray-100 min-h-screen pb-8">
     <!-- Success Message Banner -->

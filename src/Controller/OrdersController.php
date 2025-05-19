@@ -311,29 +311,6 @@ class OrdersController extends AppController
     }
 
     /**
-     * Edit method
-     *
-     * @param string|null $id Order id.
-     * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function edit(?string $id = null)
-    {
-        $order = $this->Orders->get($id);
-        if ($this->request->is(['patch', 'post', 'put'])) {
-            $order = $this->Orders->patchEntity($order, $this->request->getData());
-            if ($this->Orders->save($order)) {
-                $this->Flash->success(__('The order has been saved.'));
-
-                return $this->redirect(['action' => 'index']);
-            }
-            $this->Flash->error(__('The order could not be saved. Please, try again.'));
-        }
-        $users = $this->Orders->Users->find('list', ['limit' => 200])->all();
-        $this->set(compact('order', 'users'));
-    }
-
-    /**
      * Delete method
      *
      * @param string|null $id Order id.

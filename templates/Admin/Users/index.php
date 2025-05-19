@@ -7,6 +7,8 @@
  * @var int $customerUsers
  * @var int $adminUsers
  */
+
+$this->assign('title', __('User Management'));
 ?>
 
 <div class="container-fluid">

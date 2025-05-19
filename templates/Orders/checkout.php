@@ -8,6 +8,8 @@
  * @var string|null $pendingId
  */
 
+$this->assign('title', __('Checkout'));
+
 use Cake\Core\Configure;
 
 $googleMapsApiKey = Configure::read('GoogleMaps.key');

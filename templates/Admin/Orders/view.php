@@ -3,6 +3,8 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Order $order
  */
+
+$this->assign('title', __('View Order'));
 ?>
 <div class="container-fluid">
     <div class="row mb-4">

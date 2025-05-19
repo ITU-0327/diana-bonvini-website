@@ -10,6 +10,8 @@
  */
 
 use Cake\Utility\Inflector;
+
+$this->assign('title', __('Writing Service Management'));
 ?>
 
 <div class="container-fluid">

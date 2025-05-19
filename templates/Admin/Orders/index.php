@@ -5,6 +5,8 @@
  * @var int $totalOrders
  * @var float $totalRevenue
  */
+
+$this->assign('title', __('Orders'));
 ?>
 
 <div class="container-fluid">

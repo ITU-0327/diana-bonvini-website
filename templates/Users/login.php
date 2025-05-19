@@ -2,6 +2,8 @@
 /**
  * @var \App\View\AppView $this
  */
+
+$this->assign('title', 'Login');
 ?>
 <div class="w-full flex items-center justify-center" style="min-height: calc(90vh - 120px);">
     <div class="bg-white p-8 rounded shadow-md w-full max-w-md">

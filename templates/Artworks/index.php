@@ -6,6 +6,7 @@
 
 use Cake\Collection\Collection;
 
+$this->assign('title', __('Art Gallery'));
 ?>
 
 <?php

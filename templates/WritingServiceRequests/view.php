@@ -6,6 +6,7 @@
 
 use Cake\Utility\Inflector;
 
+$this->assign('title', $writingServiceRequest->service_title);
 ?>
 <div class="max-w-6xl mx-auto px-4 py-8">
     <!-- Back button and request title -->

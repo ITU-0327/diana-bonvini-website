@@ -4,6 +4,8 @@
  * @var \App\Model\Entity\WritingServiceRequest $writingServiceRequest
  */
 use Cake\Utility\Inflector;
+
+$this->assign('title', __('Writing Service Request Details'));
 ?>
 
 <div class="container-fluid">

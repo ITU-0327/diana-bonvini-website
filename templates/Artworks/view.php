@@ -5,6 +5,8 @@
  * @var int $remaining
  */
 
+$this->assign('title', __('Artwork Details'));
+
 use Cake\Collection\Collection;
 
 $user = $this->request->getAttribute('identity');
