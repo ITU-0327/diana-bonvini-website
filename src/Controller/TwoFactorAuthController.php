@@ -10,7 +10,7 @@ use Cake\Event\EventInterface;
 use Cake\Http\Cookie\Cookie;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Response;
-use DateTime;
+use Cake\I18n\DateTime;
 
 /**
  * TwoFactorAuth Controller
@@ -79,6 +79,9 @@ class TwoFactorAuthController extends AppController
                 $user->is_verified = true;
                 $this->Users->save($user);
             }
+
+            $user->last_login = DateTime::now();
+            $this->Users->save($user);
 
             if ($this->request->getData('trust_device')) {
                 $deviceId = $this->getDeviceId(true);

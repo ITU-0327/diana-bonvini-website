@@ -95,7 +95,7 @@ return function (RouteBuilder $routes): void {
     $routes->prefix('Admin', function (RouteBuilder $builder): void {
         // Connect the base path for the admin area to the Admin dashboard
         // This will be the first page an admin user sees after login
-        $builder->connect('/', ['controller' => 'Admin', 'action' => 'dashboard']);
+        $builder->connect('/', ['controller' => 'Admin', 'action' => 'dashboard', '_name' => 'admin_dashboard']);
 
         // Orders management routes for handling customer purchases
         // Provides access to view, edit, and change status of all orders

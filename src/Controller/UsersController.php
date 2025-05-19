@@ -59,6 +59,11 @@ class UsersController extends AppController
             $userEntity->last_login = DateTime::now();
             $this->Users->save($userEntity);
 
+            // Redirect admin users to dashboard, others to home
+            if ($user->user_type === 'admin') {
+                return $this->redirect(['_name' => 'admin_dashboard']);
+            }
+
             $redirect = $this->request->getQuery('redirect', ['_name' => 'home']);
 
             return $this->redirect($redirect);
