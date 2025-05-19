@@ -66,7 +66,7 @@ class OrdersController extends BaseOrdersController
         $this->set('title', 'Order Management');
 
         $query = $this->Orders->find()
-            ->contain(['Users', 'ArtworkOrders', 'ArtworkOrders.Artworks'])
+            ->contain(['Users', 'ArtworkVariantOrders', 'ArtworkVariantOrders.ArtworkVariants', 'ArtworkVariantOrders.ArtworkVariants.Artworks'])
             ->order(['Orders.created_at' => 'DESC']);
 
         $orders = $this->paginate($query);
@@ -97,8 +97,9 @@ class OrdersController extends BaseOrdersController
             $order = $this->Orders->get($id, [
                 'contain' => [
                     'Users',
-                    'ArtworkOrders',
-                    'ArtworkOrders.Artworks',
+                    'ArtworkVariantOrders',
+                    'ArtworkVariantOrders.ArtworkVariants',
+                    'ArtworkVariantOrders.ArtworkVariants.Artworks',
                     'Payments',
                 ],
             ]);
@@ -128,7 +129,7 @@ class OrdersController extends BaseOrdersController
 
         try {
             $order = $this->Orders->get($id, [
-                'contain' => ['Users', 'ArtworkOrders', 'ArtworkOrders.Artworks'],
+                'contain' => ['Users', 'ArtworkVariantOrders', 'ArtworkVariantOrders.ArtworkVariants', 'ArtworkVariantOrders.ArtworkVariants.Artworks'],
             ]);
 
             if ($this->request->is(['patch', 'post', 'put'])) {
