@@ -2,6 +2,8 @@
 /**
  * @var \App\View\AppView $this
  */
+
+$this->assign('title', 'Writing Services');
 ?>
 
 <div class="max-w-4xl mx-auto p-6">

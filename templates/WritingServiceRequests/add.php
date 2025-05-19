@@ -3,6 +3,8 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\WritingServiceRequest $writingServiceRequest
  */
+
+$this->assign('title', 'Enquire Writing Service');
 ?>
 <div class="max-w-6xl mx-auto px-4 py-8">
     <?= $this->element('page_title', ['title' => 'Enquire Writing Service']) ?>

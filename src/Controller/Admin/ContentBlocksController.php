@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Controller\AppController;
+use App\Controller\Admin\AdminController as BaseAdminController;
 use Cake\Http\Response;
 use Psr\Http\Message\UploadedFileInterface;
 use SplFileInfo;
@@ -13,7 +13,7 @@ use SplFileInfo;
  *
  * @property \App\Model\Table\ContentBlocksTable $ContentBlocks
  */
-class ContentBlocksController extends AppController
+class ContentBlocksController extends BaseAdminController
 {
     /**
      * Index method
@@ -30,8 +30,7 @@ class ContentBlocksController extends AppController
 
         $parents = $parentsQuery->toArray();
 
-        $query = $this->ContentBlocks->find();
-        $contentBlocks = $this->paginate($query);
+        $contentBlocks = $this->ContentBlocks->find();
 
         $this->set(compact('contentBlocks', 'parents'));
     }

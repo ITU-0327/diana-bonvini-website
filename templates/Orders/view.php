@@ -3,6 +3,8 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\Order $order
  */
+
+$this->assign('title', __('Order Details #' . $order->order_id));
 ?>
 <div class="max-w-6xl mx-auto px-4 py-8">
     <?= $this->element('page_title', ['title' => 'Order Details']) ?>

@@ -13,6 +13,7 @@ use Cake\ORM\Entity;
  * @property string $dimension
  * @property float $price
  * @property bool $is_deleted
+ * @property string $dimensions
  *
  * @property \App\Model\Entity\Artwork $artwork
  */
@@ -34,4 +35,16 @@ class ArtworkVariant extends Entity
         'is_deleted' => true,
         'artwork' => true,
     ];
+
+    /**
+     * Virtual field for getting dimensions
+     * This ensures the dimensions property is always available
+     * even if using different property name in the database
+     *
+     * @return string
+     */
+    protected function _getDimensions(): string
+    {
+        return $this->dimension ?? '';
+    }
 }

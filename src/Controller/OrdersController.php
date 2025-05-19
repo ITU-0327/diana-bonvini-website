@@ -118,7 +118,7 @@ class OrdersController extends AppController
         }
 
         // Complete the order data.
-        $data['total_amount'] = (string)$total;
+        $data['total_amount'] = $total;
         $data['artwork_variant_orders'] = $orderItems;
         $data['order_status'] = 'pending';
         $data['order_date'] = date('Y-m-d H:i:s');
@@ -194,8 +194,11 @@ class OrdersController extends AppController
      */
     public function confirmation(string $orderId, StripeService $stripeService): ?Response
     {
+        // Load the order with complete artwork variant data
         $order = $this->Orders->get($orderId, contain: [
-            'ArtworkVariantOrders.ArtworkVariants.Artworks',
+            'ArtworkVariantOrders' => [
+                'ArtworkVariants' => ['Artworks'],
+            ],
             'Payments',
         ]);
 
@@ -205,8 +208,11 @@ class OrdersController extends AppController
             if ($stripeService->confirmCheckout($orderId, $sessionId)) {
                 $this->Flash->success(__('Payment confirmed!'));
 
+                // Reload the order with complete artwork variant data
                 $order = $this->Orders->get($orderId, contain: [
-                    'ArtworkVariantOrders.ArtworkVariants.Artworks',
+                    'ArtworkVariantOrders' => [
+                        'ArtworkVariants' => ['Artworks'],
+                    ],
                     'Payments',
                 ]);
             } else {
@@ -219,6 +225,23 @@ class OrdersController extends AppController
             $this->updateArtworkAvailability($order);
             $this->cleanupCart();
             $this->sendConfirmationEmail($order);
+        }
+
+        // Check and log artwork variant data for debugging
+        if (!empty($order->artwork_variant_orders)) {
+            foreach ($order->artwork_variant_orders as $item) {
+                if (empty($item->artwork_variant->dimension)) {
+                    $this->log('Missing dimension for variant: ' . $item->artwork_variant->artwork_variant_id, 'debug');
+
+                    // Try to fetch the variant directly
+                    /** @var \App\Model\Table\ArtworkVariantsTable $variantsTable */
+                    $variantsTable = $this->fetchTable('ArtworkVariants');
+                    $variant = $variantsTable->get($item->artwork_variant->artwork_variant_id);
+
+                    // Update the dimension if it's missing
+                    $item->artwork_variant->dimension = $variant->dimension;
+                }
+            }
         }
 
         $this->set(compact('order'));
@@ -285,29 +308,6 @@ class OrdersController extends AppController
     {
         $order = $this->Orders->get($id, contain: ['Users', 'Payments']);
         $this->set(compact('order'));
-    }
-
-    /**
-     * Edit method
-     *
-     * @param string|null $id Order id.
-     * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function edit(?string $id = null)
-    {
-        $order = $this->Orders->get($id);
-        if ($this->request->is(['patch', 'post', 'put'])) {
-            $order = $this->Orders->patchEntity($order, $this->request->getData());
-            if ($this->Orders->save($order)) {
-                $this->Flash->success(__('The order has been saved.'));
-
-                return $this->redirect(['action' => 'index']);
-            }
-            $this->Flash->error(__('The order could not be saved. Please, try again.'));
-        }
-        $users = $this->Orders->Users->find('list', ['limit' => 200])->all();
-        $this->set(compact('order', 'users'));
     }
 
     /**
@@ -379,7 +379,7 @@ class OrdersController extends AppController
              */
             function (float $sum, ArtworkVariantCart $item): float {
                 // artwork->price * quantity
-                $price = $item->artwork->price ?? 0.0;
+                $price = $item->artwork_variant->price ?? 0.0;
                 $quantity = (float)$item->quantity;
 
                 return $sum + ($price * $quantity);
@@ -443,6 +443,20 @@ class OrdersController extends AppController
         $email = $order->billing_email;
         if (!$email) {
             return;
+        }
+
+        // Make sure we have all needed data for the email
+        if (
+            empty($order->artwork_variant_orders) ||
+            empty($order->artwork_variant_orders[0]->artwork_variant)
+        ) {
+            // Reload the order with all related data if not already loaded
+            $order = $this->Orders->get($order->order_id, [
+                'contain' => [
+                    'ArtworkVariantOrders.ArtworkVariants.Artworks',
+                    'Payments',
+                ],
+            ]);
         }
 
         try {

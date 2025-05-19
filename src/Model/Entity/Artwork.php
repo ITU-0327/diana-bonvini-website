@@ -45,7 +45,8 @@ class Artwork extends Entity
     ];
 
     /**
-     * Virtual property for the public URL of the watermarked image in R2.
+     * Virtual property for the public URL of the watermarked image.
+     * First checks if the local file exists, otherwise tries to use R2/CDN.
      *
      * @return string
      */

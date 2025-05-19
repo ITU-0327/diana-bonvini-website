@@ -90,8 +90,7 @@ class OrdersTable extends Table
         $validator
             ->scalar('order_status')
             ->requirePresence('order_status', 'create')
-            ->notEmptyString('order_status')
-            ->inList('order_status', ['pending', 'confirmed', 'completed', 'cancelled'], 'Invalid order status.');
+            ->notEmptyString('order_status');
 
         $validator
             ->dateTime('order_date')

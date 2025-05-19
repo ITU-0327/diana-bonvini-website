@@ -3,6 +3,8 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\WritingServiceRequest $writingServiceRequest
  */
+
+$this->assign('title', 'Edit Writing Service Request');
 ?>
 
 <div class="flex flex-col lg:flex-row gap-6 p-6 max-w-5xl mx-auto">

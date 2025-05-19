@@ -3,6 +3,8 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\User $user
  */
+
+$this->assign('title', 'Register');
 ?>
 <div class="w-full flex items-center justify-center" style="min-height: calc(90vh - 120px);">
     <div class="bg-white p-8 rounded shadow-md w-full max-w-md">

@@ -3,6 +3,8 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\ContentBlock $contentBlock
  */
+
+$this->assign('title', __('Add Content Block'));
 ?>
 <div class="container mx-auto px-6 py-12">
     <?= $this->element('page_title', ['title' => 'Add Content Block']) ?>

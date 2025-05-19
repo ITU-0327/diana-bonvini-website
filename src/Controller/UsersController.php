@@ -60,6 +60,11 @@ class UsersController extends AppController
             $userEntity->last_login = DateTime::now();
             $this->Users->save($userEntity);
 
+            // Redirect admin users to dashboard, others to home
+            if ($user->user_type === 'admin') {
+                return $this->redirect(['_name' => 'admin_dashboard']);
+            }
+
             $redirect = $this->request->getQuery('redirect', ['_name' => 'home']);
 
             return $this->redirect($redirect);
@@ -201,26 +206,6 @@ class UsersController extends AppController
         }
 
         $this->set(compact('user'));
-    }
-
-    /**
-     * Delete method
-     *
-     * @param string|null $id User id.
-     * @return \Cake\Http\Response|null Redirects to index.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function delete(?string $id = null): ?Response
-    {
-        $this->request->allowMethod(['post', 'delete']);
-        $user = $this->Users->get($id);
-        if ($this->Users->delete($user)) {
-            $this->Flash->success(__('The user has been deleted.'));
-        } else {
-            $this->Flash->error(__('The user could not be deleted. Please, try again.'));
-        }
-
-        return $this->redirect(['action' => 'index']);
     }
 
     /**

@@ -5,6 +5,8 @@
  * @var int $remaining
  */
 
+$this->assign('title', __('Artwork Details'));
+
 use Cake\Collection\Collection;
 
 $user = $this->request->getAttribute('identity');
@@ -132,29 +134,7 @@ $options = $sortedBySize->combine(
                     <?= $this->Form->end() ?>
                 </div>
 
-                <?php if ($user && $user->user_type === 'admin') : ?>
-                    <!-- Admin Edit + Delete -->
-                    <div class="flex space-x-2 mt-2">
-                        <?= $this->Html->link(
-                            '<i class="fa fa-edit mr-2"></i>Edit',
-                            ['action' => 'edit', $artwork->artwork_id],
-                            [
-                                'escapeTitle' => false,
-                                'class' => 'inline-flex items-center bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700',
-                            ],
-                        ) ?>
 
-                        <?= $this->Form->postLink(
-                            '<i class="fa fa-trash mr-2"></i>Delete',
-                            ['action' => 'delete', $artwork->artwork_id],
-                            [
-                                'escapeTitle' => false,
-                                'confirm' => 'Are you sure you want to delete this artwork?',
-                                'class' => 'inline-flex items-center bg-red-600 text-white py-2 px-6 rounded hover:bg-red-700',
-                            ],
-                        ) ?>
-                    </div>
-                <?php endif; ?>
             <?php endif; ?>
 
             <!-- Tax/Shipping Info -->
