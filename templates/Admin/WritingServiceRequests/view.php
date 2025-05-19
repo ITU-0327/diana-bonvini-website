@@ -160,7 +160,7 @@ $this->assign('title', __('Writing Service Request Details'));
                                         <div class="message-content">
                                             <div class="message-bubble p-3 rounded">
                                                 <div class="message-text">
-                                                    <?php 
+                                                    <?php
                                                     // Process message content to properly handle markdown-style formatting
                                                     $messageContent = nl2br(h($message->message));
                                                     // Convert **bold** to actual bold text
@@ -200,9 +200,6 @@ $this->assign('title', __('Writing Service Request Details'));
 
                         <div class="form-group mb-0 d-flex justify-content-between align-items-center">
                             <div class="action-buttons">
-                                <button type="button" id="paymentRequestBtn" class="btn btn-success mr-2">
-                                    <i class="fas fa-credit-card mr-1"></i> Send Payment Request
-                                </button>
                             </div>
                             <button type="submit" class="btn btn-primary px-4" id="sendButton">
                                 <i class="fas fa-paper-plane mr-1"></i>
@@ -251,7 +248,7 @@ $this->assign('title', __('Writing Service Request Details'));
                                 <?= $this->Form->end() ?>
                             </div>
                         </div>
-                        
+
                         <!-- Document List -->
                         <?php if (isset($requestDocuments) && !empty($requestDocuments)): ?>
                             <h6 class="font-weight-bold mb-2">Uploaded Documents</h6>
@@ -266,10 +263,10 @@ $this->assign('title', __('Writing Service Request Details'));
                                                 <?= h($document->document_name) ?>
                                             </div>
                                             <div class="small text-muted">
-                                                <span><?= h(strtoupper($document->file_extension)) ?></span> • 
+                                                <span><?= h(strtoupper($document->file_extension)) ?></span> •
                                                 <span><?= h($document->formatted_size) ?></span> •
                                                 <span>
-                                                    <?php 
+                                                    <?php
                                                     if (!empty($document->created_at)) {
                                                         echo h($document->created_at->format('M j, Y'));
                                                     }
@@ -277,8 +274,8 @@ $this->assign('title', __('Writing Service Request Details'));
                                                 </span>
                                             </div>
                                         </div>
-                                        <a href="<?= '/' . h($document->document_path) ?>" 
-                                           class="btn btn-sm btn-outline-primary ml-2" 
+                                        <a href="<?= '/' . h($document->document_path) ?>"
+                                           class="btn btn-sm btn-outline-primary ml-2"
                                            target="_blank">
                                             <i class="fas fa-download"></i>
                                         </a>
@@ -287,7 +284,7 @@ $this->assign('title', __('Writing Service Request Details'));
                             </div>
                         <?php endif; ?>
                     </div>
-                    
+
                     <!-- Payment Request Button -->
                     <div class="mb-4 pt-3 border-top">
                         <h6 class="font-weight-bold mb-2">Payment Options</h6>
@@ -296,7 +293,7 @@ $this->assign('title', __('Writing Service Request Details'));
                         </button>
                         <p class="text-sm text-muted mt-1">Send a payment request link to the client</p>
                     </div>
-                    
+
                     <!-- Payment History -->
                     <div class="mb-4 pt-2 border-top">
                         <h6 class="font-weight-bold mb-2 d-flex justify-content-between">
@@ -355,7 +352,7 @@ $this->assign('title', __('Writing Service Request Details'));
                             ['class' => 'btn btn-info btn-block', 'escape' => false]
                         ) ?>
                         <p class="text-sm text-muted mt-1">View and manage your Google Calendar appointments</p>
-                        
+
                         <!-- Schedule Consultation -->
                         <div class="mt-3">
                             <button type="button" class="btn btn-primary btn-block" data-toggle="modal" data-target="#timeSlotsModal">
@@ -458,12 +455,12 @@ $this->assign('title', __('Writing Service Request Details'));
         border-radius: 0.5rem;
         padding: 10px 12px !important;
     }
-    
+
     .message-text {
         font-size: 0.95rem;
         line-height: 1.4;
     }
-    
+
     .message-text strong {
         font-weight: 600;
         color: #333;
@@ -677,7 +674,7 @@ $this->assign('title', __('Writing Service Request Details'));
         if (chatContainer) {
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
-        
+
         // Initialize datepicker when the modal is shown
         $('#timeSlotsModal').on('shown.bs.modal', function() {
             console.log('Time slots modal shown, initializing datepicker');
@@ -707,7 +704,7 @@ $this->assign('title', __('Writing Service Request Details'));
                 console.error('Failed to initialize datepicker:', e);
             }
         }
-        
+
         // Helper function for debugging
         function debugLog(message, data) {
             const debugging = true; // Set to false in production
@@ -719,7 +716,7 @@ $this->assign('title', __('Writing Service Request Details'));
                 }
             }
         }
-        
+
         // Focus on message input when clicking reply button
         document.getElementById('messageText').focus();
 
@@ -755,7 +752,7 @@ $this->assign('title', __('Writing Service Request Details'));
                 // Validate the form
                 const amountInput = document.getElementById('amount');
                 const description = document.getElementById('description').value;
-                
+
                 // Get the amount value, strip currency symbols and commas
                 let amountValue = amountInput.value.replace(/[$,]/g, '').trim();
                 const amount = parseFloat(amountValue);
@@ -794,7 +791,7 @@ $this->assign('title', __('Writing Service Request Details'));
         const selectedTimeSlotsJson = document.getElementById('selectedTimeSlotsJson');
         const selectAllCheckbox = document.getElementById('selectAllTimeSlots');
         const sendTimeSlotsBtn = document.getElementById('sendTimeSlots');
-        
+
         // Load time slots when the button is clicked
         if (loadTimeSlotsBtn) {
             loadTimeSlotsBtn.addEventListener('click', function() {
@@ -819,7 +816,7 @@ $this->assign('title', __('Writing Service Request Details'));
         // Function to load time slots for a selected date
         function loadTimeSlots(date) {
             debugLog(`Loading time slots for date: ${date}`);
-            
+
             // Show loading, hide other elements
             timeSlotsEmpty.classList.add('d-none');
             timeSlotsNone.classList.add('d-none');
@@ -955,7 +952,7 @@ $this->assign('title', __('Writing Service Request Details'));
             // Update select all checkbox state
             const allCheckboxes = document.querySelectorAll('.time-slot-checkbox');
             if (selectAllCheckbox && allCheckboxes.length > 0) {
-                selectAllCheckbox.checked = timeSlotCheckboxes.length > 0 && 
+                selectAllCheckbox.checked = timeSlotCheckboxes.length > 0 &&
                                         timeSlotCheckboxes.length === allCheckboxes.length;
             }
         }
@@ -980,13 +977,13 @@ $this->assign('title', __('Writing Service Request Details'));
                     // Show loading state
                     sendTimeSlotsBtn.disabled = true;
                     sendTimeSlotsBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
-                    
+
                     // Submit the form
                     document.getElementById('timeSlotsForm').submit();
                 } catch (error) {
                     console.error('Error submitting form:', error);
                     alert('An error occurred while sending time slots. Please try again.');
-                    
+
                     // Reset button state
                     sendTimeSlotsBtn.disabled = false;
                     sendTimeSlotsBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Send Time Slots';
@@ -1074,12 +1071,12 @@ $this->assign('title', __('Writing Service Request Details'));
                     'id' => 'timeSlotsForm',
                     'type' => 'post'
                 ]) ?>
-                
+
                 <!-- Include hidden writing_service_request_id field to ensure it's passed -->
                 <?= $this->Form->hidden('writing_service_request_id', [
                     'value' => $writingServiceRequest->writing_service_request_id
                 ]) ?>
-                
+
                 <div class="row">
                     <!-- Date Selection Column -->
                     <div class="col-md-5">
@@ -1090,18 +1087,18 @@ $this->assign('title', __('Writing Service Request Details'));
                                 <div id="datepicker" class="border p-2 rounded"></div>
                             </div>
                         </div>
-                        
+
                         <!-- Clear visual call to action for loading time slots -->
                         <button type="button" id="loadTimeSlots" class="btn btn-primary btn-block">
                             <i class="fas fa-clock mr-1"></i> Load Time Slots
                         </button>
-                        
+
                         <!-- Add helper text -->
                         <p class="small text-muted mt-2 text-center">
                             First select a date, then click "Load Time Slots" to see available times
                         </p>
                     </div>
-                    
+
                     <!-- Time Slots Selection Column -->
                     <div class="col-md-7">
                         <h5 class="font-weight-bold mb-3">Select Time Slots to Offer</h5>
@@ -1109,14 +1106,14 @@ $this->assign('title', __('Writing Service Request Details'));
                             <span class="text-muted">Selected Date: </span>
                             <span id="selected-date-display" class="font-weight-bold">None selected</span>
                         </div>
-                        
+
                         <!-- Empty State -->
                         <div id="timeSlots-empty" class="text-center py-4">
                             <i class="fas fa-calendar-day fa-3x text-gray-300 mb-3"></i>
                             <p class="text-gray-500">Select a date and click "Load Time Slots"</p>
                             <p class="text-sm text-gray-400">Available time slots will appear here</p>
                         </div>
-                        
+
                         <!-- Loading State -->
                         <div id="timeSlots-loading" class="text-center py-4 d-none">
                             <div class="spinner-border text-primary mb-3" role="status">
@@ -1124,7 +1121,7 @@ $this->assign('title', __('Writing Service Request Details'));
                             </div>
                             <p class="text-gray-500">Loading available time slots...</p>
                         </div>
-                        
+
                         <!-- Time Slots List -->
                         <div id="timeSlots-list" class="card shadow-sm mb-3 d-none">
                             <div class="card-header py-2">
@@ -1161,9 +1158,9 @@ $this->assign('title', __('Writing Service Request Details'));
                         'placeholder' => 'Enter a message to accompany the time slots...',
                         'value' => 'I\'d like to schedule a consultation to discuss your writing service request. Here are some available time slots. Please click the link below to book one of these times or select another time that works for you.'
                     ]) ?>
-                    
+
                     <?= $this->Form->hidden('time_slots', [
-                        'id' => 'selectedTimeSlotsJson', 
+                        'id' => 'selectedTimeSlotsJson',
                         'value' => '[]'
                     ]) ?>
                 </div>
@@ -1194,7 +1191,7 @@ $this->assign('title', __('Writing Service Request Details'));
         const selectedTimeSlotsJson = document.getElementById('selectedTimeSlotsJson');
         const selectAllCheckbox = document.getElementById('selectAllTimeSlots');
         const sendTimeSlotsBtn = document.getElementById('sendTimeSlots');
-        
+
         // Helper function for debugging
         function debugLog(message, data) {
             const debugging = true; // Set to false in production
@@ -1206,7 +1203,7 @@ $this->assign('title', __('Writing Service Request Details'));
                 }
             }
         }
-        
+
         // Initialize datepicker
         try {
             datepicker.datepicker({
@@ -1253,7 +1250,7 @@ $this->assign('title', __('Writing Service Request Details'));
         // Function to load time slots for a selected date
         function loadTimeSlots(date) {
             debugLog(`Loading time slots for date: ${date}`);
-            
+
             // Show loading, hide other elements
             timeSlotsEmpty.classList.add('d-none');
             timeSlotsNone.classList.add('d-none');
@@ -1389,7 +1386,7 @@ $this->assign('title', __('Writing Service Request Details'));
             // Update select all checkbox state
             const allCheckboxes = document.querySelectorAll('.time-slot-checkbox');
             if (selectAllCheckbox && allCheckboxes.length > 0) {
-                selectAllCheckbox.checked = timeSlotCheckboxes.length > 0 && 
+                selectAllCheckbox.checked = timeSlotCheckboxes.length > 0 &&
                                         timeSlotCheckboxes.length === allCheckboxes.length;
             }
         }
@@ -1399,7 +1396,7 @@ $this->assign('title', __('Writing Service Request Details'));
             sendTimeSlotsBtn.addEventListener('click', function() {
                 const messageText = document.getElementById('timeSlotMessageText');
                 const selectedTimeSlots = selectedTimeSlotsJson;
-                
+
                 if (!messageText || !messageText.value.trim()) {
                     alert('Please enter a message to accompany the time slots');
                     return;
@@ -1421,20 +1418,20 @@ $this->assign('title', __('Writing Service Request Details'));
                     // Show loading state
                     sendTimeSlotsBtn.disabled = true;
                     sendTimeSlotsBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
-                    
+
                     // Log form data before submission (for debugging only)
                     console.log('Submitting form with data:', {
                         message_text: messageText.value,
                         time_slots: selectedTimeSlots.value,
                         request_id: '<?= $writingServiceRequest->writing_service_request_id ?>'
                     });
-                    
+
                     // Submit the form
                     form.submit();
                 } catch (error) {
                     console.error('Error submitting form:', error);
                     alert('An error occurred while sending time slots. Please try again.');
-                    
+
                     // Reset button state
                     sendTimeSlotsBtn.disabled = false;
                     sendTimeSlotsBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Send Time Slots';
@@ -1681,7 +1678,7 @@ Thank you for your payment. We'll now begin work on your writing service request
 
             return isPaid;
         }
-        
+
         // Status update form handling
         const statusForm = document.getElementById('statusForm');
         if (statusForm) {
