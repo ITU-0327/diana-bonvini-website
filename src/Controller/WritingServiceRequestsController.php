@@ -701,13 +701,39 @@ class WritingServiceRequestsController extends AppController
             }
         }
 
-        // If payment is marked as paid, add a confirmation message
+        // If payment is marked as paid, add a confirmation message, but only if it doesn't already exist
         if ($isPaid && $status === 'paid') {
             try {
-                $this->_addPaymentConfirmationMessage($id, $paymentDetails);
+                // Get existing messages to check if confirmation already exists
+                $writingServiceRequest = $this->WritingServiceRequests->get($id, [
+                    'contain' => ['RequestMessages']
+                ]);
+                
+                // Only add confirmation if we don't already have one for this payment
+                $paymentId = !empty($paymentDetails['transaction_id']) 
+                    ? $paymentDetails['transaction_id'] 
+                    : (!empty($paymentDetails['payment_id']) ? $paymentDetails['payment_id'] : null);
+                    
+                $hasConfirmation = false;
+                
+                if ($paymentId && !empty($writingServiceRequest->request_messages)) {
+                    foreach ($writingServiceRequest->request_messages as $message) {
+                        if (strpos($message->message, '[PAYMENT_CONFIRMATION]') !== false && 
+                            strpos($message->message, "Payment ID: {$paymentId}") !== false) {
+                            $hasConfirmation = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!$hasConfirmation) {
+                    $this->_addPaymentConfirmationMessage($id, $paymentDetails);
+                } else {
+                    $this->log("Skipping duplicate payment confirmation for ID: {$paymentId}", 'debug');
+                }
             } catch (\Exception $e) {
                 // Log error but continue
-                $this->log('Error adding confirmation message: ' . $e->getMessage(), 'error');
+                $this->log('Error processing confirmation message: ' . $e->getMessage(), 'error');
             }
         }
 
@@ -950,7 +976,10 @@ class WritingServiceRequestsController extends AppController
 
             // Create session parameters
             $successUrl = Router::url(
-                ['controller' => 'WritingServiceRequests', 'action' => 'paymentSuccess', $id, $sessionPaymentId],
+                ['controller' => 'WritingServiceRequests', 'action' => 'view', $id, '?' => [
+                    'payment_success' => 'true',
+                    'paymentId' => $sessionPaymentId
+                ]],
                 true,
             );
 
@@ -1062,7 +1091,7 @@ class WritingServiceRequestsController extends AppController
         try {
             // Get the request with user relationship
             $writingServiceRequest = $this->WritingServiceRequests->get($requestId, [
-                'contain' => ['Users'],
+                'contain' => ['Users', 'RequestMessages'],
             ]);
 
             // Format amount
@@ -1079,6 +1108,21 @@ class WritingServiceRequestsController extends AppController
             $paymentId = !empty($paymentDetails['transaction_id']) 
                 ? $paymentDetails['transaction_id'] 
                 : (!empty($paymentDetails['payment_id']) ? $paymentDetails['payment_id'] : 'unknown');
+                
+            // Check if a confirmation message already exists for this payment ID
+            if (!empty($writingServiceRequest->request_messages)) {
+                foreach ($writingServiceRequest->request_messages as $message) {
+                    // Check if this is a payment confirmation message
+                    if (strpos($message->message, '[PAYMENT_CONFIRMATION]') !== false) {
+                        // Check if this message contains this specific payment ID
+                        if (strpos($message->message, "Payment ID: {$paymentId}") !== false) {
+                            // Confirmation already exists, don't add another one
+                            $this->log("Payment confirmation message already exists for payment ID: {$paymentId}", 'debug');
+                            return true;
+                        }
+                    }
+                }
+            }
 
             // Create confirmation message
             $messageText = "[PAYMENT_CONFIRMATION]\n\n";
@@ -1441,9 +1485,19 @@ class WritingServiceRequestsController extends AppController
      */
     public function paymentSuccess(?string $id = null, ?string $sessionPaymentId = null)
     {
+        // Determine if this is an AJAX request
+        $isAjax = $this->request->is('ajax') || $this->request->is('json');
+        
         if (empty($id) || empty($sessionPaymentId)) {
+            if ($isAjax) {
+                return $this->response->withType('application/json')
+                    ->withStringBody(json_encode([
+                        'success' => false,
+                        'message' => 'Invalid payment information.'
+                    ]));
+            }
+            
             $this->Flash->error('Invalid payment information.');
-
             return $this->redirect(['action' => 'index']);
         }
 
@@ -1454,13 +1508,38 @@ class WritingServiceRequestsController extends AppController
             $writingServiceRequest = $this->WritingServiceRequests->get($id);
         } catch (\Exception $e) {
             $this->log('Error retrieving writing service request: ' . $e->getMessage(), 'error');
+            
+            if ($isAjax) {
+                return $this->response->withType('application/json')
+                    ->withStringBody(json_encode([
+                        'success' => false,
+                        'message' => 'Error retrieving writing service request.'
+                    ]));
+            }
+            
             $this->Flash->error('Error processing payment: Unable to find the writing service request.');
-
             return $this->redirect(['action' => 'index']);
         }
 
         // Get payment data from session
         $paymentData = $this->request->getSession()->read("WsrPayments.$sessionPaymentId");
+        
+        // Skip if payment is already marked as paid
+        if (!empty($paymentData) && isset($paymentData['status']) && $paymentData['status'] === 'paid') {
+            $this->log("Payment $sessionPaymentId is already marked as paid", 'debug');
+            
+            if ($isAjax) {
+                return $this->response->withType('application/json')
+                    ->withStringBody(json_encode([
+                        'success' => true,
+                        'paid' => true,
+                        'message' => 'Payment already confirmed.'
+                    ]));
+            }
+            
+            $this->Flash->success('Payment has already been processed.');
+            return $this->redirect(['action' => 'view', $id]);
+        }
 
         // Get amount from session data
         $amount = $paymentData['amount'] ?? '0.00';
@@ -1488,12 +1567,8 @@ class WritingServiceRequestsController extends AppController
             $this->log('Converted dbPaymentId to string: ' . $dbPaymentId, 'debug');
         }
 
-        // Update database
-        // Convert dbPaymentId to string again just to be safe
-        if ($dbPaymentId !== null && !is_string($dbPaymentId)) {
-            $dbPaymentId = (string)$dbPaymentId;
-        }
-        $this->_updateDatabasePaymentStatus($id, $dbPaymentId, $sessionPaymentId, $paymentDetails);
+        // Update database payment record
+        $dbUpdated = $this->_updateDatabasePaymentStatus($id, $dbPaymentId, $sessionPaymentId, $paymentDetails);
 
         // Update request status if needed
         if ($writingServiceRequest->request_status === 'pending') {
@@ -1509,11 +1584,24 @@ class WritingServiceRequestsController extends AppController
         // Add payment confirmation message
         $this->_addPaymentConfirmationMessage($id, $paymentDetails);
 
+        if ($isAjax) {
+            return $this->response->withType('application/json')
+                ->withStringBody(json_encode([
+                    'success' => true,
+                    'paid' => true,
+                    'message' => 'Payment has been processed successfully.',
+                    'details' => $paymentDetails
+                ]));
+        }
+        
         // Show success message
         $this->Flash->success('Payment completed successfully!');
 
         // Redirect to view page with success parameter
-        return $this->redirect(['action' => 'view', $id, '?' => ['payment_success' => true]]);
+        return $this->redirect(['action' => 'view', $id, '?' => [
+            'payment_success' => 'true',
+            'paymentId' => $sessionPaymentId
+        ]]);
     }
 
     /**

@@ -431,21 +431,37 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             
             console.log(`Processing payment success for ID: ${specificPaymentId}`);
-            showPaymentSuccessToast();
             
-            // Remove the parameter from URL to prevent showing toast on page refresh
-            if (window.history && window.history.replaceState) {
-                const newUrl = window.location.pathname;
-                window.history.replaceState({}, document.title, newUrl);
-            }
-
-            // Find the specific payment container for this payment ID
-            const matchingContainer = findPaymentContainer(specificPaymentId);
-            if (matchingContainer) {
-                console.log(`Found matching payment container for ID: ${specificPaymentId}`);
-                checkPaymentStatus(matchingContainer);
-            } else {
-                console.log(`No matching payment container found for ID: ${specificPaymentId}`);
+            // Process payment through server-side to ensure it's properly recorded
+            const requestId = getRequestId();
+            if (requestId) {
+                const baseUrl = getBaseUrl();
+                const paymentSuccessUrl = `${baseUrl}/writing-service-requests/paymentSuccess/${requestId}/${specificPaymentId}`;
+                
+                // Remove the parameter from URL to prevent showing toast on page refresh
+                // Do this immediately before making the request
+                if (window.history && window.history.replaceState) {
+                    const newUrl = window.location.pathname;
+                    window.history.replaceState({}, document.title, newUrl);
+                }
+                
+                // Make a server request to confirm the payment
+                fetch(paymentSuccessUrl)
+                    .then(response => response.json())
+                    .catch(err => console.error('Error confirming payment:', err))
+                    .finally(() => {
+                        // Show success toast
+                        showPaymentSuccessToast();
+                        
+                        // Find the specific payment container for this payment ID
+                        const matchingContainer = findPaymentContainer(specificPaymentId);
+                        if (matchingContainer) {
+                            console.log(`Found matching payment container for ID: ${specificPaymentId}`);
+                            checkPaymentStatus(matchingContainer);
+                        } else {
+                            console.log(`No matching payment container found for ID: ${specificPaymentId}`);
+                        }
+                    });
             }
         }
     }
