@@ -154,7 +154,7 @@ class UsersController extends BaseAdminController
             $currentPassword = $data['current_password'] ?? '';
             $hasher = new DefaultPasswordHasher();
 
-            if (!$hasher->check($currentPassword, $user->password)) {
+            if (!$hasher->check($currentPassword, (string)$user->password)) {
                 $this->Flash->error(__('Current password is incorrect.'));
 
                 return $this->redirect(['action' => 'profile']);

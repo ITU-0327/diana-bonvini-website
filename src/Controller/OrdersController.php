@@ -234,9 +234,9 @@ class OrdersController extends AppController
                     $this->log('Missing dimension for variant: ' . $item->artwork_variant->artwork_variant_id, 'debug');
 
                     // Try to fetch the variant directly
+                    /** @var \App\Model\Table\ArtworkVariantsTable $variantsTable */
                     $variantsTable = $this->fetchTable('ArtworkVariants');
                     $variant = $variantsTable->get($item->artwork_variant->artwork_variant_id);
-                    $this->log('Direct fetch dimension: ' . $variant->dimension, 'debug');
 
                     // Update the dimension if it's missing
                     $item->artwork_variant->dimension = $variant->dimension;

@@ -156,20 +156,30 @@ class WritingServiceRequestsController extends AppController
             $this->response = $this->response->withType('application/json');
 
             if (empty($id)) {
-                return $this->response->withStringBody(json_encode([
+                $jsonResponse = json_encode([
                     'success' => false,
                     'message' => 'Request ID is required',
-                ]));
+                ]);
+                if ($jsonResponse === false) {
+                    return $this->response->withStringBody('{"success":false,"message":"Error encoding response"}');
+                }
+
+                return $this->response->withStringBody($jsonResponse);
             }
 
             /** @var \App\Model\Entity\User|null $user */
             $user = $this->Authentication->getIdentity();
 
             if (!$user) {
-                return $this->response->withStringBody(json_encode([
+                $jsonResponse = json_encode([
                     'success' => false,
                     'message' => 'Authentication required',
-                ]));
+                ]);
+                if ($jsonResponse === false) {
+                    return $this->response->withStringBody('{"success":false,"message":"Error encoding response"}');
+                }
+
+                return $this->response->withStringBody($jsonResponse);
             }
 
             // Get the lastMessageId from query parameter if not provided as route parameter
@@ -219,23 +229,38 @@ class WritingServiceRequestsController extends AppController
                     }
                 }
 
-                return $this->response->withStringBody(json_encode([
+                $jsonResponse = json_encode([
                     'success' => true,
                     'messages' => $messages,
                     'count' => count($messages),
-                ]));
+                ]);
+                if ($jsonResponse === false) {
+                    return $this->response->withStringBody('{"success":false,"message":"Error encoding response"}');
+                }
+
+                return $this->response->withStringBody($jsonResponse);
             } catch (Exception $e) {
-                return $this->response->withStringBody(json_encode([
+                $jsonResponse = json_encode([
                     'success' => false,
                     'message' => 'Error: ' . $e->getMessage(),
-                ]));
+                ]);
+                if ($jsonResponse === false) {
+                    return $this->response->withStringBody('{"success":false,"message":"Error encoding response"}');
+                }
+
+                return $this->response->withStringBody($jsonResponse);
             }
         }
 
-        return $this->response->withStringBody(json_encode([
+        $jsonResponse = json_encode([
             'success' => false,
             'message' => 'Invalid request',
-        ]));
+        ]);
+        if ($jsonResponse === false) {
+            return $this->response->withStringBody('{"success":false,"message":"Error encoding response"}');
+        }
+
+        return $this->response->withStringBody($jsonResponse);
     }
 
     /**

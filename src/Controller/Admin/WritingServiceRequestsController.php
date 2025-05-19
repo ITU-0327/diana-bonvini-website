@@ -148,7 +148,7 @@ class WritingServiceRequestsController extends BaseAdminController
      * @param string|null $lastMessageId The ID of the last message the client has
      * @return \Cake\Http\Response|null The JSON response with new messages
      */
-    public function fetchMessages(?string $id = null, ?string $lastMessageId = null)
+    public function fetchMessages(?string $id = null, ?string $lastMessageId = null): ?Response
     {
         $this->request->allowMethod(['get', 'ajax']);
 
@@ -156,20 +156,30 @@ class WritingServiceRequestsController extends BaseAdminController
         $this->response = $this->response->withType('application/json');
 
         if (empty($id)) {
-            return $this->response->withStringBody(json_encode([
+            $jsonResponse = json_encode([
                 'success' => false,
                 'message' => 'Request ID is required',
-            ]));
+            ]);
+            if ($jsonResponse === false) {
+                return $this->response->withStringBody('{"success":false,"message":"Error encoding response"}');
+            }
+
+            return $this->response->withStringBody($jsonResponse);
         }
 
         /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
 
         if (!$user) {
-            return $this->response->withStringBody(json_encode([
+            $jsonResponse = json_encode([
                 'success' => false,
                 'message' => 'Authentication required',
-            ]));
+            ]);
+            if ($jsonResponse === false) {
+                return $this->response->withStringBody('{"success":false,"message":"Error encoding response"}');
+            }
+
+            return $this->response->withStringBody($jsonResponse);
         }
 
         // Get the lastMessageId from query parameter if not provided as route parameter
@@ -207,7 +217,7 @@ class WritingServiceRequestsController extends BaseAdminController
                         'sender' => $isAdmin ? 'admin' : 'client',
                         'senderName' => $isAdmin ? 'Admin' : ($message->user->first_name . ' ' . $message->user->last_name),
                         'timestamp' => $timeFormatted,
-                        'is_read' => (bool)$message->is_read,
+                        'is_read' => $message->is_read,
                         'created_at' => $message->created_at->format('c'),
                     ];
 
@@ -219,16 +229,26 @@ class WritingServiceRequestsController extends BaseAdminController
                 }
             }
 
-            return $this->response->withStringBody(json_encode([
+            $jsonResponse = json_encode([
                 'success' => true,
                 'messages' => $messages,
                 'count' => count($messages),
-            ]));
+            ]);
+            if ($jsonResponse === false) {
+                return $this->response->withStringBody('{"success":false,"message":"Error encoding response"}');
+            }
+
+            return $this->response->withStringBody($jsonResponse);
         } catch (Exception $e) {
-            return $this->response->withStringBody(json_encode([
+            $jsonResponse = json_encode([
                 'success' => false,
                 'message' => 'Error: ' . $e->getMessage(),
-            ]));
+            ]);
+            if ($jsonResponse === false) {
+                return $this->response->withStringBody('{"success":false,"message":"Error encoding response"}');
+            }
+
+            return $this->response->withStringBody($jsonResponse);
         }
     }
 
@@ -332,7 +352,7 @@ class WritingServiceRequestsController extends BaseAdminController
             $this->Flash->success(__('The price has been set successfully.'));
 
             // Add automatic message about price update
-            $this->sendPriceUpdateMessage($writingServiceRequest, $price);
+            $this->sendPriceUpdateMessage($writingServiceRequest, (float)$price);
         } else {
             $this->Flash->error(__('The price could not be updated. Please, try again.'));
         }
@@ -345,15 +365,15 @@ class WritingServiceRequestsController extends BaseAdminController
      *
      * @param \App\Model\Entity\WritingServiceRequest $writingServiceRequest The writing service request
      * @param float $price The price amount
-     * @return bool Success flag
+     * @return void Success flag
      */
-    private function sendPriceUpdateMessage(WritingServiceRequest $writingServiceRequest, float $price): bool
+    private function sendPriceUpdateMessage(WritingServiceRequest $writingServiceRequest, float $price): void
     {
         /** @var \App\Model\Entity\User $admin */
         $admin = $this->Authentication->getIdentity();
 
-        $formattedPrice = '$' . number_format((float)$price, 2);
-        $message = "Price Update: We've set the price for your request at {$formattedPrice}. ";
+        $formattedPrice = '$' . number_format($price, 2);
+        $message = "Price Update: We've set the price for your request at $formattedPrice. ";
         $message .= "If you'd like to proceed, please reply to this message or use the payment option that will be added soon.";
 
         $data = [
@@ -372,7 +392,7 @@ class WritingServiceRequestsController extends BaseAdminController
             $data,
         );
 
-        return (bool)$this->WritingServiceRequests->save($writingServiceRequest);
+        $this->WritingServiceRequests->save($writingServiceRequest);
     }
 
     /**

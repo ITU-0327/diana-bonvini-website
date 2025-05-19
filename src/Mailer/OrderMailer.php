@@ -32,6 +32,7 @@ class OrderMailer extends Mailer
             !isset($order->artwork_variant_orders[0]->artwork_variant)
         ) {
             // Load the order with complete artwork data if not already loaded
+            /** @var \App\Model\Table\OrdersTable $ordersTable */
             $ordersTable = TableRegistry::getTableLocator()->get('Orders');
             $order = $ordersTable->get($order->order_id, [
                 'contain' => [
