@@ -53,9 +53,6 @@ $this->assign('title', __('My Profile'));
                         <p><?= $user->last_login ? $user->last_login->format('F j, Y g:i A') : 'N/A' ?></p>
                     </div>
 
-                    <a href="<?= $this->Url->build(['action' => 'edit', $user->user_id]) ?>" class="btn btn-primary btn-block">
-                        <i class="fas fa-user-edit mr-1"></i> Edit Profile
-                    </a>
                 </div>
             </div>
 
