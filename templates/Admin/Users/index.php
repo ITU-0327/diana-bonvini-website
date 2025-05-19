@@ -1,7 +1,7 @@
 <?php
 /**
  * @var \App\View\AppView $this
- * @var iterable<\App\Model\Entity\User> $users
+ * @var array<\App\Model\Entity\User> $users
  * @var int $totalUsers
  * @var int $activeUsers
  * @var int $customerUsers
@@ -141,21 +141,22 @@
                                 <th>Status</th>
                                 <th>Joined</th>
                                 <th>Last Login</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (count($users) > 0) : ?>
                                 <?php foreach ($users as $user) : ?>
-                                <tr class="user-row" data-role="<?= h($user->user_type) ?>" data-status="<?= isset($user->active) && $user->active ? 'active' : 'inactive' ?>">
+                                <tr class="user-row" data-role="<?= h($user->user_type) ?>" data-status="<?= ($user->is_verified && !$user->is_deleted) ? 'active' : 'inactive' ?>">
                                     <td class="align-middle">
                                         <div class="d-flex align-items-center">
                                             <div class="avatar-circle me-2" style="width: 32px; height: 32px; background-color: #e0e0e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #666; font-weight: 600;">
                                                 <?= substr($user->first_name ?? '', 0, 1) ?><?= substr($user->last_name ?? '', 0, 1) ?>
                                             </div>
-                                            <div>
-                                                <?= h($user->first_name . ' ' . $user->last_name) ?>
-                                            </div>
+                                            <?= $this->Html->link(
+                                                h($user->first_name . ' ' . $user->last_name),
+                                                ['action' => 'view', $user->user_id],
+                                                ['escape' => false, 'class' => 'text-decoration-none btn btn-link'],
+                                            ) ?>
                                         </div>
                                     </td>
                                     <td class="align-middle"><?= h($user->email) ?></td>
@@ -167,62 +168,21 @@
                                         <?php endif; ?>
                                     </td>
                                     <td class="align-middle">
-                                        <?php if (isset($user->active) && $user->active) : ?>
+                                        <?php if ($user->is_verified && !$user->is_deleted) : ?>
                                             <span class="badge bg-success">Active</span>
                                         <?php else : ?>
                                             <span class="badge bg-danger">Inactive</span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="align-middle">
-                                        <?php if (isset($user->created_at)) : ?>
-                                            <?= $user->created_at->format('M d, Y') ?>
-                                        <?php elseif (isset($user->created)) : ?>
-                                            <?= $user->created->format('M d, Y') ?>
-                                        <?php else : ?>
-                                            <span class="text-muted">N/A</span>
-                                        <?php endif; ?>
+                                        <?= $user->created_at->format('M d, Y') ?>
                                     </td>
                                     <td class="align-middle">
-                                        <?php if (isset($user->last_login) && $user->last_login) : ?>
+                                        <?php if ($user->last_login) : ?>
                                             <?= $user->last_login->format('M d, Y H:i') ?>
                                         <?php else : ?>
                                             <span class="text-muted">Never</span>
                                         <?php endif; ?>
-                                    </td>
-                                    <td class="align-middle">
-                                        <div class="btn-group">
-                                            <a href="<?= $this->Url->build(['action' => 'view', $user->user_id]) ?>" class="btn btn-sm btn-info">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="<?= $this->Url->build(['action' => 'edit', $user->user_id]) ?>" class="btn btn-sm btn-primary">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <?php if (isset($user->active)) : ?>
-                                                <?php if ($user->active) : ?>
-                                                    <?= $this->Form->postLink(
-                                                        '<i class="fas fa-user-slash"></i>',
-                                                        ['action' => 'deactivate', $user->user_id],
-                                                        [
-                                                            'confirm' => 'Are you sure you want to deactivate this user?',
-                                                            'class' => 'btn btn-sm btn-warning',
-                                                            'escape' => false,
-                                                            'title' => 'Deactivate',
-                                                        ],
-                                                    ) ?>
-                                                <?php else : ?>
-                                                    <?= $this->Form->postLink(
-                                                        '<i class="fas fa-user-check"></i>',
-                                                        ['action' => 'activate', $user->user_id],
-                                                        [
-                                                            'confirm' => 'Are you sure you want to activate this user?',
-                                                            'class' => 'btn btn-sm btn-success',
-                                                            'escape' => false,
-                                                            'title' => 'Activate',
-                                                        ],
-                                                    ) ?>
-                                                <?php endif; ?>
-                                            <?php endif; ?>
-                                        </div>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>

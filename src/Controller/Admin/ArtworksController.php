@@ -109,7 +109,7 @@ class ArtworksController extends BaseAdminController
         $artwork = $this->Artworks->get($id, contain: [
             'ArtworkVariants' => function ($q) {
                 return $q->where(['ArtworkVariants.is_deleted' => 0]);
-            }
+            },
         ]);
         if ($this->request->is(['patch', 'post', 'put'])) {
             // Get the data before we modify it

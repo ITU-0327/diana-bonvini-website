@@ -232,12 +232,12 @@ class OrdersController extends AppController
             foreach ($order->artwork_variant_orders as $item) {
                 if (empty($item->artwork_variant->dimension)) {
                     $this->log('Missing dimension for variant: ' . $item->artwork_variant->artwork_variant_id, 'debug');
-                    
+
                     // Try to fetch the variant directly
                     $variantsTable = $this->fetchTable('ArtworkVariants');
                     $variant = $variantsTable->get($item->artwork_variant->artwork_variant_id);
                     $this->log('Direct fetch dimension: ' . $variant->dimension, 'debug');
-                    
+
                     // Update the dimension if it's missing
                     $item->artwork_variant->dimension = $variant->dimension;
                 }
@@ -469,15 +469,16 @@ class OrdersController extends AppController
         }
 
         // Make sure we have all needed data for the email
-        if (empty($order->artwork_variant_orders) || 
-            empty($order->artwork_variant_orders[0]->artwork_variant)) {
-            
+        if (
+            empty($order->artwork_variant_orders) ||
+            empty($order->artwork_variant_orders[0]->artwork_variant)
+        ) {
             // Reload the order with all related data if not already loaded
             $order = $this->Orders->get($order->order_id, [
                 'contain' => [
                     'ArtworkVariantOrders.ArtworkVariants.Artworks',
-                    'Payments'
-                ]
+                    'Payments',
+                ],
             ]);
         }
 

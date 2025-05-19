@@ -3,14 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Service\R2StorageService;
 use Cake\Event\EventInterface;
-use Cake\Http\Response;
 use Cake\ORM\TableRegistry;
-use Exception;
-use GdImage;
-use Psr\Http\Message\UploadedFileInterface;
-use RuntimeException;
 
 /**
  * Artworks Controller

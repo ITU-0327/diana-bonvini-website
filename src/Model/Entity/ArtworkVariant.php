@@ -35,7 +35,7 @@ class ArtworkVariant extends Entity
         'is_deleted' => true,
         'artwork' => true,
     ];
-    
+
     /**
      * Virtual field for getting dimensions
      * This ensures the dimensions property is always available

@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Controller\AppController;
-use DateTime;
 use Cake\Event\EventInterface;
+use DateTime;
 
 /**
  * Admin Controller

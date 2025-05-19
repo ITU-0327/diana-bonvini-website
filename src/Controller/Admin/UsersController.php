@@ -13,6 +13,8 @@ use Exception;
  *
  * Manages users from an administrative perspective.
  * Uses dedicated admin templates.
+ *
+ * @property \App\Model\Table\UsersTable $Users
  */
 class UsersController extends BaseAdminController
 {
@@ -23,28 +25,37 @@ class UsersController extends BaseAdminController
      */
     public function index(): void
     {
-        $this->set('title', 'User Management');
-
         $query = $this->Users->find();
+        /** @var iterable<\App\Model\Entity\User> $users */
         $users = $this->paginate($query);
 
-        // Calculate user statistics
-        $totalUsers = count($users);
-        $activeUsers = 0;
-        $customerUsers = 0;
-        $adminUsers = 0;
+        // Calculate user statistics using fresh queries for each count
+        $totalUsers = $this->Users->find()
+            ->all()
+            ->count();
 
-        foreach ($users as $user) {
-            if ($user->active === true) {
-                $activeUsers++;
-            }
+        $activeUsers = $this->Users->find()
+            ->where([
+                'Users.is_deleted' => false,
+                'Users.is_verified' => true,
+            ])
+            ->count();
 
-            if ($user->user_type === 'customer') {
-                $customerUsers++;
-            } elseif ($user->user_type === 'admin') {
-                $adminUsers++;
-            }
-        }
+        $customerUsers = $this->Users->find()
+            ->where([
+                'Users.is_deleted' => false,
+                'Users.is_verified' => true,
+                'Users.user_type' => 'customer',
+            ])
+            ->count();
+
+        $adminUsers = $this->Users->find()
+            ->where([
+                'Users.is_deleted' => false,
+                'Users.is_verified' => true,
+                'Users.user_type' => 'admin',
+            ])
+            ->count();
 
         $this->set(compact('users', 'totalUsers', 'activeUsers', 'customerUsers', 'adminUsers'));
     }
@@ -69,28 +80,6 @@ class UsersController extends BaseAdminController
             $this->Flash->error(__('The user could not be found.'));
             $this->redirect(['action' => 'index']);
         }
-    }
-
-    /**
-     * Activate a user account
-     *
-     * @param string|null $id User id.
-     * @return \Cake\Http\Response|null Redirects to index.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function activate(?string $id = null): ?Response
-    {
-        $this->request->allowMethod(['post']);
-        $user = $this->Users->get($id);
-        $user->active = true;
-
-        if ($this->Users->save($user)) {
-            $this->Flash->success(__('The user has been activated.'));
-        } else {
-            $this->Flash->error(__('The user could not be activated. Please, try again.'));
-        }
-
-        return $this->redirect(['action' => 'index']);
     }
 
     /**
@@ -235,88 +224,5 @@ class UsersController extends BaseAdminController
         }
 
         return $this->redirect(['action' => 'profile']);
-    }
-
-    /**
-     * Add method - Create a new user
-     *
-     * @return \Cake\Http\Response|null|void Redirects on successful add, renders view otherwise.
-     */
-    public function add()
-    {
-        $user = $this->Users->newEmptyEntity();
-
-        if ($this->request->is('post')) {
-            $data = $this->request->getData();
-
-            // Verify password and confirmation match
-            if ($data['password'] !== $data['password_confirm']) {
-                $this->Flash->error(__('Password and confirmation do not match.'));
-            } else {
-                $user = $this->Users->patchEntity($user, $data);
-                $user->active = true; // Set user as active by default
-
-                if ($this->Users->save($user)) {
-                    $this->Flash->success(__('User has been created successfully.'));
-
-                    return $this->redirect(['action' => 'index']);
-                }
-                $this->Flash->error(__('The user could not be saved. Please, try again.'));
-            }
-        }
-
-        $userTypes = [
-            'customer' => 'Customer',
-            'admin' => 'Administrator',
-        ];
-
-        $this->set(compact('user', 'userTypes'));
-    }
-
-    /**
-     * Edit method - Edit a user
-     *
-     * @param string|null $id User id.
-     * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
-     */
-    public function edit(?string $id = null)
-    {
-        try {
-            $user = $this->Users->get($id);
-
-            if ($this->request->is(['patch', 'post', 'put'])) {
-                $data = $this->request->getData();
-
-                // If password field is empty, remove it from data
-                if (empty($data['password'])) {
-                    unset($data['password']);
-                } elseif ($data['password'] !== $data['password_confirm']) {
-                    $this->Flash->error(__('Password and confirmation do not match.'));
-                    $this->set(compact('user'));
-
-                    return;
-                }
-
-                $user = $this->Users->patchEntity($user, $data);
-
-                if ($this->Users->save($user)) {
-                    $this->Flash->success(__('User has been updated successfully.'));
-
-                    return $this->redirect(['action' => 'index']);
-                }
-                $this->Flash->error(__('The user could not be updated. Please, try again.'));
-            }
-
-            $userTypes = [
-                'customer' => 'Customer',
-                'admin' => 'Administrator',
-            ];
-
-            $this->set(compact('user', 'userTypes'));
-        } catch (Exception $e) {
-            $this->Flash->error(__('The user could not be found.'));
-
-            return $this->redirect(['action' => 'index']);
-        }
     }
 }
