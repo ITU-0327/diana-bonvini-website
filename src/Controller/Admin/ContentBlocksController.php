@@ -23,10 +23,8 @@ class ContentBlocksController extends BaseAdminController
     public function index(): void
     {
         // Prepare a query for distinct parent values.
-        $parentsQuery = $this->ContentBlocks->find('list', [
-            'keyField' => 'parent',
-            'valueField' => 'parent',
-        ])->distinct(['parent']);
+        $parentsQuery = $this->ContentBlocks->find('list', keyField: 'parent', valueField: 'parent')
+            ->distinct(['parent']);
 
         $parents = $parentsQuery->toArray();
 

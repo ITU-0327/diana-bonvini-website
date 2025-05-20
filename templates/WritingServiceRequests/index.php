@@ -1,10 +1,11 @@
 <?php
-$this->assign('title', 'Writing Service Requests');
 /**
  * @var \App\View\AppView $this
  * @var iterable<\App\Model\Entity\WritingServiceRequest> $writingServiceRequests
  */
 use Cake\Utility\Inflector;
+
+$this->assign('title', __('Writing Service Requests'));
 ?>
 <div class="max-w-7xl mx-auto px-4 py-8">
     <?= $this->element('page_title', ['title' => 'Writing Service Requests']) ?>
