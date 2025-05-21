@@ -184,6 +184,7 @@ class CalendarController extends AppController
         $time = $this->request->getQuery('time');
         $requestId = $this->request->getQuery('request_id');
         $messageId = $this->request->getQuery('message_id');
+        $type = $this->request->getQuery('type', 'writing'); // Default to 'writing' for backward compatibility
         
         // URL decode parameters to handle URL encoded characters
         $date = urldecode($date);
@@ -191,7 +192,13 @@ class CalendarController extends AppController
         
         if (empty($date) || empty($time) || empty($requestId)) {
             $this->Flash->error(__('Missing required parameters.'));
+            
+            // Check if this is a coaching request or writing request based on the type parameter
+            if ($type === 'coaching') {
+                return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'view', $requestId]);
+            } else {
             return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+            }
         }
         
         // Extract actual time from formatted time string (e.g., "9:00 AM - 9:30 AM" -> "09:00")
@@ -216,7 +223,11 @@ class CalendarController extends AppController
                     $time = sprintf('%02d:%02d', $hours, $minutes);
                 } else {
                     $this->Flash->error(__('Invalid time format. Hours and minutes must be valid.'));
+                    if ($type === 'coaching') {
+                        return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'view', $requestId]);
+                    } else {
                     return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+                    }
                 }
             } else {
                 // One last approach - try to handle the specific case directly
@@ -224,7 +235,11 @@ class CalendarController extends AppController
                     $time = '09:00';
                 } else {
                     $this->Flash->error(__('Could not parse the appointment time.'));
+                    if ($type === 'coaching') {
+                        return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'view', $requestId]);
+                    } else {
                     return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+                    }
                 }
             }
         }
@@ -262,11 +277,19 @@ class CalendarController extends AppController
                             $dateObj = new \DateTime($formattedDate);
                         } else {
                             $this->Flash->error(__('Could not parse the appointment date.'));
+                            if ($type === 'coaching') {
+                                return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'view', $requestId]);
+                            } else {
                             return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+                            }
                         }
                     } else {
                         $this->Flash->error(__('Could not parse the appointment date.'));
+                        if ($type === 'coaching') {
+                            return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'view', $requestId]);
+                        } else {
                         return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+                        }
                     }
                 }
             } else {
@@ -278,11 +301,19 @@ class CalendarController extends AppController
                         $dateObj = $extractedDate;
                     } catch (\Exception $e3) {
                         $this->Flash->error(__('Could not parse the appointment date.'));
+                        if ($type === 'coaching') {
+                            return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'view', $requestId]);
+                        } else {
                         return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+                        }
                     }
                 } else {
                     $this->Flash->error(__('Could not parse the appointment date.'));
+                    if ($type === 'coaching') {
+                        return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'view', $requestId]);
+                    } else {
                     return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+                    }
                 }
             }
         }
@@ -299,18 +330,57 @@ class CalendarController extends AppController
             
             if (empty($adminUser)) {
                 $this->Flash->error(__('No admin available for appointment scheduling.'));
+                if ($type === 'coaching') {
+                    return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'view', $requestId]);
+                } else {
                 return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
             }
+            }
             
+            if ($type === 'coaching') {
+                // Load the CoachingServiceRequests model if not already loaded
+                try {
+                    $this->CoachingServiceRequests = $this->fetchTable('CoachingServiceRequests');
+                    
+                    // Get the coaching service request
+                    $serviceRequest = $this->CoachingServiceRequests->get($requestId, [
+                        'contain' => ['Users']
+                    ]);
+                    
+                    // Check if the writing service request belongs to the current user
+                    if ($serviceRequest->user_id !== $user->user_id) {
+                        $this->Flash->error(__('You can only book appointments for your own coaching service requests.'));
+                        return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'index']);
+                    }
+                    
+                    // We'll use the coaching service request title later
+                    $requestTitle = $serviceRequest->service_title ?? 'Coaching Service';
+                    $requestTypeDesc = 'coaching service';
+                    
+                } catch (\Exception $e) {
+                    $this->Flash->error(__('Invalid coaching service request.'));
+                    return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'index']);
+                }
+            } else {
             // Get the writing service request
-            $writingServiceRequest = $this->WritingServiceRequests->get($requestId, [
+                try {
+                    $serviceRequest = $this->WritingServiceRequests->get($requestId, [
                 'contain' => ['Users']
             ]);
             
             // Check if the writing service request belongs to the current user
-            if ($writingServiceRequest->user_id !== $user->user_id) {
+                    if ($serviceRequest->user_id !== $user->user_id) {
                 $this->Flash->error(__('You can only book appointments for your own writing service requests.'));
                 return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'index']);
+                    }
+                    
+                    // We'll use the writing service request title later
+                    $requestTitle = $serviceRequest->service_title ?? 'Writing Service';
+                    $requestTypeDesc = 'writing service';
+                } catch (\Exception $e) {
+                    $this->Flash->error(__('Invalid writing service request.'));
+                    return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'index']);
+                }
             }
             
             // Check if an appointment already exists for this time slot and request
@@ -326,7 +396,11 @@ class CalendarController extends AppController
                 
             if ($existingAppointment) {
                 $this->Flash->info(__('You already have an appointment for this time slot. No new appointment was created.'));
+                if ($type === 'coaching') {
+                    return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'view', $requestId, '#' => 'messages']);
+                } else {
                 return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId, '#' => 'messages']);
+                }
             }
             
             // Set appointment details
@@ -344,7 +418,11 @@ class CalendarController extends AppController
                     $appointment->appointment_time = new \Cake\I18n\Time($timeString);
                 } catch (\Exception $e2) {
                     $this->Flash->error(__('Could not parse the appointment time.'));
+                    if ($type === 'coaching') {
+                        return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'view', $requestId]);
+                    } else {
                     return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+                    }
                 }
             }
             
@@ -353,7 +431,7 @@ class CalendarController extends AppController
             $appointment->location = 'Google Meet';
             $appointment->is_deleted = false;
             $appointment->is_google_synced = false;
-            $appointment->description = 'Consultation for writing service request: ' . $writingServiceRequest->service_title . ' (ID: ' . $requestId . ')';
+            $appointment->description = 'Consultation for ' . $requestTypeDesc . ' request: ' . $requestTitle . ' (ID: ' . $requestId . ')';
             
             // Save the appointment
             if ($this->Appointments->save($appointment)) {
@@ -405,6 +483,20 @@ class CalendarController extends AppController
                     (new \DateTime($time))->format('g:i A') . "**.\n\n";
                 $message .= "A confirmation email has been sent to your email address with all the details and meeting link. I look forward to our meeting!";
                 
+                if ($type === 'coaching') {
+                    // For coaching service requests, we need to use the CoachingRequestMessages table
+                    $this->CoachingRequestMessages = $this->fetchTable('CoachingRequestMessages');
+                    
+                    $messageEntity = $this->CoachingRequestMessages->newEntity([
+                        'user_id' => $user->user_id,
+                        'coaching_service_request_id' => $requestId,
+                        'message' => $message,
+                        'is_read' => false
+                    ]);
+                    
+                    $this->CoachingRequestMessages->save($messageEntity);
+                } else {
+                    // For writing service requests, we use the RequestMessages table
                 $messageEntity = $this->RequestMessages->newEntity([
                     'user_id' => $user->user_id,
                     'writing_service_request_id' => $requestId,
@@ -413,6 +505,7 @@ class CalendarController extends AppController
                 ]);
                 
                 $this->RequestMessages->save($messageEntity);
+                }
                 
                 // Send confirmation emails
                 try {
@@ -424,6 +517,9 @@ class CalendarController extends AppController
                         $columns = $this->Appointments->getSchema()->columns();
                         if (in_array('writing_service_request_id', $columns)) {
                             $containList[] = 'WritingServiceRequests';
+                        }
+                        if (in_array('coaching_service_request_id', $columns)) {
+                            $containList[] = 'CoachingServiceRequests';
                         }
                         
                         $appointment = $this->Appointments->get($appointment->appointment_id, [
@@ -476,14 +572,26 @@ class CalendarController extends AppController
                     (new \DateTime($time))->format('g:i A')
                 ));
                 
+                if ($type === 'coaching') {
+                    return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'view', $requestId, '#' => 'messages']);
+                } else {
                 return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId, '#' => 'messages']);
+                }
             } else {
                 $this->Flash->error(__('The appointment could not be saved. Please try again.'));
+                if ($type === 'coaching') {
+                    return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'view', $requestId]);
+                } else {
                 return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+                }
             }
         } catch (\Exception $e) {
             $this->Flash->error(__('An error occurred: {0}', $e->getMessage()));
+            if ($type === 'coaching') {
+                return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'view', $requestId]);
+            } else {
             return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
+            }
         }
     }
     

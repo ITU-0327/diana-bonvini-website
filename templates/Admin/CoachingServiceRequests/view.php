@@ -1,0 +1,1353 @@
+<?php
+/**
+ * @var \App\View\AppView $this
+ * @var \App\Model\Entity\CoachingServiceRequest $coachingServiceRequest
+ * @var \App\Model\Entity\CoachingRequestDocument[] $coachingRequestDocuments
+ */
+use Cake\Utility\Inflector;
+?>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-chalkboard-teacher mr-2"></i><?= __('Coaching Service Request Details') ?></h6>
+                    <ol class="breadcrumb m-0 bg-transparent p-0">
+                        <li class="breadcrumb-item"><?= $this->Html->link(__('Dashboard'), ['controller' => 'Admin', 'action' => 'dashboard']) ?></li>
+                        <li class="breadcrumb-item"><?= $this->Html->link(__('Coaching Requests'), ['action' => 'index']) ?></li>
+                        <li class="breadcrumb-item active"><?= __('Request Details') ?></li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Details and Chat Section -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Request Information</h6>
+                    <div>
+                        <span class="badge badge-secondary mr-2">ID: <?= h($coachingServiceRequest->coaching_service_request_id) ?></span>
+                        <?php
+                        $statusClass = match ($coachingServiceRequest->request_status) {
+                            'pending' => 'warning',
+                            'in_progress' => 'primary',
+                            'completed' => 'success',
+                            'canceled', 'cancelled' => 'danger',
+                            default => 'secondary'
+                        };
+                        ?>
+                        <span class="badge badge-<?= $statusClass ?> py-2 px-3">
+                            <?= ucfirst(str_replace('_', ' ', h($coachingServiceRequest->request_status))) ?>
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5 class="font-weight-bold"><?= h($coachingServiceRequest->service_title) ?></h5>
+                            <p class="text-muted">
+                                <i class="fas fa-calendar-alt mr-2"></i>
+                                Created: <?= $coachingServiceRequest->created_at->format('F j, Y h:i A') ?>
+                            </p>
+                            <p class="text-muted">
+                                <i class="fas fa-tag mr-2"></i>
+                                Service Type: <?= h($coachingServiceRequest->service_type) ?>
+                            </p>
+                            <p class="text-muted">
+                                <i class="fas fa-fingerprint mr-2"></i>
+                                Request ID: <?= h($coachingServiceRequest->coaching_service_request_id) ?>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light mb-3">
+                                <div class="card-body p-3">
+                                    <h6 class="card-title mb-2">Client Information</h6>
+                                    <?php if (isset($coachingServiceRequest->user) && $coachingServiceRequest->user) : ?>
+                                        <p class="mb-1">
+                                            <i class="fas fa-user mr-2"></i>
+                                            <?= h($coachingServiceRequest->user->full_name) ?>
+                                        </p>
+                                        <p class="mb-1">
+                                            <i class="fas fa-envelope mr-2"></i>
+                                            <?= h($coachingServiceRequest->user->email) ?>
+                                        </p>
+                                        <?php if (!empty($coachingServiceRequest->user->phone_number)) : ?>
+                                            <p class="mb-1">
+                                                <i class="fas fa-phone mr-2"></i>
+                                                <?= h($coachingServiceRequest->user->phone_number) ?>
+                                            </p>
+                                        <?php endif; ?>
+                                    <?php else : ?>
+                                        <p class="mb-1 text-muted">
+                                            <i class="fas fa-exclamation-circle mr-2"></i>
+                                            No user information available
+                                        </p>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Request Notes -->
+                    <?php if (!empty($coachingServiceRequest->notes)) : ?>
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="font-weight-bold mb-3">Client Notes</h6>
+                            <div class="card bg-light-yellow">
+                                <div class="card-body py-3 px-4">
+                                    <p class="card-text"><?= nl2br(h($coachingServiceRequest->notes)) ?></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Document Display -->
+                    <?php if (!empty($coachingServiceRequest->document)) : ?>
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h6 class="font-weight-bold mb-3">Attached Document</h6>
+                            <div class="card bg-light border-left-primary">
+                                <div class="card-body py-3 px-4 d-flex align-items-center">
+                                    <i class="fas fa-file-alt text-primary fa-2x mr-3"></i>
+                                    <div class="flex-grow-1">
+                                        <p class="mb-0 font-weight-bold"><?= h(basename($coachingServiceRequest->document)) ?></p>
+                                    </div>
+                                    <a href="<?= '/' . $coachingServiceRequest->document ?>" target="_blank" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-download mr-1"></i> Download
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Messages and Communication Log -->
+            <div class="card shadow mb-4" id="messages">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Client Conversation</h6>
+                    <div class="d-flex align-items-center">
+                        <?php $messageCount = !empty($coachingServiceRequest->coaching_request_messages) ? count($coachingServiceRequest->coaching_request_messages) : 0; ?>
+                        <span class="badge badge-info px-3 py-2"><?= $messageCount ?> Messages</span>
+                    </div>
+                </div>
+                <div class="card-body p-3">
+                    <div class="chat-container" style="max-height: 500px; overflow-y: auto; scroll-behavior: smooth; scroll-padding: 10px; overscroll-behavior: contain;" id="chat-messages">
+                        <?php if (!empty($coachingServiceRequest->coaching_request_messages)) : ?>
+                            <div class="chat-messages">
+                                <?php foreach ($coachingServiceRequest->coaching_request_messages as $message) : ?>
+                                    <?php
+                                    $isAdmin = isset($message->user) && $message->user->user_type === 'admin';
+                                    ?>
+                                    <div class="chat-message <?= $isAdmin ? 'admin-message' : 'client-message' ?>" data-message-id="<?= h($message->coaching_request_message_id) ?>">
+                                        <div class="message-header d-flex align-items-center mb-1">
+                                            <div class="message-avatar mr-2">
+                                                <?php if ($isAdmin) : ?>
+                                                    <div class="avatar bg-primary text-white">A</div>
+                                                <?php else : ?>
+                                                    <div class="avatar bg-success text-white">
+                                                        <?= substr($message->user->full_name ?? 'C', 0, 1) ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="message-info">
+                                                <span class="message-sender font-weight-bold">
+                                                    <?= $isAdmin ? 'You (Admin)' : h($message->user->full_name) ?>
+                                                </span>
+                                                <span class="message-time text-muted ml-2">
+                                                    <i class="far fa-clock"></i> <?= $message->created_at->format('M j, Y g:i A') ?>
+                                                </span>
+                                                <?php if (!$isAdmin && !$message->is_read) : ?>
+                                                <span class="badge badge-warning ml-2">New</span>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                        <div class="message-content">
+                                            <div class="message-bubble p-3 rounded">
+                                                <div class="message-text">
+                                                    <?php
+                                                    // Process message content to properly handle markdown-style formatting
+                                                    $messageContent = nl2br(h($message->message));
+                                                    // Convert **bold** to actual bold text
+                                                    $messageContent = preg_replace('/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $messageContent);
+
+                                                    // Handle payment button special markup
+                                                    if (strpos($message->message, '[PAYMENT_BUTTON]') !== false) {
+                                                        $buttonPattern = '/\[PAYMENT_BUTTON\](.*?)\[\/PAYMENT_BUTTON\]/';
+                                                        $match = preg_match($buttonPattern, $message->message, $matches);
+
+                                                        if ($match && isset($matches[1])) {
+                                                            $paymentId = $matches[1];
+                                                            // Check if this payment is already paid
+                                                            $isPaid = false;
+                                                            if (!empty($coachingServiceRequest->coaching_service_payments)) {
+                                                                foreach ($coachingServiceRequest->coaching_service_payments as $payment) {
+                                                                    if ($payment->payment_id == $paymentId && $payment->status === 'paid') {
+                                                                        $isPaid = true;
+                                                                        break;
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            // Create payment button HTML with appropriate status
+                                                            $buttonHtml = '
+                                                                <div class="mt-2" data-payment-container="'.h($paymentId).'">
+                                                                    <span class="text-muted small">Payment request status:</span>
+                                                                    <div class="d-flex align-items-center mt-1">
+                                                                        <button class="btn '.($isPaid ? 'btn-success' : 'btn-warning').' btn-sm payment-button" disabled>
+                                                                            <i class="fas fa-'.($isPaid ? 'check-circle' : 'credit-card').' mr-1"></i>
+                                                                            '.($isPaid ? 'Payment Complete' : 'Payment Button').'
+                                                                        </button>
+                                                                        <span class="badge badge-'.($isPaid ? 'success' : 'light').' ml-2">
+                                                                            '.($isPaid ? 'PAID' : 'PENDING').'
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            ';
+
+                                                            // Replace the tag with the button
+                                                            $messageContent = preg_replace($buttonPattern, $buttonHtml, $messageContent);
+                                                        }
+                                                    }
+
+                                                    // Handle payment confirmation
+                                                    if (strpos($message->message, '[PAYMENT_CONFIRMATION]') !== false) {
+                                                        $confirmPattern = '/\[PAYMENT_CONFIRMATION\](.*?)\[\/PAYMENT_CONFIRMATION\]/s';
+                                                        $match = preg_match($confirmPattern, $message->message, $matches);
+
+                                                        if ($match && isset($matches[1])) {
+                                                            // Get the content and format it
+                                                            $confirmationContent = $matches[1];
+                                                            // Format the confirmation message (convert markdown bold to HTML)
+                                                            $confirmationContent = preg_replace('/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $confirmationContent);
+
+                                                            // Create an elegant payment confirmation card
+                                                            $confirmationHtml = '
+                                                                <div class="payment-confirmation-card mt-2 border border-success rounded shadow-sm">
+                                                                    <div class="payment-confirmation-header d-flex align-items-center bg-success-light border-bottom border-success p-2">
+                                                                        <i class="fas fa-check-circle text-success mr-2"></i>
+                                                                        <span class="font-weight-bold text-success">Payment Confirmation</span>
+                                                                        <span class="badge badge-pill badge-success ml-auto">PAID</span>
+                                                                    </div>
+                                                                    <div class="payment-confirmation-body p-3">
+                                                                        <div class="payment-confirmation-content">
+                                                                            ' . $confirmationContent . '
+                                                                        </div>
+                                                                        <div class="d-flex align-items-center mt-2 pt-2 border-top">
+                                                                            <i class="fas fa-info-circle text-primary mr-2"></i>
+                                                                            <span class="text-muted small">This payment has been recorded and the client has been notified</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ';
+
+                                                            // Replace the tag with the confirmation
+                                                            $messageContent = preg_replace($confirmPattern, $confirmationHtml, $messageContent);
+                                                        }
+                                                    }
+
+                                                    echo $messageContent;
+                                                    ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else : ?>
+                            <div class="text-center py-5">
+                                <i class="fas fa-comments fa-3x text-gray-300 mb-3"></i>
+                                <p class="text-gray-500 mb-0">No messages yet. Start the conversation with the client.</p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- New Message Form -->
+                    <div class="new-message-form mt-3 pt-3 border-top">
+                        <?= $this->Form->create(null, [
+                            'url' => ['action' => 'sendMessage', $coachingServiceRequest->coaching_service_request_id],
+                            'id' => 'replyForm',
+                        ]) ?>
+
+                        <div class="form-group mb-3">
+                            <?= $this->Form->textarea('message_text', [
+                                'rows' => 3,
+                                'class' => 'form-control',
+                                'placeholder' => 'Type your message here...',
+                                'required' => true,
+                                'id' => 'messageText',
+                            ]) ?>
+                            <small class="form-text text-muted">You can use **text** for bold formatting.</small>
+                        </div>
+
+                        <div class="form-group mb-0 d-flex justify-content-between align-items-center">
+                            <div class="action-buttons">
+                                <!-- Buttons moved to sidebar - Calendar and Payment modal approach -->
+                            </div>
+                            <button type="submit" class="btn btn-primary px-4" id="sendButton">
+                                <i class="fas fa-paper-plane mr-1"></i>
+                                Send Message
+                            </button>
+                        </div>
+
+                        <?= $this->Form->end() ?>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents Card -->
+            <?php if (!empty($coachingRequestDocuments)): ?>
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Documents</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Document Name</th>
+                                    <th>Uploaded By</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($coachingRequestDocuments as $document): ?>
+                                <tr>
+                                    <td><?= h($document->document_name) ?></td>
+                                    <td>
+                                        <span class="badge badge-<?= $document->uploaded_by === 'admin' ? 'primary' : 'info' ?>">
+                                            <?= ucfirst(h($document->uploaded_by)) ?>
+                                        </span>
+                                    </td>
+                                    <td><?= $document->created_at->format('M d, Y h:i A') ?></td>
+                                    <td>
+                                        <a href="<?= $this->Url->build('/' . h($document->document_path), ['fullBase' => true]) ?>"
+                                           class="btn btn-sm btn-primary"
+                                           target="_blank">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        <a href="<?= $this->Url->build('/' . h($document->document_path), ['fullBase' => true, 'download' => true]) ?>"
+                                           class="btn btn-sm btn-info">
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Sidebar with Actions -->
+        <div class="col-lg-4">
+            <!-- Action Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Request Actions</h6>
+                </div>
+                <div class="card-body">
+                    <!-- Status Update Form -->
+                    <div class="mb-4">
+                        <h6 class="font-weight-bold mb-2">Update Status</h6>
+                        <?= $this->Form->create(null, [
+                            'url' => ['action' => 'updateStatus', $coachingServiceRequest->coaching_service_request_id],
+                            'class' => 'status-update-form',
+                        ]) ?>
+                        <div class="form-group">
+                            <?= $this->Form->select('status', [
+                                'pending' => 'Pending',
+                                'in_progress' => 'In Progress',
+                                'completed' => 'Completed',
+                                'canceled' => 'Canceled'
+                            ], [
+                                'class' => 'form-control',
+                                'value' => $coachingServiceRequest->request_status
+                            ]) ?>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-sync-alt mr-1"></i> Update Status
+                        </button>
+                        <?= $this->Form->end() ?>
+                    </div>
+
+                    <!-- Document Upload Section -->
+                    <div class="mb-4">
+                        <h6 class="font-weight-bold mb-2">Document Management</h6>
+                        <div class="card bg-light border mb-3">
+                            <div class="card-body p-3">
+                                <?= $this->Form->create(null, [
+                                    'url' => ['action' => 'uploadDocument', $coachingServiceRequest->coaching_service_request_id],
+                                    'type' => 'file',
+                                    'class' => 'document-upload-form',
+                                ]) ?>
+                                <div class="form-group mb-2">
+                                    <label class="small font-weight-bold">Upload Document</label>
+                                    <?= $this->Form->control('document', [
+                                        'type' => 'file',
+                                        'class' => 'form-control-file',
+                                        'label' => false,
+                                        'required' => true,
+                                        'accept' => '.pdf,.doc,.docx,.txt,.jpg,.jpeg',
+                                    ]) ?>
+                                    <small class="form-text text-muted">Accepted: PDF, Word, TXT, or JPEG files</small>
+                                </div>
+                                <button type="submit" class="btn btn-info btn-block">
+                                    <i class="fas fa-upload mr-1"></i> Upload Document
+                                </button>
+                                <?= $this->Form->end() ?>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Request Section -->
+                    <div class="mb-4">
+                        <h6 class="font-weight-bold mb-2">Payment Management</h6>
+                        <button type="button" class="btn btn-warning btn-block" id="paymentOptionsBtn" data-toggle="modal" data-target="#paymentRequestModal">
+                            <i class="fas fa-credit-card mr-1"></i> Send Payment Request
+                        </button>
+                        <p class="text-sm text-muted mt-1">Send a payment request link to the client</p>
+
+                        <?php if (!empty($coachingServiceRequest->coaching_service_payments)): ?>
+                        <!-- Payment History -->
+                        <div class="mt-4">
+                            <h6 class="font-weight-bold mb-2 d-flex justify-content-between">
+                                <span>Payment History</span>
+                                <span class="badge badge-info"><?= count($coachingServiceRequest->coaching_service_payments) ?></span>
+                            </h6>
+
+                            <div class="table-responsive">
+                                <table id="payment-history-table" class="table table-sm table-hover border">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Amount</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($coachingServiceRequest->coaching_service_payments as $payment): ?>
+                                            <?php
+                                            $paymentStatusClass = match ($payment->status) {
+                                                'paid' => 'success',
+                                                'pending' => 'warning',
+                                                default => 'secondary'
+                                            };
+                                            ?>
+                                            <tr>
+                                                <td class="small text-muted">
+                                                    <?= h($payment->coaching_service_payment_id) ?>
+                                                </td>
+                                                <td class="font-weight-bold">
+                                                    $<?= number_format($payment->amount, 2) ?>
+                                                </td>
+                                                <td class="text-muted small">
+                                                    <?= $payment->payment_date ? $payment->payment_date->format('M j, Y g:i A') : 'Pending' ?>
+                                                </td>
+                                                <td>
+                                                    <span class="badge badge-<?= $paymentStatusClass ?>">
+                                                        <?= ucfirst($payment->status) ?>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <?php else: ?>
+                            <div class="text-center mt-3 p-3 bg-light rounded border text-muted">
+                                <i class="fas fa-info-circle mr-1"></i> No payment requests yet
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Time Slots Section -->
+                    <div class="mb-4 pt-2 border-top">
+                        <h6 class="font-weight-bold mb-2">Calendar Management</h6>
+                        <?= $this->Html->link(
+                            '<i class="fab fa-google mr-1"></i> View My Calendar',
+                            ['controller' => 'GoogleAuth', 'action' => 'viewCalendar'],
+                            ['class' => 'btn btn-info btn-block', 'escape' => false]
+                        ) ?>
+                        <p class="text-sm text-muted mt-1">View and manage your Google Calendar appointments</p>
+
+                        <!-- Schedule Consultation -->
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-primary btn-block" data-toggle="modal" data-target="#timeSlotsModal">
+                                <i class="fas fa-calendar-alt mr-1"></i> Offer Available Time Slots
+                            </button>
+                            <p class="text-sm text-muted mt-1">Select and send available time slots to the client</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.bg-light-yellow {
+    background-color: rgba(255, 243, 205, 0.5);
+}
+.border-left-primary {
+    border-left: 4px solid #4e73df !important;
+}
+.chat-message {
+    margin-bottom: 1.5rem;
+    max-width: 85%;
+}
+.admin-message {
+    margin-left: auto;
+}
+.client-message {
+    margin-right: auto;
+}
+.message-bubble {
+    position: relative;
+}
+.admin-message .message-bubble {
+    background-color: #e3f2fd;
+    color: #0d47a1;
+}
+.client-message .message-bubble {
+    background-color: #f5f5f5;
+    color: #212121;
+}
+.avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+.small-box {
+    border-radius: 0.35rem;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    position: relative;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    color: #fff;
+}
+.small-box .inner {
+    padding: 10px;
+}
+.small-box h3 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0 0 5px 0;
+    white-space: nowrap;
+    padding: 0;
+}
+.small-box .icon {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 2rem;
+    opacity: 0.3;
+}
+.bg-info { background-color: #36b9cc !important; }
+.bg-success { background-color: #1cc88a !important; }
+.bg-warning { background-color: #f6c23e !important; }
+.bg-primary { background-color: #4e73df !important; }
+
+/* Payment Card Styles */
+.payment-confirmation-card {
+    transition: all 0.2s ease;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+.payment-confirmation-card:hover {
+    box-shadow: 0 .25rem 0.5rem rgba(0,0,0,.1)!important;
+}
+.bg-success-light {
+    background-color: rgba(28, 200, 138, 0.15);
+}
+.payment-confirmation-content {
+    line-height: 1.4;
+    font-size: 0.95rem;
+}
+.payment-confirmation-content strong {
+    color: #28a745;
+    font-weight: 600;
+}
+
+/* Chat loading indicator */
+.chat-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 15px 25px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.chat-loading.active {
+    opacity: 1;
+}
+
+.chat-loading span {
+    margin-top: 10px;
+    font-weight: 500;
+    color: #4e73df;
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+</style>
+
+<!-- Load jQuery UI for datepicker -->
+<?= $this->Html->css('https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css') ?>
+<?= $this->Html->script('https://code.jquery.com/ui/1.12.1/jquery-ui.min.js', ['block' => true]) ?>
+<?= $this->Html->script('coaching-service-payments.js', ['block' => true]) ?>
+
+<?php $this->append('script'); ?>
+<script>
+    $(document).ready(function() {
+        // Scroll to bottom of chat container
+        let chatContainer = document.getElementById('chat-messages');
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        // Helper function for debugging
+        function debugLog(message, data) {
+            const debugging = true; // Set to false in production
+            if (debugging && console) {
+                if (data) {
+                    console.log(`[CoachingTimeSlots] ${message}:`, data);
+                } else {
+                    console.log(`[CoachingTimeSlots] ${message}`);
+                }
+            }
+        }
+
+        // Initialize datepicker when the modal is shown
+        $('#timeSlotsModal').on('shown.bs.modal', function() {
+            debugLog('Time slots modal shown, initializing datepicker');
+            initDatepicker();
+        });
+
+        // Initialize datepicker
+        function initDatepicker() {
+            try {
+                $('#datepicker').datepicker({
+                    minDate: 0, // Today
+                    maxDate: '+60d', // Allow up to 60 days in the future
+                    dateFormat: 'yy-mm-dd',
+                    firstDay: 1, // Start week on Monday
+                    showOtherMonths: true,
+                    selectOtherMonths: true,
+                    beforeShowDay: $.datepicker.noWeekends, // Disable weekends
+                    onSelect: function(dateText) {
+                        debugLog('Date selected:', dateText);
+                        $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+                        $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
+                        $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
+                    }
+                });
+                debugLog('Datepicker initialized');
+            } catch (e) {
+                console.error('Failed to initialize datepicker:', e);
+            }
+        }
+
+        // Focus on message input when clicking reply button
+        document.getElementById('messageText').focus();
+
+        // Animate button on form submit
+        const replyForm = document.getElementById('replyForm');
+        if (replyForm) {
+            replyForm.addEventListener('submit', function() {
+                const button = document.getElementById('sendButton');
+                button.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
+                button.disabled = true;
+            });
+        }
+
+        // Handle URL hash for navigating to specific sections
+        if (window.location.hash) {
+            const targetElement = document.querySelector(window.location.hash);
+            if (targetElement) {
+                setTimeout(() => {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 70,
+                        behavior: 'smooth'
+                    });
+                }, 100);
+            }
+        }
+
+        // Handle payment request form submission
+        const paymentRequestForm = document.getElementById('paymentRequestForm');
+        const sendPaymentRequestBtn = document.getElementById('sendPaymentRequestBtn');
+
+        if (paymentRequestForm && sendPaymentRequestBtn) {
+            // Create a hidden input for the cleaned amount
+            const cleanedAmountInput = document.createElement('input');
+            cleanedAmountInput.type = 'hidden';
+            cleanedAmountInput.name = 'cleaned_amount';
+            paymentRequestForm.appendChild(cleanedAmountInput);
+
+            sendPaymentRequestBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                // Get the amount value and clean it
+                const amountInput = document.getElementById('amount');
+                const descriptionInput = document.getElementById('description');
+
+                // Remove currency symbols and commas
+                let rawAmount = amountInput.value;
+                let cleanAmount = rawAmount.replace(/[$,]/g, '').trim();
+                let numericAmount = parseFloat(cleanAmount);
+
+                console.log('Original amount:', rawAmount);
+                console.log('Cleaned amount:', cleanAmount);
+                console.log('Numeric amount:', numericAmount);
+
+                if (!cleanAmount || isNaN(numericAmount) || numericAmount <= 0) {
+                    alert('Please enter a valid payment amount greater than 0.');
+                    return;
+                }
+
+                if (!descriptionInput.value.trim()) {
+                    alert('Please enter a payment description.');
+                    return;
+                }
+
+                // Set the cleaned amount in the hidden field
+                cleanedAmountInput.value = numericAmount;
+
+                // Show loading state
+                sendPaymentRequestBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
+                sendPaymentRequestBtn.disabled = true;
+
+                // Submit the form
+                paymentRequestForm.submit();
+            });
+        }
+
+        // Time slots selection functionality
+        const loadTimeSlotsBtn = document.getElementById('loadTimeSlots');
+        const timeSlotsLoading = document.getElementById('timeSlots-loading');
+        const timeSlotsEmpty = document.getElementById('timeSlots-empty');
+        const timeSlotsNone = document.getElementById('timeSlots-none');
+        const timeSlotsContainer = document.getElementById('time-slots-container');
+        const timeSlotsListContainer = document.getElementById('timeSlots-list');
+        const selectedDateDisplay = document.getElementById('selected-date-display');
+        const selectedTimeSlotsJson = document.getElementById('selectedTimeSlotsJson');
+        const selectAllCheckbox = document.getElementById('selectAllTimeSlots');
+        const sendTimeSlotsBtn = document.getElementById('sendTimeSlots');
+
+        // Load time slots when the button is clicked
+        if (loadTimeSlotsBtn) {
+            loadTimeSlotsBtn.addEventListener('click', function() {
+                const selectedDate = $('#datepicker').datepicker('getDate');
+                debugLog('Load button clicked, selected date:', selectedDate);
+
+                if (!selectedDate) {
+                    alert('Please select a date first');
+                    return;
+                }
+
+                // Format date as YYYY-MM-DD
+                const year = selectedDate.getFullYear();
+                const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                const day = String(selectedDate.getDate()).padStart(2, '0');
+                const formattedDate = `${year}-${month}-${day}`;
+
+                loadTimeSlots(formattedDate);
+            });
+        }
+
+        // Function to load time slots for a selected date
+        function loadTimeSlots(date) {
+            debugLog(`Loading time slots for date: ${date}`);
+
+            // Show loading, hide other elements
+            timeSlotsEmpty.classList.add('d-none');
+            timeSlotsNone.classList.add('d-none');
+            timeSlotsListContainer.classList.add('d-none');
+            timeSlotsLoading.classList.remove('d-none');
+
+            // Format the date for display
+            const formattedDate = new Date(date);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            selectedDateDisplay.textContent = formattedDate.toLocaleDateString('en-US', options);
+
+            // Get CSRF token from the document
+            let csrfToken;
+            try {
+                const csrfElement = document.querySelector('input[name="_csrfToken"]');
+                csrfToken = csrfElement ? csrfElement.value : '<?= $this->request->getAttribute('csrfToken') ?>';
+                debugLog('Using CSRF token', csrfToken.substring(0, 10) + '...');
+            } catch (e) {
+                console.error('Error getting CSRF token:', e);
+                csrfToken = '<?= $this->request->getAttribute('csrfToken') ?>';
+            }
+
+            // Build the URL
+            const url = `<?= $this->Url->build(['controller' => 'CoachingServiceRequests', 'action' => 'getAvailableTimeSlots', 'prefix' => 'Admin']) ?>?date=${date}`;
+            debugLog('Fetching from URL', url);
+
+            // Fetch available time slots
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-Token': csrfToken,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.json().catch(error => {
+                        console.error('Error parsing JSON response:', error);
+                        throw new Error('Invalid JSON response');
+                    });
+                })
+                .then(data => {
+                    console.log('Time slots data:', data);
+                    timeSlotsLoading.classList.add('d-none');
+
+                    if (data.success && data.timeSlots && data.timeSlots.length > 0) {
+                        // Show time slots container
+                        timeSlotsListContainer.classList.remove('d-none');
+
+                        // Populate time slots
+                        timeSlotsContainer.innerHTML = '';
+
+                        data.timeSlots.forEach(slot => {
+                            const slotDiv = document.createElement('div');
+                            slotDiv.className = 'custom-control custom-checkbox time-slot-item mb-2';
+
+                            const id = `slot-${slot.date}-${slot.start.replace(':', '-')}`;
+
+                            slotDiv.innerHTML = `
+                                <input type="checkbox" class="custom-control-input time-slot-checkbox" id="${id}" data-slot='${JSON.stringify(slot)}'>
+                                <label class="custom-control-label" for="${id}">
+                                    ${slot.formatted}
+                                </label>
+                            `;
+
+                            timeSlotsContainer.appendChild(slotDiv);
+                        });
+
+                        // Setup the checkboxes for selecting time slots
+                        setupTimeSlotCheckboxes();
+                    } else {
+                        console.log('No time slots available or success is false');
+                        // Show no time slots message
+                        timeSlotsNone.classList.remove('d-none');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading time slots:', error);
+                    timeSlotsLoading.classList.add('d-none');
+                    timeSlotsNone.classList.remove('d-none');
+                    alert('Error loading time slots: ' + error.message);
+                });
+        }
+
+        // Setup time slot checkboxes
+        function setupTimeSlotCheckboxes() {
+            const timeSlotCheckboxes = document.querySelectorAll('.time-slot-checkbox');
+
+            // Handle individual checkbox changes
+            timeSlotCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectedTimeSlots);
+            });
+
+            // Handle select all checkbox
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    timeSlotCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
+
+                    updateSelectedTimeSlots();
+                });
+            }
+
+            // Clear previous selection
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = false;
+            }
+            updateSelectedTimeSlots();
+        }
+
+        // Update selected time slots
+        function updateSelectedTimeSlots() {
+            const selectedTimeSlots = [];
+            const timeSlotCheckboxes = document.querySelectorAll('.time-slot-checkbox:checked');
+
+            timeSlotCheckboxes.forEach(checkbox => {
+                try {
+                    const slotData = JSON.parse(checkbox.dataset.slot);
+                    selectedTimeSlots.push(slotData);
+                } catch (e) {
+                    console.error('Error parsing slot data:', e);
+                }
+            });
+
+            // Enable/disable send button based on selection
+            if (sendTimeSlotsBtn) {
+                sendTimeSlotsBtn.disabled = selectedTimeSlots.length === 0;
+            }
+
+            // Update hidden input with selected time slots
+            if (selectedTimeSlotsJson) {
+                selectedTimeSlotsJson.value = JSON.stringify(selectedTimeSlots);
+            }
+
+            // Update select all checkbox state
+            const allCheckboxes = document.querySelectorAll('.time-slot-checkbox');
+            if (selectAllCheckbox && allCheckboxes.length > 0) {
+                selectAllCheckbox.checked = timeSlotCheckboxes.length > 0 &&
+                                        timeSlotCheckboxes.length === allCheckboxes.length;
+            }
+
+            debugLog('Selected time slots updated:', selectedTimeSlots.length);
+        }
+
+        // Send time slots button
+        if (sendTimeSlotsBtn) {
+            sendTimeSlotsBtn.addEventListener('click', function() {
+                const messageText = document.getElementById('timeSlotMessageText').value.trim();
+                const selectedTimeSlots = selectedTimeSlotsJson ? selectedTimeSlotsJson.value : '[]';
+
+                if (!messageText) {
+                    alert('Please enter a message to accompany the time slots');
+                    return;
+                }
+
+                if (!selectedTimeSlots || selectedTimeSlots === '[]') {
+                    alert('Please select at least one time slot');
+                    return;
+                }
+
+                try {
+                    // Show loading state
+                    sendTimeSlotsBtn.disabled = true;
+                    sendTimeSlotsBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
+
+                    // Get the form
+                    const form = document.getElementById('timeSlotsForm');
+                    if (!form) {
+                        console.error('Form not found');
+                        alert('Error: Form not found');
+
+                        // Reset button state
+                        sendTimeSlotsBtn.disabled = false;
+                        sendTimeSlotsBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Send Time Slots';
+                        return;
+                    }
+
+                    // Log form data before submission (for debugging)
+                    console.log('Submitting form with data:', {
+                        message_text: messageText,
+                        time_slots: selectedTimeSlots,
+                        request_id: '<?= $coachingServiceRequest->coaching_service_request_id ?>'
+                    });
+
+                    // Submit the form
+                    form.submit();
+                } catch (error) {
+                    console.error('Error submitting form:', error);
+                    alert('An error occurred while sending time slots. Please try again.');
+
+                    // Reset button state
+                    sendTimeSlotsBtn.disabled = false;
+                    sendTimeSlotsBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Send Time Slots';
+                }
+            });
+        }
+
+        // Payment request template button
+        $('#paymentRequestBtn').click(function() {
+            const template = document.getElementById('payment-request-template').innerHTML;
+            const messageText = document.getElementById('messageText');
+            messageText.value = template;
+
+            // Focus on the text area
+            messageText.focus();
+        });
+
+        // Mark as paid button functionality
+        const markAsPaidBtn = document.getElementById('markAsPaidBtn');
+        if (markAsPaidBtn) {
+            markAsPaidBtn.addEventListener('click', function() {
+                $('#markAsPaidModal').modal('show');
+            });
+        }
+
+        // Process payment elements in existing messages
+        processPaymentElements();
+
+        // Function to process payment elements in messages
+        function processPaymentElements() {
+            // Process payment buttons
+            document.querySelectorAll('.message-bubble').forEach(message => {
+                // First check for existing payment containers and initialize them
+                const existingContainers = message.querySelectorAll('[data-payment-container]');
+                existingContainers.forEach(container => {
+                    const paymentId = container.dataset.paymentContainer;
+                    if (paymentId) {
+                        // Check the payment status from our payment history
+                        const isPaid = checkPaymentPaidStatus(paymentId);
+
+                        // Update the UI based on payment status
+                        const button = container.querySelector('.payment-button');
+                        if (button) {
+                            button.classList.remove('btn-warning', 'btn-success');
+                            button.classList.add(isPaid ? 'btn-success' : 'btn-warning');
+                            button.innerHTML = `<i class="fas fa-${isPaid ? 'check-circle' : 'credit-card'} mr-1"></i> ${isPaid ? 'Payment Complete' : 'Payment Button'}`;
+                        }
+
+                        // Update the badge
+                        const badge = container.querySelector('.badge');
+                        if (badge) {
+                            badge.classList.remove('badge-light', 'badge-success');
+                            badge.classList.add(isPaid ? 'badge-success' : 'badge-light');
+                            badge.textContent = isPaid ? 'PAID' : 'PENDING';
+                        }
+                    }
+                });
+            });
+        }
+
+        // Function to check if a payment is paid from payment history
+        function checkPaymentPaidStatus(paymentId) {
+            // This is a simplified version - in a real app you'd check from your actual payment data
+            // Let's assume we've already checked payments in PHP and want to check if this payment ID is in our paid list
+
+            <?php
+            // Generate JavaScript array of paid payment IDs
+            $paidPaymentIds = [];
+            if (!empty($coachingServiceRequest->coaching_service_payments)) {
+                foreach ($coachingServiceRequest->coaching_service_payments as $payment) {
+                    if ($payment->status === 'paid') {
+                        $paidPaymentIds[] = $payment->payment_id;
+                    }
+                }
+            }
+            echo "const paidPaymentIds = " . json_encode($paidPaymentIds) . ";";
+            ?>
+
+            // Check if this payment ID is in our list of paid payments
+            if (paymentId.includes('|')) {
+                // Handle combined IDs (session|db format)
+                const parts = paymentId.split('|');
+                return paidPaymentIds.includes(parts[0]) || paidPaymentIds.includes(parts[1]);
+            }
+
+            return paidPaymentIds.includes(paymentId);
+        }
+    });
+</script>
+<?php $this->end(); ?>
+
+<!-- Time Slots Modal -->
+<div class="modal fade" id="timeSlotsModal" tabindex="-1" role="dialog" aria-labelledby="timeSlotsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="timeSlotsModalLabel">
+                    <i class="far fa-clock mr-1"></i> Select Available Time Slots
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <?= $this->Form->create(null, [
+                    'url' => ['action' => 'sendTimeSlots', $coachingServiceRequest->coaching_service_request_id],
+                    'id' => 'timeSlotsForm',
+                    'type' => 'post'
+                ]) ?>
+
+                <!-- Include _csrfToken field explicitly -->
+                <?= $this->Form->hidden('_csrfToken', [
+                    'value' => $this->request->getAttribute('csrfToken')
+                ]) ?>
+
+                <!-- Include hidden coaching_service_request_id field to ensure it's passed -->
+                <?= $this->Form->hidden('coaching_service_request_id', [
+                    'value' => $coachingServiceRequest->coaching_service_request_id
+                ]) ?>
+
+                <div class="row">
+                    <!-- Date Selection Column -->
+                    <div class="col-md-5">
+                        <h5 class="font-weight-bold mb-3">Select a Date</h5>
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-body p-2">
+                                <!-- Improved datepicker with larger display -->
+                                <div id="datepicker" class="border p-2 rounded"></div>
+                            </div>
+                        </div>
+
+                        <!-- Clear visual call to action for loading time slots -->
+                        <button type="button" id="loadTimeSlots" class="btn btn-primary btn-block">
+                            <i class="fas fa-clock mr-1"></i> Load Time Slots
+                        </button>
+
+                        <!-- Add helper text -->
+                        <p class="small text-muted mt-2 text-center">
+                            First select a date, then click "Load Time Slots" to see available times
+                        </p>
+                    </div>
+
+                    <!-- Time Slots Selection Column -->
+                    <div class="col-md-7">
+                        <h5 class="font-weight-bold mb-3">Select Time Slots to Offer</h5>
+                        <div class="selected-date-container mb-2">
+                            <span class="text-muted">Selected Date: </span>
+                            <span id="selected-date-display" class="font-weight-bold">None selected</span>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div id="timeSlots-empty" class="text-center py-4">
+                            <i class="fas fa-calendar-day fa-3x text-gray-300 mb-3"></i>
+                            <p class="text-gray-500">Select a date and click "Load Time Slots"</p>
+                            <p class="text-sm text-gray-400">Available time slots will appear here</p>
+                        </div>
+
+                        <!-- Loading State -->
+                        <div id="timeSlots-loading" class="text-center py-4 d-none">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p class="text-gray-500">Loading available time slots...</p>
+                        </div>
+
+                        <!-- Time Slots List -->
+                        <div id="timeSlots-list" class="card shadow-sm mb-3 d-none">
+                            <div class="card-header py-2">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" id="selectAllTimeSlots">
+                                    <label class="custom-control-label font-weight-bold" for="selectAllTimeSlots">
+                                        Select All Time Slots
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="card-body p-3" style="max-height: 250px; overflow-y: auto;">
+                                <div id="time-slots-container">
+                                    <!-- Time slots will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- No Time Slots State -->
+                        <div id="timeSlots-none" class="text-center py-4 d-none">
+                            <i class="fas fa-calendar-times fa-3x text-gray-300 mb-3"></i>
+                            <p class="text-gray-500">No available time slots for this date</p>
+                            <p class="text-sm text-gray-400">Please select another date</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Message Text Area -->
+                <div class="form-group mt-4">
+                    <h6 class="font-weight-bold mb-2">Message to Client</h6>
+                    <?= $this->Form->textarea('message_text', [
+                        'class' => 'form-control',
+                        'rows' => 3,
+                        'id' => 'timeSlotMessageText',
+                        'placeholder' => 'Enter a message to accompany the time slots...',
+                        'value' => 'I\'d like to schedule a consultation to discuss your coaching service request. Here are some available time slots. Please click the link below to book one of these times or select another time that works for you.'
+                    ]) ?>
+
+                    <?= $this->Form->hidden('time_slots', [
+                        'id' => 'selectedTimeSlotsJson',
+                        'value' => '[]'
+                    ]) ?>
+                </div>
+
+                <?= $this->Form->end() ?>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" id="sendTimeSlots" class="btn btn-success" disabled>
+                    <i class="fas fa-paper-plane mr-1"></i> Send Time Slots
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mark as Paid Modal -->
+<div class="modal fade" id="markAsPaidModal" tabindex="-1" role="dialog" aria-labelledby="markAsPaidModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="markAsPaidModalLabel">Mark Payment as Paid</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <?= $this->Form->create(null, [
+                'url' => ['action' => 'markAsPaid', $coachingServiceRequest->coaching_service_request_id],
+                'id' => 'markAsPaidForm'
+            ]) ?>
+
+            <!-- Include _csrfToken field explicitly -->
+            <?= $this->Form->hidden('_csrfToken', [
+                'value' => $this->request->getAttribute('csrfToken')
+            ]) ?>
+
+            <div class="modal-body">
+                <p class="text-muted mb-3">Record a manual payment for this coaching service request. The client will be notified of the payment being recorded.</p>
+
+                <div class="form-group mb-3">
+                    <label for="amount">Payment Amount ($)</label>
+                    <?= $this->Form->control('amount', [
+                        'class' => 'form-control',
+                        'type' => 'number',
+                        'step' => '0.01',
+                        'min' => '1',
+                        'placeholder' => 'Enter amount',
+                        'required' => true,
+                        'label' => false,
+                    ]) ?>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="description">Payment Description (Optional)</label>
+                    <?= $this->Form->textarea('description', [
+                        'class' => 'form-control',
+                        'rows' => 2,
+                        'placeholder' => 'e.g. Payment received via bank transfer',
+                    ]) ?>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle mr-1"></i> A confirmation message will be sent to the client automatically.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-success">Mark as Paid</button>
+            </div>
+            <?= $this->Form->end() ?>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Templates -->
+<div id="payment-request-template" class="d-none">
+**Payment Request**
+
+**Service:** Coaching Service: <?= h($coachingServiceRequest->service_title) ?>
+**Amount:** $<?= number_format($coachingServiceRequest->final_price ?? 0, 2) ?>
+
+Please click the button below to complete your payment. Once payment is processed, you'll receive a confirmation and we'll begin work on your coaching request.
+
+[PAYMENT_BUTTON]<?= bin2hex(random_bytes(8)) ?>[/PAYMENT_BUTTON]
+</div>
+
+<div id="payment-confirmation-template" class="d-none">
+[PAYMENT_CONFIRMATION]
+**Payment Confirmation**
+
+Your payment of **$<?= number_format($coachingServiceRequest->final_price ?? 0, 2) ?>** for **<?= h($coachingServiceRequest->service_title) ?>** has been received.
+
+Thank you for your payment. We can now proceed with your coaching service as discussed.
+</div>
+
+<div id="time-slots-template" class="d-none">
+**Available Time Slots:**
+
+- Monday, June 3, 2024: 10:00 AM - 11:00 AM
+- Tuesday, June 4, 2024: 2:00 PM - 3:00 PM
+- Thursday, June 6, 2024: 11:00 AM - 12:00 PM
+
+Please select one of the time slots above for our coaching session by clicking the "Accept" button next to your preferred time.
+</div>
+
+<!-- Payment Request Modal -->
+<div class="modal fade" id="paymentRequestModal" tabindex="-1" role="dialog" aria-labelledby="paymentRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-white">
+                <h5 class="modal-title" id="paymentRequestModalLabel"><i class="fas fa-credit-card mr-2"></i> Send Payment Request</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <?= $this->Form->create(null, [
+                    'url' => ['action' => 'sendPaymentRequest', $coachingServiceRequest->coaching_service_request_id],
+                    'id' => 'paymentRequestForm',
+                ]) ?>
+
+                <!-- Include _csrfToken field explicitly -->
+                <?= $this->Form->hidden('_csrfToken', [
+                    'value' => $this->request->getAttribute('csrfToken')
+                ]) ?>
+
+                <div class="form-group">
+                    <label for="amount">Payment Amount</label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">$</span>
+                        </div>
+                        <?= $this->Form->control('amount', [
+                            'type' => 'text',
+                            'class' => 'form-control',
+                            'id' => 'amount',
+                            'placeholder' => 'Enter amount',
+                            'required' => true,
+                            'value' => $coachingServiceRequest->final_price ?: '',
+                            'label' => false
+                        ]) ?>
+                    </div>
+                    <small class="form-text text-muted">Enter the amount to charge the client.</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Payment Description</label>
+                    <?= $this->Form->textarea('description', [
+                        'class' => 'form-control',
+                        'id' => 'description',
+                        'required' => true,
+                        'rows' => 3,
+                        'placeholder' => 'e.g., Coaching session fee',
+                        'value' => 'Coaching Service: ' . $coachingServiceRequest->service_title,
+                    ]) ?>
+                    <small class="form-text text-muted">Briefly describe what this payment is for.</small>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="sendPaymentRequestBtn">
+                    <i class="fas fa-paper-plane mr-1"></i> Send Payment Request
+                </button>
+            </div>
+            <?= $this->Form->end() ?>
+        </div>
+    </div>
+</div>
+</div>
