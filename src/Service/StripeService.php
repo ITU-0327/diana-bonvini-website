@@ -58,21 +58,21 @@ class StripeService
             ];
         }
 
-        // Add shipping cost as a separate line item
-        if (!empty($order->shipping_cost) && $order->shipping_cost > 0) {
-            $lineItems[] = [
-                'price_data' => [
-                    'currency' => 'aud',
-                    'product_data' => ['name' => 'Shipping'],
-                    'unit_amount' => (int)round($order->shipping_cost * 100.0),
-                ],
-                'quantity' => 1,
-            ];
-        }
-
-        // assemble parameters
+        // assemble parameters with shipping options
         $params = [
             'payment_method_types' => ['card'],
+            'shipping_options' => [
+                [
+                    'shipping_rate_data' => [
+                        'type' => 'fixed_amount',
+                        'fixed_amount' => [
+                            'amount' => (int)round($order->shipping_cost * 100.0),
+                            'currency' => 'aud',
+                        ],
+                        'display_name' => 'Shipping',
+                    ],
+                ],
+            ],
             'line_items' => $lineItems ?: [[
                 'price_data' => [
                     'currency' => 'aud',
