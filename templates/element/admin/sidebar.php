@@ -87,8 +87,8 @@ $isActive = function ($controller, $action = null) {
 
             <?= $this->Html->link(
                 '<i class="fas fa-chalkboard-teacher"></i> <span>Coaching Service</span>',
-                ['controller' => 'CoachingServiceRequestsController', 'action' => 'index', 'prefix' => 'Admin'],
-                ['class' => 'menu-item ' . $isActive('GoogleAuth'), 'escape' => false],
+                ['controller' => 'CoachingServiceRequests', 'action' => 'index', 'prefix' => 'Admin'],
+                ['class' => 'menu-item ' . $isActive('CoachingServiceRequests'), 'escape' => false],
             ) ?>
 
             <?= $this->Html->link(

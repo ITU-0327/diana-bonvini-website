@@ -8,6 +8,7 @@ use Cake\Core\Configure;
 use Cake\Http\Response;
 use Cake\Routing\Router;
 use DateTimeInterface;
+use Exception;
 use Psr\Http\Message\UploadedFileInterface;
 use RuntimeException;
 use Stripe\Checkout\Session;
@@ -95,7 +96,7 @@ class WritingServiceRequestsController extends AppController
                 'is_deleted' => false,
             ])
             ->toArray();
-            
+
         // Fetch request documents
         $requestDocumentsTable = $this->fetchTable('RequestDocuments');
         $requestDocuments = $requestDocumentsTable->find()
@@ -132,33 +133,33 @@ class WritingServiceRequestsController extends AppController
                         $writingServiceRequest->request_status = 'in_progress';
                         $this->WritingServiceRequests->save($writingServiceRequest);
                     }
-                    
+
                     // Send notification email to admin
                     try {
                         // Get the latest message that was just added
                         $latestMessage = end($writingServiceRequest->request_messages);
-                        
+
                         if ($latestMessage) {
                             // Get a fresh copy of the request with user data
                             $requestWithUser = $this->WritingServiceRequests->get($id, [
                                 'contain' => ['Users'],
                             ]);
-                            
+
                             // Fixed admin email
                             $adminEmail = 'diana@dianabonvini.com';
                             $adminName = 'Diana Bonvini';
-                            
+
                             // Send admin notification
                             $mailer = new \App\Mailer\PaymentMailer('default');
                             $mailer->newMessageNotification(
-                                $requestWithUser, 
-                                $data['reply_message'], 
-                                $adminEmail, 
+                                $requestWithUser,
+                                $data['reply_message'],
+                                $adminEmail,
                                 $adminName
                             );
                             $mailer->deliverAsync();
                         }
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         // Log critical errors only
                         $this->log('Error sending message notification: ' . $e->getMessage(), 'error');
                     }
@@ -346,7 +347,7 @@ class WritingServiceRequestsController extends AppController
             $data['user_id'] = $user->user_id;
             $data['request_status'] = 'pending';
             $data['is_deleted'] = false;
-            
+
             // Handle appointment_id - make it nullable
             if (empty($data['appointment_id'])) {
                 unset($data['appointment_id']);
@@ -367,30 +368,30 @@ class WritingServiceRequestsController extends AppController
 
             if ($this->WritingServiceRequests->save($writingServiceRequest)) {
                 $this->Flash->success(__('The writing service request has been saved.'));
-                
+
                 // Send notification email to admin
                 try {
                     // Get the writing service request with user information
                     $writingServiceRequest = $this->WritingServiceRequests->get($writingServiceRequest->writing_service_request_id, [
                         'contain' => ['Users'],
                     ]);
-                    
+
                     // Fixed admin email
                     $adminEmail = 'diana@dianabonvini.com';
                     $adminName = 'Diana Bonvini';
-                    
+
                     // Send admin notification
                     $mailer = new \App\Mailer\PaymentMailer('default');
                     $mailer->newRequestNotification($writingServiceRequest, $adminEmail, $adminName);
                     $mailer->deliverAsync();
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     // Log critical errors only
                     $this->log('Error sending new writing service request notification: ' . $e->getMessage(), 'error');
                 }
 
                 return $this->redirect(['action' => 'index']);
             }
-            
+
             $this->log('Error saving writing service request: ' . json_encode($writingServiceRequest->getErrors()), 'error');
             $this->Flash->error(__('The writing service request could not be saved. Please, try again.'));
         }
@@ -539,7 +540,7 @@ class WritingServiceRequestsController extends AppController
 
                     // Make sure the database is also updated
                     $this->_updateDatabasePaymentStatus($id, $dbPaymentId, $sessionPaymentId, $paymentDetails);
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     // Log error but don't block the response
                     $this->log('Error updating DB payment status: ' . $e->getMessage(), 'error');
                 }
@@ -582,7 +583,7 @@ class WritingServiceRequestsController extends AppController
                         $writingServiceRequest->request_status = 'in_progress';
                         $this->WritingServiceRequests->save($writingServiceRequest);
                     }
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     // Log error but don't block the response
                     $this->log('Warning: Could not get WritingServiceRequest: ' . $e->getMessage(), 'warning');
                 }
@@ -594,7 +595,7 @@ class WritingServiceRequestsController extends AppController
                 // Try to update database, but don't fail if can't
                 try {
                     $this->_updateDatabasePaymentStatus($id, $dbPaymentId, $sessionPaymentId, $paymentDetails);
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     // Log error but don't block the response
                     $this->log('Error updating DB payment status: ' . $e->getMessage(), 'error');
                 }
@@ -625,10 +626,10 @@ class WritingServiceRequestsController extends AppController
                             $this->request->getSession()->write("WsrPayments.$sessionPaymentId.receipt", $paymentDetails);
                         }
                     }
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->log('Error fetching payment record: ' . $e->getMessage(), 'warning');
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->log('WritingServicePayments table not available: ' . $e->getMessage(), 'warning');
             }
         }
@@ -689,13 +690,13 @@ class WritingServiceRequestsController extends AppController
                         // Try database update
                         try {
                             $this->_updateDatabasePaymentStatus($id, $dbPaymentId, $sessionPaymentId, $paymentDetails);
-                        } catch (\Exception $e) {
+                        } catch (Exception $e) {
                             // Log error but continue
                             $this->log('Error in DB update: ' . $e->getMessage(), 'error');
                         }
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // If we can't get the writing service request, still provide a usable response
                 $this->log('Error getting final status: ' . $e->getMessage(), 'error');
             }
@@ -708,30 +709,30 @@ class WritingServiceRequestsController extends AppController
                 $writingServiceRequest = $this->WritingServiceRequests->get($id, [
                     'contain' => ['RequestMessages']
                 ]);
-                
+
                 // Only add confirmation if we don't already have one for this payment
-                $paymentId = !empty($paymentDetails['transaction_id']) 
-                    ? $paymentDetails['transaction_id'] 
+                $paymentId = !empty($paymentDetails['transaction_id'])
+                    ? $paymentDetails['transaction_id']
                     : (!empty($paymentDetails['payment_id']) ? $paymentDetails['payment_id'] : null);
-                    
+
                 $hasConfirmation = false;
-                
+
                 if ($paymentId && !empty($writingServiceRequest->request_messages)) {
                     foreach ($writingServiceRequest->request_messages as $message) {
-                        if (strpos($message->message, '[PAYMENT_CONFIRMATION]') !== false && 
+                        if (strpos($message->message, '[PAYMENT_CONFIRMATION]') !== false &&
                             strpos($message->message, "Payment ID: {$paymentId}") !== false) {
                             $hasConfirmation = true;
                             break;
                         }
                     }
                 }
-                
+
                 if (!$hasConfirmation) {
                     $this->_addPaymentConfirmationMessage($id, $paymentDetails);
                 } else {
                     $this->log("Skipping duplicate payment confirmation for ID: {$paymentId}", 'debug');
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Log error but continue
                 $this->log('Error processing confirmation message: ' . $e->getMessage(), 'error');
             }
@@ -779,7 +780,7 @@ class WritingServiceRequestsController extends AppController
             if ($dbPaymentId && $dbPaymentId !== 'pending') {
                 try {
                     $paymentEntity = $writingServicePaymentsTable->get($dbPaymentId);
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $paymentEntity = null;
                     $this->log('Payment record not found, will create new: ' . $e->getMessage(), 'debug');
                 }
@@ -826,7 +827,7 @@ class WritingServiceRequestsController extends AppController
 
                 return false;
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log('Error updating payment status in database: ' . $e->getMessage(), 'error');
 
             return false;
@@ -866,7 +867,7 @@ class WritingServiceRequestsController extends AppController
             $writingServiceRequest = $this->WritingServiceRequests->get($id, [
                 'contain' => ['Users'],
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log('Error retrieving request: ' . $e->getMessage(), 'error');
             $this->Flash->error('Unable to find the requested service.');
 
@@ -933,11 +934,11 @@ class WritingServiceRequestsController extends AppController
 
                         return $this->redirect(['action' => 'view', $id, '?' => ['payment_already_completed' => true]]);
                     }
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->log('Error fetching payment record: ' . $e->getMessage(), 'error');
                     // Continue with session data
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->log('WritingServicePayments table not available: ' . $e->getMessage(), 'warning');
                 // Continue with session data
             }
@@ -1017,7 +1018,7 @@ class WritingServiceRequestsController extends AppController
 
             // Redirect to Stripe checkout
             return $this->redirect($session->url);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log('Stripe error: ' . $e->getMessage() . "\n" . $e->getTraceAsString(), 'error');
             $this->Flash->error(__('There was an error processing your payment: ') . $e->getMessage());
 
@@ -1038,37 +1039,37 @@ class WritingServiceRequestsController extends AppController
         // Fixed admin email
         $adminEmail = 'diana@dianabonvini.com';
         $adminName = 'Diana Bonvini';
-        
+
         // Send customer email first - wrap in try-catch to prevent errors from blocking process
         try {
             $customerMailer = new \App\Mailer\PaymentMailer('default');
             $customerMailer->paymentConfirmation($request, $payment, $paymentDetails);
             $result = $customerMailer->deliverAsync();
-            
+
             if (!$result) {
                 $this->log('Customer payment confirmation email failed to send', 'warning');
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Log error but don't let it prevent admin notification
             $this->log('Error sending customer confirmation email: ' . $e->getMessage(), 'error');
         }
-        
+
         // Send admin notification in a separate try-catch
         try {
             $adminMailer = new \App\Mailer\PaymentMailer('default');
             $adminMailer->adminPaymentNotification(
-                $request, 
-                $payment, 
-                $adminEmail, 
+                $request,
+                $payment,
+                $adminEmail,
                 $adminName,
                 $paymentDetails
             );
             $result = $adminMailer->deliverAsync();
-            
+
             if (!$result) {
                 $this->log('Admin payment notification email failed to send', 'warning');
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Log critical errors only
             $this->log('Error sending admin notification email: ' . $e->getMessage(), 'error');
         }
@@ -1103,12 +1104,12 @@ class WritingServiceRequestsController extends AppController
             $date = !empty($paymentDetails['date'])
                 ? date('F j, Y \a\t g:i A', (int)$paymentDetails['date'])
                 : 'recently';
-                
+
             // Get payment ID (transaction ID or database ID if available)
-            $paymentId = !empty($paymentDetails['transaction_id']) 
-                ? $paymentDetails['transaction_id'] 
+            $paymentId = !empty($paymentDetails['transaction_id'])
+                ? $paymentDetails['transaction_id']
                 : (!empty($paymentDetails['payment_id']) ? $paymentDetails['payment_id'] : 'unknown');
-                
+
             // Check if a confirmation message already exists for this payment ID
             if (!empty($writingServiceRequest->request_messages)) {
                 foreach ($writingServiceRequest->request_messages as $message) {
@@ -1155,50 +1156,50 @@ class WritingServiceRequestsController extends AppController
                 $this->log('Failed to save payment confirmation message: ' . json_encode($writingServiceRequest->getErrors()), 'error');
                 return false;
             }
-            
+
             // Handle email sending separately from message saving to prevent failures
             $this->_processPaymentConfirmationEmails($writingServiceRequest, $paymentDetails, $paymentId);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log('Error adding payment confirmation message: ' . $e->getMessage(), 'error');
             return false;
         }
     }
-    
+
     /**
      * Helper method to handle email processing separately from message saving
-     * 
+     *
      * @param \App\Model\Entity\WritingServiceRequest $writingServiceRequest The writing service request
      * @param array $paymentDetails Payment details
      * @param string $paymentId The payment ID
      * @return void
      */
     protected function _processPaymentConfirmationEmails(
-        WritingServiceRequest $writingServiceRequest, 
-        array $paymentDetails, 
+        WritingServiceRequest $writingServiceRequest,
+        array $paymentDetails,
         string $paymentId
     ): void {
         try {
             // Get payment details from database if available
             $payment = null;
             $dbPaymentId = !empty($paymentDetails['payment_id']) ? $paymentDetails['payment_id'] : null;
-            
+
             if ($dbPaymentId) {
                 try {
                     $writingServicePaymentsTable = $this->fetchTable('WritingServicePayments');
                     $payment = $writingServicePaymentsTable->get($dbPaymentId);
-                    
+
                     // Ensure we're using the current payment amount
                     if (isset($paymentDetails['amount'])) {
                         $payment->amount = (float)$paymentDetails['amount'];
                     }
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     // Log error but continue with a temporary payment object
                     $this->log('Error retrieving payment record: ' . $e->getMessage(), 'warning');
                 }
             }
-            
+
             // If we don't have a valid payment record, create a temporary one
             if (!$payment) {
                 // Create a temporary payment object for email
@@ -1211,11 +1212,11 @@ class WritingServiceRequestsController extends AppController
                     'status' => 'paid',
                 ]);
             }
-            
+
             // Send emails using the helper method
             $this->_sendPaymentEmails($writingServiceRequest, $payment, $paymentDetails);
-            
-        } catch (\Exception $e) {
+
+        } catch (Exception $e) {
             // Log error but don't halt execution
             $this->log('Error in payment confirmation email processing: ' . $e->getMessage(), 'error');
         }
@@ -1487,7 +1488,7 @@ class WritingServiceRequestsController extends AppController
     {
         // Determine if this is an AJAX request
         $isAjax = $this->request->is('ajax') || $this->request->is('json');
-        
+
         if (empty($id) || empty($sessionPaymentId)) {
             if ($isAjax) {
                 return $this->response->withType('application/json')
@@ -1496,7 +1497,7 @@ class WritingServiceRequestsController extends AppController
                         'message' => 'Invalid payment information.'
                     ]));
             }
-            
+
             $this->Flash->error('Invalid payment information.');
             return $this->redirect(['action' => 'index']);
         }
@@ -1506,9 +1507,9 @@ class WritingServiceRequestsController extends AppController
         // Get the writing service request to ensure we have the correct price
         try {
             $writingServiceRequest = $this->WritingServiceRequests->get($id);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log('Error retrieving writing service request: ' . $e->getMessage(), 'error');
-            
+
             if ($isAjax) {
                 return $this->response->withType('application/json')
                     ->withStringBody(json_encode([
@@ -1516,18 +1517,18 @@ class WritingServiceRequestsController extends AppController
                         'message' => 'Error retrieving writing service request.'
                     ]));
             }
-            
+
             $this->Flash->error('Error processing payment: Unable to find the writing service request.');
             return $this->redirect(['action' => 'index']);
         }
 
         // Get payment data from session
         $paymentData = $this->request->getSession()->read("WsrPayments.$sessionPaymentId");
-        
+
         // Skip if payment is already marked as paid
         if (!empty($paymentData) && isset($paymentData['status']) && $paymentData['status'] === 'paid') {
             $this->log("Payment $sessionPaymentId is already marked as paid", 'debug');
-            
+
             if ($isAjax) {
                 return $this->response->withType('application/json')
                     ->withStringBody(json_encode([
@@ -1536,7 +1537,7 @@ class WritingServiceRequestsController extends AppController
                         'message' => 'Payment already confirmed.'
                     ]));
             }
-            
+
             $this->Flash->success('Payment has already been processed.');
             return $this->redirect(['action' => 'view', $id]);
         }
@@ -1593,7 +1594,7 @@ class WritingServiceRequestsController extends AppController
                     'details' => $paymentDetails
                 ]));
         }
-        
+
         // Show success message
         $this->Flash->success('Payment completed successfully!');
 
@@ -1634,7 +1635,7 @@ class WritingServiceRequestsController extends AppController
 
             // Generate a unique session payment ID
             $sessionPaymentId = 'pay_' . uniqid();
-            
+
             // Get amount from the request data or prompt for it
             $amount = $this->request->getData('amount');
             if (empty($amount) || !is_numeric($amount) || (float)$amount <= 0) {
@@ -1644,7 +1645,7 @@ class WritingServiceRequestsController extends AppController
                 ]));
             }
 
-            // Generate a transaction ID based on request ID 
+            // Generate a transaction ID based on request ID
             $paymentDetails = [
                 'amount' => $amount,
                 'customer_id' => $user->user_id,
@@ -1712,7 +1713,7 @@ class WritingServiceRequestsController extends AppController
                 'message' => 'Payment has been marked as paid',
                 'paymentId' => $sessionPaymentId . '|' . $dbPaymentId,
             ]));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log('Error marking payment as paid: ' . $e->getMessage(), 'error');
 
             return $this->response->withStringBody(json_encode([
@@ -1784,7 +1785,7 @@ class WritingServiceRequestsController extends AppController
 
                     $this->request->getSession()->write("WsrPayments.$sessionPaymentId", $paymentData);
                     $this->log('Created payment data from database record: ' . json_encode($paymentData), 'debug');
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->log('Error retrieving payment from database: ' . $e->getMessage(), 'error');
                 }
             }
@@ -1798,7 +1799,7 @@ class WritingServiceRequestsController extends AppController
 
             // Call the regular pay method with the extracted parameters
             return $this->pay($id, $paymentId);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log('payDirect error: ' . $e->getMessage(), 'error');
             $this->Flash->error('Error processing payment: ' . $e->getMessage());
 
@@ -1815,7 +1816,7 @@ class WritingServiceRequestsController extends AppController
     public function uploadDocument(?string $id = null)
     {
         $this->request->allowMethod(['post']);
-        
+
         /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
 
@@ -1826,31 +1827,31 @@ class WritingServiceRequestsController extends AppController
 
         try {
             $writingServiceRequest = $this->WritingServiceRequests->get($id);
-            
+
             // Check permissions - admin or owner of the request
             if ($user->user_type !== 'admin' && $user->user_id !== $writingServiceRequest->user_id) {
                 $this->Flash->error(__('You do not have permission to upload documents to this request.'));
                 return $this->redirect(['action' => 'index']);
             }
-            
+
             $data = $this->request->getData();
-            
+
             // Handle file upload
             $file = $this->request->getUploadedFile('document');
-            
+
             if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
                 $this->Flash->error(__('No document uploaded or upload failed.'));
                 return $this->redirect(['action' => 'view', $id]);
             }
-            
+
             // Process the document upload
             $documentPath = $this->_handleDocumentUpload($file, 'view');
-            
+
             if ($documentPath) {
                 // Create a RequestDocument entity
                 $requestDocumentsTable = $this->fetchTable('RequestDocuments');
                 $requestDocument = $requestDocumentsTable->newEmptyEntity();
-                
+
                 $data = [
                     'request_document_id' => Text::uuid(),
                     'writing_service_request_id' => $id,
@@ -1863,12 +1864,12 @@ class WritingServiceRequestsController extends AppController
                     'is_deleted' => false,
                     'created_at' => new \DateTime('now')
                 ];
-                
+
                 // Skip validation for the writing_service_request_id field
                 $requestDocument = $requestDocumentsTable->patchEntity($requestDocument, $data, [
                     'validate' => false
                 ]);
-                
+
                 if ($requestDocumentsTable->save($requestDocument)) {
                     // Add a message to the chat about the upload
                     $message = "Uploaded document: **" . $file->getClientFilename() . "**";
@@ -1880,7 +1881,7 @@ class WritingServiceRequestsController extends AppController
                         'is_read' => false,
                     ]);
                     $requestMessagesTable->save($newMessage);
-                    
+
                     $this->Flash->success(__('Document uploaded successfully.'));
                 } else {
                     $this->Flash->error(__('Document uploaded but could not be saved in the database.'));
@@ -1888,10 +1889,10 @@ class WritingServiceRequestsController extends AppController
             } else {
                 $this->Flash->error(__('Failed to upload document. Please try again.'));
             }
-            
+
             return $this->redirect(['action' => 'view', $id]);
-            
-        } catch (\Exception $e) {
+
+        } catch (Exception $e) {
             $this->Flash->error(__('Error: {0}', $e->getMessage()));
             return $this->redirect(['action' => 'view', $id]);
         }

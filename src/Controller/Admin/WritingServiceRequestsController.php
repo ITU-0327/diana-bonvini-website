@@ -5,10 +5,13 @@ namespace App\Controller\Admin;
 
 use App\Controller\Admin\AdminController as BaseAdminController;
 use App\Model\Entity\WritingServiceRequest;
+use App\Service\GoogleCalendarService;
 use Cake\Http\Response;
 use Cake\Utility\Inflector;
-use Exception;
 use Cake\Utility\Text;
+use DateTime;
+use DateTimeZone;
+use Exception;
 
 /**
  * WritingServiceRequests Controller (Admin prefix)
@@ -140,124 +143,6 @@ class WritingServiceRequestsController extends BaseAdminController
         }
 
         $this->set(compact('writingServiceRequest'));
-    }
-
-    /**
-     * AJAX endpoint to fetch new messages
-     *
-     * @param string|null $id Writing Service Request id
-     * @param string|null $lastMessageId The ID of the last message the client has
-     * @return \Cake\Http\Response|null The JSON response with new messages
-     */
-    public function fetchMessages(?string $id = null, ?string $lastMessageId = null): ?Response
-    {
-        $this->request->allowMethod(['get', 'ajax']);
-
-        $this->disableAutoRender();
-        $this->response = $this->response->withType('application/json');
-
-        if (empty($id)) {
-            $jsonResponse = json_encode([
-                'success' => false,
-                'message' => 'Request ID is required',
-            ]);
-            if ($jsonResponse === false) {
-                return $this->response->withStringBody('{"success":false,"message":"Error encoding response"}');
-            }
-
-            return $this->response->withStringBody($jsonResponse);
-        }
-
-        /** @var \App\Model\Entity\User|null $user */
-        $user = $this->Authentication->getIdentity();
-
-        if (!$user) {
-            $jsonResponse = json_encode([
-                'success' => false,
-                'message' => 'Authentication required',
-            ]);
-            if ($jsonResponse === false) {
-                return $this->response->withStringBody('{"success":false,"message":"Error encoding response"}');
-            }
-
-            return $this->response->withStringBody($jsonResponse);
-        }
-
-        // Get the lastMessageId from query parameter if not provided as route parameter
-        if (empty($lastMessageId)) {
-            $lastMessageId = $this->request->getQuery('lastMessageId');
-        }
-
-        try {
-            $writingServiceRequest = $this->WritingServiceRequests->get($id, [
-                'contain' => [
-                    'RequestMessages' => function ($q) use ($lastMessageId) {
-                        $query = $q->contain(['Users'])
-                            ->order(['RequestMessages.created_at' => 'ASC']);
-
-                        if (!empty($lastMessageId)) {
-                            // Only get messages newer than the lastMessageId
-                            $query->where(['RequestMessages.request_message_id >' => $lastMessageId]);
-                        }
-
-                        return $query;
-                    },
-                ],
-            ]);
-
-            // Format messages for JSON response
-            $messages = [];
-            if (!empty($writingServiceRequest->request_messages)) {
-                foreach ($writingServiceRequest->request_messages as $message) {
-                    $isAdmin = isset($message->user) && $message->user->user_type === 'admin';
-                    $timeFormatted = $message->created_at->format('M j, Y g:i A');
-
-                    $messages[] = [
-                        'id' => $message->request_message_id,
-                        'content' => $message->message,
-                        'sender' => $isAdmin ? 'admin' : 'client',
-                        'senderName' => $isAdmin ? 'Admin' : ($message->user->first_name . ' ' . $message->user->last_name),
-                        'timestamp' => $timeFormatted,
-                        'is_read' => (bool)$message->is_read,
-                        'created_at' => $message->created_at->format('c'),
-                    ];
-
-                    // Mark the message as read if it's not from the current user
-                    if ($message->user_id !== $user->user_id && !$message->is_read) {
-                        $message->is_read = true;
-                        $this->WritingServiceRequests->RequestMessages->save($message);
-                    }
-                }
-            }
-
-            $jsonResponse = json_encode([
-                'success' => true,
-                'messages' => $messages,
-                'count' => count($messages),
-            ]);
-            if ($jsonResponse === false) {
-                return $this->response->withStringBody('{"success":false,"message":"Error encoding response"}');
-            }
-
-            return $this->response->withStringBody($jsonResponse);
-        } catch (Exception $e) {
-            $jsonResponse = json_encode([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage(),
-            ]);
-            if ($jsonResponse === false) {
-                return $this->response->withStringBody('{"success":false,"message":"Error encoding response"}');
-            }
-
-            return $this->response->withStringBody($jsonResponse);
-        }
-
-        // Configure FormProtection component
-        if ($this->components()->has('FormProtection')) {
-            $this->FormProtection->setConfig([
-                'unlockedFields' => ['message_text', 'time_slots'],
-            ]);
-        }
     }
 
     /**
@@ -435,108 +320,6 @@ class WritingServiceRequestsController extends BaseAdminController
     }
 
     /**
-     * Get available time slots for a given date
-     *
-     * @return void
-     */
-    public function getAvailableTimeSlots()
-    {
-        $this->request->allowMethod(['get', 'ajax']);
-
-        // Return JSON response
-        $this->viewBuilder()->setClassName('Json');
-        $this->viewBuilder()->setOption('serialize', ['success', 'timeSlots']);
-
-        $success = false;
-        $timeSlots = [];
-
-        // Get date from query parameter
-        $date = $this->request->getQuery('date');
-
-        if (!empty($date) && strtotime($date)) {
-            /** @var \App\Model\Entity\User $admin */
-            $admin = $this->Authentication->getIdentity();
-
-            // Create Google Calendar Service
-            $googleCalendarService = new \App\Service\GoogleCalendarService();
-            $dateObj = new \DateTime($date, new \DateTimeZone(date_default_timezone_get()));
-
-            // Define working hours (9 AM to 5 PM by default)
-            $workingHours = [
-                'start' => '09:00',
-                'end' => '17:00',
-            ];
-
-            // Get free time slots (will return demo slots if calendar not connected)
-            $timeSlots = $googleCalendarService->getFreeTimeSlots($admin->user_id, $dateObj, $workingHours);
-            $success = true;
-        }
-
-        $this->set(compact('success', 'timeSlots'));
-    }
-
-    /**
-     * Send available time slots to the client
-     *
-     * @param string|null $id Writing Service Request id.
-     * @return \Cake\Http\Response|null
-     */
-    public function sendTimeSlots(?string $id = null)
-    {
-        /** @var \App\Model\Entity\User $admin */
-        $admin = $this->Authentication->getIdentity();
-        $writingServiceRequest = $this->WritingServiceRequests->get($id);
-
-        if ($this->request->is('post')) {
-            $data = $this->request->getData();
-
-            if (!empty($data['time_slots']) && !empty($data['message_text'])) {
-                $timeSlots = json_decode($data['time_slots'], true);
-                $messageText = $data['message_text'];
-
-                // Format the time slots for the message
-                $formattedSlots = '';
-                foreach ($timeSlots as $index => $slot) {
-                    $formattedSlots .= ($index + 1) . ". " . $slot['formatted'] . " on " . date('l, F j, Y', strtotime($slot['date'])) . "\n";
-                }
-
-                // Create the full message with the time slots
-                $fullMessage = $messageText . "\n\nAvailable time slots:\n" . $formattedSlots;
-                $fullMessage .= "\nTo book an appointment, please visit: " . $this->request->webroot . "calendar/availability/" . $id;
-
-                // Save the message
-                $messageData = [
-                    'request_messages' => [
-                        [
-                            'user_id' => $admin->user_id,
-                            'message' => $fullMessage,
-                            'is_read' => false,
-                            'writing_service_request_id' => $writingServiceRequest->writing_service_request_id,
-                        ],
-                    ],
-                ];
-
-                $writingServiceRequest = $this->WritingServiceRequests->patchEntity(
-                    $writingServiceRequest,
-                    $messageData
-                );
-
-                if ($this->WritingServiceRequests->save($writingServiceRequest)) {
-                    $this->Flash->success(__('Time slots have been sent to the client.'));
-                } else {
-                    $this->Flash->error(__('Failed to send time slots. Please try again.'));
-                }
-            } else {
-                $this->Flash->error(__('Please select at least one time slot and provide a message.'));
-            }
-
-            return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
-        }
-
-        return $this->redirect(['action' => 'view', $id]);
-    }
-
-    /**
      * Send payment request to client
      *
      * @param string|null $id Writing Service Request id.
@@ -609,8 +392,8 @@ class WritingServiceRequestsController extends BaseAdminController
 
         // Create a message with payment button using the new approach with query parameters
         $messageText = "**Payment Request**\n\n";
-        $messageText .= "**Service:** " . $description . "\n";
-        $messageText .= "**Amount:** " . $formattedAmount . "\n\n";
+        $messageText .= '**Service:** ' . $description . "\n";
+        $messageText .= '**Amount:** ' . $formattedAmount . "\n\n";
         $messageText .= "Please click the button below to complete your payment. Once payment is processed, you'll receive a confirmation and we'll begin work on your request.\n\n";
         $messageText .= '[PAYMENT_BUTTON]' . $combinedPaymentId . '[/PAYMENT_BUTTON]';
 
@@ -678,11 +461,12 @@ class WritingServiceRequestsController extends BaseAdminController
 
         if (!$admin || $admin->user_type !== 'admin') {
             $this->Flash->error(__('You are not authorized to perform this action.'));
+
             return $this->redirect(['controller' => 'Admin', 'action' => 'dashboard']);
         }
 
         $writingServiceRequest = $this->WritingServiceRequests->get($id, [
-            'contain' => ['Users']
+            'contain' => ['Users'],
         ]);
 
         $data = $this->request->getData();
@@ -690,6 +474,7 @@ class WritingServiceRequestsController extends BaseAdminController
 
         if (empty(trim($messageText))) {
             $this->Flash->error(__('Please enter a message.'));
+
             return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
         }
 
@@ -708,7 +493,7 @@ class WritingServiceRequestsController extends BaseAdminController
         // Add the message to the request
         $writingServiceRequest = $this->WritingServiceRequests->patchEntity(
             $writingServiceRequest,
-            $messageData
+            $messageData,
         );
 
         if ($this->WritingServiceRequests->save($writingServiceRequest)) {
@@ -810,7 +595,7 @@ class WritingServiceRequestsController extends BaseAdminController
                     'messages' => $messages,
                     'count' => count($messages),
                 ]));
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return $this->response->withStringBody(json_encode([
                     'success' => false,
                     'message' => 'Error: ' . $e->getMessage(),
@@ -880,7 +665,7 @@ class WritingServiceRequestsController extends BaseAdminController
                         'transaction_id' => $payment->transaction_id,
                     ];
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $result['error'] = $e->getMessage();
             }
         }
@@ -927,7 +712,7 @@ class WritingServiceRequestsController extends BaseAdminController
 
             try {
                 // Initialize the GoogleCalendarService
-                $googleCalendarService = new \App\Service\GoogleCalendarService();
+                $googleCalendarService = new GoogleCalendarService();
 
                 // Check if we have active Google Calendar settings for this user
                 $googleCalendarSettings = null;
@@ -937,12 +722,12 @@ class WritingServiceRequestsController extends BaseAdminController
                         $googleCalendarSettings = $this->GoogleCalendarSettings->find()
                             ->where(['user_id' => $userId, 'is_active' => true])
                             ->first();
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         $this->log('Error retrieving Google Calendar settings: ' . $e->getMessage(), 'error');
                     }
                 }
 
-                $dateObj = new \DateTime($date, new \DateTimeZone(date_default_timezone_get()));
+                $dateObj = new DateTime($date, new DateTimeZone(date_default_timezone_get()));
 
                 // Define working hours (9 AM to 5 PM by default)
                 $workingHours = [
@@ -958,7 +743,7 @@ class WritingServiceRequestsController extends BaseAdminController
                         $timeSlots = $googleCalendarService->getFreeTimeSlots($userId, $dateObj, $workingHours);
                         $success = true;
                         $this->log('Retrieved ' . count($timeSlots) . ' time slots from Google Calendar', 'debug');
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         $this->log('Error retrieving time slots from Google Calendar: ' . $e->getMessage(), 'error');
                         // Fall back to mock data
                         $timeSlots = $this->createMockTimeSlots($dateObj);
@@ -971,14 +756,14 @@ class WritingServiceRequestsController extends BaseAdminController
                     $timeSlots = $this->createMockTimeSlots($dateObj);
                     $success = true;
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->log('Error in getAvailableTimeSlots: ' . $e->getMessage(), 'error');
                 // Always provide some mock data as fallback
                 try {
-                    $dateObj = new \DateTime($date, new \DateTimeZone(date_default_timezone_get()));
+                    $dateObj = new DateTime($date, new DateTimeZone(date_default_timezone_get()));
                     $timeSlots = $this->createMockTimeSlots($dateObj);
                     $success = true;
-                } catch (\Exception $innerEx) {
+                } catch (Exception $innerEx) {
                     $this->log('Error creating mock time slots: ' . $innerEx->getMessage(), 'error');
                     // Even if all else fails, create a few basic time slots
                     $timeSlots = $this->createBasicTimeSlots($date);
@@ -1007,7 +792,7 @@ class WritingServiceRequestsController extends BaseAdminController
      * @param \DateTime $date The date to create slots for
      * @return array The mock time slots
      */
-    private function createMockTimeSlots(\DateTime $date)
+    private function createMockTimeSlots(DateTime $date)
     {
         // Create mock slots from 9 AM to 5 PM at 30-minute intervals
         $slots = [];
@@ -1035,7 +820,7 @@ class WritingServiceRequestsController extends BaseAdminController
                     'date' => $date->format('Y-m-d'),
                     'start' => $startTime,
                     'end' => $endTime,
-                    'formatted' => $startTime . ' - ' . $endTime
+                    'formatted' => $startTime . ' - ' . $endTime,
                 ];
             }
         }
@@ -1061,35 +846,35 @@ class WritingServiceRequestsController extends BaseAdminController
             'date' => $dateString,
             'start' => '09:00',
             'end' => '09:30',
-            'formatted' => '9:00 AM - 9:30 AM'
+            'formatted' => '9:00 AM - 9:30 AM',
         ];
 
         $slots[] = [
             'date' => $dateString,
             'start' => '10:00',
             'end' => '10:30',
-            'formatted' => '10:00 AM - 10:30 AM'
+            'formatted' => '10:00 AM - 10:30 AM',
         ];
 
         $slots[] = [
             'date' => $dateString,
             'start' => '11:00',
             'end' => '11:30',
-            'formatted' => '11:00 AM - 11:30 AM'
+            'formatted' => '11:00 AM - 11:30 AM',
         ];
 
         $slots[] = [
             'date' => $dateString,
             'start' => '14:00',
             'end' => '14:30',
-            'formatted' => '2:00 PM - 2:30 PM'
+            'formatted' => '2:00 PM - 2:30 PM',
         ];
 
         $slots[] = [
             'date' => $dateString,
             'start' => '15:00',
             'end' => '15:30',
-            'formatted' => '3:00 PM - 3:30 PM'
+            'formatted' => '3:00 PM - 3:30 PM',
         ];
 
         return $slots;
@@ -1110,6 +895,7 @@ class WritingServiceRequestsController extends BaseAdminController
 
         if (empty($id)) {
             $this->Flash->error(__('Invalid writing service request.'));
+
             return $this->redirect(['action' => 'index']);
         }
 
@@ -1128,12 +914,14 @@ class WritingServiceRequestsController extends BaseAdminController
             // Validate required fields
             if (empty($messageText)) {
                 $this->Flash->error(__('Please enter a message.'));
+
                 return $this->redirect(['action' => 'view', $id]);
             }
 
             // Validate time slots
             if (empty($timeSlots)) {
                 $this->Flash->error(__('No time slots selected.'));
+
                 return $this->redirect(['action' => 'view', $id]);
             }
 
@@ -1144,7 +932,7 @@ class WritingServiceRequestsController extends BaseAdminController
                 $this->log('Failed to decode time slots JSON: ' . $timeSlots, 'error');
 
                 // Create some basic time slots as fallback
-                $date = new \DateTime();
+                $date = new DateTime();
                 $decodedTimeSlots = $this->createMockTimeSlots($date);
                 $this->log('Created fallback time slots: ' . json_encode($decodedTimeSlots), 'debug');
             }
@@ -1154,10 +942,10 @@ class WritingServiceRequestsController extends BaseAdminController
             foreach ($decodedTimeSlots as $slot) {
                 if (isset($slot['date']) && isset($slot['formatted'])) {
                     try {
-                        $formattedDate = new \DateTime($slot['date']);
+                        $formattedDate = new DateTime($slot['date']);
                         $dayName = $formattedDate->format('l');
                         $formattedSlots[] = "- {$dayName}, {$formattedDate->format('F j, Y')}: {$slot['formatted']}";
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         $this->log('Error formatting date: ' . $e->getMessage(), 'error');
                         // Add a basic formatted slot as fallback
                         $formattedSlots[] = "- {$slot['date']}: {$slot['formatted']}";
@@ -1167,6 +955,7 @@ class WritingServiceRequestsController extends BaseAdminController
 
             if (empty($formattedSlots)) {
                 $this->Flash->error(__('Failed to format time slots.'));
+
                 return $this->redirect(['action' => 'view', $id]);
             }
 
@@ -1176,7 +965,7 @@ class WritingServiceRequestsController extends BaseAdminController
             $message .= implode("\n", $formattedSlots);
             $message .= "\n\n";
             $message .= "[CALENDAR_BOOKING_LINK]\n";
-            $message .= "Click here to book a time slot or propose another time that works better for you.";
+            $message .= 'Click here to book a time slot or propose another time that works better for you.';
             $message .= "\n[/CALENDAR_BOOKING_LINK]";
 
             // Create a message entity
@@ -1197,7 +986,7 @@ class WritingServiceRequestsController extends BaseAdminController
             // Add the message to the request
             $writingServiceRequest = $this->WritingServiceRequests->patchEntity(
                 $writingServiceRequest,
-                $messageData
+                $messageData,
             );
 
             if ($this->WritingServiceRequests->save($writingServiceRequest)) {
@@ -1207,7 +996,7 @@ class WritingServiceRequestsController extends BaseAdminController
                     [
                         'slots' => $decodedTimeSlots,
                         'expires' => time() + (7 * 24 * 60 * 60), // Expire after 7 days
-                    ]
+                    ],
                 );
 
                 $this->Flash->success(__('Time slots sent successfully.'));
@@ -1223,9 +1012,10 @@ class WritingServiceRequestsController extends BaseAdminController
             }
 
             return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log('Error in sendTimeSlots: ' . $e->getMessage(), 'error');
             $this->Flash->error(__('An error occurred: {0}', $e->getMessage()));
+
             return $this->redirect(['action' => 'view', $id]);
         }
     }
@@ -1245,17 +1035,17 @@ class WritingServiceRequestsController extends BaseAdminController
 
         if (!$user || $user->user_type !== 'admin') {
             $this->Flash->error(__('You need to be an admin to upload documents.'));
+
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
 
         try {
-            $writingServiceRequest = $this->WritingServiceRequests->get($id);
-
             // Handle file upload
             $file = $this->request->getUploadedFile('document');
 
             if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
                 $this->Flash->error(__('No document uploaded or upload failed.'));
+
                 return $this->redirect(['action' => 'view', $id]);
             }
 
@@ -1268,7 +1058,7 @@ class WritingServiceRequestsController extends BaseAdminController
                 $requestDocument = $requestDocumentsTable->newEmptyEntity();
 
                 $data = [
-                    'request_document_id' => \Cake\Utility\Text::uuid(),
+                    'request_document_id' => Text::uuid(),
                     'writing_service_request_id' => $id,
                     'user_id' => $user->user_id,
                     'document_path' => $documentPath,
@@ -1277,17 +1067,17 @@ class WritingServiceRequestsController extends BaseAdminController
                     'file_size' => $file->getSize(),
                     'uploaded_by' => 'admin',
                     'is_deleted' => false,
-                    'created_at' => new \DateTime('now')
+                    'created_at' => new DateTime('now'),
                 ];
 
                 // Skip validation for the writing_service_request_id field
                 $requestDocument = $requestDocumentsTable->patchEntity($requestDocument, $data, [
-                    'validate' => false
+                    'validate' => false,
                 ]);
 
                 if ($requestDocumentsTable->save($requestDocument)) {
                     // Add a message to the chat about the upload
-                    $message = "Uploaded document: **" . $file->getClientFilename() . "**";
+                    $message = 'Uploaded document: **' . $file->getClientFilename() . '**';
                     $requestMessagesTable = $this->fetchTable('RequestMessages');
                     $newMessage = $requestMessagesTable->newEntity([
                         'writing_service_request_id' => $id,
@@ -1308,10 +1098,10 @@ class WritingServiceRequestsController extends BaseAdminController
             }
 
             return $this->redirect(['action' => 'view', $id]);
-
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log('Error in admin document upload: ' . $e->getMessage(), 'error');
             $this->Flash->error(__('Error: {0}', $e->getMessage()));
+
             return $this->redirect(['action' => 'view', $id]);
         }
     }
