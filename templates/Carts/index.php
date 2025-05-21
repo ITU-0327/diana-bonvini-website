@@ -57,7 +57,7 @@ $this->assign('title', __('Cart'));
                                     [
                                         'type' => 'number',
                                         'min' => 1,
-                                        'max' => 5,
+                                        'max' => $artwork->stock,
                                         'value' => $quantity,
                                         'label' => false,
                                         'class' => 'w-20 border rounded p-1',

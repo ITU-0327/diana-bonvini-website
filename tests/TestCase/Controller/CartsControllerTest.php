@@ -171,7 +171,7 @@ class CartsControllerTest extends TestCase
         // Post with no artwork_variant_id in data.
         $this->post('/carts/add');
         $this->assertResponseSuccess();
-        $this->assertFlashMessage('No size selected.');
+        $this->assertFlashMessage('No variant selected.');
     }
 
     /**

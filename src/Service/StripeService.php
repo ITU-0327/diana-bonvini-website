@@ -51,16 +51,31 @@ class StripeService
             $lineItems[] = [
                 'price_data' => [
                     'currency' => 'aud',
-                    'product_data' => ['name' => "$artwork->title ($dimension)"],
+                    'product_data' => [
+                        'name' => "$artwork->title ($dimension)",
+                        'images' => [ $artwork->image_url ],
+                    ],
                     'unit_amount' => (int)round($item->price * 100.0),
                 ],
                 'quantity' => $item->quantity,
             ];
         }
 
-        // assemble parameters
+        // assemble parameters with shipping options
         $params = [
             'payment_method_types' => ['card'],
+            'shipping_options' => [
+                [
+                    'shipping_rate_data' => [
+                        'type' => 'fixed_amount',
+                        'fixed_amount' => [
+                            'amount' => (int)round($order->shipping_cost * 100.0),
+                            'currency' => 'aud',
+                        ],
+                        'display_name' => 'Shipping',
+                    ],
+                ],
+            ],
             'line_items' => $lineItems ?: [[
                 'price_data' => [
                     'currency' => 'aud',

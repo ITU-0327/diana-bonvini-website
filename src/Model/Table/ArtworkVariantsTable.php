@@ -86,6 +86,12 @@ class ArtworkVariantsTable extends Table
             ->greaterThanOrEqual('price', 1, 'Price must be at least $1.00');
 
         $validator
+            ->scalar('print_type')
+            ->requirePresence('print_type', 'create')
+            ->notEmptyString('print_type')
+            ->inList('print_type', ['canvas', 'print'], 'Print type must be canvas or print');
+
+        $validator
             ->boolean('is_deleted')
             ->notEmptyString('is_deleted');
 

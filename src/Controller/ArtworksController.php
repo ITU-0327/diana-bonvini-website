@@ -88,23 +88,8 @@ class ArtworksController extends AppController
             }
         }
 
-        // Sum sold quantities across all confirmed/completed orders
-        $ArtworkVariantOrdersTable = TableRegistry::getTableLocator()->get('ArtworkVariantOrders');
-        $soldCountQuery = $ArtworkVariantOrdersTable->find();
-        $soldCountQuery->select(['sum' => 'SUM(ArtworkVariantOrders.quantity)'])
-            ->matching('ArtworkVariants', function ($q) use ($artwork) {
-                return $q->where(['ArtworkVariants.artwork_id' => $artwork->artwork_id]);
-            })
-            ->innerJoinWith('Orders', function ($q) {
-                return $q->where([
-                    'Orders.order_status IN' => ['confirmed','completed'],
-                    'Orders.is_deleted' => false,
-                ]);
-            });
-        $soldCount = (int)($soldCountQuery->first()->get('sum') ?? 0);
-
-        $max = $artwork->max_copies;
-        $remaining = max(0, $max - $soldCount - $inCart);
+        // Calculate remaining using artwork's virtual stock field and in-cart quantity
+        $remaining = max(0, $artwork->stock - $inCart);
 
         $this->set(compact('artwork', 'remaining'));
     }

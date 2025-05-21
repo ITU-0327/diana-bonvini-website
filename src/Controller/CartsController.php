@@ -79,7 +79,7 @@ class CartsController extends AppController
         $quantity = max(1, (int)$this->request->getData('quantity', 1));
 
         if (!$artworkVariantId) {
-            $this->Flash->error('No size selected.');
+            $this->Flash->error('No variant selected.');
 
             return $this->redirect($this->referer());
         }
@@ -244,52 +244,30 @@ class CartsController extends AppController
         // Posted quantities: [artwork_variant_cart_id => newQty]
         $quantities = $this->request->getData('quantities') ?: [];
 
-        // Loop through each line
         foreach ($quantities as $lineId => $newQty) {
             $newQty = (int)max(1, $newQty);
             /** @var \App\Model\Entity\ArtworkVariantCart $line */
             $line = $this->Carts->ArtworkVariantCarts->get($lineId, contain: ['ArtworkVariants.Artworks']);
 
-            // Compute how many of this artwork are sold
-            $variant = $line->artwork_variant;
-            $artwork = $variant->artwork;
-            $max = $artwork->max_copies;
-            // sum sold across confirmed/completed orders
-            $soldCount = $this->fetchTable('ArtworkVariantOrders')->find()
-                ->select(['sum' => 'SUM(ArtworkVariantOrders.quantity)'])
-                ->where([
-                    'ArtworkVariantOrders.artwork_variant_id' => $variant->artwork_variant_id,
-                    'ArtworkVariantOrders.is_deleted'         => false,
-                ])
-                ->first()
-                ->get('sum') ?? 0;
-
-            // sum existing in cart excluding this line
-            $inCart = $this->Carts->ArtworkVariantCarts->find()
-                ->matching('ArtworkVariants', function ($q) use ($artwork) {
-                    return $q->where([
-                        'ArtworkVariants.artwork_id' => $artwork->artwork_id,
-                        'ArtworkVariants.is_deleted' => false,
-                    ]);
-                })
-                ->where(['ArtworkVariantCarts.cart_id' => $cart->cart_id])
-                ->select(['sum' => 'SUM(ArtworkVariantCarts.quantity)'])
-                ->first()
-                ->get('sum') ?? 0;
-
-            // remove this line's old qty so we can re-add with new
-            $inCart -= $line->quantity;
-
-            $available = $max - $soldCount - $inCart;
+            // Artwork entity has virtual stock (max_copies minus confirmed sales)
+            $artwork = $line->artwork_variant->artwork;
+            // Calculate total quantity in cart for this artwork
+            $totalInCart = 0;
+            foreach ($cart->artwork_variant_carts as $ci) {
+                if ($ci->artwork_variant->artwork_id === $artwork->artwork_id) {
+                    $totalInCart += $ci->quantity;
+                }
+            }
+            // Available for this update: artwork stock minus other cart quantities
+            $available = max(0, $artwork->stock - ($totalInCart - $line->quantity));
             if ($available < 1) {
-                $this->Flash->error(
-                    'No more copies available for ' . $artwork->title . '.',
-                );
+                $this->Flash->error('No more copies available for ' . $artwork->title . '.');
                 continue;
             }
-
-            if ($newQty < 1 || $newQty > $available) {
-                $this->Flash->error("Quantity for '" . $artwork->title . "' can only be between 1 and " . $available . '.');
+            if ($newQty > $available) {
+                $this->Flash->error(
+                    "Quantity for '$artwork->title' can only be up to $available.",
+                );
                 continue;
             }
 

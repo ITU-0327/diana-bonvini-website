@@ -18,6 +18,7 @@ namespace App;
 
 use App\Authentication\MultiFactorAuthenticator;
 use App\Service\R2StorageService;
+use App\Service\ShippingService;
 use App\Service\StripeService;
 use App\Service\TwoFactorService;
 use Authentication\AuthenticationService;
@@ -143,6 +144,9 @@ class Application extends BaseApplication implements AuthenticationServiceProvid
 
         // Cloudflare R2
         $container->addShared(R2StorageService::class);
+
+        // Shipping Service
+        $container->addShared(ShippingService::class);
     }
 
     /**

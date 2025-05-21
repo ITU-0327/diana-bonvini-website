@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Model\Entity;
 
 use Cake\ORM\Entity;
+use Cake\ORM\TableRegistry;
 
 /**
  * Artwork Entity
@@ -12,6 +13,7 @@ use Cake\ORM\Entity;
  * @property string $title
  * @property string|null $description
  * @property string $image_url
+ * @property int $stock
  * @property string $availability_status
  * @property int $max_copies
  * @property bool $is_deleted
@@ -22,7 +24,7 @@ use Cake\ORM\Entity;
  */
 class Artwork extends Entity
 {
-    protected array $_virtual = ['image_url'];
+    protected array $_virtual = ['image_url', 'stock'];
 
     /**
      * Fields that can be mass assigned using newEntity() or patchEntity().
@@ -56,5 +58,34 @@ class Artwork extends Entity
         $key = "{$this->artwork_id}_wm.jpg";
 
         return "$endpoint/$key";
+    }
+
+    /**
+     * Virtual property for the available stock (max copies minus sold quantity).
+     *
+     * @return int
+     */
+    protected function _getStock(): int
+    {
+        // If entity has no ID yet (e.g., new artwork), skip stock calculation
+        if (empty($this->artwork_id)) {
+            return 0;
+        }
+        // Calculate total sold across confirmed/completed orders for this artwork
+        $avOrders = TableRegistry::getTableLocator()
+            ->get('ArtworkVariantOrders');
+        $soldQuery = $avOrders->find()
+            ->select(['sum' => 'SUM(ArtworkVariantOrders.quantity)'])
+            ->matching('Orders', function ($q) {
+                return $q->where(['Orders.order_status IN' => ['confirmed', 'completed']]);
+            })
+            ->matching('ArtworkVariants', function ($q) {
+                return $q->where(['ArtworkVariants.artwork_id' => $this->artwork_id]);
+            });
+        $soldResult = $soldQuery->first();
+        $sold = $soldResult ? (int)$soldResult->get('sum') : 0;
+        $available = $this->max_copies - $sold;
+
+        return max($available, 0);
     }
 }
