@@ -54,6 +54,20 @@ $this->Html->script('https://cdn.tailwindcss.com', ['block' => 'script']);
                             </div>
                         </div>
 
+                        <div class="col-md-12">
+                            <div class="form-group mb-3">
+                                <?= $this->Form->label('max_copies', 'Max Copies', ['class' => 'form-label']) ?>
+                                <?= $this->Form->control('max_copies', [
+                                    'label' => false,
+                                    'type' => 'number',
+                                    'min' => '1',
+                                    'class' => 'form-control',
+                                    'placeholder' => 'Enter maximum copies',
+                                    'required' => true,
+                                ]) ?>
+                            </div>
+                        </div>
+
                         <div class="col-12">
                             <div class="form-group mb-3">
                                 <label class="form-label">Variant Prices</label>
