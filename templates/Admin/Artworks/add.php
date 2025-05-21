@@ -171,7 +171,6 @@ $this->Html->script('https://cdn.tailwindcss.com', ['block' => 'script']);
 
             // Basic validation
             const title = document.querySelector('input[name="title"]');
-            const description = document.querySelector('textarea[name="description"]');
             const imageUpload = document.getElementById('imageUpload');
 
             if (!title.value.trim()) {
@@ -179,13 +178,6 @@ $this->Html->script('https://cdn.tailwindcss.com', ['block' => 'script']);
                 title.classList.add('is-invalid');
             } else {
                 title.classList.remove('is-invalid');
-            }
-
-            if (!description.value.trim()) {
-                isValid = false;
-                description.classList.add('is-invalid');
-            } else {
-                description.classList.remove('is-invalid');
             }
 
             if (imageUpload.files.length === 0) {
