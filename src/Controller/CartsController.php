@@ -266,7 +266,7 @@ class CartsController extends AppController
             }
             if ($newQty > $available) {
                 $this->Flash->error(
-                    "Quantity for '{$artwork->title}' can only be up to {$available}."
+                    "Quantity for '$artwork->title' can only be up to $available.",
                 );
                 continue;
             }

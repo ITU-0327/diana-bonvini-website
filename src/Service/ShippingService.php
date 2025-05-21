@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use Cake\Core\Configure;
-
 class ShippingService
 {
     /**
@@ -13,22 +11,22 @@ class ShippingService
     private array $shippingRates = [
         'AU' => [
             'NSW' => [
-                'metro' => 20.00,    // Sydney Metro
-                'regional' => 25.00, // Regional NSW
+                'metro' => 20.00,
+                'regional' => 25.00,
             ],
             'NT' => 30.00,
             'WA' => 30.00,
-            'default' => 25.00,     // Interstate
+            'default' => 25.00,
         ],
-        'default' => 45.00,         // Overseas (average of $40-$50)
+        'default' => 45.00,
     ];
 
     /**
      * Size limits for standard shipping
      */
     private array $sizeLimits = [
-        'length' => 1050,  // mm
-        'width' => 420,    // mm (A3 size)
+        'length' => 1050,
+        'width' => 420,
     ];
 
     /**
@@ -36,9 +34,9 @@ class ShippingService
      */
     private array $largeItemConfig = [
         'baseFee' => 50.00,
-        'freeWeight' => 5.00,      // kg
-        'weightRate' => 10.00,      // per kg after free weight
-        'height' => 100,           // mm (assumed height for cubic weight)
+        'freeWeight' => 5.00,
+        'weightRate' => 10.00,
+        'height' => 100,
     ];
 
     /**
@@ -99,6 +97,7 @@ class ShippingService
             if (preg_match('/^[1-2]\d{3}$/', $state)) {
                 return $countryRates['NSW']['metro'];
             }
+
             return $countryRates['NSW']['regional'];
         }
 
@@ -124,10 +123,10 @@ class ShippingService
 
         // Add rate per kg after the free weight limit
         if ($chargeableWeight > $this->largeItemConfig['freeWeight']) {
-            return $this->largeItemConfig['baseFee'] + 
+            return $this->largeItemConfig['baseFee'] +
                    (($chargeableWeight - $this->largeItemConfig['freeWeight']) * $this->largeItemConfig['weightRate']);
         }
 
         return $this->largeItemConfig['baseFee'];
     }
-} 
+}
