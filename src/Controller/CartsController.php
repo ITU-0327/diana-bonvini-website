@@ -80,6 +80,7 @@ class CartsController extends AppController
 
         if (!$artworkVariantId) {
             $this->Flash->error('No variant selected.');
+
             return $this->redirect($this->referer());
         }
 
