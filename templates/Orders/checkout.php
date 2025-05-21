@@ -323,6 +323,8 @@ $totalCost = $subtotal + $shippingFee;
                             break;
                         }
                     }
+                    // Trigger change event to recalculate shipping fee
+                    stateSelect.dispatchEvent(new Event('change'));
                 });
             } catch (err) {
                 console.error('Google Places Autocomplete error:', err);
