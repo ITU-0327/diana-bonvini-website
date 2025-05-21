@@ -15,13 +15,6 @@
         </div>
 
         <div class="user-menu">
-            <div class="user-menu-item">
-                <i class="fas fa-search"></i>
-            </div>
-            <div class="user-menu-item position-relative">
-                <i class="fas fa-bell"></i>
-                <span class="badge badge-danger position-absolute" style="top: 0; right: 0; font-size: 0.6rem;">3</span>
-            </div>
             <div class="user-dropdown dropdown">
                 <?php
                 $identity = $this->request->getAttribute('identity');
