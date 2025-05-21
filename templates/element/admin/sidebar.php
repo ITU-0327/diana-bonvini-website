@@ -4,6 +4,7 @@
  *
  * @var \App\View\AppView $this
  */
+use Cake\ORM\TableRegistry;
 
 /**
  * @param $controller
@@ -61,60 +62,37 @@ $isActive = function ($controller, $action = null) {
                 ['class' => 'menu-item ' . $isActive('Orders'), 'escape' => false],
             ) ?>
 
-            <?= $this->Html->link(
-                '<i class="fas fa-pen"></i> <span>Writing Services</span>',
-                ['prefix' => 'Admin', 'controller' => 'WritingServiceRequests', 'action' => 'index'],
-                ['class' => 'menu-item ' . $isActive('WritingServiceRequests'), 'escape' => false],
-            ) ?>
-
             <?php
             // Access RequestMessages table directly in the view
-            $unreadCount = 0;
-            if (class_exists('\Cake\ORM\TableRegistry')) {
-                $requestMessagesTable = \Cake\ORM\TableRegistry::getTableLocator()->get('RequestMessages');
-                $usersTable = \Cake\ORM\TableRegistry::getTableLocator()->get('Users');
+            $requestMessagesTable = TableRegistry::getTableLocator()->get('RequestMessages');
+            $usersTable = TableRegistry::getTableLocator()->get('Users');
 
-                // Count all unread messages from non-admin users
-                $unreadCount = $requestMessagesTable->find()
-                    ->where([
-                        'RequestMessages.is_read' => false,
-                        'RequestMessages.user_id NOT IN' => $usersTable->find()
-                            ->select(['user_id'])
-                            ->where(['user_type' => 'admin'])
-                    ])
-                    ->count();
-            }
+            // Count all unread messages from non-admin users
+            $unreadCount = $requestMessagesTable->find()
+                ->where([
+                    'RequestMessages.is_read' => false,
+                    'RequestMessages.user_id NOT IN' => $usersTable->find()
+                        ->select(['user_id'])
+                        ->where(['user_type' => 'admin']),
+                ])
+                ->count();
 
             echo $this->Html->link(
                 '<i class="fas fa-pen"></i> <span>Writing Services</span>' .
                 ($unreadCount > 0 ? '<span class="badge badge-danger ml-1">' . $unreadCount . '</span>' : ''),
                 ['controller' => 'WritingServiceRequests', 'action' => 'index', 'prefix' => 'Admin'],
-                ['class' => 'menu-item ' . $isActive('WritingServiceRequests'), 'escape' => false]
+                ['class' => 'menu-item ' . $isActive('WritingServiceRequests'), 'escape' => false],
             );
             ?>
 
             <?= $this->Html->link(
-                '<i class="fab fa-google"></i> <span>Coaching Service</span>',
+                '<i class="fas fa-chalkboard-teacher"></i> <span>Coaching Service</span>',
                 ['controller' => 'CoachingServiceRequestsController', 'action' => 'index', 'prefix' => 'Admin'],
                 ['class' => 'menu-item ' . $isActive('GoogleAuth'), 'escape' => false],
             ) ?>
 
-<<<<<<< HEAD
-=======
-        <!-- Calendar -->
-        <li class="nav-item">
             <?= $this->Html->link(
                 '<i class="fas fa-calendar"></i> <span>Calendar</span>',
-                ['controller' => 'Calendar', 'action' => 'index', 'prefix' => 'Admin'],
-                ['escape' => false, 'class' => $this->request->getParam('controller') === 'Calendar' ? 'active' : ''],
-            ) ?>
-        </li>
-
-        <!-- Google Calendar Integration -->
-        <li class="nav-item">
->>>>>>> 6aed05c (Add calendar link to admin sidebar and enhance user details view with user ID and improved layout)
-            <?= $this->Html->link(
-                '<i class="fab fa-google"></i> <span>Calendar</span>',
                 ['controller' => 'GoogleAuth', 'action' => 'index', 'prefix' => 'Admin'],
                 ['class' => 'menu-item ' . $isActive('GoogleAuth'), 'escape' => false],
             ) ?>
