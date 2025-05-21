@@ -98,7 +98,7 @@ class OrdersController extends AppController
             $data['shipping_country'],
         );
 
-        // See if we're updating an in‑flight order
+        // See if we're updating an in-flight order
         $pendingId = !empty($data['order_id']) ? (string)$data['order_id'] : null;
         if ($pendingId) {
             // load the existing pending order (and its artwork_orders)
@@ -106,8 +106,10 @@ class OrdersController extends AppController
                 $pendingId,
                 contain: ['ArtworkVariantOrders' => ['ArtworkVariants']],
             );
+            // Remove existing artwork orders to prevent duplication on re-checkout
+            $this->Orders->ArtworkVariantOrders->deleteAll(['order_id' => $order->order_id]);
         } else {
-            // brand‑new checkout
+            // brand-new checkout
             $order = $this->Orders->newEmptyEntity();
         }
 
