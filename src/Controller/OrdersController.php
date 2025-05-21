@@ -8,8 +8,8 @@ use App\Model\Entity\ArtworkVariantCart;
 use App\Model\Entity\ArtworkVariantOrder;
 use App\Model\Entity\Cart;
 use App\Model\Entity\Order;
-use App\Service\StripeService;
 use App\Service\ShippingService;
+use App\Service\StripeService;
 use Cake\Http\Response;
 use Exception;
 
@@ -64,7 +64,7 @@ class OrdersController extends AppController
         if ($order->shipping_state && $order->shipping_country) {
             $shippingFee = $shippingService->calculateShippingFee(
                 $order->shipping_state,
-                $order->shipping_country
+                $order->shipping_country,
             );
         }
 
@@ -95,7 +95,7 @@ class OrdersController extends AppController
         // Calculate shipping fee
         $data['shipping_cost'] = $shippingService->calculateShippingFee(
             $data['shipping_state'],
-            $data['shipping_country']
+            $data['shipping_country'],
         );
 
         // See if we're updating an in‑flight order
@@ -134,7 +134,7 @@ class OrdersController extends AppController
         }
 
         // Complete the order data.
-        $data['total_amount'] = $total;
+        $data['total_amount'] = $total + $data['shipping_cost'];
         $data['artwork_variant_orders'] = $orderItems;
         $data['order_status'] = 'pending';
         $data['order_date'] = date('Y-m-d H:i:s');
@@ -497,7 +497,8 @@ class OrdersController extends AppController
         $state = $this->request->getQuery('shipping_state');
         $country = $this->request->getQuery('shipping_country');
         $fee = $shippingService->calculateShippingFee($state, $country);
-        $payload = json_encode(['shippingFee' => $fee]);
+        $payload = (string)json_encode(['shippingFee' => $fee]);
+
         return $this->response
             ->withType('application/json')
             ->withStringBody($payload);

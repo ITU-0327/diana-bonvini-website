@@ -219,6 +219,9 @@ $totalCost = $subtotal + $shippingFee;
                     <div class="mt-6 border-t pt-4">
                         <p class="text-gray-700 text-lg">Subtotal: $<span id="subtotal"><?= number_format($subtotal, 2) ?></span></p>
                         <p class="text-gray-700 text-lg">Shipping: $<span id="shipping-fee"><?= number_format($shippingFee, 2) ?></span></p>
+                        <?php if ($shippingFee <= 0): ?>
+                            <p id="shipping-message" class="text-sm text-gray-500 italic">Please fill in the shipping information to calculate shipping fee.</p>
+                        <?php endif; ?>
                         <hr class="my-3">
                         <p class="text-2xl font-bold text-gray-900">Total: $<span id="total"><?= number_format($totalCost, 2) ?></span></p>
                     </div>
@@ -354,6 +357,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const fee = parseFloat(data.shippingFee);
                 shippingEl.textContent = fee.toFixed(2);
                 totalEl.textContent = (ORDER_SUBTOTAL + fee).toFixed(2);
+                const msg = document.getElementById('shipping-message');
+                if (msg) { msg.style.display = 'none'; }
             })
             .catch(error => console.error('Error fetching shipping fee:', error));
     }
