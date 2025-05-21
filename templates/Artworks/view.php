@@ -90,6 +90,12 @@ $sortedVariants = $variants
                         ['url' => ['controller' => 'Carts', 'action' => 'add']],
                     ) ?>
 
+                    <?php
+                    // Tell the FormProtector not to lock these two fields:
+                    $this->Form->unlockField('artwork_variant_id');
+                    $this->Form->unlockField('quantity');
+                    ?>
+
                     <!-- Variant selector grid -->
                     <div class="mb-4">
                         <label class="block text-gray-700 font-medium mb-2">Select Variant</label>
