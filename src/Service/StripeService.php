@@ -51,7 +51,10 @@ class StripeService
             $lineItems[] = [
                 'price_data' => [
                     'currency' => 'aud',
-                    'product_data' => ['name' => "$artwork->title ($dimension)"],
+                    'product_data' => [
+                        'name' => "$artwork->title ($dimension)",
+                        'images' => [ $artwork->image_url ],
+                    ],
                     'unit_amount' => (int)round($item->price * 100.0),
                 ],
                 'quantity' => $item->quantity,
