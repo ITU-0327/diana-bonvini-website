@@ -13,6 +13,8 @@ $user = $this->request->getAttribute('identity');
 
 // Define desired size order
 $orderMap = ['A3' => 1, 'A2' => 2, 'A1' => 3];
+// Sort and filter variants, skipping those with price 0
+$orderPrintType = ['canvas' => 1, 'print' => 2];
 
 // Wrap variants in a Collection for sorting and combining
 $variants = new Collection($artwork->artwork_variants ?? []);
@@ -21,14 +23,10 @@ $variants = new Collection($artwork->artwork_variants ?? []);
 $cheapest = $variants->sortBy('price')->last();
 $displayPrice = $cheapest->price ?? null;
 
-// Sort by defined size order for dropdown
-$sortedBySize = $variants->sortBy(fn($v) => $orderMap[$v->dimension] ?? PHP_INT_MAX);
-
-// Build options for size selector
-$options = $sortedBySize->combine(
-    'artwork_variant_id',
-    fn($v) => $v->dimension . ' – $' . $v->price,
-)->toArray();
+$sortedVariants = $variants
+    ->sortBy(fn($v) => (($orderMap[$v->dimension] ?? PHP_INT_MAX) * 10) + ($orderPrintType[$v->print_type] ?? PHP_INT_MAX))
+    ->filter(fn($v) => $v->price > 0)
+    ->toList();
 ?>
 
 <div class="max-w-6xl mx-auto px-4 py-8">
@@ -92,16 +90,31 @@ $options = $sortedBySize->combine(
                         ['url' => ['controller' => 'Carts', 'action' => 'add']],
                     ) ?>
 
-                    <!-- size selector -->
+                    <!-- Variant selector grid -->
                     <div class="mb-4">
-                        <?= $this->Form->control('artwork_variant_id', [
-                            'type' => 'select',
-                            'options' => $options,
-                            'required' => true,
-                            'empty' => 'Select size',
-                            'label' => 'Size',
-                            'class' => 'border rounded p-2 w-full',
-                        ]) ?>
+                        <label class="block text-gray-700 font-medium mb-2">Select Variant</label>
+                        <div class="grid grid-cols-3 gap-4">
+                            <?php foreach ($sortedVariants as $variant) : ?>
+                                <div>
+                                    <input
+                                        type="radio"
+                                        name="artwork_variant_id"
+                                        id="variant-<?= h($variant->artwork_variant_id) ?>"
+                                        value="<?= h($variant->artwork_variant_id) ?>"
+                                        class="hidden peer"
+                                        required
+                                    />
+                                    <label
+                                        for="variant-<?= h($variant->artwork_variant_id) ?>"
+                                        class="flex flex-col items-center p-4 border rounded-lg cursor-pointer
+                                               peer-checked:border-indigo-600 peer-checked:bg-indigo-100"
+                                    >
+                                        <span class="font-semibold"><?= h($variant->dimension) ?> (<?= h(ucfirst($variant->print_type)) ?>)</span>
+                                        <span class="text-gray-600">$<?= $this->Number->format($variant->price) ?></span>
+                                    </label>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
 
                     <!-- quantity -->

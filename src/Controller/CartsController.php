@@ -79,8 +79,7 @@ class CartsController extends AppController
         $quantity = max(1, (int)$this->request->getData('quantity', 1));
 
         if (!$artworkVariantId) {
-            $this->Flash->error('No size selected.');
-
+            $this->Flash->error('No variant selected.');
             return $this->redirect($this->referer());
         }
 

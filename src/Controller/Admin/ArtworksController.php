@@ -52,13 +52,17 @@ class ArtworksController extends BaseAdminController
     {
         $artwork = $this->Artworks->newEmptyEntity();
 
-        // Initialize empty variants for the form
+        // Initialize empty variants for all size and print type combinations
         $artwork->set('artwork_variants', []);
         $sizes = ['A3', 'A2', 'A1'];
+        $printTypes = ['canvas', 'print'];
         foreach ($sizes as $dim) {
-            $variant = $this->Artworks->ArtworkVariants->newEmptyEntity();
-            $variant->dimension = $dim;
-            $artwork->artwork_variants[] = $variant;
+            foreach ($printTypes as $pt) {
+                $variant = $this->Artworks->ArtworkVariants->newEmptyEntity();
+                $variant->dimension = $dim;
+                $variant->print_type = $pt;
+                $artwork->artwork_variants[] = $variant;
+            }
         }
 
         if ($this->request->is('post')) {
@@ -68,7 +72,7 @@ class ArtworksController extends BaseAdminController
             if (isset($data['artwork_variants'])) {
                 $data['artwork_variants'] = array_filter(
                     $data['artwork_variants'],
-                    fn($v) => isset($v['price']) && $v['price'] !== '',
+                    fn($v) => isset($v['price']) && $v['price'] !== '' && floatval($v['price']) > 0,
                 );
             }
 

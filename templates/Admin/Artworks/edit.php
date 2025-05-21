@@ -88,6 +88,12 @@ $this->Html->script('https://cdn.tailwindcss.com', ['block' => 'script']);
                                                 'label' => 'Price ($)',
                                                 'class' => 'form-control',
                                             ]) ?>
+                                            <?= $this->Form->control("artwork_variants.$i.print_type", [
+                                                'type' => 'select',
+                                                'options' => ['canvas' => 'Canvas', 'print' => 'Print'],
+                                                'label' => 'Print Type',
+                                                'class' => 'form-control',
+                                            ]) ?>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>

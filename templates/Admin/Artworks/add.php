@@ -70,27 +70,59 @@ $this->Html->script('https://cdn.tailwindcss.com', ['block' => 'script']);
 
                         <div class="col-12">
                             <div class="form-group mb-3">
-                                <label class="form-label">Variant Prices</label>
-                                <div class="row">
-                                    <?php foreach ($artwork->artwork_variants as $i => $variant) : ?>
-                                        <div class="col-md-4 mb-3">
-                                            <?= $this->Form->control("artwork_variants.$i.dimension", [
-                                                'type' => 'text',
-                                                'label' => 'Size',
-                                                'readonly' => true,
-                                                'class' => 'form-control',
-                                            ]) ?>
-                                            <?= $this->Form->control("artwork_variants.$i.price", [
-                                                'type' => 'number',
-                                                'step' => '0.01',
-                                                'min' => '1',
-                                                'label' => 'Price ($)',
-                                                'class' => 'form-control',
-                                                'placeholder' => 'Enter price',
-                                            ]) ?>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
+                                <label class="form-label">Variant Prices <small class="text-muted">(Enter 0 to skip this variant)</small></label>
+                                <?php
+                                    $sizes = ['A3', 'A2', 'A1'];
+                                    $printTypes = ['canvas', 'print'];
+                                    $variantsBySize = [];
+                                    foreach ($artwork->artwork_variants as $i => $variant) {
+                                        $variantsBySize[$variant->dimension][$variant->print_type] = $i;
+                                    }
+                                ?>
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Size</th>
+                                            <th>Canvas Price</th>
+                                            <th>Print Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($sizes as $size) : ?>
+                                            <tr>
+                                                <td><?= h($size) ?></td>
+                                                <?php foreach ($printTypes as $pt) : ?>
+                                                    <td>
+                                                        <?php if (isset($variantsBySize[$size][$pt])) :
+                                                            $i = $variantsBySize[$size][$pt];
+                                                            $variant = $artwork->artwork_variants[$i];
+                                                        ?>
+                                                            <?= $this->Form->control(
+                                                                "artwork_variants.$i.dimension",
+                                                                ['type' => 'hidden', 'value' => $variant->dimension]
+                                                            ) ?>
+                                                            <?= $this->Form->control(
+                                                                "artwork_variants.$i.print_type",
+                                                                ['type' => 'hidden', 'value' => $variant->print_type]
+                                                            ) ?>
+                                                            <?= $this->Form->control(
+                                                                "artwork_variants.$i.price",
+                                                                [
+                                                                    'type' => 'number',
+                                                                    'step' => '0.01',
+                                                                    'min' => '0',
+                                                                    'label' => false,
+                                                                    'class' => 'form-control',
+                                                                    'placeholder' => 'Enter price (0 to skip)',
+                                                                ]
+                                                            ) ?>
+                                                        <?php endif; ?>
+                                                    </td>
+                                                <?php endforeach; ?>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
