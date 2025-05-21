@@ -9,6 +9,7 @@ use App\Model\Entity\ArtworkVariantOrder;
 use App\Model\Entity\Cart;
 use App\Model\Entity\Order;
 use App\Service\StripeService;
+use App\Service\ShippingService;
 use Cake\Http\Response;
 use Exception;
 
@@ -27,7 +28,7 @@ class OrdersController extends AppController
      *
      * @return \Cake\Http\Response|null Renders view.
      */
-    public function checkout(): ?Response
+    public function checkout(ShippingService $shippingService): ?Response
     {
         /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
@@ -58,7 +59,16 @@ class OrdersController extends AppController
             $total = $this->_calculateCartTotal($cart);
         }
 
-        $this->set(compact('cart', 'total', 'order', 'user', 'pendingId'));
+        // Calculate shipping fee if shipping information is available
+        $shippingFee = 0;
+        if ($order->shipping_state && $order->shipping_country) {
+            $shippingFee = $shippingService->calculateShippingFee(
+                $order->shipping_state,
+                $order->shipping_country
+            );
+        }
+
+        $this->set(compact('cart', 'total', 'order', 'user', 'pendingId', 'shippingFee'));
 
         return null;
     }
@@ -72,7 +82,7 @@ class OrdersController extends AppController
      *
      * @return \Cake\Http\Response|null Redirects to Stripe's payment page.
      */
-    public function placeOrder(StripeService $stripeService): ?Response
+    public function placeOrder(StripeService $stripeService, ShippingService $shippingService): ?Response
     {
         $this->request->allowMethod(['post']);
 
@@ -81,6 +91,12 @@ class OrdersController extends AppController
         /** @var \App\Model\Entity\User $user */
         $user = $this->Authentication->getIdentity();
         $data['user_id'] = $user->user_id;
+
+        // Calculate shipping fee
+        $data['shipping_cost'] = $shippingService->calculateShippingFee(
+            $data['shipping_state'],
+            $data['shipping_country']
+        );
 
         // See if we're updating an in‑flight order
         $pendingId = !empty($data['order_id']) ? (string)$data['order_id'] : null;
@@ -466,5 +482,24 @@ class OrdersController extends AppController
         } catch (Exception $e) {
             $this->log('Failed to send confirmation email: ' . $e->getMessage(), 'error');
         }
+    }
+
+    /**
+     * AJAX endpoint to calculate shipping fee based on country and state.
+     *
+     * @param \App\Service\ShippingService $shippingService
+     * @return \Cake\Http\Response JSON response containing the shipping fee
+     */
+    public function shippingFee(ShippingService $shippingService): Response
+    {
+        $this->request->allowMethod(['get']);
+
+        $state = $this->request->getQuery('shipping_state');
+        $country = $this->request->getQuery('shipping_country');
+        $fee = $shippingService->calculateShippingFee($state, $country);
+        $payload = json_encode(['shippingFee' => $fee]);
+        return $this->response
+            ->withType('application/json')
+            ->withStringBody($payload);
     }
 }

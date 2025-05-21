@@ -50,7 +50,6 @@ $this->Html->script('https://cdn.tailwindcss.com', ['block' => 'script']);
                                     'class' => 'form-control',
                                     'rows' => '4',
                                     'placeholder' => 'Describe the artwork in detail...',
-                                    'required' => true,
                                 ]) ?>
                             </div>
                         </div>

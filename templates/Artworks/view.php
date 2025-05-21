@@ -60,13 +60,6 @@ $options = $sortedBySize->combine(
                 <h1 class="text-2xl font-bold text-gray-800"><?= h($artwork->title) ?></h1>
             </div>
 
-            <!-- Artwork Meta Info -->
-            <div class="text-sm text-gray-500">
-                <p>Oil on canvas, 2008</p>
-                <p>Gallery wrap canvas</p>
-                <p>26 in × 23 in</p>
-            </div>
-
             <!-- Artwork Description -->
             <div class="text-gray-700 text-sm">
                 <p><?= h($artwork->description) ?></p>

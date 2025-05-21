@@ -51,6 +51,7 @@ CREATE TABLE orders (
     order_id CHAR(9) NOT NULL PRIMARY KEY,
     user_id CHAR(36) NOT NULL,
     total_amount DECIMAL(10,2) NOT NULL,
+    shipping_cost DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     order_status ENUM('pending','confirmed','completed','cancelled') NOT NULL,
     order_date DATETIME NOT NULL,
     billing_first_name VARCHAR(255) NOT NULL,

@@ -13,7 +13,6 @@ use Cake\ORM\Entity;
  * @property string $dimension
  * @property float $price
  * @property bool $is_deleted
- * @property string $dimensions
  *
  * @property \App\Model\Entity\Artwork $artwork
  */

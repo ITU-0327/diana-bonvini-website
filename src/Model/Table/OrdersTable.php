@@ -88,6 +88,17 @@ class OrdersTable extends Table
             ]);
 
         $validator
+            ->decimal('shipping_cost')
+            ->requirePresence('shipping_cost', 'create')
+            ->notEmptyString('shipping_cost')
+            ->add('shipping_cost', 'nonNegative', [
+                'rule' => function ($value, $context) {
+                    return $value >= 0;
+                },
+                'message' => 'Shipping cost must be non-negative.',
+            ]);
+
+        $validator
             ->scalar('order_status')
             ->requirePresence('order_status', 'create')
             ->notEmptyString('order_status');
