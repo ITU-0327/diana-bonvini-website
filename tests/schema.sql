@@ -40,6 +40,7 @@ CREATE TABLE artwork_variants (
     artwork_variant_id CHAR(36) NOT NULL PRIMARY KEY,
     artwork_id CHAR(36) NOT NULL,
     dimension ENUM('A3','A2','A1') NOT NULL,
+    print_type ENUM('canvas','print') NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
     INDEX idx_av_artwork (artwork_id),
