@@ -1342,9 +1342,10 @@ Please select one of the time slots above for our coaching session by clicking t
 
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-warning" id="sendPaymentRequestBtn">
-                    <i class="fas fa-paper-plane mr-1"></i> Send Payment Request
-                </button>
+                <?= $this->Form->button(__('Send Payment Request'), [
+                    'type'  => 'submit',
+                    'class' => 'btn btn-warning'
+                ]) ?>
             </div>
             <?= $this->Form->end() ?>
         </div>
