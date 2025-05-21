@@ -39,13 +39,15 @@ $this->assign('title', 'Edit Writing Service Request');
                 </div>
 
                 <div>
-                    <?= $this->Form->label('service_type', 'Service Type', ['class' => 'block font-medium text-gray-700']) ?>
-                    <?= $this->Form->select('service_type', [
-                        '' => 'Please select a service',
-                        'creative_writing' => 'Creative Writing',
-                        'editing' => 'Editing',
-                        'proofreading' => 'Proofreading',
-                    ], ['class' => 'w-full mt-1 border-gray-300 rounded shadow-sm']) ?>
+                    <?= $this->Form->label('service_type', 'Service Type (describe the service you need)', ['class' => 'block font-medium text-gray-700 mb-2']) ?>
+                    <?= $this->Form->text('service_type', [
+                        'class' => 'w-full mt-1 border-gray-300 rounded shadow-sm',
+                        'maxlength' => 200,
+                        'placeholder' => 'Describe the type of writing service you need (max 200 characters)',
+                    ]) ?>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Examples: Creative Writing, Editing, Proofreading, Essay Writing, Technical Writing, etc.
+                    </p>
                 </div>
 
                 <div>

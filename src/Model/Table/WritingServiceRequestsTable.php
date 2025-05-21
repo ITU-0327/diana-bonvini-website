@@ -89,7 +89,7 @@ class WritingServiceRequestsTable extends Table
 
         $validator
             ->scalar('service_type')
-            ->inList('service_type', ['creative_writing', 'editing', 'proofreading'])
+            ->maxLength('service_type', 200)
             ->requirePresence('service_type', 'create')
             ->notEmptyString('service_type');
 
