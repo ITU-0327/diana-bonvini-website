@@ -372,9 +372,7 @@ class WritingServiceRequestsController extends AppController
                 // Send notification email to admin
                 try {
                     // Get the writing service request with user information
-                    $writingServiceRequest = $this->WritingServiceRequests->get($writingServiceRequest->writing_service_request_id, [
-                        'contain' => ['Users'],
-                    ]);
+                    $writingServiceRequest = $this->WritingServiceRequests->get($writingServiceRequest->writing_service_request_id, contain: ['Users']);
 
                     // Fixed admin email
                     $adminEmail = 'diana@dianabonvini.com';
