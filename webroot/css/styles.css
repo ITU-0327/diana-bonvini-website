@@ -282,6 +282,17 @@ footer {
     text-decoration: none;
 }
 
+/* Logo Image Animation */
+.logo-image {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.nav-logo:hover .logo-image {
+    transform: scale(1.05) rotate(-2deg);
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
+}
+
 /* Shared pseudo-element for animated underline on links and logo */
 .nav-menu a::before,
 .nav-menu-link::before,

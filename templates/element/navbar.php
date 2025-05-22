@@ -13,7 +13,8 @@ $userType = $user?->get('user_type');
         <div class="flex justify-between items-center h-16">
             <!-- Left: Logo (always visible) -->
             <div class="flex items-center">
-                <a href="<?= $this->Url->build('/') ?>" class="flex items-center nav-logo">
+                <a href="<?= $this->Url->build('/') ?>" class="flex items-center nav-logo gap-3">
+                    <?= $this->Html->image('logo.png', ['class' => 'h-10 w-auto logo-image']) ?>
                     <span class="font-bold text-2xl text-gray-800"><?= $this->ContentBlock->text('logo') ?></span>
                 </a>
             </div>

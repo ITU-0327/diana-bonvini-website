@@ -9,7 +9,10 @@ $this->assign('title', 'Login');
     <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
         <!-- Logo Placeholder -->
         <div class="mb-6 text-center">
-            <h1 class="text-4xl font-bold text-indigo-600">Diana Bonvini</h1>
+            <div class="flex items-center justify-center gap-3">
+                <?= $this->Html->image('logo.png', ['class' => 'h-14 w-auto']) ?>
+                <span class="text-4xl font-bold text-gray-800"><?= $this->ContentBlock->text('logo') ?></span>
+            </div>
         </div>
         <?= $this->Flash->render() ?>
         <?= $this->Form->create() ?>
