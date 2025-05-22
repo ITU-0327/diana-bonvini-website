@@ -79,10 +79,10 @@ class CoachingServiceRequestsController extends AppController
                 'Users',
                 'CoachingRequestMessages' => function ($q) {
                     return $q->contain(['Users'])
-                        ->order(['CoachingRequestMessages.created_at' => 'ASC']);
+                        ->orderBy(['CoachingRequestMessages.created_at' => 'ASC']);
                 },
                 'CoachingServicePayments' => function ($q) {
-                    return $q->order(['CoachingServicePayments.created_at' => 'DESC']);
+                    return $q->orderBy(['CoachingServicePayments.created_at' => 'DESC']);
                 },
             ],
         );
@@ -103,7 +103,7 @@ class CoachingServiceRequestsController extends AppController
                 'coaching_service_request_id' => $id,
                 'is_deleted' => false,
             ])
-            ->order(['created_at' => 'DESC'])
+            ->orderBy(['created_at' => 'DESC'])
             ->toArray();
 
         // Mark messages from admin as read when customer views them
@@ -520,7 +520,7 @@ class CoachingServiceRequestsController extends AppController
                 $id,
                 contain: [
                     'CoachingServicePayments' => function ($q) {
-                        return $q->order(['CoachingServicePayments.created_at' => 'DESC']);
+                        return $q->orderBy(['CoachingServicePayments.created_at' => 'DESC']);
                     },
                 ],
             );
@@ -872,7 +872,7 @@ class CoachingServiceRequestsController extends AppController
                     'coaching_service_request_id' => $id,
                     'is_deleted' => false,
                 ])
-                ->order(['created_at' => 'ASC']);
+                ->orderBy(['created_at' => 'ASC']);
 
             if (!empty($lastMessageId)) {
                 $messagesQuery->andWhere([

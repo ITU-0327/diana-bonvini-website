@@ -80,10 +80,10 @@ class WritingServiceRequestsController extends AppController
                 'Users',
                 'RequestMessages' => function ($q) {
                     return $q->contain(['Users'])
-                        ->order(['RequestMessages.created_at' => 'ASC']);
+                        ->orderBy(['RequestMessages.created_at' => 'ASC']);
                 },
                 'WritingServicePayments' => function ($q) {
-                    return $q->order(['WritingServicePayments.created_at' => 'DESC']);
+                    return $q->orderBy(['WritingServicePayments.created_at' => 'DESC']);
                 },
             ],
         );
@@ -104,7 +104,7 @@ class WritingServiceRequestsController extends AppController
                 'writing_service_request_id' => $id,
                 'is_deleted' => false,
             ])
-            ->order(['created_at' => 'DESC'])
+            ->orderBy(['created_at' => 'DESC'])
             ->toArray();
 
         // Mark messages from admin as read when customer views them
@@ -257,7 +257,7 @@ class WritingServiceRequestsController extends AppController
                     'contain' => [
                         'RequestMessages' => function ($q) use ($lastMessageId) {
                             $query = $q->contain(['Users'])
-                                ->order(['RequestMessages.created_at' => 'ASC']);
+                                ->orderBy(['RequestMessages.created_at' => 'ASC']);
 
                             if (!empty($lastMessageId)) {
                                 // Only get messages newer than the lastMessageId
@@ -1296,10 +1296,10 @@ class WritingServiceRequestsController extends AppController
                 'Users',
                 'RequestMessages' => function ($q) {
                     return $q->contain(['Users'])
-                        ->order(['RequestMessages.created_at' => 'ASC']);
+                        ->orderBy(['RequestMessages.created_at' => 'ASC']);
                 },
                 'WritingServicePayments' => function ($q) {
-                    return $q->order(['WritingServicePayments.created_at' => 'DESC']);
+                    return $q->orderBy(['WritingServicePayments.created_at' => 'DESC']);
                 },
             ],
         );
@@ -1311,7 +1311,7 @@ class WritingServiceRequestsController extends AppController
                 'writing_service_request_id' => $id,
                 'is_deleted' => false,
             ])
-            ->order(['created_at' => 'DESC'])
+            ->orderBy(['created_at' => 'DESC'])
             ->toArray();
 
         if ($this->request->is(['post', 'put', 'patch'])) {
