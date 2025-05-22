@@ -7,6 +7,9 @@ use App\Controller\AppController;
 use App\Service\GoogleCalendarService;
 use Cake\Event\EventInterface;
 use Exception;
+use App\Model\Table\GoogleCalendarSettingsTable;
+use Cake\Database\Connection;
+use Cake\Database\StatementInterface;
 
 /**
  * GoogleAuth Controller
@@ -21,6 +24,11 @@ class GoogleAuthController extends AppController
      * @var \App\Service\GoogleCalendarService
      */
     protected GoogleCalendarService $googleCalendarService;
+
+    /**
+     * @var \App\Model\Table\GoogleCalendarSettingsTable
+     */
+    protected GoogleCalendarSettingsTable $GoogleCalendarSettings;
 
     /**
      * Initialize method
@@ -61,10 +69,12 @@ class GoogleAuthController extends AppController
     protected function createGoogleCalendarSettingsTable(): void
     {
         try {
+            /** @var Connection $connection */
             $connection = \Cake\Datasource\ConnectionManager::get('default');
-
             // Check if the table already exists
-            $tableExists = $connection->execute("SHOW TABLES LIKE 'google_calendar_settings'")->count() > 0;
+            /** @var StatementInterface $stmt */
+            $stmt = $connection->execute("SHOW TABLES LIKE 'google_calendar_settings'");
+            $tableExists = $stmt->rowCount() > 0;
 
             if (!$tableExists) {
                 // Create the table using the SQL from the migration

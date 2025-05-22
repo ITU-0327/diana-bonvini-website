@@ -168,7 +168,7 @@ class CoachingServiceRequestsTable extends Table
      * @param \Cake\Event\Event $event The event being processed
      * @param \App\Model\Entity\CoachingServiceRequest $entity The entity being saved
      * @param \ArrayObject $options The options passed to the save method
-     * @return bool Whether the save should continue
+     * @return void
      */
     public function beforeSave($event, $entity, $options)
     {
@@ -186,6 +186,6 @@ class CoachingServiceRequestsTable extends Table
             $entity->is_deleted = false;
         }
         
-        return true;
+        $event->setResult(true);
     }
 } 
