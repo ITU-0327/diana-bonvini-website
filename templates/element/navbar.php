@@ -124,6 +124,14 @@ $userType = $user?->get('user_type');
                     <li>
                         <a href="<?= $this->Url->build('/contact') ?>">Contact</a>
                     </li>
+
+                    <?php if ($userType === 'admin') : ?>
+                        <li>
+                            <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'WritingServiceRequests', 'action' => 'index']) ?>" class="text-indigo-600 hover:text-indigo-500 font-semibold">
+                                Admin Dashboard
+                            </a>
+                        </li>
+                    <?php endif; ?>
                 </ul>
             </div>
 
@@ -263,6 +271,13 @@ $userType = $user?->get('user_type');
                     Contact
                 </a>
             </li>
+            <?php if ($userType === 'admin') : ?>
+                <li>
+                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'WritingServiceRequests', 'action' => 'index']) ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:text-teal-500">
+                        Admin Dashboard
+                    </a>
+                </li>
+            <?php endif; ?>
             <?php if ($user) : ?>
                 <li class="mt-2 border-t border-gray-200 pt-3">
                     <a href="<?= $this->Url->build(['controller' => 'Carts', 'action' => 'index']) ?>"
