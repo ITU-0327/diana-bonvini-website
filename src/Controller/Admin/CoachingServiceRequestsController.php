@@ -156,19 +156,17 @@ class CoachingServiceRequestsController extends AppController
         /** @var \App\Model\Entity\User $admin */
         $admin = $this->Authentication->getIdentity();
 
-        $coachingServiceRequest = $this->CoachingServiceRequests->get($id, [
-            'contain' => [
-                'Users',
-                'CoachingRequestMessages' => function ($q) {
-                    return $q->contain(['Users'])
-                        ->order(['CoachingRequestMessages.created_at' => 'ASC'])
-                        ->where(['CoachingRequestMessages.is_deleted' => false]);
-                },
-                'CoachingServicePayments' => function ($q) {
-                    return $q->order(['CoachingServicePayments.created_at' => 'DESC'])
-                        ->where(['CoachingServicePayments.is_deleted' => false]);
-                },
-            ],
+        $coachingServiceRequest = $this->CoachingServiceRequests->get($id, contain: [
+            'Users',
+            'CoachingRequestMessages' => function ($q) {
+                return $q->contain(['Users'])
+                    ->orderBy(['CoachingRequestMessages.created_at' => 'ASC'])
+                    ->where(['CoachingRequestMessages.is_deleted' => false]);
+            },
+            'CoachingServicePayments' => function ($q) {
+                return $q->orderBy(['CoachingServicePayments.created_at' => 'DESC'])
+                    ->where(['CoachingServicePayments.is_deleted' => false]);
+            },
         ]);
         
         // Fetch coaching request documents
@@ -178,7 +176,7 @@ class CoachingServiceRequestsController extends AppController
                 'coaching_service_request_id' => $id,
                 'is_deleted' => false,
             ])
-            ->order(['created_at' => 'DESC'])
+            ->orderBy(['created_at' => 'DESC'])
             ->toArray();
 
         // Mark client messages as read when admin views them
@@ -231,9 +229,7 @@ class CoachingServiceRequestsController extends AppController
         $admin = $this->Authentication->getIdentity();
         $this->log('sendPaymentRequest started for coaching service request ID: ' . $id, 'debug');
 
-        $coachingServiceRequest = $this->CoachingServiceRequests->get($id, [
-            'contain' => ['Users'],
-        ]);
+        $coachingServiceRequest = $this->CoachingServiceRequests->get($id, contain: ['Users']);
 
         $data = $this->request->getData();
         $this->log('Raw payment request data: ' . json_encode($data), 'debug');
@@ -308,9 +304,7 @@ class CoachingServiceRequestsController extends AppController
                 try {
                     // We don't need to fetch Users table since we already have user info
                     // Make sure we have fresh data with user information
-                    $coachingServiceRequest = $this->CoachingServiceRequests->get($id, [
-                        'contain' => ['Users'],
-                    ]);
+                    $coachingServiceRequest = $this->CoachingServiceRequests->get($id, contain: ['Users']);
                     
                     // Send payment request email
                     $mailer = new \App\Mailer\PaymentMailer('default');
@@ -415,9 +409,7 @@ class CoachingServiceRequestsController extends AppController
             return $this->redirect(['controller' => 'Admin', 'action' => 'dashboard']);
         }
 
-        $coachingServiceRequest = $this->CoachingServiceRequests->get($id, [
-            'contain' => ['Users']
-        ]);
+        $coachingServiceRequest = $this->CoachingServiceRequests->get($id, contain: ['Users']);
 
         $data = $this->request->getData();
         $messageText = $data['message_text'] ?? '';
@@ -457,9 +449,7 @@ class CoachingServiceRequestsController extends AppController
             // Send email notification to customer
             try {
                 // Get a fresh copy of the request with user data to ensure we have all necessary information
-                $requestWithUser = $this->CoachingServiceRequests->get($id, [
-                    'contain' => ['Users'],
-                ]);
+                $requestWithUser = $this->CoachingServiceRequests->get($id, contain: ['Users']);
                 
                 if (!empty($requestWithUser->user) && !empty($requestWithUser->user->email)) {
                     // Admin name (use the actual admin's name or a fixed name)
@@ -581,9 +571,7 @@ class CoachingServiceRequestsController extends AppController
                 
                 // Notify the client via email
                 try {
-                    $requestWithUser = $this->CoachingServiceRequests->get($id, [
-                        'contain' => ['Users'],
-                    ]);
+                    $requestWithUser = $this->CoachingServiceRequests->get($id, contain: ['Users']);
                     
                     if (!empty($requestWithUser->user) && !empty($requestWithUser->user->email)) {
                         // Send customer notification
@@ -627,9 +615,7 @@ class CoachingServiceRequestsController extends AppController
             return $this->redirect(['controller' => 'Admin', 'action' => 'dashboard']);
         }
         
-        $coachingServiceRequest = $this->CoachingServiceRequests->get($id, [
-            'contain' => ['Users'],
-        ]);
+        $coachingServiceRequest = $this->CoachingServiceRequests->get($id, contain: ['Users']);
         
         $data = $this->request->getData();
         $newStatus = $data['status'] ?? null;
@@ -677,9 +663,7 @@ class CoachingServiceRequestsController extends AppController
             
             // Notify the client via email about the status change
             try {
-                $requestWithUser = $this->CoachingServiceRequests->get($id, [
-                    'contain' => ['Users'],
-                ]);
+                $requestWithUser = $this->CoachingServiceRequests->get($id, contain: ['Users']);
                 
                 if (!empty($requestWithUser->user) && !empty($requestWithUser->user->email)) {
                     // Send status update notification
@@ -817,9 +801,7 @@ class CoachingServiceRequestsController extends AppController
             $id = $postData['coaching_service_request_id'];
         }
         
-        $coachingServiceRequest = $this->CoachingServiceRequests->get($id, [
-            'contain' => ['Users'],
-        ]);
+        $coachingServiceRequest = $this->CoachingServiceRequests->get($id, contain: ['Users']);
         
         $data = $this->request->getData();
         $this->log('SendTimeSlots called with ID: ' . $id, 'debug');
@@ -906,9 +888,7 @@ class CoachingServiceRequestsController extends AppController
             
             // Notify the client via email
             try {
-                $requestWithUser = $this->CoachingServiceRequests->get($id, [
-                    'contain' => ['Users'],
-                ]);
+                $requestWithUser = $this->CoachingServiceRequests->get($id, contain: ['Users']);
                 
                 if (!empty($requestWithUser->user) && !empty($requestWithUser->user->email)) {
                     // Use the already formatted time slots for email
@@ -966,9 +946,7 @@ class CoachingServiceRequestsController extends AppController
             return $this->redirect(['controller' => 'Admin', 'action' => 'dashboard']);
         }
         
-        $coachingServiceRequest = $this->CoachingServiceRequests->get($id, [
-            'contain' => ['Users'],
-        ]);
+        $coachingServiceRequest = $this->CoachingServiceRequests->get($id, contain: ['Users']);
         
         $data = $this->request->getData();
         $amount = $data['amount'] ?? 0;
@@ -1036,9 +1014,7 @@ class CoachingServiceRequestsController extends AppController
             
             // Send email notification to client
             try {
-                $requestWithUser = $this->CoachingServiceRequests->get($id, [
-                    'contain' => ['Users'],
-                ]);
+                $requestWithUser = $this->CoachingServiceRequests->get($id, contain: ['Users']);
                 
                 if (!empty($requestWithUser->user) && !empty($requestWithUser->user->email)) {
                     $mailer = new \App\Mailer\PaymentMailer('default');

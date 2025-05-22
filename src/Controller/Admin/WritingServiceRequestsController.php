@@ -12,6 +12,7 @@ use Cake\Utility\Text;
 use DateTime;
 use DateTimeZone;
 use Exception;
+use Psr\Http\Message\UploadedFileInterface;
 
 /**
  * WritingServiceRequests Controller (Admin prefix)
@@ -98,11 +99,12 @@ class WritingServiceRequestsController extends BaseAdminController
         /** @var \App\Model\Entity\User $user */
         $user = $this->Authentication->getIdentity();
 
-        $writingServiceRequest = $this->WritingServiceRequests->get($id, [
-            'contain' => ['Users', 'RequestMessages' => function ($q) {
+        $writingServiceRequest = $this->WritingServiceRequests->get($id, contain: [
+            'Users',
+            'RequestMessages' => function ($q) {
                 return $q->contain(['Users'])
-                    ->order(['RequestMessages.created_at' => 'ASC']);
-            }],
+                    ->orderBy(['RequestMessages.created_at' => 'ASC']);
+            },
         ]);
 
         // Mark messages from client as read when admin views them
@@ -549,20 +551,18 @@ class WritingServiceRequestsController extends BaseAdminController
             }
 
             try {
-                $writingServiceRequest = $this->WritingServiceRequests->get($id, [
-                    'contain' => [
-                        'RequestMessages' => function ($q) use ($lastMessageId) {
-                            $query = $q->contain(['Users'])
-                                ->order(['RequestMessages.created_at' => 'ASC']);
+                $writingServiceRequest = $this->WritingServiceRequests->get($id, contain: [
+                    'RequestMessages' => function ($q) use ($lastMessageId) {
+                        $query = $q->contain(['Users'])
+                            ->orderBy(['RequestMessages.created_at' => 'ASC']);
 
-                            if (!empty($lastMessageId)) {
-                                // Only get messages newer than the lastMessageId
-                                $query->where(['RequestMessages.request_message_id >' => $lastMessageId]);
-                            }
+                        if (!empty($lastMessageId)) {
+                            // Only get messages newer than the lastMessageId
+                            $query->where(['RequestMessages.request_message_id >' => $lastMessageId]);
+                        }
 
-                            return $query;
-                        },
-                    ],
+                        return $query;
+                    },
                 ]);
 
                 // Format messages for JSON response
@@ -1018,6 +1018,39 @@ class WritingServiceRequestsController extends BaseAdminController
 
             return $this->redirect(['action' => 'view', $id]);
         }
+    }
+
+    /**
+     * Handle document upload in admin context
+     *
+     * @param \Psr\Http\Message\UploadedFileInterface|null $file The uploaded file
+     * @param string $redirectAction The action to redirect to on error
+     * @return \Cake\Http\Response|string|null The file path or a redirect Response on error
+     */
+    protected function _handleDocumentUpload(?UploadedFileInterface $file, string $redirectAction): string|Response|null
+    {
+        if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
+            return null;
+        }
+        $allowedMimeTypes = [
+            'application/pdf',
+            'image/jpeg',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/msword',
+            'text/plain',
+        ];
+        if (!in_array($file->getClientMediaType(), $allowedMimeTypes)) {
+            $this->Flash->error(__('Invalid file type. Please upload PDF, Word, or TXT documents only.'));
+            return $this->redirect(['action' => $redirectAction]);
+        }
+        $uploadPath = WWW_ROOT . 'uploads' . DS . 'documents';
+        if (!is_dir($uploadPath)) {
+            mkdir($uploadPath, 0755, true);
+        }
+        $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9_.]/', '_', $file->getClientFilename() ?? '');
+        $filePath = $uploadPath . DS . $filename;
+        $file->moveTo($filePath);
+        return 'uploads/documents/' . $filename;
     }
 
     /**
