@@ -270,17 +270,22 @@ footer {
     position: relative;
 }
 
-.nav-menu a {
+.nav-menu a,
+.nav-menu-link,
+.main-nav-link {
     font-weight: 600;
     color: var(--color-diana-gray);
     padding: 0.5rem 0.75rem;
     transition: color 0.3s ease, transform 0.3s ease;
     position: relative;
     overflow: hidden;
+    text-decoration: none;
 }
 
 /* Shared pseudo-element for animated underline on links and logo */
 .nav-menu a::before,
+.nav-menu-link::before,
+.main-nav-link::before,
 .nav-logo::before {
     content: "";
     position: absolute;
@@ -295,12 +300,17 @@ footer {
 }
 
 .nav-menu a:hover::before,
-.nav-menu a:focus::before {
+.nav-menu-link:hover::before,
+.main-nav-link:hover::before {
     transform: translateX(-50%) scaleX(1);
 }
 
 .nav-menu a:hover,
-.nav-menu a:focus {
+.nav-menu a:focus,
+.nav-menu-link:hover,
+.nav-menu-link:focus,
+.main-nav-link:hover,
+.main-nav-link:focus {
     color: var(--color-diana-primary);
     transform: translateY(-2px);
 }

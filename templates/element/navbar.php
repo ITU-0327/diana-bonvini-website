@@ -167,9 +167,11 @@ $userType = $user?->get('user_type');
                         </div>
                     </div>
                 <?php else : ?>
-                    <div>
-                        <?= $this->Html->link('Login', ['controller' => 'Users', 'action' => 'login'], ['class' => 'text-indigo-600 hover:text-indigo-500 font-semibold']) ?>
-                    </div>
+                    <ul class="nav-menu">
+                        <li>
+                            <a href="<?= $this->Url->build(['controller' => 'Users', 'action' => 'login']) ?>">Login</a>
+                        </li>
+                    </ul>
                 <?php endif; ?>
             </div>
 
