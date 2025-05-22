@@ -140,9 +140,7 @@ class CoachingServiceRequestsController extends AppController
                         
                         if ($latestMessage) {
                             // Get a fresh copy of the request with user data
-                            $requestWithUser = $this->CoachingServiceRequests->get($id, [
-                                'contain' => ['Users'],
-                            ]);
+                            $requestWithUser = $this->CoachingServiceRequests->get($id, contain: ['Users']);
                             
                             // Fixed admin email
                             $adminEmail = 'diana@dianabonvini.com';
@@ -315,9 +313,7 @@ class CoachingServiceRequestsController extends AppController
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
 
-        $coachingServiceRequest = $this->CoachingServiceRequests->get($id, [
-            'contain' => [],
-        ]);
+        $coachingServiceRequest = $this->CoachingServiceRequests->get($id, contain: []);
 
         if ($this->request->is(['patch', 'post', 'put'])) {
             $data = $this->request->getData();
@@ -589,9 +585,7 @@ class CoachingServiceRequestsController extends AppController
         
         try {
             // Get the coaching service request
-            $coachingServiceRequest = $this->CoachingServiceRequests->get($id, [
-                'contain' => ['CoachingServicePayments', 'Users'],
-            ]);
+            $coachingServiceRequest = $this->CoachingServiceRequests->get($id, contain: ['CoachingServicePayments', 'Users']);
             
             // Set payment amount
             $amount = 100.00; // Default amount if none found
@@ -691,7 +685,7 @@ class CoachingServiceRequestsController extends AppController
                     $this->Flash->success(__('Payment was successful! Thank you for your payment.'));
                     
                     // Update request status if needed
-                    $coachingServiceRequest = $this->CoachingServiceRequests->get($id);
+                    $coachingServiceRequest = $this->CoachingServiceRequests->get($id, contain: []);
                     if ($coachingServiceRequest->request_status === 'pending') {
                         $coachingServiceRequest->request_status = 'in_progress';
                         $this->CoachingServiceRequests->save($coachingServiceRequest);
@@ -699,9 +693,7 @@ class CoachingServiceRequestsController extends AppController
                     
                     // Send payment confirmation email
                     try {
-                        $requestWithUser = $this->CoachingServiceRequests->get($id, [
-                            'contain' => ['Users'],
-                        ]);
+                        $requestWithUser = $this->CoachingServiceRequests->get($id, contain: ['Users']);
                         
                         $mailer = new \App\Mailer\PaymentMailer('default');
                         $mailer->sendCoachingPaymentConfirmation($requestWithUser, $payment);
@@ -855,9 +847,7 @@ class CoachingServiceRequestsController extends AppController
             }
 
             // Find the coaching service request
-            $coachingServiceRequest = $this->CoachingServiceRequests->get($id, [
-                'contain' => ['Users'],
-            ]);
+            $coachingServiceRequest = $this->CoachingServiceRequests->get($id, contain: ['Users']);
 
             // Ensure the user has access to this request
             if ($user->user_type !== 'admin' && $coachingServiceRequest->user_id !== $user->get('user_id')) {

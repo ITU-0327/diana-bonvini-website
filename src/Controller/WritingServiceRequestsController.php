@@ -141,9 +141,7 @@ class WritingServiceRequestsController extends AppController
 
                         if ($latestMessage) {
                             // Get a fresh copy of the request with user data
-                            $requestWithUser = $this->WritingServiceRequests->get($id, [
-                                'contain' => ['Users'],
-                            ]);
+                            $requestWithUser = $this->WritingServiceRequests->get($id, contain: ['Users']);
 
                             // Fixed admin email
                             $adminEmail = 'diana@dianabonvini.com';
@@ -253,20 +251,18 @@ class WritingServiceRequestsController extends AppController
             }
 
             try {
-                $writingServiceRequest = $this->WritingServiceRequests->get($id, [
-                    'contain' => [
-                        'RequestMessages' => function ($q) use ($lastMessageId) {
-                            $query = $q->contain(['Users'])
-                                ->orderBy(['RequestMessages.created_at' => 'ASC']);
+                $writingServiceRequest = $this->WritingServiceRequests->get($id, contain: [
+                    'RequestMessages' => function ($q) use ($lastMessageId) {
+                        $query = $q->contain(['Users'])
+                            ->orderBy(['RequestMessages.created_at' => 'ASC']);
 
-                            if (!empty($lastMessageId)) {
-                                // Only get messages newer than the lastMessageId
-                                $query->where(['RequestMessages.request_message_id >' => $lastMessageId]);
-                            }
+                        if (!empty($lastMessageId)) {
+                            // Only get messages newer than the lastMessageId
+                            $query->where(['RequestMessages.request_message_id >' => $lastMessageId]);
+                        }
 
-                            return $query;
-                        },
-                    ],
+                        return $query;
+                    },
                 ]);
 
                 // Format messages for JSON response
@@ -636,9 +632,7 @@ class WritingServiceRequestsController extends AppController
         if (!$isPaid && $paymentData) {
             // If we got here, we should check if the request has a final price and is not in pending status
             try {
-                $writingServiceRequest = $this->WritingServiceRequests->get($id, [
-                    'contain' => ['RequestMessages'],
-                ]);
+                $writingServiceRequest = $this->WritingServiceRequests->get($id, contain: ['RequestMessages']);
 
                 // NEW: Check for payment confirmation messages in the messages
                 $hasPaymentConfirmation = false;
@@ -704,9 +698,7 @@ class WritingServiceRequestsController extends AppController
         if ($isPaid && $status === 'paid') {
             try {
                 // Get existing messages to check if confirmation already exists
-                $writingServiceRequest = $this->WritingServiceRequests->get($id, [
-                    'contain' => ['RequestMessages']
-                ]);
+                $writingServiceRequest = $this->WritingServiceRequests->get($id, contain: ['RequestMessages']);
 
                 // Only add confirmation if we don't already have one for this payment
                 $paymentId = !empty($paymentDetails['transaction_id'])
@@ -765,9 +757,7 @@ class WritingServiceRequestsController extends AppController
             }
 
             // Get the writing service request with payment data
-            $writingServiceRequest = $this->WritingServiceRequests->get($requestId, [
-                'contain' => ['WritingServicePayments']
-            ]);
+            $writingServiceRequest = $this->WritingServiceRequests->get($requestId, contain: ['WritingServicePayments']);
 
             // Use the amount from payment details
             $amount = $paymentDetails['amount'] ?? '0.00';
@@ -862,9 +852,7 @@ class WritingServiceRequestsController extends AppController
 
         // Get writing service request with basic containment
         try {
-            $writingServiceRequest = $this->WritingServiceRequests->get($id, [
-                'contain' => ['Users'],
-            ]);
+            $writingServiceRequest = $this->WritingServiceRequests->get($id, contain: ['Users']);
         } catch (Exception $e) {
             $this->log('Error retrieving request: ' . $e->getMessage(), 'error');
             $this->Flash->error('Unable to find the requested service.');
@@ -1089,9 +1077,7 @@ class WritingServiceRequestsController extends AppController
 
         try {
             // Get the request with user relationship
-            $writingServiceRequest = $this->WritingServiceRequests->get($requestId, [
-                'contain' => ['Users', 'RequestMessages'],
-            ]);
+            $writingServiceRequest = $this->WritingServiceRequests->get($requestId, contain: ['Users', 'RequestMessages']);
 
             // Format amount
             $amount = !empty($paymentDetails['amount'])
