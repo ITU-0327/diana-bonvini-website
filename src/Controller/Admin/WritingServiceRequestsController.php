@@ -35,7 +35,8 @@ class WritingServiceRequestsController extends BaseAdminController
             ->contain(['Users' => function ($q) {
                 return $q->where(['Users.is_deleted' => false]);
             }])
-            ->where(['WritingServiceRequests.is_deleted' => false]);
+            ->where(['WritingServiceRequests.is_deleted' => false])
+            ->order(['WritingServiceRequests.created_at' => 'DESC']);
 
         $writingServiceRequests = $this->paginate($query);
 
