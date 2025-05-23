@@ -362,8 +362,7 @@ class WritingServiceRequestsController extends BaseAdminController
             $writingServicePaymentsTable = $this->fetchTable('WritingServicePayments');
             $useDatabase = true;
         } catch (Exception $e) {
-            $this->log('WritingServicePayments table not available: ' . $e->getMessage(), 'warning');
-            // Continue with session-only tracking
+            $useDatabase = false;
         }
 
         // Only attempt database operations if the table exists

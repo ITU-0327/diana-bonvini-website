@@ -52,7 +52,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                         </p>
     </div>
 
-                    <?php if (!empty($writingServiceRequest->service_instructions)): ?>
+                    <?php if (!empty($writingServiceRequest->service_instructions)) : ?>
                         <div class="mb-6">
                             <h3 class="text-md font-semibold text-gray-900 mb-2">Your Instructions</h3>
                             <div class="bg-gray-50 rounded p-3 text-gray-700">
@@ -78,10 +78,10 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                             <i class="fas fa-sync-alt fa-spin mr-1"></i> Updating...
                         </div>
 
-                        <?php if (!empty($writingServiceRequest->request_messages)): ?>
-                            <?php foreach ($writingServiceRequest->request_messages as $msg): ?>
-                            <?php
-                            $isAdmin = isset($msg->user) && strtolower($msg->user->user_type) === 'admin';
+                        <?php if (!empty($writingServiceRequest->request_messages)) : ?>
+                            <?php foreach ($writingServiceRequest->request_messages as $msg) : ?>
+                                <?php
+                                $isAdmin = isset($msg->user) && strtolower($msg->user->user_type) === 'admin';
                                 $bubbleClass = $isAdmin
                                     ? 'bg-indigo-100 text-gray-800'
                                     : 'bg-blue-600 text-white';
@@ -90,9 +90,9 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                 <div class="flex <?= $alignClass ?>" data-message-id="<?= h($msg->request_message_id) ?>">
                                     <div class="max-w-lg">
                                         <div class="flex items-end space-x-2">
-                                            <?php if ($isAdmin): ?>
+                                            <?php if ($isAdmin) : ?>
                                                 <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-sm font-medium">A</div>
-                                                <?php endif; ?>
+                                            <?php endif; ?>
                                             <div>
                                                 <div class="px-4 py-2 rounded-lg <?= $bubbleClass ?>">
                                             <?php
@@ -103,16 +103,16 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                     $messageText = preg_replace('/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $messageText);
 
                                             // Check if this message contains time slots
-                                                    if ($isAdmin && strpos($msg->message, '**Available Time Slots:**') !== false) {
+                                            if ($isAdmin && strpos($msg->message, '**Available Time Slots:**') !== false) {
                                                 // This is a time slots message, format it specially
-                                                        $parts = explode('**Available Time Slots:**', $msg->message, 2);
+                                                $parts = explode('**Available Time Slots:**', $msg->message, 2);
 
                                                 // Process the first part with proper bold formatting
                                                 $firstPart = nl2br(h($parts[0]));
                                                 $firstPart = preg_replace('/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $firstPart);
                                                 echo $firstPart . '<br>';
 
-                                                        echo '<div class="timeslots-header font-semibold mt-2 mb-1">Available Time Slots:</div>';
+                                                echo '<div class="timeslots-header font-semibold mt-2 mb-1">Available Time Slots:</div>';
 
                                                 // Parse time slots
                                                 if (preg_match_all('/- ([^:]+): ([^\n]+)/', $parts[1], $matches, PREG_SET_ORDER)) {
@@ -122,9 +122,11 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                     $hasAnyAppointment = false;
                                                     if (isset($appointments)) {
                                                         foreach ($appointments as $appointment) {
-                                                            if ($appointment->writing_service_request_id == $writingServiceRequest->writing_service_request_id &&
+                                                            if (
+                                                                $appointment->writing_service_request_id == $writingServiceRequest->writing_service_request_id &&
                                                                 $appointment->status != 'cancelled' &&
-                                                                $appointment->is_deleted == false) {
+                                                                $appointment->is_deleted == false
+                                                            ) {
                                                                 $hasAnyAppointment = true;
                                                                 break;
                                                             }
@@ -139,10 +141,12 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                         $isThisSlotBooked = false;
                                                         if (isset($appointments)) {
                                                             foreach ($appointments as $appointment) {
-                                                                if ($appointment->appointment_date->format('l, F j, Y') == $date &&
+                                                                if (
+                                                                    $appointment->appointment_date->format('l, F j, Y') == $date &&
                                                                     $appointment->appointment_time->format('g:i A') == substr($time, 0, 7) &&
                                                                     $appointment->status != 'cancelled' &&
-                                                                    $appointment->is_deleted == false) {
+                                                                    $appointment->is_deleted == false
+                                                                ) {
                                                                     $isThisSlotBooked = true;
                                                                     break;
                                                                 }
@@ -176,7 +180,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                                 'date' => urlencode($date),
                                                                 'time' => urlencode($time),
                                                                 'request_id' => $writingServiceRequest->writing_service_request_id,
-                                                                'message_id' => $msg->request_message_id
+                                                                'message_id' => $msg->request_message_id,
                                                                     ]]) . '" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200">';
                                                                     echo '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">';
                                                                     echo '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
@@ -187,63 +191,87 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                     }
 
                                                     echo '</div>';
-                                                        }
-                                                    }
+                                                }
+                                            }
                                                     // Handle payment buttons
-                                                    else if (strpos($messageText, '[PAYMENT_BUTTON]') !== false) {
-                                                    $buttonPattern = '/\[PAYMENT_BUTTON\](.*?)\[\/PAYMENT_BUTTON\]/';
-                                                        $messageText = preg_replace_callback($buttonPattern, function($matches) use ($writingServiceRequest) {
-                                                        $paymentId = $matches[1];
-                                                        $requestId = $writingServiceRequest->writing_service_request_id;
+                                            elseif (strpos($messageText, '[PAYMENT_BUTTON]') !== false) {
+                                                $buttonPattern = '/\[PAYMENT_BUTTON\](.*?)\[\/PAYMENT_BUTTON\]/';
+                                                $messageText = preg_replace_callback($buttonPattern, function ($matches) use ($writingServiceRequest) {
+                                                    $paymentId = $matches[1];
+                                                    $requestId = $writingServiceRequest->writing_service_request_id;
 
-                                                        // Check if this payment is already paid
-                                                        $isPaid = false;
-                                                        if (!empty($writingServiceRequest->writing_service_payments)) {
-                                                            foreach ($writingServiceRequest->writing_service_payments as $payment) {
-                                                                if ($payment->writing_service_payment_id == $paymentId && $payment->status === 'paid') {
-                                                                    $isPaid = true;
-                                                                    break;
-                                                                }
+                                                // Check if this payment is already paid
+                                                    $isPaid = false;
+                                                    if (!empty($writingServiceRequest->writing_service_payments)) {
+                                                        foreach ($writingServiceRequest->writing_service_payments as $payment) {
+                                                            if ($payment->writing_service_payment_id == $paymentId && $payment->status === 'paid') {
+                                                                $isPaid = true;
+                                                                break;
                                                             }
                                                         }
+                                                    }
 
                                                             // Create payment container with modern styling
                                                             $containerClass = 'payment-container mt-3';
-                                                        $buttonClass = $isPaid ?
-                                                                'inline-flex items-center px-4 py-2 rounded bg-green-600 text-white text-sm font-medium payment-button' :
-                                                                'inline-flex items-center px-4 py-2 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 payment-button';
-                                                        $buttonText = $isPaid ? 'Payment Complete' : 'Make Payment';
-                                                        $buttonIcon = $isPaid ?
+                                                            $buttonClass = $isPaid ?
+                                                        'inline-flex items-center px-4 py-2 rounded bg-green-600 text-white text-sm font-medium payment-button' :
+                                                        'inline-flex items-center px-4 py-2 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 payment-button';
+                                                            $buttonText = $isPaid ? 'Payment Complete' : 'Make Payment';
+                                                            $buttonIcon = $isPaid ?
                                                             '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' :
                                                             '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>';
 
                                                         // Status class and initial visibility
-                                                        $statusClass = $isPaid ? 'payment-status mt-2 text-sm flex items-center payment-completed' : 'payment-status hidden mt-2 text-sm flex items-center';
-                                                        $statusIcon = $isPaid ? '✅' : '⏳';
-                                                        $statusText = $isPaid ? 'Payment received' : 'Checking payment status...';
+                                                            $statusClass = $isPaid ? 'payment-status mt-2 text-sm flex items-center payment-completed' : 'payment-status hidden mt-2 text-sm flex items-center';
+                                                            $statusIcon = $isPaid ? '✅' : '⏳';
+                                                            $statusText = $isPaid ? 'Payment received' : 'Checking payment status...';
 
-                                                        return '<div class="'.$containerClass.'" data-payment-container="'.$paymentId.'">
-                                                            <!-- Payment button -->
-                                                                <div class="payment-button-container">
-                                                                <a href="'.($isPaid ? 'javascript:void(0)' : '/writing-service-requests/payDirect?id='.$requestId.'&paymentId='.urlencode($paymentId)).'"
-                                                                   class="'.$buttonClass.'"
-                                                                       '.($isPaid ? 'disabled="disabled"' : 'data-payment-id="'.$paymentId.'').'>
-                                                                    '.$buttonIcon.'
-                                                                    '.$buttonText.'
-                                                                </a>
-                                                            </div>
-                                                            <!-- Payment status indicator -->
-                                                            <div class="'.$statusClass.'">
-                                                                <span class="status-icon mr-1">'.$statusIcon.'</span>
-                                                                <span class="status-text '.($isPaid ? 'text-green-600 font-medium' : '').'">'.$statusText.'</span>
-                                                                <span class="status-date ml-2"></span>
-                                                            </div>
-                                                        </div>';
-                                                        }, $messageText);
+                                                            return (function () use (
+                                                                $paymentId,
+                                                                $requestId,
+                                                                $isPaid,
+                                                                $containerClass,
+                                                                $buttonClass,
+                                                                $buttonText,
+                                                                $buttonIcon,
+                                                                $statusClass,
+                                                                $statusIcon,
+                                                                $statusText,
+                                                            ) {
+                                                                /** @var \Cake\View\View $this */
 
-                                                        echo $messageText;
-                                                    } else {
-                                                        echo $messageText;
+                                                                $payUrl = $isPaid
+                                                                    ? 'javascript:void(0)'
+                                                                    : $this->Url->build([
+                                                                        'controller' => 'WritingServiceRequests',
+                                                                        'action'     => 'payDirect',
+                                                                        '?' => [
+                                                                            'id'        => $requestId,
+                                                                            'paymentId' => $paymentId,
+                                                                        ],
+                                                                    ]);
+
+                                                                return '<div class="' . $containerClass . '" data-payment-container="' . $paymentId . '">
+                                                                          <div class="payment-button-container">
+                                                                            <a href="' . $payUrl . '"
+                                                                               class="' . $buttonClass . '"
+                                                                               ' . ($isPaid ? 'disabled="disabled"' : 'data-payment-id="' . $paymentId . '"') . '>
+                                                                               ' . $buttonIcon . '
+                                                                               ' . $buttonText . '
+                                                                            </a>
+                                                                          </div>
+                                                                          <div class="' . $statusClass . '">
+                                                                            <span class="status-icon mr-1">' . $statusIcon . '</span>
+                                                                            <span class="status-text ' . ($isPaid ? 'text-green-600 font-medium' : '') . '">' . $statusText . '</span>
+                                                                            <span class="status-date ml-2"></span>
+                                                                          </div>
+                                                                        </div>';
+                                                            })();
+                                                }, $messageText);
+
+                                                echo $messageText;
+                                            } else {
+                                                echo $messageText;
                                             }
                                             ?>
                                         </div>
@@ -258,7 +286,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                             </div>
                                 </div>
                             <?php endforeach; ?>
-                        <?php else: ?>
+                        <?php else : ?>
                             <div class="text-center py-8">
                                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -266,7 +294,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                 <h3 class="mt-2 text-sm font-medium text-gray-900">No messages</h3>
                                 <p class="mt-1 text-sm text-gray-500">Start the conversation with the admin.</p>
                         </div>
-                    <?php endif; ?>
+                        <?php endif; ?>
                 </div>
 
                     <!-- Message Input Form -->
@@ -286,7 +314,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                     <div class="mt-3 flex justify-end">
                         <?= $this->Form->button('Send Message', [
                             'class' => 'inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500',
-                            'id' => 'send-message-btn'
+                            'id' => 'send-message-btn',
                         ]) ?>
                         </div>
                         <?= $this->Form->end() ?>
@@ -323,15 +351,15 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                         </div>
                 <div class="p-6">
                                 <?= $this->Html->link(
-                        '<i class="fas fa-arrow-left mr-2"></i> Back to Requests',
-                        ['action' => 'index'],
-                        ['class' => 'w-full mb-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center justify-center text-sm', 'escape' => false]
-                    ) ?>
+                                    '<i class="fas fa-arrow-left mr-2"></i> Back to Requests',
+                                    ['action' => 'index'],
+                                    ['class' => 'w-full mb-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center justify-center text-sm', 'escape' => false],
+                                ) ?>
                     <?= $this->Html->link(
                         '<i class="fas fa-edit mr-2"></i> Edit Request',
                         ['action' => 'edit', $writingServiceRequest->writing_service_request_id],
-                        ['class' => 'w-full bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold py-2 px-4 rounded inline-flex items-center justify-center text-sm', 'escape' => false]
-                                ) ?>
+                        ['class' => 'w-full bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold py-2 px-4 rounded inline-flex items-center justify-center text-sm', 'escape' => false],
+                    ) ?>
                             </div>
                         </div>
                         </div>
@@ -454,14 +482,17 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
 
         const paymentIds = Array.from(paymentButtons).map(btn => btn.dataset.paymentId);
 
-        fetch(`/writing-service-requests/checkPaymentStatus/${requestId}`, {
-            method: 'POST',
-            body: JSON.stringify({ paymentIds }),
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
+        const qs = new URLSearchParams({
+            paymentIds: JSON.stringify(paymentIds)      // 把数组放进 query-string
+        }).toString();
+
+        fetch(`/writing-service-requests/checkPaymentStatus/${requestId}?${qs}`, {
+            method : 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
+            .then(r => r.json())
+            .then(data => { if (data.success && data.payments) updatePaymentUI(data.payments); })
+            .catch(err => console.error('Error checking payment status:', err));
         .then(response => response.json())
         .then(data => {
             if (data.success && data.payments) {

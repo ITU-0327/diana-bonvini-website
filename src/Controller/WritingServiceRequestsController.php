@@ -3,17 +3,20 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Mailer\PaymentMailer;
+use App\Model\Entity\WritingServicePayment;
 use App\Model\Entity\WritingServiceRequest;
 use Cake\Core\Configure;
 use Cake\Http\Response;
 use Cake\Routing\Router;
+use Cake\Utility\Text;
+use DateTime;
 use DateTimeInterface;
 use Exception;
 use Psr\Http\Message\UploadedFileInterface;
 use RuntimeException;
 use Stripe\Checkout\Session;
 use Stripe\Stripe;
-use Cake\Utility\Text;
 
 /**
  * WritingServiceRequests Controller
@@ -83,7 +86,8 @@ class WritingServiceRequestsController extends AppController
                         ->orderBy(['RequestMessages.created_at' => 'ASC']);
                 },
                 'WritingServicePayments' => function ($q) {
-                    return $q->orderBy(['WritingServicePayments.created_at' => 'DESC']);
+                    return $q->where(['WritingServicePayments.status' => 'paid'])
+                        ->orderBy(['WritingServicePayments.created_at' => 'DESC']);
                 },
             ],
         );
@@ -148,12 +152,12 @@ class WritingServiceRequestsController extends AppController
                             $adminName = 'Diana Bonvini';
 
                             // Send admin notification
-                            $mailer = new \App\Mailer\PaymentMailer('default');
+                            $mailer = new PaymentMailer('default');
                             $mailer->newMessageNotification(
                                 $requestWithUser,
                                 $data['reply_message'],
                                 $adminEmail,
-                                $adminName
+                                $adminName,
                             );
                             $mailer->deliverAsync();
                         }
@@ -375,7 +379,7 @@ class WritingServiceRequestsController extends AppController
                     $adminName = 'Diana Bonvini';
 
                     // Send admin notification
-                    $mailer = new \App\Mailer\PaymentMailer('default');
+                    $mailer = new PaymentMailer('default');
                     $mailer->newRequestNotification($writingServiceRequest, $adminEmail, $adminName);
                     $mailer->deliverAsync();
                 } catch (Exception $e) {
@@ -641,10 +645,12 @@ class WritingServiceRequestsController extends AppController
                         // Only consider it confirmed if the confirmation message contains THIS payment ID
                         if (strpos($message->message, '[PAYMENT_CONFIRMATION]') !== false) {
                             // Check if this specific payment ID is mentioned in the confirmation message
-                            if (strpos($message->message, "Payment ID: $sessionPaymentId") !== false ||
+                            if (
+                                strpos($message->message, "Payment ID: $sessionPaymentId") !== false ||
                                 strpos($message->message, "Payment ID:$sessionPaymentId") !== false ||
                                 ($dbPaymentId && (strpos($message->message, "Payment ID: $dbPaymentId") !== false ||
-                                                strpos($message->message, "Payment ID:$dbPaymentId") !== false))) {
+                                                strpos($message->message, "Payment ID:$dbPaymentId") !== false))
+                            ) {
                                 $hasPaymentConfirmation = true;
                                 break;
                             }
@@ -709,8 +715,10 @@ class WritingServiceRequestsController extends AppController
 
                 if ($paymentId && !empty($writingServiceRequest->request_messages)) {
                     foreach ($writingServiceRequest->request_messages as $message) {
-                        if (strpos($message->message, '[PAYMENT_CONFIRMATION]') !== false &&
-                            strpos($message->message, "Payment ID: {$paymentId}") !== false) {
+                        if (
+                            strpos($message->message, '[PAYMENT_CONFIRMATION]') !== false &&
+                            strpos($message->message, "Payment ID: {$paymentId}") !== false
+                        ) {
                             $hasConfirmation = true;
                             break;
                         }
@@ -963,11 +971,12 @@ class WritingServiceRequestsController extends AppController
 
             // Create session parameters
             $successUrl = Router::url(
-                ['controller' => 'WritingServiceRequests', 'action' => 'view', $id, '?' => [
-                    'payment_success' => 'true',
-                    'paymentId' => $sessionPaymentId
-                ]],
-                true,
+                ['controller' => 'WritingServiceRequests',
+                    'action'     => 'paymentSuccess',
+                    $id,
+                    $sessionPaymentId
+                ],
+                true
             );
 
             $cancelUrl = Router::url(
@@ -1020,7 +1029,7 @@ class WritingServiceRequestsController extends AppController
      * @param array $paymentDetails Payment details
      * @return void
      */
-    protected function _sendPaymentEmails(WritingServiceRequest $request, \App\Model\Entity\WritingServicePayment $payment, array $paymentDetails): void
+    protected function _sendPaymentEmails(WritingServiceRequest $request, WritingServicePayment $payment, array $paymentDetails): void
     {
         // Fixed admin email
         $adminEmail = 'diana@dianabonvini.com';
@@ -1028,7 +1037,7 @@ class WritingServiceRequestsController extends AppController
 
         // Send customer email first - wrap in try-catch to prevent errors from blocking process
         try {
-            $customerMailer = new \App\Mailer\PaymentMailer('default');
+            $customerMailer = new PaymentMailer('default');
             $customerMailer->paymentConfirmation($request, $payment, $paymentDetails);
             $result = $customerMailer->deliverAsync();
 
@@ -1042,13 +1051,13 @@ class WritingServiceRequestsController extends AppController
 
         // Send admin notification in a separate try-catch
         try {
-            $adminMailer = new \App\Mailer\PaymentMailer('default');
+            $adminMailer = new PaymentMailer('default');
             $adminMailer->adminPaymentNotification(
                 $request,
                 $payment,
                 $adminEmail,
                 $adminName,
-                $paymentDetails
+                $paymentDetails,
             );
             $result = $adminMailer->deliverAsync();
 
@@ -1103,6 +1112,7 @@ class WritingServiceRequestsController extends AppController
                         if (strpos($message->message, "Payment ID: {$paymentId}") !== false) {
                             // Confirmation already exists, don't add another one
                             $this->log("Payment confirmation message already exists for payment ID: {$paymentId}", 'debug');
+
                             return true;
                         }
                     }
@@ -1132,12 +1142,13 @@ class WritingServiceRequestsController extends AppController
             // Add the message
             $writingServiceRequest = $this->WritingServiceRequests->patchEntity(
                 $writingServiceRequest,
-                $messageData
+                $messageData,
             );
 
             // Save the entity
             if (!$this->WritingServiceRequests->save($writingServiceRequest)) {
                 $this->log('Failed to save payment confirmation message: ' . json_encode($writingServiceRequest->getErrors()), 'error');
+
                 return false;
             }
 
@@ -1147,6 +1158,7 @@ class WritingServiceRequestsController extends AppController
             return true;
         } catch (Exception $e) {
             $this->log('Error adding payment confirmation message: ' . $e->getMessage(), 'error');
+
             return false;
         }
     }
@@ -1162,7 +1174,7 @@ class WritingServiceRequestsController extends AppController
     protected function _processPaymentConfirmationEmails(
         WritingServiceRequest $writingServiceRequest,
         array $paymentDetails,
-        string $paymentId
+        string $paymentId,
     ): void {
         try {
             // Get payment details from database if available
@@ -1187,11 +1199,11 @@ class WritingServiceRequestsController extends AppController
             // If we don't have a valid payment record, create a temporary one
             if (!$payment) {
                 // Create a temporary payment object for email
-                $payment = new \App\Model\Entity\WritingServicePayment([
+                $payment = new WritingServicePayment([
                     'writing_service_request_id' => $writingServiceRequest->writing_service_request_id,
                     'amount' => (float)($paymentDetails['amount'] ?? 0.00),
                     'transaction_id' => $paymentId,
-                    'payment_date' => new \DateTime(),
+                    'payment_date' => new DateTime(),
                     'payment_method' => 'online',
                     'status' => 'paid',
                 ]);
@@ -1199,7 +1211,6 @@ class WritingServiceRequestsController extends AppController
 
             // Send emails using the helper method
             $this->_sendPaymentEmails($writingServiceRequest, $payment, $paymentDetails);
-
         } catch (Exception $e) {
             // Log error but don't halt execution
             $this->log('Error in payment confirmation email processing: ' . $e->getMessage(), 'error');
@@ -1288,6 +1299,14 @@ class WritingServiceRequestsController extends AppController
                     return $q->orderBy(['WritingServicePayments.created_at' => 'DESC']);
                 },
             ],
+        );
+
+        $this->log(
+            '==== DEBUG payment list for request ' . $id . ' ====' . PHP_EOL .
+            print_r($writingServiceRequest->writing_service_payments, true) .
+            PHP_EOL .
+            'Total paid calculated by entity: ' . $writingServiceRequest->getTotalPaidAmount(),
+            'debug'
         );
 
         // Fetch request documents
@@ -1478,11 +1497,12 @@ class WritingServiceRequestsController extends AppController
                 return $this->response->withType('application/json')
                     ->withStringBody(json_encode([
                         'success' => false,
-                        'message' => 'Invalid payment information.'
+                        'message' => 'Invalid payment information.',
                     ]));
             }
 
             $this->Flash->error('Invalid payment information.');
+
             return $this->redirect(['action' => 'index']);
         }
 
@@ -1498,11 +1518,12 @@ class WritingServiceRequestsController extends AppController
                 return $this->response->withType('application/json')
                     ->withStringBody(json_encode([
                         'success' => false,
-                        'message' => 'Error retrieving writing service request.'
+                        'message' => 'Error retrieving writing service request.',
                     ]));
             }
 
             $this->Flash->error('Error processing payment: Unable to find the writing service request.');
+
             return $this->redirect(['action' => 'index']);
         }
 
@@ -1518,11 +1539,12 @@ class WritingServiceRequestsController extends AppController
                     ->withStringBody(json_encode([
                         'success' => true,
                         'paid' => true,
-                        'message' => 'Payment already confirmed.'
+                        'message' => 'Payment already confirmed.',
                     ]));
             }
 
             $this->Flash->success('Payment has already been processed.');
+
             return $this->redirect(['action' => 'view', $id]);
         }
 
@@ -1575,7 +1597,7 @@ class WritingServiceRequestsController extends AppController
                     'success' => true,
                     'paid' => true,
                     'message' => 'Payment has been processed successfully.',
-                    'details' => $paymentDetails
+                    'details' => $paymentDetails,
                 ]));
         }
 
@@ -1585,7 +1607,7 @@ class WritingServiceRequestsController extends AppController
         // Redirect to view page with success parameter
         return $this->redirect(['action' => 'view', $id, '?' => [
             'payment_success' => 'true',
-            'paymentId' => $sessionPaymentId
+            'paymentId' => $sessionPaymentId,
         ]]);
     }
 
@@ -1614,7 +1636,7 @@ class WritingServiceRequestsController extends AppController
         try {
             // Get the writing service request
             $writingServiceRequest = $this->WritingServiceRequests->get($id, [
-                'contain' => ['WritingServicePayments']
+                'contain' => ['WritingServicePayments'],
             ]);
 
             // Generate a unique session payment ID
@@ -1806,6 +1828,7 @@ class WritingServiceRequestsController extends AppController
 
         if (!$user) {
             $this->Flash->error(__('You need to be logged in.'));
+
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
 
@@ -1815,6 +1838,7 @@ class WritingServiceRequestsController extends AppController
             // Check permissions - admin or owner of the request
             if ($user->user_type !== 'admin' && $user->user_id !== $writingServiceRequest->user_id) {
                 $this->Flash->error(__('You do not have permission to upload documents to this request.'));
+
                 return $this->redirect(['action' => 'index']);
             }
 
@@ -1825,6 +1849,7 @@ class WritingServiceRequestsController extends AppController
 
             if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
                 $this->Flash->error(__('No document uploaded or upload failed.'));
+
                 return $this->redirect(['action' => 'view', $id]);
             }
 
@@ -1846,17 +1871,17 @@ class WritingServiceRequestsController extends AppController
                     'file_size' => $file->getSize(),
                     'uploaded_by' => $user->user_type,
                     'is_deleted' => false,
-                    'created_at' => new \DateTime('now')
+                    'created_at' => new DateTime('now'),
                 ];
 
                 // Skip validation for the writing_service_request_id field
                 $requestDocument = $requestDocumentsTable->patchEntity($requestDocument, $data, [
-                    'validate' => false
+                    'validate' => false,
                 ]);
 
                 if ($requestDocumentsTable->save($requestDocument)) {
                     // Add a message to the chat about the upload
-                    $message = "Uploaded document: **" . $file->getClientFilename() . "**";
+                    $message = 'Uploaded document: **' . $file->getClientFilename() . '**';
                     $requestMessagesTable = $this->fetchTable('RequestMessages');
                     $newMessage = $requestMessagesTable->newEntity([
                         'writing_service_request_id' => $id,
@@ -1875,9 +1900,9 @@ class WritingServiceRequestsController extends AppController
             }
 
             return $this->redirect(['action' => 'view', $id]);
-
         } catch (Exception $e) {
             $this->Flash->error(__('Error: {0}', $e->getMessage()));
+
             return $this->redirect(['action' => 'view', $id]);
         }
     }
