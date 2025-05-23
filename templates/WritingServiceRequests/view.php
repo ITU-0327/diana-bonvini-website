@@ -271,17 +271,17 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
 
                     <!-- Message Input Form -->
                     <?= $this->Form->create(null, [
-                        'url' => ['controller' => 'WritingServiceRequests', 'action' => 'addMessage', $writingServiceRequest->writing_service_request_id],
-                        'id' => 'message-form',
-                        ]) ?>
+                        'url' => ['action' => 'view', $writingServiceRequest->writing_service_request_id],
+                        'id'  => 'message-form',
+                    ]) ?>
                     <div class="mt-4">
-                        <?= $this->Form->textarea('message', [
-                                'rows' => 3,
-                                'placeholder' => 'Type your message here...',
-                            'class' => 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm',
-                                'required' => true,
-                            'id' => 'message-textarea'
-                            ]) ?>
+                        <?= $this->Form->textarea('reply_message', [
+                            'rows'        => 3,
+                            'placeholder' => 'Type your message here...',
+                            'class'       => 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm',
+                            'required'    => true,
+                            'id'          => 'message-textarea',
+                        ]) ?>
                         </div>
                     <div class="mt-3 flex justify-end">
                         <?= $this->Form->button('Send Message', [
@@ -392,13 +392,39 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                 const formData = new FormData(messageForm);
                 const requestId = document.querySelector('[data-request-id]').dataset.requestId;
 
-                fetch(`/writing-service-requests/addMessage/${requestId}`, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
+                const messageForm = document.getElementById('message-form');
+                if (messageForm) {
+                    messageForm.addEventListener('submit', function (e) {
+                        e.preventDefault();
+
+                        const textarea  = document.getElementById('message-textarea');
+                        const submitBtn = document.getElementById('send-message-btn');
+
+                        if (textarea.value.trim() === '') return;
+
+                        submitBtn.disabled = true;
+
+                        const url      = messageForm.action;
+                        const formData = new FormData(messageForm);
+
+                        fetch(url, {
+                            method : 'POST',
+                            body   : formData,
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        })
+                            .then(resp => {
+                                if (resp.ok || resp.status === 302) return resp.text();
+                                throw new Error('server');
+                            })
+                            .then(() => {
+                                textarea.value = '';
+                                loadMessages();
+                            })
+                            .catch(() => alert('Failed to send message. Please try again.'))
+                            .finally(() => { submitBtn.disabled = false; });
+                    });
+                }
+
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
