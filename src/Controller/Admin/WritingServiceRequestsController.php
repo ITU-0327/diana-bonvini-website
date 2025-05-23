@@ -106,6 +106,11 @@ class WritingServiceRequestsController extends BaseAdminController
                 return $q->contain(['Users'])
                     ->orderBy(['RequestMessages.created_at' => 'ASC']);
             },
+            'WritingServicePayments' => function ($q) {
+                return $q
+                    ->where(['WritingServicePayments.status' => 'paid'])
+                    ->orderBy(['WritingServicePayments.created_at' => 'DESC']);
+            },
         ]);
 
         // Mark messages from client as read when admin views them
