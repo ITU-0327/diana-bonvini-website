@@ -51,7 +51,7 @@ class AppController extends Controller
          * see https://book.cakephp.org/5/en/controllers/components/form-protection.html
          */
         $this->loadComponent('FormProtection', [
-            'unlockedActions' => ['add', 'edit', 'uploadDocument'],
+            'unlockedActions' => ['add', 'edit', 'uploadDocument', 'paymentSuccess'],
             'unlockedFields' => ['document'],
         ]);
     }

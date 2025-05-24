@@ -359,12 +359,14 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                 <div class="p-6">
                     <?php if (!empty($writingServiceRequest->writing_service_payments)): ?>
                         <div class="space-y-3">
-                            <?php foreach ($writingServiceRequest->writing_service_payments as $payment): ?>
+                            <?php 
+                            $paymentNumber = 1;
+                            foreach ($writingServiceRequest->writing_service_payments as $payment): ?>
                                 <div class="border rounded-lg p-3 <?= $payment->status === 'paid' ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50' ?>">
                                     <div class="flex justify-between items-start mb-2">
                                         <div class="flex-1">
                                             <div class="text-sm font-medium text-gray-900">
-                                                Payment #<?= h($payment->writing_service_payment_id) ?>
+                                                Payment #<?= $paymentNumber ?>
                                             </div>
                                             <div class="text-sm text-gray-500">
                                                 <?= $payment->created_at ? $payment->created_at->format('M j, Y g:i A') : 'Unknown' ?>
@@ -407,7 +409,9 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                         <?php endif; ?>
                                     </div>
                                 </div>
-                            <?php endforeach; ?>
+                            <?php 
+                            $paymentNumber++;
+                            endforeach; ?>
                         </div>
                         
                         <!-- Payment Summary -->

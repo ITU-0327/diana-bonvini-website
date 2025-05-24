@@ -33,6 +33,7 @@ class CoachingServicePayment extends Entity
      * @var array<string, bool>
      */
     protected array $_accessible = [
+        'coaching_service_payment_id' => true,
         'coaching_service_request_id' => true,
         'amount' => true,
         'transaction_id' => true,

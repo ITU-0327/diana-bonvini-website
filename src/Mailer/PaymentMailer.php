@@ -380,7 +380,7 @@ class PaymentMailer extends Mailer
      */
     public function sendCoachingPaymentConfirmation($coachingServiceRequest, $payment)
     {
-        $formattedAmount = number_format($payment->amount, 2);
+        $formattedAmount = number_format((float)$payment->amount, 2);
         
         $this->setTo($coachingServiceRequest->user->email)
             ->setSubject('Payment Confirmed for Coaching Service #' . $coachingServiceRequest->coaching_service_request_id)
@@ -417,5 +417,62 @@ class PaymentMailer extends Mailer
             ])
             ->viewBuilder()
                 ->setTemplate('coaching_time_slots');
+    }
+    
+    /**
+     * Send a notification to admin when a coaching payment is received
+     *
+     * @param \App\Model\Entity\CoachingServiceRequest $coachingServiceRequest The coaching service request
+     * @param \App\Model\Entity\CoachingServicePayment $payment The payment entity
+     * @param string $adminEmail Admin email address
+     * @param string $adminName Admin name
+     * @return void
+     */
+    public function adminCoachingPaymentNotification($coachingServiceRequest, $payment, string $adminEmail, string $adminName)
+    {
+        $formattedAmount = number_format((float)$payment->amount, 2);
+        
+        $this->setTo($adminEmail)
+            ->setSubject('💰 New Coaching Payment Received #' . $coachingServiceRequest->coaching_service_request_id)
+            ->setEmailFormat('both')
+            ->setViewVars([
+                'admin_name' => $adminName,
+                'client_name' => $coachingServiceRequest->user->full_name,
+                'client_email' => $coachingServiceRequest->user->email,
+                'coaching_service_request' => $coachingServiceRequest,
+                'payment' => $payment,
+                'amount' => $formattedAmount,
+                'transaction_id' => $payment->transaction_id ?? 'N/A'
+            ])
+            ->viewBuilder()
+                ->setTemplate('admin_coaching_payment_notification');
+    }
+    
+    /**
+     * Send a notification to admin when a new coaching service request is created
+     *
+     * @param \App\Model\Entity\CoachingServiceRequest $coachingServiceRequest The coaching service request
+     * @param string $adminEmail Admin email address
+     * @param string $adminName Admin name
+     * @return void
+     */
+    public function newCoachingRequestNotification($coachingServiceRequest, string $adminEmail, string $adminName)
+    {
+        // Make sure we have access to the user
+        if (empty($coachingServiceRequest->user)) {
+            throw new \InvalidArgumentException('User information is required for new coaching request notification email');
+        }
+        
+        $this->setTo($adminEmail)
+            ->setSubject('🎯 New Coaching Service Request: ' . ucwords(str_replace('_', ' ', $coachingServiceRequest->service_type)))
+            ->setEmailFormat('both')
+            ->setViewVars([
+                'coaching_service_request' => $coachingServiceRequest,
+                'admin_name' => $adminName,
+                'client_name' => $coachingServiceRequest->user->full_name,
+                'client_email' => $coachingServiceRequest->user->email,
+            ])
+            ->viewBuilder()
+                ->setTemplate('coaching_new_request_notification');
     }
 } 

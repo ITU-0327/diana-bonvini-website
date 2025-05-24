@@ -73,9 +73,7 @@ class CoachingServiceRequestsController extends AppController
         }
 
         $query = $this->CoachingServiceRequests->find()
-            ->contain(['Users', 'CoachingServicePayments' => function ($q) {
-                return $q->where(['status' => 'paid']);
-            }])
+            ->contain(['Users', 'CoachingServicePayments'])
             ->where(['CoachingServiceRequests.is_deleted' => false]);
 
         // Process filter parameters
@@ -164,8 +162,7 @@ class CoachingServiceRequestsController extends AppController
                     ->where(['CoachingRequestMessages.is_deleted' => false]);
             },
             'CoachingServicePayments' => function ($q) {
-                return $q->orderBy(['CoachingServicePayments.created_at' => 'DESC'])
-                    ->where(['CoachingServicePayments.is_deleted' => false]);
+                return $q->orderBy(['CoachingServicePayments.created_at' => 'DESC']);
             },
         ]);
         
@@ -227,167 +224,103 @@ class CoachingServiceRequestsController extends AppController
 
         /** @var \App\Model\Entity\User $admin */
         $admin = $this->Authentication->getIdentity();
-        $this->log('sendPaymentRequest started for coaching service request ID: ' . $id, 'debug');
-
-        $coachingServiceRequest = $this->CoachingServiceRequests->get($id, contain: ['Users']);
+        $coachingServiceRequest = $this->CoachingServiceRequests->get($id);
 
         $data = $this->request->getData();
-        $this->log('Raw payment request data: ' . json_encode($data), 'debug');
-        
-        // First try to get the pre-cleaned amount if provided by enhanced JS
-        $amount = $data['cleaned_amount'] ?? $data['amount'] ?? null;
+        $amount = $data['amount'] ?? null;
         $description = $data['description'] ?? 'Coaching service fee';
 
-        // Ensure amount is properly cleaned of any currency symbols and commas
-        if (!empty($amount)) {
-            $this->log('Original amount before cleaning: ' . $amount, 'debug');
-            
-            // Convert to string if it's not already
-            $amount = (string)$amount;
-            
-            // If this doesn't look like a purely numeric value, clean it
-            if (!is_numeric($amount)) {
-                // Remove currency symbols, commas, and any other non-numeric chars except decimal point
-                $amount = preg_replace('/[^0-9.]/', '', $amount);
-                $this->log('Cleaned amount after regex: ' . $amount, 'debug');
-            }
-            
-            // Ensure it's treated as a float
-            $amount = (float)$amount;
-        }
-
-        // Only validate that amount is numeric and positive
+        // Validate amount
         if (empty($amount) || !is_numeric($amount) || (float)$amount <= 0) {
-            $this->log('Amount validation failed. Amount: ' . ($amount ?? 'null'), 'debug');
             $this->Flash->error(__('Please provide a valid payment amount.'));
-
             return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
         }
-        
-        // Update the amount in the data array to use the cleaned value
-        $data['amount'] = $amount;
-        $this->log('Final amount after validation: ' . $amount, 'debug');
 
-        // Create a unique payment ID
-        $paymentId = uniqid('csr_payment_');
-        $this->log('Generated payment ID: ' . $paymentId, 'debug');
+        $amount = (float)$amount;
+        $formattedAmount = '$' . number_format($amount, 2);
 
-        // Format the amount for display
-        $formattedAmount = '$' . number_format((float)$amount, 2);
-
-        // Default to session-only tracking
-        $dbPaymentId = 'pending';
-        $useDatabase = false;
-
-        // Try to create a database record, but don't require it
         try {
+            // Create payment record in database
             $coachingServicePaymentsTable = $this->fetchTable('CoachingServicePayments');
-            $useDatabase = true;
-            
-            // Create a new payment record
-            $newPayment = $coachingServicePaymentsTable->newEntity([
+            $paymentEntity = $coachingServicePaymentsTable->newEntity([
                 'coaching_service_request_id' => $id,
                 'amount' => $amount,
-                'transaction_id' => null,
-                'payment_date' => new \DateTime(),
-                'payment_method' => 'pending',
+                'transaction_id' => null, // Will be filled when payment is completed
+                'payment_method' => 'stripe',
                 'status' => 'pending',
                 'is_deleted' => false,
             ]);
-            
-            $this->log('Attempting to save payment record to database', 'debug');
-            if ($coachingServicePaymentsTable->save($newPayment)) {
-                $dbPaymentId = $newPayment->coaching_service_payment_id;
-                $this->log('Payment record saved successfully with ID: ' . $dbPaymentId, 'debug');
+
+            if (!$coachingServicePaymentsTable->save($paymentEntity)) {
+                $errors = $paymentEntity->getErrors();
+                $this->log('Failed to create coaching payment record. Errors: ' . json_encode($errors), 'error');
+                $this->log('Payment entity data: ' . json_encode($paymentEntity->toArray()), 'error');
+                $this->Flash->error(__('Failed to create payment request. Please try again.'));
+                return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
+            }
+
+            // Create payment ID for the payment button
+            $paymentId = $paymentEntity->coaching_service_payment_id;
+
+            // Create message with payment button
+            $messageText = "**Payment Request**\n\n";
+            $messageText .= "**Service:** " . $description . "\n";
+            $messageText .= "**Amount:** " . $formattedAmount . "\n\n";
+            $messageText .= "Please click the button below to complete your payment. Once payment is processed, you'll receive a confirmation and we'll continue with your request.\n\n";
+            $messageText .= '[PAYMENT_BUTTON]' . $paymentId . '[/PAYMENT_BUTTON]';
+
+            // Save the message
+            $messageData = [
+                'coaching_request_messages' => [
+                    [
+                        'user_id' => $admin->user_id,
+                        'message' => $messageText,
+                        'is_read' => false,
+                        'is_deleted' => false, // Ensure is_deleted is set
+                        'coaching_service_request_id' => $coachingServiceRequest->coaching_service_request_id,
+                    ],
+                ],
+            ];
+
+            $coachingServiceRequest = $this->CoachingServiceRequests->patchEntity(
+                $coachingServiceRequest,
+                $messageData,
+            );
+
+            if ($this->CoachingServiceRequests->save($coachingServiceRequest)) {
+                $this->Flash->success(__('Payment request has been sent to the client.'));
                 
                 // Send email notification to customer
                 try {
-                    // We don't need to fetch Users table since we already have user info
-                    // Make sure we have fresh data with user information
-                    $coachingServiceRequest = $this->CoachingServiceRequests->get($id, contain: ['Users']);
+                    // Get the coaching service request with user information for email
+                    $requestWithUser = $this->CoachingServiceRequests->get($id, contain: ['Users']);
                     
-                    // Send payment request email
+                    // Create and send payment request email
                     $mailer = new \App\Mailer\PaymentMailer('default');
-                    $this->log('Attempting to send coaching payment request email', 'debug');
-                    $mailer->coachingPaymentRequest($coachingServiceRequest, $newPayment, (float)$amount);
+                    $mailer->coachingPaymentRequest($requestWithUser, $paymentEntity, $amount);
                     $result = $mailer->deliverAsync();
                     
-                    if (!$result) {
-                        $this->log('Payment request email failed to send but continuing', 'warning');
+                    if ($result) {
+                        $this->log('Coaching payment request email sent successfully to ' . $requestWithUser->user->email, 'info');
                     } else {
-                        $this->log('Payment request email sent successfully', 'debug');
+                        $this->log('Coaching payment request email failed to send to ' . $requestWithUser->user->email, 'warning');
                     }
-                } catch (\Exception $e) {
-                    // Log but don't prevent the process from continuing
-                    $this->log('Failed to send payment request email: ' . $e->getMessage(), 'error');
+                } catch (Exception $emailException) {
+                    // Log email error but don't fail the payment request creation
+                    $this->log('Error sending coaching payment request email: ' . $emailException->getMessage(), 'error');
                 }
             } else {
-                $this->log('Failed to save payment record. Validation errors: ' . json_encode($newPayment->getErrors()), 'error');
+                $messageErrors = $coachingServiceRequest->getErrors();
+                $this->log('Failed to save coaching payment request message. Errors: ' . json_encode($messageErrors), 'error');
+                $this->Flash->error(__('Failed to send payment request message. Please try again.'));
             }
-        } catch (\Exception $e) {
-            $this->log('Error creating payment record: ' . $e->getMessage(), 'error');
-            $dbPaymentId = 'failed';
+
+        } catch (Exception $e) {
+            $this->log('Error creating coaching payment request: ' . $e->getMessage(), 'error');
+            $this->log('Stack trace: ' . $e->getTraceAsString(), 'error');
+            $this->Flash->error(__('An error occurred while creating the payment request. Please try again.'));
         }
 
-        // Combine session paymentId and db paymentId for reference
-        $combinedPaymentId = $paymentId;
-        if ($dbPaymentId !== 'pending' && $dbPaymentId !== 'failed') {
-            $combinedPaymentId .= '|' . $dbPaymentId;
-        }
-        $this->log('Combined payment ID: ' . $combinedPaymentId, 'debug');
-
-        // Create a message for the chat
-        $messageText = "**Payment Request**\n\n";
-        $messageText .= "**Service:** " . $coachingServiceRequest->service_title . "\n";
-        $messageText .= "**Amount:** " . $formattedAmount . "\n\n";
-        $messageText .= "Please click the button below to complete your payment. Once payment is processed, you'll receive a confirmation and we'll begin work on your coaching request.\n\n";
-        $messageText .= '[PAYMENT_BUTTON]' . $combinedPaymentId . '[/PAYMENT_BUTTON]';
-        $this->log('Created payment request message with PAYMENT_BUTTON tag', 'debug');
-
-        // Store payment details in session (primary source of truth)
-        $this->request->getSession()->write("CsrPayments.$paymentId", [
-            'amount' => $amount,
-            'description' => $description,
-            'coaching_service_request_id' => $id,
-            'created' => time(),
-            'status' => 'pending',
-            'db_payment_id' => $dbPaymentId,
-        ]);
-
-        $this->log('Payment data stored in session: ' . json_encode([
-                'sessionKey' => "CsrPayments.$paymentId",
-                'amount' => $amount,
-                'description' => $description,
-                'id' => $id,
-            ]), 'debug');
-
-        // Save the message
-        $messageData = [
-            'coaching_request_messages' => [
-                [
-                    'user_id' => $admin->user_id,
-                    'message' => $messageText,
-                    'is_read' => false,
-                    'coaching_service_request_id' => $coachingServiceRequest->coaching_service_request_id,
-                ],
-            ],
-        ];
-
-        $coachingServiceRequest = $this->CoachingServiceRequests->patchEntity(
-            $coachingServiceRequest,
-            $messageData,
-        );
-        
-        $this->log('Attempting to save message to coaching service request', 'debug');
-        if ($this->CoachingServiceRequests->save($coachingServiceRequest)) {
-            $this->log('Message saved successfully', 'debug');
-            $this->Flash->success(__('Payment request has been sent to the client.'));
-        } else {
-            $this->log('Failed to save message. Validation errors: ' . json_encode($coachingServiceRequest->getErrors()), 'error');
-            $this->Flash->error(__('Failed to send payment request. Please try again.'));
-        }
-
-        $this->log('sendPaymentRequest completed', 'debug');
         return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
     }
 
@@ -471,7 +404,6 @@ class CoachingServiceRequestsController extends AppController
             } catch (\Exception $e) {
                 $this->log('Failed to send customer notification: ' . $e->getMessage(), 'error');
             }
-            
         } else {
             $this->Flash->error(__('Failed to send message. Please try again.'));
         }

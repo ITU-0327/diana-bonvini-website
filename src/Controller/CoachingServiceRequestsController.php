@@ -13,6 +13,7 @@ use RuntimeException;
 use Stripe\Checkout\Session;
 use Stripe\Stripe;
 use Cake\Utility\Text;
+use Cake\Event\EventInterface;
 
 /**
  * CoachingServiceRequests Controller
@@ -22,6 +23,27 @@ use Cake\Utility\Text;
  */
 class CoachingServiceRequestsController extends AppController
 {
+    /**
+     * Before filter method.
+     *
+     * @param \Cake\Event\EventInterface<\Cake\Controller\Controller> $event The event object.
+     * @return void
+     */
+    public function beforeFilter(EventInterface $event): void
+    {
+        parent::beforeFilter($event);
+
+        // Allow unauthenticated access to payment success callback from Stripe
+        $this->Authentication->addUnauthenticatedActions([
+            'paymentSuccess',
+        ]);
+        
+        // Ensure FormProtection allows paymentSuccess action
+        $this->FormProtection->setConfig('unlockedActions', [
+            'add', 'edit', 'uploadDocument', 'paymentSuccess'
+        ]);
+    }
+
     /**
      * Index method
      *
@@ -40,9 +62,7 @@ class CoachingServiceRequestsController extends AppController
         }
 
         $query = $this->CoachingServiceRequests->find()
-            ->contain(['Users', 'CoachingServicePayments' => function ($q) {
-                return $q->where(['status' => 'paid']);
-            }])
+            ->contain(['Users', 'CoachingServicePayments'])
             ->where(['CoachingServiceRequests.user_id' => $userId]);
 
         $this->paginate = [
@@ -280,6 +300,35 @@ class CoachingServiceRequestsController extends AppController
                     if ($this->CoachingServiceRequests->save($coachingServiceRequest)) {
                         $this->log('Coaching service request saved successfully. ID: ' . $coachingServiceRequest->coaching_service_request_id, 'debug');
                         $this->Flash->success(__('Your coaching service request has been saved.'));
+                        
+                        // Send notification email to admin about new coaching request
+                        try {
+                            // Get a fresh copy of the request with user data
+                            $requestWithUser = $this->CoachingServiceRequests->get($coachingServiceRequest->coaching_service_request_id, contain: ['Users']);
+                            
+                            if (!empty($requestWithUser->user) && !empty($requestWithUser->user->email)) {
+                                $adminEmail = 'diana@dianabonvini.com';
+                                $adminName = 'Diana Bonvini';
+                                
+                                // Send admin notification
+                                $mailer = new \App\Mailer\PaymentMailer('default');
+                                $mailer->newCoachingRequestNotification(
+                                    $requestWithUser,
+                                    $adminEmail,
+                                    $adminName
+                                );
+                                $result = $mailer->deliverAsync();
+                                
+                                if ($result) {
+                                    $this->log('New coaching request notification sent successfully to ' . $adminEmail, 'info');
+                                } else {
+                                    $this->log('New coaching request notification failed to send to ' . $adminEmail, 'warning');
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            $this->log('Error sending new coaching request notification: ' . $e->getMessage(), 'error');
+                        }
+                        
                         return $this->redirect(['action' => 'view', $coachingServiceRequest->coaching_service_request_id]);
                     } else {
                         $this->log('Failed to save coaching service request. General error.', 'error');
@@ -590,35 +639,66 @@ class CoachingServiceRequestsController extends AppController
             // Set payment amount
             $amount = 100.00; // Default amount if none found
             
-            // Find the specific payment record
+            // Find the specific payment record using the primary key
             $paymentTable = $this->fetchTable('CoachingServicePayments');
             $payment = $paymentTable->find()
                 ->where([
-                    'coaching_service_request_id' => $id,
-                    'payment_id' => $paymentId,
+                    'coaching_service_payment_id' => $paymentId,
                 ])
                 ->first();
                 
             if ($payment) {
                 $amount = $payment->amount;
             } else {
-                // Create a new payment record if one doesn't exist
-                $payment = $paymentTable->newEntity([
-                    'coaching_service_request_id' => $id,
-                    'payment_id' => $paymentId,
-                    'amount' => $amount,
-                    'status' => 'pending',
-                    'payment_method' => 'card',
-                ]);
-                $paymentTable->save($payment);
+                // If not found by ID, it might be a database record payment
+                // Try to get from session if it's a session-based payment
+                $sessionData = $this->request->getSession()->read("CsrPayments.$paymentId");
+                if ($sessionData && isset($sessionData['db_payment_id'])) {
+                    // Try to find by the database payment ID
+                    $payment = $paymentTable->find()
+                        ->where([
+                            'coaching_service_payment_id' => $sessionData['db_payment_id'],
+                        ])
+                        ->first();
+                    
+                    if ($payment) {
+                        $amount = $payment->amount;
+                        $paymentId = $payment->coaching_service_payment_id; // Use the actual payment ID
+                    }
+                }
+                
+                if (!$payment) {
+                    $this->Flash->error(__('Payment record not found. Please try again.'));
+                    return $this->redirect(['action' => 'view', $id]);
+                }
             }
             
             // Initialize Stripe for payment processing
-            Stripe::setApiKey(Configure::read('Stripe.secretKey'));
+            Stripe::setApiKey(Configure::read('Stripe.secret'));
             
-            // Create checkout session for payment
-            $successUrl = Router::url(['controller' => 'CoachingServiceRequests', 'action' => 'paymentSuccess', $id, $paymentId], true);
-            $cancelUrl = Router::url(['controller' => 'CoachingServiceRequests', 'action' => 'view', $id], true);
+            $this->log('Using Stripe secret key: ' . substr(Configure::read('Stripe.secret'), 0, 10) . '...', 'debug');
+            
+            // Create checkout session for payment with correct URLs
+            $currentHost = $this->request->getEnv('HTTP_HOST');
+            $scheme = $this->request->getEnv('HTTPS') ? 'https' : 'http';
+            
+            $successUrl = $scheme . '://' . $currentHost . '/coaching-service-requests/payment-success/' . $id . '/' . $paymentId;
+            $cancelUrl = $scheme . '://' . $currentHost . '/coaching-service-requests/view/' . $id;
+            
+            $this->log('Creating Stripe session with params: ' . json_encode([
+                'line_items' => [
+                    'price_data' => [
+                        'currency' => 'aud',
+                        'product_data' => [
+                            'name' => 'Coaching Service: ' . $coachingServiceRequest->service_title,
+                        ],
+                        'unit_amount' => (int)($amount * 100),
+                    ],
+                    'quantity' => 1,
+                ],
+                'success_url' => $successUrl,
+                'cancel_url' => $cancelUrl,
+            ]), 'debug');
             
             $session = Session::create([
                 'payment_method_types' => ['card'],
@@ -642,6 +722,8 @@ class CoachingServiceRequestsController extends AppController
                 ],
             ]);
             
+            $this->log('Stripe session created successfully. Redirecting to: ' . $session->url, 'debug');
+            
             // Redirect to Stripe checkout
             return $this->redirect($session->url);
             
@@ -661,6 +743,9 @@ class CoachingServiceRequestsController extends AppController
      */
     public function paymentSuccess(?string $id = null, ?string $paymentId = null)
     {
+        $this->request->allowMethod(['get', 'post']);
+        $this->log('paymentSuccess called with id: ' . $id . ', paymentId: ' . $paymentId, 'debug');
+        
         if (!$id || !$paymentId) {
             $this->Flash->error(__('Invalid request parameters.'));
             return $this->redirect(['action' => 'index']);
@@ -671,40 +756,77 @@ class CoachingServiceRequestsController extends AppController
             $paymentTable = $this->fetchTable('CoachingServicePayments');
             $payment = $paymentTable->find()
                 ->where([
-                    'coaching_service_request_id' => $id,
-                    'payment_id' => $paymentId,
+                    'coaching_service_payment_id' => $paymentId,
                 ])
                 ->first();
+                
+            $this->log('Payment found: ' . ($payment ? 'yes' : 'no'), 'debug');
                 
             if ($payment) {
                 $payment->status = 'paid';
                 $payment->payment_date = new \DateTime();
                 $payment->transaction_id = 'stripe_' . date('YmdHis') . '_' . substr($paymentId, 0, 8);
                 
+                $this->log('Attempting to save payment with status: paid', 'debug');
+                
                 if ($paymentTable->save($payment)) {
+                    $this->log('Payment saved successfully', 'debug');
                     $this->Flash->success(__('Payment was successful! Thank you for your payment.'));
                     
                     // Update request status if needed
-                    $coachingServiceRequest = $this->CoachingServiceRequests->get($id, contain: []);
-                    if ($coachingServiceRequest->request_status === 'pending') {
-                        $coachingServiceRequest->request_status = 'in_progress';
-                        $this->CoachingServiceRequests->save($coachingServiceRequest);
+                    try {
+                        $this->log('Getting coaching service request for status update', 'debug');
+                        $coachingServiceRequest = $this->CoachingServiceRequests->get($id, contain: []);
+                        if ($coachingServiceRequest->request_status === 'pending') {
+                            $coachingServiceRequest->request_status = 'in_progress';
+                            $this->CoachingServiceRequests->save($coachingServiceRequest);
+                            $this->log('Request status updated to in_progress', 'debug');
+                        }
+                    } catch (\Exception $e) {
+                        $this->log('Error updating request status: ' . $e->getMessage(), 'error');
                     }
                     
                     // Send payment confirmation email
                     try {
+                        $this->log('Getting request with user for email', 'debug');
                         $requestWithUser = $this->CoachingServiceRequests->get($id, contain: ['Users']);
                         
-                        $mailer = new \App\Mailer\PaymentMailer('default');
-                        $mailer->sendCoachingPaymentConfirmation($requestWithUser, $payment);
-                        $mailer->deliverAsync();
+                        // Send customer confirmation
+                        $this->log('Creating mailer for customer', 'debug');
+                        $customerMailer = new \App\Mailer\PaymentMailer('default');
+                        $customerMailer->sendCoachingPaymentConfirmation($requestWithUser, $payment);
+                        $customerMailer->deliverAsync();
+                        $this->log('Customer confirmation email sent successfully', 'debug');
+                        
+                        // Send admin notification
+                        try {
+                            $adminEmail = 'diana@dianabonvini.com';
+                            $adminName = 'Diana Bonvini';
+                            
+                            $this->log('Creating mailer for admin notification', 'debug');
+                            $adminMailer = new \App\Mailer\PaymentMailer('default');
+                            $adminMailer->adminCoachingPaymentNotification(
+                                $requestWithUser, 
+                                $payment, 
+                                $adminEmail, 
+                                $adminName
+                            );
+                            $adminMailer->deliverAsync();
+                            $this->log('Admin notification email sent successfully', 'debug');
+                            
+                        } catch (\Exception $adminEmailError) {
+                            $this->log('Error sending admin notification email: ' . $adminEmailError->getMessage(), 'error');
+                        }
+                        
                     } catch (\Exception $e) {
                         $this->log('Error sending payment confirmation email: ' . $e->getMessage(), 'error');
                     }
                 } else {
+                    $this->log('Failed to save payment', 'error');
                     $this->Flash->error(__('Your payment was processed, but there was an error updating the payment record.'));
                 }
             } else {
+                $this->log('Payment record not found', 'debug');
                 $this->Flash->warning(__('Payment record not found, but your payment may have been processed.'));
             }
             
@@ -713,7 +835,20 @@ class CoachingServiceRequestsController extends AppController
             $this->Flash->error(__('There was an error updating your payment record.'));
         }
         
-        return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
+        // Since the user might not be authenticated (coming from Stripe), we need to redirect to login with a message
+        // Check if user is authenticated
+        $user = $this->Authentication->getIdentity();
+        
+        if ($user) {
+            // User is authenticated, redirect to view page
+            $this->log('User is authenticated, redirecting to view page', 'debug');
+            return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
+        } else {
+            // User is not authenticated (normal for Stripe callback), redirect to login with success message
+            $this->log('User not authenticated, redirecting to login', 'debug');
+            $this->Flash->success(__('Payment completed successfully! Please log in to view your request.'));
+            return $this->redirect(['controller' => 'Users', 'action' => 'login']);
+        }
     }
 
     /**
@@ -739,7 +874,6 @@ class CoachingServiceRequestsController extends AppController
         if (empty($id) || empty($paymentId)) {
             $this->Flash->error('Missing required payment information.');
             $this->log('payDirect error: Missing required parameters', 'error');
-
             return $this->redirect(['action' => 'index']);
         }
 
@@ -747,55 +881,62 @@ class CoachingServiceRequestsController extends AppController
             // Check if the coaching service request exists
             $coachingServiceRequest = $this->CoachingServiceRequests->get($id);
 
-            // Check if we can find the payment data in the session
-            $parts = explode('|', urldecode($paymentId));
-            $sessionPaymentId = $parts[0];
-            $paymentData = $this->request->getSession()->read("CsrPayments.$sessionPaymentId");
-
-            $this->log('Payment data retrieved from session: ' . json_encode([
-                    'sessionPaymentId' => $sessionPaymentId,
-                    'paymentData' => $paymentData,
-                ]), 'debug');
-
-            // If payment data doesn't exist in the session, try to get it from the database
-            if (!$paymentData && isset($parts[1])) {
-                $dbPaymentId = $parts[1];
-
-                // Get payment data from database
-                $coachingServicePaymentsTable = $this->fetchTable('CoachingServicePayments');
-                try {
-                    $paymentEntity = $coachingServicePaymentsTable->get($dbPaymentId);
-
-                    // Create session data for this payment
-                    $paymentData = [
-                        'amount' => (string)$paymentEntity->amount,
-                        'description' => 'Coaching service payment',
-                        'coaching_service_request_id' => $id,
-                        'created' => time(),
-                        'status' => $paymentEntity->status,
-                        'db_payment_id' => $dbPaymentId,
-                    ];
-
-                    $this->request->getSession()->write("CsrPayments.$sessionPaymentId", $paymentData);
-                    $this->log('Created payment data from database record: ' . json_encode($paymentData), 'debug');
-                } catch (\Exception $e) {
-                    $this->log('Error retrieving payment from database: ' . $e->getMessage(), 'error');
+            // First try to get payment data from database (new approach)
+            $coachingServicePaymentsTable = $this->fetchTable('CoachingServicePayments');
+            $paymentData = null;
+            
+            try {
+                $paymentEntity = $coachingServicePaymentsTable->get($paymentId);
+                
+                // Check if payment is still pending
+                if ($paymentEntity->status !== 'pending') {
+                    $this->Flash->error('This payment has already been processed.');
+                    return $this->redirect(['action' => 'view', $id]);
                 }
+                
+                // Create session data from database record for compatibility with existing pay method
+                $sessionPaymentId = 'db_' . $paymentId;
+                $paymentData = [
+                    'amount' => (string)$paymentEntity->amount,
+                    'description' => 'Coaching service payment',
+                    'coaching_service_request_id' => $id,
+                    'created' => time(),
+                    'status' => $paymentEntity->status,
+                    'db_payment_id' => $paymentId,
+                ];
+                
+                $this->request->getSession()->write("CsrPayments.$sessionPaymentId", $paymentData);
+                $this->log('Created payment data from database record: ' . json_encode($paymentData), 'debug');
+                
+                // Call the pay method with the new session-based payment ID
+                return $this->pay($id, $sessionPaymentId);
+                
+            } catch (\Exception $dbException) {
+                $this->log('Could not find payment in database: ' . $dbException->getMessage(), 'debug');
+                
+                // Fallback to legacy session-based system
+                $parts = explode('|', urldecode($paymentId));
+                $sessionPaymentId = $parts[0];
+                $paymentData = $this->request->getSession()->read("CsrPayments.$sessionPaymentId");
+
+                $this->log('Payment data retrieved from session: ' . json_encode([
+                        'sessionPaymentId' => $sessionPaymentId,
+                        'paymentData' => $paymentData,
+                    ]), 'debug');
+
+                // If still no payment data found, fail
+                if (!$paymentData) {
+                    $this->Flash->error('Invalid payment request. Payment information not found.');
+                    return $this->redirect(['action' => 'view', $id]);
+                }
+                
+                // Call the regular pay method with the legacy parameters
+                return $this->pay($id, $paymentId);
             }
 
-            // If we still don't have payment data, fail
-            if (!$paymentData) {
-                $this->Flash->error('Invalid payment request. Payment information not found.');
-
-                return $this->redirect(['action' => 'view', $id]);
-            }
-
-            // Call the regular pay method with the extracted parameters
-            return $this->pay($id, $paymentId);
         } catch (\Exception $e) {
             $this->log('payDirect error: ' . $e->getMessage(), 'error');
             $this->Flash->error('Error processing payment: ' . $e->getMessage());
-
             return $this->redirect(['action' => 'view', $id]);
         }
     }

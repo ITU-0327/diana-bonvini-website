@@ -30,17 +30,8 @@ use Cake\Utility\Inflector;
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary">Request Information</h6>
                     <div>
-                        <span class="badge badge-secondary mr-2">ID: <?= h($coachingServiceRequest->coaching_service_request_id) ?></span>
-                        <?php
-                        $statusClass = match ($coachingServiceRequest->request_status) {
-                            'pending' => 'warning',
-                            'in_progress' => 'primary',
-                            'completed' => 'success',
-                            'canceled', 'cancelled' => 'danger',
-                            default => 'secondary'
-                        };
-                        ?>
-                        <span class="badge badge-<?= $statusClass ?> py-2 px-3">
+                        <span class="badge badge-secondary mr-2">ID: <?= h(substr($coachingServiceRequest->coaching_service_request_id, 0, 12)) ?></span>
+                        <span class="badge badge-<?= getStatusClass($coachingServiceRequest->request_status) ?> py-2 px-3">
                             <?= ucfirst(str_replace('_', ' ', h($coachingServiceRequest->request_status))) ?>
                         </span>
                     </div>
@@ -69,7 +60,7 @@ use Cake\Utility\Inflector;
                                     <?php if (isset($coachingServiceRequest->user) && $coachingServiceRequest->user) : ?>
                                         <p class="mb-1">
                                             <i class="fas fa-user mr-2"></i>
-                                            <?= h($coachingServiceRequest->user->full_name) ?>
+                                            <?= h($coachingServiceRequest->user->first_name . ' ' . $coachingServiceRequest->user->last_name) ?>
                                         </p>
                                         <p class="mb-1">
                                             <i class="fas fa-envelope mr-2"></i>
@@ -152,13 +143,13 @@ use Cake\Utility\Inflector;
                                                     <div class="avatar bg-primary text-white">A</div>
                                                 <?php else : ?>
                                                     <div class="avatar bg-success text-white">
-                                                        <?= substr($message->user->full_name ?? 'C', 0, 1) ?>
+                                                        <?= substr($message->user->first_name ?? 'C', 0, 1) ?>
                                                     </div>
                                                 <?php endif; ?>
                                             </div>
                                             <div class="message-info">
                                                 <span class="message-sender font-weight-bold">
-                                                    <?= $isAdmin ? 'You (Admin)' : h($message->user->full_name) ?>
+                                                    <?= $isAdmin ? 'You (Admin)' : h($message->user->first_name . ' ' . $message->user->last_name) ?>
                                                 </span>
                                                 <span class="message-time text-muted ml-2">
                                                     <i class="far fa-clock"></i> <?= $message->created_at->format('M j, Y g:i A') ?>
@@ -417,58 +408,104 @@ use Cake\Utility\Inflector;
                             <i class="fas fa-credit-card mr-1"></i> Send Payment Request
                         </button>
                         <p class="text-sm text-muted mt-1">Send a payment request link to the client</p>
+                    </div>
+
+                    <!-- Payment History -->
+                    <div class="mb-4 pt-2 border-top">
+                        <h6 class="font-weight-bold mb-2 d-flex justify-content-between">
+                            <span>Payment History</span>
+                            <?php if (!empty($coachingServiceRequest->coaching_service_payments)): ?>
+                                <span class="badge badge-info"><?= count($coachingServiceRequest->coaching_service_payments) ?></span>
+                            <?php endif; ?>
+                        </h6>
 
                         <?php if (!empty($coachingServiceRequest->coaching_service_payments)): ?>
-                        <!-- Payment History -->
-                        <div class="mt-4">
-                            <h6 class="font-weight-bold mb-2 d-flex justify-content-between">
-                                <span>Payment History</span>
-                                <span class="badge badge-info"><?= count($coachingServiceRequest->coaching_service_payments) ?></span>
-                            </h6>
-
                             <div class="table-responsive">
                                 <table id="payment-history-table" class="table table-sm table-hover border">
                                     <thead class="bg-light">
                                         <tr>
-                                            <th>ID</th>
+                                            <th>Payment #</th>
                                             <th>Amount</th>
-                                            <th>Date</th>
+                                            <th>Date Created</th>
                                             <th>Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php foreach ($coachingServiceRequest->coaching_service_payments as $payment): ?>
-                                            <?php
-                                            $paymentStatusClass = match ($payment->status) {
-                                                'paid' => 'success',
-                                                'pending' => 'warning',
-                                                default => 'secondary'
-                                            };
-                                            ?>
-                                            <tr>
-                                                <td class="small text-muted">
-                                                    <?= h($payment->coaching_service_payment_id) ?>
+                                        <?php 
+                                        $paymentNumber = 1;
+                                        foreach ($coachingServiceRequest->coaching_service_payments as $payment): ?>
+                                            <tr class="<?= $payment->status === 'paid' ? 'table-success' : 'table-warning' ?>">
+                                                <td class="small font-weight-bold">
+                                                    #<?= $paymentNumber ?>
                                                 </td>
                                                 <td class="font-weight-bold">
                                                     $<?= number_format($payment->amount, 2) ?>
                                                 </td>
                                                 <td class="text-muted small">
-                                                    <?= $payment->payment_date ? $payment->payment_date->format('M j, Y g:i A') : 'Pending' ?>
+                                                    <?= $payment->created_at ? $payment->created_at->format('M j, Y g:i A') : 'Unknown' ?>
                                                 </td>
                                                 <td>
-                                                    <span class="badge badge-<?= $paymentStatusClass ?>">
-                                                        <?= ucfirst($payment->status) ?>
-                                                    </span>
+                                                    <?php if ($payment->status === 'paid'): ?>
+                                                        <span class="badge badge-success">
+                                                            <i class="fas fa-check-circle mr-1"></i>Paid
+                                                        </span>
+                                                        <?php if ($payment->payment_date): ?>
+                                                            <small class="d-block text-muted mt-1">
+                                                                <?= $payment->payment_date->format('M j, Y g:i A') ?>
+                                                            </small>
+                                                        <?php endif; ?>
+                                                    <?php else: ?>
+                                                        <span class="badge badge-warning">
+                                                            <i class="fas fa-clock mr-1"></i>Pending
+                                                        </span>
+                                                        <small class="d-block text-muted mt-1">Awaiting payment</small>
+                                                    <?php endif; ?>
                                                 </td>
                                             </tr>
-                                        <?php endforeach; ?>
+                                        <?php 
+                                        $paymentNumber++;
+                                        endforeach; ?>
                                     </tbody>
+                                    <tfoot class="bg-light">
+                                        <tr>
+                                            <td colspan="3" class="text-right font-weight-bold">Total Requests:</td>
+                                            <td class="font-weight-bold"><?= count($coachingServiceRequest->coaching_service_payments) ?></td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
-                        </div>
+                            
+                            <!-- Payment Statistics -->
+                            <div class="row mt-2">
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        <i class="fas fa-check-circle text-success mr-1"></i>
+                                        Paid: <?php 
+                                            $paidCount = 0;
+                                            foreach ($coachingServiceRequest->coaching_service_payments as $payment) {
+                                                if ($payment->status === 'paid') $paidCount++;
+                                            }
+                                            echo $paidCount;
+                                        ?>
+                                    </small>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock text-warning mr-1"></i>
+                                        Pending: <?php 
+                                            $pendingCount = 0;
+                                            foreach ($coachingServiceRequest->coaching_service_payments as $payment) {
+                                                if ($payment->status === 'pending') $pendingCount++;
+                                            }
+                                            echo $pendingCount;
+                                        ?>
+                                    </small>
+                                </div>
+                            </div>
                         <?php else: ?>
-                            <div class="text-center mt-3 p-3 bg-light rounded border text-muted">
+                            <div class="text-center p-3 bg-light rounded border text-muted">
                                 <i class="fas fa-info-circle mr-1"></i> No payment requests yet
+                                <small class="d-block mt-1">Use the "Send Payment Request" button above to create payment requests for this service.</small>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -1352,3 +1389,46 @@ Please select one of the time slots above for our coaching session by clicking t
     </div>
 </div>
 </div>
+
+<?php
+/**
+ * Get status class for badges
+ */
+function getStatusClass(string $status): string
+{
+    return match ($status) {
+        'pending' => 'warning',
+        'in_progress' => 'primary',
+        'completed' => 'success',
+        'canceled', 'cancelled' => 'danger',
+        default => 'secondary'
+    };
+}
+
+/**
+ * Get document icon based on mime type
+ */
+function getDocumentIcon(string $mimeType): string
+{
+    return match (true) {
+        str_contains($mimeType, 'pdf') => 'fas fa-file-pdf text-danger',
+        str_contains($mimeType, 'word') => 'fas fa-file-word text-primary',
+        str_contains($mimeType, 'image') => 'fas fa-file-image text-success',
+        default => 'fas fa-file-alt text-secondary'
+    };
+}
+
+/**
+ * Format file size
+ */
+function formatFileSize(int $bytes): string
+{
+    $units = ['B', 'KB', 'MB', 'GB'];
+    $i = 0;
+    while ($bytes >= 1024 && $i < count($units) - 1) {
+        $bytes /= 1024;
+        $i++;
+    }
+    return round($bytes, 2) . ' ' . $units[$i];
+}
+?>
