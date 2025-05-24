@@ -177,8 +177,8 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                         } else {
                                                             // No appointment exists yet, show normal accept button
                                                             echo '<a href="' . $this->Url->build(['controller' => 'Calendar', 'action' => 'acceptTimeSlot', '?' => [
-                                                                'date' => urlencode($date),
-                                                                'time' => urlencode($time),
+                                                                'date' => $date,
+                                                                'time' => $time,
                                                                 'request_id' => $writingServiceRequest->writing_service_request_id,
                                                                 'message_id' => $msg->request_message_id,
                                                                     ]]) . '" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200">';

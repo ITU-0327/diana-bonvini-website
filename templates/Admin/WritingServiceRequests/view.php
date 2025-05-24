@@ -751,14 +751,277 @@ $this->assign('title', __('Writing Service Request Details'));
     .animate-spin {
         animation: spin 1s linear infinite;
     }
+
+    /* Ensure the datepicker container is visible */
+    #datepicker {
+        min-height: 200px !important;
+        width: 100% !important;
+        background: white !important;
+        border: 1px solid #ddd !important;
+        border-radius: 4px !important;
+    }
+
+    /* Make inline datepicker fill the container nicely */
+    #datepicker .ui-datepicker {
+        width: 100% !important;
+        margin: 0 !important;
+        position: static !important;
+        display: block !important;
+    }
+
+    /* Fallback styles in case jQuery UI CSS doesn't load */
+    .ui-datepicker {
+        z-index: 9999 !important;
+        background: #fff !important;
+        border: 1px solid #ddd !important;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+        font-size: 13px !important;
+        padding: 0 !important;
+        font-family: Arial, sans-serif !important;
+    }
+
+    .ui-datepicker table {
+        width: 100% !important;
+        margin: 0 !important;
+        border-collapse: collapse !important;
+    }
+
+    .ui-datepicker td, .ui-datepicker th {
+        padding: 2px !important;
+        text-align: center !important;
+        border: 1px solid #e0e0e0 !important;
+    }
+
+    .ui-datepicker td a {
+        padding: 8px !important;
+        text-align: center !important;
+        display: block !important;
+        text-decoration: none !important;
+        color: #333 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .ui-datepicker td a:hover {
+        background: #4e73df !important;
+        color: white !important;
+    }
+
+    .ui-datepicker .ui-datepicker-today a {
+        background: #f8f9fa !important;
+        font-weight: bold !important;
+        border: 2px solid #4e73df !important;
+    }
+
+    .ui-datepicker .ui-state-active a {
+        background: #4e73df !important;
+        color: white !important;
+    }
+
+    .ui-datepicker .ui-datepicker-header {
+        background: #4e73df !important;
+        color: white !important;
+        text-align: center !important;
+        padding: 10px !important;
+        font-weight: bold !important;
+    }
+
+    .ui-datepicker .ui-datepicker-prev,
+    .ui-datepicker .ui-datepicker-next {
+        cursor: pointer !important;
+        color: white !important;
+        position: absolute !important;
+        top: 10px !important;
+        padding: 5px !important;
+    }
+
+    .ui-datepicker .ui-datepicker-prev {
+        left: 10px !important;
+    }
+
+    .ui-datepicker .ui-datepicker-next {
+        right: 10px !important;
+    }
+
+    .ui-datepicker .ui-datepicker-title {
+        text-align: center !important;
+        font-weight: bold !important;
+    }
+
+    /* If datepicker still doesn't show, make the container more explicit */
+    #datepicker .ui-widget-content {
+        background: white !important;
+        border: 1px solid #ddd !important;
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    /* Modal z-index fix */
+    .modal {
+        z-index: 1050 !important;
+    }
+
+    .modal-backdrop {
+        z-index: 1040 !important;
+    }
 </style>
 
-<!-- Load jQuery UI for datepicker -->
-<?= $this->Html->css('https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css') ?>
-<?= $this->Html->script('https://code.jquery.com/ui/1.12.1/jquery-ui.min.js', ['block' => true]) ?>
+<!-- Load jQuery UI for datepicker directly -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/ui-lightness/jquery-ui.css">
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Ensure jQuery UI is loaded before proceeding
+        console.log('jQuery available:', typeof $ !== 'undefined');
+        console.log('jQuery UI available:', typeof $.ui !== 'undefined');
+        
+        // Initialize datepicker immediately when modal is shown
+        $('#timeSlotsModal').on('shown.bs.modal', function() {
+            console.log('Modal opened, initializing datepicker...');
+            
+            // Wait a bit for modal to fully render
+            setTimeout(function() {
+                const $datepicker = $('#datepicker');
+                console.log('Datepicker element found:', $datepicker.length);
+                
+                if ($datepicker.length && typeof $.fn.datepicker !== 'undefined') {
+                    // Destroy existing datepicker if present
+                    if ($datepicker.hasClass('hasDatepicker')) {
+                        $datepicker.datepicker('destroy');
+                    }
+                    
+                    // Initialize datepicker
+                    $datepicker.datepicker({
+                        minDate: 0,
+                        maxDate: '+60d',
+                        dateFormat: 'yy-mm-dd',
+                        firstDay: 1,
+                        showOtherMonths: true,
+                        selectOtherMonths: true,
+                        changeMonth: true,
+                        changeYear: true,
+                        inline: true, // Show inline immediately
+                        onSelect: function(dateText) {
+                            console.log('Date selected:', dateText);
+                            $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { 
+                                weekday: 'long', 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric' 
+                            }));
+                            $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
+                            $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
+                        }
+                    });
+                    
+                    // Force the datepicker to show inline and be visible
+                    $datepicker.datepicker('widget').show();
+                    console.log('Datepicker initialized successfully');
+                } else {
+                    console.error('jQuery UI datepicker not available, using fallback HTML5 date input');
+                    // Fallback: Create HTML5 date input
+                    createFallbackDatePicker($datepicker);
+                }
+            }, 200);
+        });
+
+        // Fallback date picker function
+        function createFallbackDatePicker($container) {
+            console.log('Creating fallback date picker');
+            
+            // Get today's date for min attribute
+            const today = new Date();
+            const minDate = today.toISOString().split('T')[0];
+            
+            // Get 60 days from now for max attribute  
+            const maxDate = new Date(today.getTime() + (60 * 24 * 60 * 60 * 1000));
+            const maxDateStr = maxDate.toISOString().split('T')[0];
+            
+            // Create HTML5 date input
+            const dateInput = `
+                <div class="fallback-datepicker p-3">
+                    <p class="text-muted mb-3">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Please select a date for your consultation
+                    </p>
+                    <input type="date" 
+                           id="fallback-date-input" 
+                           class="form-control form-control-lg" 
+                           min="${minDate}" 
+                           max="${maxDateStr}"
+                           style="font-size: 1.1rem; padding: 12px;">
+                    <small class="form-text text-muted mt-2">
+                        Available dates: ${minDate} to ${maxDateStr}
+                    </small>
+                </div>
+            `;
+            
+            $container.html(dateInput);
+            
+            // Add change event listener
+            $('#fallback-date-input').on('change', function() {
+                const selectedDate = $(this).val();
+                const dateObj = new Date(selectedDate);
+                
+                console.log('Fallback date selected:', selectedDate);
+                
+                // Update the display
+                $('#selected-date-display').text(dateObj.toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                }));
+                
+                $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + selectedDate + '</span>');
+                $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
+                
+                // Store the selected date for the load time slots function
+                window.selectedDateForTimeSlots = selectedDate;
+            });
+        }
+
+        // Also try to initialize on page load as backup
+        $(document).ready(function() {
+            console.log('Document ready, jQuery UI datepicker available:', typeof $.fn.datepicker !== 'undefined');
+            
+            // Try to initialize datepicker on page load as well
+            if (typeof $.fn.datepicker !== 'undefined') {
+                console.log('Attempting early datepicker initialization');
+                try {
+                    const $datepicker = $('#datepicker');
+                    if ($datepicker.length && !$datepicker.hasClass('hasDatepicker')) {
+                        $datepicker.datepicker({
+                            minDate: 0,
+                            maxDate: '+60d',
+                            dateFormat: 'yy-mm-dd',
+                            firstDay: 1,
+                            showOtherMonths: true,
+                            selectOtherMonths: true,
+                            changeMonth: true,
+                            changeYear: true,
+                            inline: true,
+                            onSelect: function(dateText) {
+                                console.log('Date selected (early init):', dateText);
+                                $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { 
+                                    weekday: 'long', 
+                                    year: 'numeric', 
+                                    month: 'long', 
+                                    day: 'numeric' 
+                                }));
+                                $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
+                                $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
+                            }
+                        });
+                        console.log('Early datepicker initialization successful');
+                    }
+                } catch (e) {
+                    console.log('Early datepicker initialization failed, will try again on modal open:', e);
+                }
+            }
+        });
+
         // Scroll to bottom of chat on page load
         const chatContainer = document.querySelector('.chat-container');
         if (chatContainer) {
@@ -775,48 +1038,6 @@ $this->assign('title', __('Writing Service Request Details'));
             setTimeout(function() {
                 chatContainer.scrollTop = chatContainer.scrollHeight;
             }, 1500);
-        }
-
-        // Initialize datepicker when the modal is shown
-        $('#timeSlotsModal').on('shown.bs.modal', function() {
-            console.log('Time slots modal shown, initializing datepicker');
-            initDatepicker();
-        });
-
-        // Initialize datepicker
-        function initDatepicker() {
-            try {
-                $('#datepicker').datepicker({
-                    minDate: 0, // Today
-                    maxDate: '+60d', // Allow up to 60 days in the future
-                    dateFormat: 'yy-mm-dd',
-                    firstDay: 1, // Start week on Monday
-                    showOtherMonths: true,
-                    selectOtherMonths: true,
-                    beforeShowDay: $.datepicker.noWeekends, // Disable weekends
-                    onSelect: function(dateText) {
-                        console.log('Date selected:', dateText);
-                        $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
-                        $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
-                        $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
-                    }
-                });
-                console.log('Datepicker initialized');
-            } catch (e) {
-                console.error('Failed to initialize datepicker:', e);
-            }
-        }
-
-        // Helper function for debugging
-        function debugLog(message, data) {
-            const debugging = true; // Set to false in production
-            if (debugging && console) {
-                if (data) {
-                    console.log(`[TimeSlots] ${message}:`, data);
-                } else {
-                    console.log(`[TimeSlots] ${message}`);
-                }
-            }
         }
 
         // Focus on message input when clicking reply button
@@ -892,7 +1113,7 @@ $this->assign('title', __('Writing Service Request Details'));
         }
 
         // Set up real-time message polling
-        setupMessagePolling();
+        // setupMessagePolling(); // Function not defined, commenting out to prevent errors
 
         // Time slots selection functionality
         const loadTimeSlotsBtn = document.getElementById('loadTimeSlots');
@@ -906,22 +1127,59 @@ $this->assign('title', __('Writing Service Request Details'));
         const selectAllCheckbox = document.getElementById('selectAllTimeSlots');
         const sendTimeSlotsBtn = document.getElementById('sendTimeSlots');
 
+        // Helper function for debugging
+        function debugLog(message, data) {
+            const debugging = true; // Set to false in production
+            if (debugging && console) {
+                if (data) {
+                    console.log(`[TimeSlots] ${message}:`, data);
+                } else {
+                    console.log(`[TimeSlots] ${message}`);
+                }
+            }
+        }
+
         // Load time slots when the button is clicked
         if (loadTimeSlotsBtn) {
             loadTimeSlotsBtn.addEventListener('click', function() {
-                const selectedDate = $('#datepicker').datepicker('getDate');
-                console.log('Load button clicked, selected date:', selectedDate);
+                let selectedDate = null;
+                let formattedDate = null;
+                
+                // Try to get date from jQuery UI datepicker first
+                try {
+                    selectedDate = datepicker.datepicker('getDate');
+                    if (selectedDate) {
+                        // Format date as YYYY-MM-DD
+                        const year = selectedDate.getFullYear();
+                        const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                        const day = String(selectedDate.getDate()).padStart(2, '0');
+                        formattedDate = `${year}-${month}-${day}`;
+                    }
+                } catch (e) {
+                    console.log('jQuery datepicker not available, checking fallback');
+                }
+                
+                // If jQuery UI datepicker didn't work, try the fallback HTML5 input
+                if (!formattedDate) {
+                    const fallbackInput = document.getElementById('fallback-date-input');
+                    if (fallbackInput && fallbackInput.value) {
+                        formattedDate = fallbackInput.value;
+                        console.log('Using fallback date input:', formattedDate);
+                    }
+                }
+                
+                // Also check the stored date from the fallback
+                if (!formattedDate && window.selectedDateForTimeSlots) {
+                    formattedDate = window.selectedDateForTimeSlots;
+                    console.log('Using stored fallback date:', formattedDate);
+                }
+                
+                console.log('Load button clicked, formatted date:', formattedDate);
 
-                if (!selectedDate) {
+                if (!formattedDate) {
                     alert('Please select a date first');
                     return;
                 }
-
-                // Format date as YYYY-MM-DD
-                const year = selectedDate.getFullYear();
-                const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-                const day = String(selectedDate.getDate()).padStart(2, '0');
-                const formattedDate = `${year}-${month}-${day}`;
 
                 loadTimeSlots(formattedDate);
             });
@@ -978,6 +1236,10 @@ $this->assign('title', __('Writing Service Request Details'));
                     timeSlotsLoading.classList.add('d-none');
 
                     if (data.success && data.timeSlots && data.timeSlots.length > 0) {
+                        // Hide other states first
+                        timeSlotsEmpty.classList.add('d-none');
+                        timeSlotsNone.classList.add('d-none');
+                        
                         // Show time slots container
                         timeSlotsListContainer.classList.remove('d-none');
 
@@ -1003,6 +1265,10 @@ $this->assign('title', __('Writing Service Request Details'));
                         // Setup the checkboxes for selecting time slots
                         setupTimeSlotCheckboxes();
                     } else {
+                        // Hide other states first
+                        timeSlotsEmpty.classList.add('d-none');
+                        timeSlotsListContainer.classList.add('d-none');
+                        
                         console.log('No time slots available or success is false');
                         // Show no time slots message
                         timeSlotsNone.classList.remove('d-none');
@@ -1156,6 +1422,33 @@ $this->assign('title', __('Writing Service Request Details'));
                 }
             }, 500);
         }
+
+        // Set up image lightbox
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('lightbox-trigger')) {
+                e.preventDefault();
+                
+                // Create lightbox
+                const lightbox = document.createElement('div');
+                lightbox.className = 'lightbox-overlay';
+                lightbox.innerHTML = `
+                    <div class="lightbox-content">
+                        <span class="lightbox-close">&times;</span>
+                        <img src="${e.target.href}" alt="${e.target.getAttribute('data-filename')}" class="lightbox-image">
+                        <div class="lightbox-caption">${e.target.getAttribute('data-filename')}</div>
+                    </div>
+                `;
+                
+                document.body.appendChild(lightbox);
+                
+                // Close lightbox on click
+                lightbox.addEventListener('click', function(e) {
+                    if (e.target === lightbox || e.target.classList.contains('lightbox-close')) {
+                        document.body.removeChild(lightbox);
+                    }
+                });
+            }
+        });
     });
 </script>
 
@@ -1232,10 +1525,21 @@ $this->assign('title', __('Writing Service Request Details'));
                 </button>
             </div>
             <div class="modal-body">
+                <!-- Debug: Expected form URL should be /admin/writing-service-requests/send-time-slots/<?= h($writingServiceRequest->writing_service_request_id) ?> -->
                 <?= $this->Form->create(null, [
-                    'url' => ['action' => 'sendTimeSlots', $writingServiceRequest->writing_service_request_id],
+                    'url' => $this->Url->build([
+                        'prefix' => 'Admin',
+                        'controller' => 'WritingServiceRequests', 
+                        'action' => 'sendTimeSlots', 
+                        $writingServiceRequest->writing_service_request_id
+                    ]),
                     'id' => 'timeSlotsForm',
                     'type' => 'post'
+                ]) ?>
+                
+                <!-- Explicit CSRF token -->
+                <?= $this->Form->hidden('_csrfToken', [
+                    'value' => $this->request->getAttribute('csrfToken')
                 ]) ?>
 
                 <!-- Include hidden writing_service_request_id field to ensure it's passed -->
@@ -1249,19 +1553,19 @@ $this->assign('title', __('Writing Service Request Details'));
                         <h5 class="font-weight-bold mb-3">Select a Date</h5>
                         <div class="card shadow-sm mb-4">
                             <div class="card-body p-2">
-                                <!-- Improved datepicker with larger display -->
+                                <!-- Calendar will load here automatically -->
                                 <div id="datepicker" class="border p-2 rounded"></div>
                             </div>
                         </div>
 
-                        <!-- Clear visual call to action for loading time slots -->
+                        <!-- Load time slots button -->
                         <button type="button" id="loadTimeSlots" class="btn btn-primary btn-block">
                             <i class="fas fa-clock mr-1"></i> Load Time Slots
                         </button>
 
-                        <!-- Add helper text -->
+                        <!-- Helper text -->
                         <p class="small text-muted mt-2 text-center">
-                            First select a date, then click "Load Time Slots" to see available times
+                            Click a date above, then click "Load Time Slots"
                         </p>
                     </div>
 
@@ -1276,7 +1580,7 @@ $this->assign('title', __('Writing Service Request Details'));
                         <!-- Empty State -->
                         <div id="timeSlots-empty" class="text-center py-4">
                             <i class="fas fa-calendar-day fa-3x text-gray-300 mb-3"></i>
-                            <p class="text-gray-500">Select a date and click "Load Time Slots"</p>
+                            <p class="text-gray-500">Click a date on the calendar and load time slots</p>
                             <p class="text-sm text-gray-400">Available time slots will appear here</p>
                         </div>
 
@@ -1358,6 +1662,57 @@ $this->assign('title', __('Writing Service Request Details'));
         const selectAllCheckbox = document.getElementById('selectAllTimeSlots');
         const sendTimeSlotsBtn = document.getElementById('sendTimeSlots');
 
+        // Initialize datepicker when jQuery and jQuery UI are fully loaded
+        $(document).ready(function() {
+            // Initialize datepicker when the modal is shown
+            $('#timeSlotsModal').on('shown.bs.modal', function() {
+                console.log('Time slots modal shown, initializing datepicker');
+                initDatepicker();
+            });
+
+            // Initialize datepicker
+            function initDatepicker() {
+                try {
+                    const $datepicker = $('#datepicker');
+                    
+                    // Destroy existing datepicker if it exists
+                    if ($datepicker.hasClass('hasDatepicker')) {
+                        $datepicker.datepicker('destroy');
+                    }
+                    
+                    // Initialize with proper configuration
+                    $datepicker.datepicker({
+                        minDate: 0, // Today
+                        maxDate: '+60d', // Allow up to 60 days in the future
+                        dateFormat: 'yy-mm-dd',
+                        firstDay: 1, // Start week on Monday
+                        showOtherMonths: true,
+                        selectOtherMonths: true,
+                        changeMonth: true,
+                        changeYear: true,
+                        inline: true, // Show inline immediately
+                        onSelect: function(dateText) {
+                            console.log('Date selected:', dateText);
+                            $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { 
+                                weekday: 'long', 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric' 
+                            }));
+                            $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
+                            $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
+                        }
+                    });
+                    
+                    // Force the datepicker to show inline and be visible
+                    $datepicker.datepicker('widget').show();
+                    console.log('Datepicker initialized successfully');
+                } catch (e) {
+                    console.error('Failed to initialize datepicker:', e);
+                }
+            }
+        });
+
         // Helper function for debugging
         function debugLog(message, data) {
             const debugging = true; // Set to false in production
@@ -1379,10 +1734,17 @@ $this->assign('title', __('Writing Service Request Details'));
                 firstDay: 1, // Start week on Monday
                 showOtherMonths: true,
                 selectOtherMonths: true,
-                beforeShowDay: $.datepicker.noWeekends, // Disable weekends
+                changeMonth: true,
+                changeYear: true,
+                inline: true, // Show inline immediately
                 onSelect: function(dateText) {
                     console.log('Date selected:', dateText);
-                    $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+                    $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    }));
                     $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
                     $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
                 }
@@ -1395,19 +1757,44 @@ $this->assign('title', __('Writing Service Request Details'));
         // Load time slots when the button is clicked
         if (loadTimeSlotsBtn) {
             loadTimeSlotsBtn.addEventListener('click', function() {
-                const selectedDate = datepicker.datepicker('getDate');
-                console.log('Load button clicked, selected date:', selectedDate);
+                let selectedDate = null;
+                let formattedDate = null;
+                
+                // Try to get date from jQuery UI datepicker first
+                try {
+                    selectedDate = datepicker.datepicker('getDate');
+                    if (selectedDate) {
+                        // Format date as YYYY-MM-DD
+                        const year = selectedDate.getFullYear();
+                        const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                        const day = String(selectedDate.getDate()).padStart(2, '0');
+                        formattedDate = `${year}-${month}-${day}`;
+                    }
+                } catch (e) {
+                    console.log('jQuery datepicker not available, checking fallback');
+                }
+                
+                // If jQuery UI datepicker didn't work, try the fallback HTML5 input
+                if (!formattedDate) {
+                    const fallbackInput = document.getElementById('fallback-date-input');
+                    if (fallbackInput && fallbackInput.value) {
+                        formattedDate = fallbackInput.value;
+                        console.log('Using fallback date input:', formattedDate);
+                    }
+                }
+                
+                // Also check the stored date from the fallback
+                if (!formattedDate && window.selectedDateForTimeSlots) {
+                    formattedDate = window.selectedDateForTimeSlots;
+                    console.log('Using stored fallback date:', formattedDate);
+                }
+                
+                console.log('Load button clicked, formatted date:', formattedDate);
 
-                if (!selectedDate) {
+                if (!formattedDate) {
                     alert('Please select a date first');
                     return;
                 }
-
-                // Format date as YYYY-MM-DD
-                const year = selectedDate.getFullYear();
-                const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-                const day = String(selectedDate.getDate()).padStart(2, '0');
-                const formattedDate = `${year}-${month}-${day}`;
 
                 loadTimeSlots(formattedDate);
             });
@@ -1464,6 +1851,10 @@ $this->assign('title', __('Writing Service Request Details'));
                     timeSlotsLoading.classList.add('d-none');
 
                     if (data.success && data.timeSlots && data.timeSlots.length > 0) {
+                        // Hide other states first
+                        timeSlotsEmpty.classList.add('d-none');
+                        timeSlotsNone.classList.add('d-none');
+                        
                         // Show time slots container
                         timeSlotsListContainer.classList.remove('d-none');
 
@@ -1489,6 +1880,10 @@ $this->assign('title', __('Writing Service Request Details'));
                         // Setup the checkboxes for selecting time slots
                         setupTimeSlotCheckboxes();
                     } else {
+                        // Hide other states first
+                        timeSlotsEmpty.classList.add('d-none');
+                        timeSlotsListContainer.classList.add('d-none');
+                        
                         console.log('No time slots available or success is false');
                         // Show no time slots message
                         timeSlotsNone.classList.remove('d-none');
@@ -1591,7 +1986,13 @@ $this->assign('title', __('Writing Service Request Details'));
                         time_slots: selectedTimeSlots.value,
                         request_id: '<?= $writingServiceRequest->writing_service_request_id ?>'
                     });
+                    
+                    // Log form action URL for debugging
+                    console.log('Form action URL:', form.action);
+                    console.log('Form method:', form.method);
+                    console.log('Expected URL should be: /admin/writing-service-requests/send-time-slots/<?= h($writingServiceRequest->writing_service_request_id) ?>');
 
+                    // Submit the form
                     // Submit the form
                     form.submit();
                 } catch (error) {
@@ -1854,6 +2255,71 @@ Thank you for your payment. We'll now begin work on your writing service request
                 button.disabled = true;
             });
         }
+    });
+</script>
+<?php $this->end(); ?>
+
+<?php $this->append('script'); ?>
+<script>
+    // Debugging script to check jQuery UI availability
+    $(document).ready(function() {
+        console.log('jQuery version:', $.fn.jquery);
+        console.log('jQuery UI available:', typeof $.ui !== 'undefined');
+        console.log('Datepicker available:', typeof $.fn.datepicker !== 'undefined');
+        
+        if (typeof $.ui === 'undefined') {
+            console.error('jQuery UI is not loaded!');
+        }
+        
+        if (typeof $.fn.datepicker === 'undefined') {
+            console.error('jQuery UI Datepicker is not loaded!');
+        }
+
+        // Test modal functionality
+        $('#timeSlotsModal').on('show.bs.modal', function() {
+            console.log('Modal is opening...');
+        });
+
+        $('#timeSlotsModal').on('shown.bs.modal', function() {
+            console.log('Modal is now visible');
+            // Force datepicker initialization
+            setTimeout(function() {
+                const $datepicker = $('#datepicker');
+                console.log('Datepicker element found:', $datepicker.length > 0);
+                
+                if ($datepicker.length > 0 && typeof $.fn.datepicker !== 'undefined') {
+                    // Initialize datepicker
+                    if (!$datepicker.hasClass('hasDatepicker')) {
+                        console.log('Initializing datepicker...');
+                        $datepicker.datepicker({
+                            minDate: 0,
+                            maxDate: '+60d',
+                            dateFormat: 'yy-mm-dd',
+                            firstDay: 1,
+                            showOtherMonths: true,
+                            selectOtherMonths: true,
+                            beforeShowDay: $.datepicker.noWeekends,
+                            onSelect: function(dateText) {
+                                console.log('Date selected:', dateText);
+                                $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { 
+                                    weekday: 'long', 
+                                    year: 'numeric', 
+                                    month: 'long', 
+                                    day: 'numeric' 
+                                }));
+                                $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
+                                $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
+                            }
+                        });
+                        console.log('Datepicker initialized successfully');
+                    } else {
+                        console.log('Datepicker already initialized');
+                    }
+                } else {
+                    console.error('Cannot initialize datepicker - element not found or jQuery UI not available');
+                }
+            }, 100);
+        });
     });
 </script>
 <?php $this->end(); ?>

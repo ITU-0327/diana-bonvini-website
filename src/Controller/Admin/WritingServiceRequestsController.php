@@ -750,10 +750,10 @@ class WritingServiceRequestsController extends BaseAdminController
 
                 $dateObj = new DateTime($date, new DateTimeZone(date_default_timezone_get()));
 
-                // Define working hours (9 AM to 5 PM by default)
+                // Define working hours (24 hours a day)
                 $workingHours = [
-                    'start' => '09:00',
-                    'end' => '17:00',
+                    'start' => '00:00',
+                    'end' => '23:59',
                 ];
 
                 if ($googleCalendarSettings) {
@@ -815,35 +815,37 @@ class WritingServiceRequestsController extends BaseAdminController
      */
     private function createMockTimeSlots(DateTime $date)
     {
-        // Create mock slots from 9 AM to 5 PM at 30-minute intervals
+        // Create mock slots every hour from midnight to 11 PM
         $slots = [];
-        $startHour = 9;
-        $endHour = 17;
+        $startHour = 0;   // Midnight
+        $endHour = 24;    // End of day
 
         $this->log('Creating mock time slots for date: ' . $date->format('Y-m-d'), 'debug');
 
         $slotDate = clone $date;
 
         for ($hour = $startHour; $hour < $endHour; $hour++) {
-            for ($minute = 0; $minute < 60; $minute += 30) {
-                // Skip some slots randomly to simulate busy times
-                if (rand(0, 100) < 30) {
-                    continue;
-                }
-
-                $slotDate->setTime($hour, $minute);
-
-                $startTime = $slotDate->format('H:i');
-                $slotDate->modify('+30 minutes');
-                $endTime = $slotDate->format('H:i');
-
-                $slots[] = [
-                    'date' => $date->format('Y-m-d'),
-                    'start' => $startTime,
-                    'end' => $endTime,
-                    'formatted' => $startTime . ' - ' . $endTime,
-                ];
+            // Skip some slots randomly to simulate busy times (reduce the skip rate for more availability)
+            if (rand(0, 100) < 15) { // Only 15% chance of being unavailable
+                continue;
             }
+
+            $slotDate->setTime($hour, 0, 0); // Start at the top of each hour
+
+            $startTime = $slotDate->format('H:i');
+            $slotDate->modify('+1 hour');
+            $endTime = $slotDate->format('H:i');
+
+            // Format for display (12-hour format)
+            $startTimeFormatted = $slotDate->setTime($hour, 0, 0)->format('g:i A');
+            $endTimeFormatted = $slotDate->modify('+1 hour')->format('g:i A');
+
+            $slots[] = [
+                'date' => $date->format('Y-m-d'),
+                'start' => $startTime,
+                'end' => $endTime,
+                'formatted' => $startTimeFormatted . ' - ' . $endTimeFormatted,
+            ];
         }
 
         $this->log('Created ' . count($slots) . ' mock time slots', 'debug');
@@ -862,43 +864,65 @@ class WritingServiceRequestsController extends BaseAdminController
     {
         $slots = [];
 
-        // Just create a few slots for today
-        $slots[] = [
-            'date' => $dateString,
-            'start' => '09:00',
-            'end' => '09:30',
-            'formatted' => '9:00 AM - 9:30 AM',
+        // Create hourly slots throughout the day as fallback
+        $availableHours = [
+            ['start' => '00:00', 'end' => '01:00', 'formatted' => '12:00 AM - 1:00 AM'],
+            ['start' => '02:00', 'end' => '03:00', 'formatted' => '2:00 AM - 3:00 AM'],
+            ['start' => '06:00', 'end' => '07:00', 'formatted' => '6:00 AM - 7:00 AM'],
+            ['start' => '08:00', 'end' => '09:00', 'formatted' => '8:00 AM - 9:00 AM'],
+            ['start' => '09:00', 'end' => '10:00', 'formatted' => '9:00 AM - 10:00 AM'],
+            ['start' => '10:00', 'end' => '11:00', 'formatted' => '10:00 AM - 11:00 AM'],
+            ['start' => '11:00', 'end' => '12:00', 'formatted' => '11:00 AM - 12:00 PM'],
+            ['start' => '12:00', 'end' => '13:00', 'formatted' => '12:00 PM - 1:00 PM'],
+            ['start' => '13:00', 'end' => '14:00', 'formatted' => '1:00 PM - 2:00 PM'],
+            ['start' => '14:00', 'end' => '15:00', 'formatted' => '2:00 PM - 3:00 PM'],
+            ['start' => '15:00', 'end' => '16:00', 'formatted' => '3:00 PM - 4:00 PM'],
+            ['start' => '16:00', 'end' => '17:00', 'formatted' => '4:00 PM - 5:00 PM'],
+            ['start' => '17:00', 'end' => '18:00', 'formatted' => '5:00 PM - 6:00 PM'],
+            ['start' => '18:00', 'end' => '19:00', 'formatted' => '6:00 PM - 7:00 PM'],
+            ['start' => '19:00', 'end' => '20:00', 'formatted' => '7:00 PM - 8:00 PM'],
+            ['start' => '20:00', 'end' => '21:00', 'formatted' => '8:00 PM - 9:00 PM'],
+            ['start' => '21:00', 'end' => '22:00', 'formatted' => '9:00 PM - 10:00 PM'],
+            ['start' => '22:00', 'end' => '23:00', 'formatted' => '10:00 PM - 11:00 PM'],
+            ['start' => '23:00', 'end' => '23:59', 'formatted' => '11:00 PM - 11:59 PM'],
         ];
 
-        $slots[] = [
-            'date' => $dateString,
-            'start' => '10:00',
-            'end' => '10:30',
-            'formatted' => '10:00 AM - 10:30 AM',
-        ];
-
-        $slots[] = [
-            'date' => $dateString,
-            'start' => '11:00',
-            'end' => '11:30',
-            'formatted' => '11:00 AM - 11:30 AM',
-        ];
-
-        $slots[] = [
-            'date' => $dateString,
-            'start' => '14:00',
-            'end' => '14:30',
-            'formatted' => '2:00 PM - 2:30 PM',
-        ];
-
-        $slots[] = [
-            'date' => $dateString,
-            'start' => '15:00',
-            'end' => '15:30',
-            'formatted' => '3:00 PM - 3:30 PM',
-        ];
+        foreach ($availableHours as $slot) {
+            $slots[] = [
+                'date' => $dateString,
+                'start' => $slot['start'],
+                'end' => $slot['end'],
+                'formatted' => $slot['formatted'],
+            ];
+        }
 
         return $slots;
+    }
+
+    /**
+     * Test routing method to debug URL generation and parameter passing
+     *
+     * @param string|null $id Writing Service Request id
+     * @return \Cake\Http\Response|null
+     */
+    public function testRouting(?string $id = null)
+    {
+        $this->disableAutoRender();
+        $this->response = $this->response->withType('application/json');
+
+        $result = [
+            'method' => $this->request->getMethod(),
+            'url' => $this->request->getRequestTarget(),
+            'id_parameter' => $id,
+            'route_params' => $this->request->getParam('pass'),
+            'all_params' => $this->request->getAttribute('params'),
+            'post_data' => $this->request->getData(),
+            'is_admin_prefix' => $this->request->getParam('prefix') === 'Admin',
+            'controller' => $this->request->getParam('controller'),
+            'action' => $this->request->getParam('action'),
+        ];
+
+        return $this->response->withStringBody(json_encode($result, JSON_PRETTY_PRINT));
     }
 
     /**
@@ -913,12 +937,23 @@ class WritingServiceRequestsController extends BaseAdminController
 
         $this->log('SendTimeSlots called with ID: ' . $id, 'debug');
         $this->log('POST data: ' . json_encode($this->request->getData()), 'debug');
+        $this->log('Request URL: ' . $this->request->getRequestTarget(), 'debug');
+        $this->log('Route params: ' . json_encode($this->request->getParam('pass')), 'debug');
+        $this->log('All params: ' . json_encode($this->request->getAttribute('params')), 'debug');
+
+        // Try to get ID from route parameter first, then from POST data as fallback
+        if (empty($id)) {
+            $id = $this->request->getData('writing_service_request_id');
+            $this->log('ID was empty, trying from POST data: ' . $id, 'debug');
+        }
 
         if (empty($id)) {
-            $this->Flash->error(__('Invalid writing service request.'));
-
+            $this->log('No ID found in route parameter or POST data', 'error');
+            $this->Flash->error(__('Invalid writing service request. Please try again.'));
             return $this->redirect(['action' => 'index']);
         }
+
+        $this->log('Using ID: ' . $id, 'debug');
 
         try {
             $writingServiceRequest = $this->WritingServiceRequests->get($id, [

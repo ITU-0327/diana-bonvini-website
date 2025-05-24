@@ -585,10 +585,10 @@ class CalendarController extends AppController
             if ($settings) {
                 $dateObj = new DateTime($date, new DateTimeZone(date_default_timezone_get()));
                 
-                // Define working hours (9 AM to 5 PM by default)
+                // Define working hours (24 hours a day)
                 $workingHours = [
-                    'start' => '09:00',
-                    'end' => '17:00',
+                    'start' => '00:00',
+                    'end' => '23:59',
                 ];
                 
                 // Get free time slots

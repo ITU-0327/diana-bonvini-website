@@ -654,458 +654,120 @@ use Cake\Utility\Inflector;
 .animate-spin {
     animation: spin 1s linear infinite;
 }
+
+/* Modal z-index fix */
+.modal {
+    z-index: 1050 !important;
+}
+
+.modal-backdrop {
+    z-index: 1040 !important;
+}
 </style>
 
-<!-- Load jQuery UI for datepicker -->
-<?= $this->Html->css('https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css') ?>
-<?= $this->Html->script('https://code.jquery.com/ui/1.12.1/jquery-ui.min.js', ['block' => true]) ?>
+<!-- Load jQuery UI for datepicker using CakePHP script blocks -->
+<?= $this->Html->css('https://code.jquery.com/ui/1.12.1/themes/ui-lightness/jquery-ui.css') ?>
+<?= $this->Html->script('https://code.jquery.com/ui/1.12.1/jquery-ui.min.js', ['block' => 'scriptBottom']) ?>
 <?= $this->Html->script('coaching-service-payments.js', ['block' => true]) ?>
 
-<?php $this->append('script'); ?>
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Time slots selection functionality
+    const datepicker = $('#datepicker');
+    const loadTimeSlotsBtn = document.getElementById('loadTimeSlots');
+    const timeSlotsLoading = document.getElementById('timeSlots-loading');
+    const timeSlotsEmpty = document.getElementById('timeSlots-empty');
+    const timeSlotsNone = document.getElementById('timeSlots-none');
+    const timeSlotsContainer = document.getElementById('time-slots-container');
+    const timeSlotsListContainer = document.getElementById('timeSlots-list');
+    const selectedDateDisplay = document.getElementById('selected-date-display');
+    const selectedTimeSlotsJson = document.getElementById('selectedTimeSlotsJson');
+    const selectAllCheckbox = document.getElementById('selectAllTimeSlots');
+    const sendTimeSlotsBtn = document.getElementById('sendTimeSlots');
+
+    // Initialize datepicker when jQuery and jQuery UI are fully loaded
     $(document).ready(function() {
-        // Scroll to bottom of chat container
-        let chatContainer = document.getElementById('chat-messages');
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-
-        // Helper function for debugging
-        function debugLog(message, data) {
-            const debugging = true; // Set to false in production
-            if (debugging && console) {
-                if (data) {
-                    console.log(`[CoachingTimeSlots] ${message}:`, data);
-                } else {
-                    console.log(`[CoachingTimeSlots] ${message}`);
-                }
-            }
-        }
-
         // Initialize datepicker when the modal is shown
         $('#timeSlotsModal').on('shown.bs.modal', function() {
-            debugLog('Time slots modal shown, initializing datepicker');
+            console.log('Time slots modal shown, initializing datepicker');
             initDatepicker();
         });
 
         // Initialize datepicker
         function initDatepicker() {
             try {
-                $('#datepicker').datepicker({
+                const $datepicker = $('#datepicker');
+                
+                // Destroy existing datepicker if it exists
+                if ($datepicker.hasClass('hasDatepicker')) {
+                    $datepicker.datepicker('destroy');
+                }
+                
+                // Initialize with proper configuration
+                $datepicker.datepicker({
                     minDate: 0, // Today
                     maxDate: '+60d', // Allow up to 60 days in the future
                     dateFormat: 'yy-mm-dd',
                     firstDay: 1, // Start week on Monday
                     showOtherMonths: true,
                     selectOtherMonths: true,
-                    beforeShowDay: $.datepicker.noWeekends, // Disable weekends
+                    changeMonth: true,
+                    changeYear: true,
+                    inline: true, // Show inline immediately
                     onSelect: function(dateText) {
-                        debugLog('Date selected:', dateText);
-                        $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+                        console.log('Date selected:', dateText);
+                        $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                        }));
                         $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
                         $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
                     }
                 });
-                debugLog('Datepicker initialized');
+                
+                // Force the datepicker to show inline and be visible
+                $datepicker.datepicker('widget').show();
+                console.log('Datepicker initialized successfully');
             } catch (e) {
                 console.error('Failed to initialize datepicker:', e);
             }
         }
-
-        // Focus on message input when clicking reply button
-        document.getElementById('messageText').focus();
-
-        // Animate button on form submit
-        const replyForm = document.getElementById('replyForm');
-        if (replyForm) {
-            replyForm.addEventListener('submit', function() {
-                const button = document.getElementById('sendButton');
-                button.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
-                button.disabled = true;
-            });
-        }
-
-        // Handle URL hash for navigating to specific sections
-        if (window.location.hash) {
-            const targetElement = document.querySelector(window.location.hash);
-            if (targetElement) {
-                setTimeout(() => {
-                    window.scrollTo({
-                        top: targetElement.offsetTop - 70,
-                        behavior: 'smooth'
-                    });
-                }, 100);
-            }
-        }
-
-        // Handle payment request form submission
-        const paymentRequestForm = document.getElementById('paymentRequestForm');
-        const sendPaymentRequestBtn = document.getElementById('sendPaymentRequestBtn');
-
-        if (paymentRequestForm && sendPaymentRequestBtn) {
-            // Create a hidden input for the cleaned amount
-            const cleanedAmountInput = document.createElement('input');
-            cleanedAmountInput.type = 'hidden';
-            cleanedAmountInput.name = 'cleaned_amount';
-            paymentRequestForm.appendChild(cleanedAmountInput);
-
-            sendPaymentRequestBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-
-                // Get the amount value and clean it
-                const amountInput = document.getElementById('amount');
-                const descriptionInput = document.getElementById('description');
-
-                // Remove currency symbols and commas
-                let rawAmount = amountInput.value;
-                let cleanAmount = rawAmount.replace(/[$,]/g, '').trim();
-                let numericAmount = parseFloat(cleanAmount);
-
-                console.log('Original amount:', rawAmount);
-                console.log('Cleaned amount:', cleanAmount);
-                console.log('Numeric amount:', numericAmount);
-
-                if (!cleanAmount || isNaN(numericAmount) || numericAmount <= 0) {
-                    alert('Please enter a valid payment amount greater than 0.');
-                    return;
-                }
-
-                if (!descriptionInput.value.trim()) {
-                    alert('Please enter a payment description.');
-                    return;
-                }
-
-                // Set the cleaned amount in the hidden field
-                cleanedAmountInput.value = numericAmount;
-
-                // Show loading state
-                sendPaymentRequestBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
-                sendPaymentRequestBtn.disabled = true;
-
-                // Submit the form
-                paymentRequestForm.submit();
-            });
-        }
-
-        // Time slots selection functionality
-        const loadTimeSlotsBtn = document.getElementById('loadTimeSlots');
-        const timeSlotsLoading = document.getElementById('timeSlots-loading');
-        const timeSlotsEmpty = document.getElementById('timeSlots-empty');
-        const timeSlotsNone = document.getElementById('timeSlots-none');
-        const timeSlotsContainer = document.getElementById('time-slots-container');
-        const timeSlotsListContainer = document.getElementById('timeSlots-list');
-        const selectedDateDisplay = document.getElementById('selected-date-display');
-        const selectedTimeSlotsJson = document.getElementById('selectedTimeSlotsJson');
-        const selectAllCheckbox = document.getElementById('selectAllTimeSlots');
-        const sendTimeSlotsBtn = document.getElementById('sendTimeSlots');
-
-        // Load time slots when the button is clicked
-        if (loadTimeSlotsBtn) {
-            loadTimeSlotsBtn.addEventListener('click', function() {
-                const selectedDate = $('#datepicker').datepicker('getDate');
-                debugLog('Load button clicked, selected date:', selectedDate);
-
-                if (!selectedDate) {
-                    alert('Please select a date first');
-                    return;
-                }
-
-                // Format date as YYYY-MM-DD
-                const year = selectedDate.getFullYear();
-                const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-                const day = String(selectedDate.getDate()).padStart(2, '0');
-                const formattedDate = `${year}-${month}-${day}`;
-
-                loadTimeSlots(formattedDate);
-            });
-        }
-
-        // Function to load time slots for a selected date
-        function loadTimeSlots(date) {
-            debugLog(`Loading time slots for date: ${date}`);
-
-            // Show loading, hide other elements
-            timeSlotsEmpty.classList.add('d-none');
-            timeSlotsNone.classList.add('d-none');
-            timeSlotsListContainer.classList.add('d-none');
-            timeSlotsLoading.classList.remove('d-none');
-
-            // Format the date for display
-            const formattedDate = new Date(date);
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            selectedDateDisplay.textContent = formattedDate.toLocaleDateString('en-US', options);
-
-            // Get CSRF token from the document
-            let csrfToken;
-            try {
-                const csrfElement = document.querySelector('input[name="_csrfToken"]');
-                csrfToken = csrfElement ? csrfElement.value : '<?= $this->request->getAttribute('csrfToken') ?>';
-                debugLog('Using CSRF token', csrfToken.substring(0, 10) + '...');
-            } catch (e) {
-                console.error('Error getting CSRF token:', e);
-                csrfToken = '<?= $this->request->getAttribute('csrfToken') ?>';
-            }
-
-            // Build the URL
-            const url = `<?= $this->Url->build(['controller' => 'CoachingServiceRequests', 'action' => 'getAvailableTimeSlots', 'prefix' => 'Admin']) ?>?date=${date}`;
-            debugLog('Fetching from URL', url);
-
-            // Fetch available time slots
-            fetch(url, {
-                method: 'GET',
-                headers: {
-                    'X-CSRF-Token': csrfToken,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }
-            })
-                .then(response => {
-                    console.log('Response status:', response.status);
-                    return response.json().catch(error => {
-                        console.error('Error parsing JSON response:', error);
-                        throw new Error('Invalid JSON response');
-                    });
-                })
-                .then(data => {
-                    console.log('Time slots data:', data);
-                    timeSlotsLoading.classList.add('d-none');
-
-                    if (data.success && data.timeSlots && data.timeSlots.length > 0) {
-                        // Show time slots container
-                        timeSlotsListContainer.classList.remove('d-none');
-
-                        // Populate time slots
-                        timeSlotsContainer.innerHTML = '';
-
-                        data.timeSlots.forEach(slot => {
-                            const slotDiv = document.createElement('div');
-                            slotDiv.className = 'custom-control custom-checkbox time-slot-item mb-2';
-
-                            const id = `slot-${slot.date}-${slot.start.replace(':', '-')}`;
-
-                            slotDiv.innerHTML = `
-                                <input type="checkbox" class="custom-control-input time-slot-checkbox" id="${id}" data-slot='${JSON.stringify(slot)}'>
-                                <label class="custom-control-label" for="${id}">
-                                    ${slot.formatted}
-                                </label>
-                            `;
-
-                            timeSlotsContainer.appendChild(slotDiv);
-                        });
-
-                        // Setup the checkboxes for selecting time slots
-                        setupTimeSlotCheckboxes();
-                    } else {
-                        console.log('No time slots available or success is false');
-                        // Show no time slots message
-                        timeSlotsNone.classList.remove('d-none');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading time slots:', error);
-                    timeSlotsLoading.classList.add('d-none');
-                    timeSlotsNone.classList.remove('d-none');
-                    alert('Error loading time slots: ' + error.message);
-                });
-        }
-
-        // Setup time slot checkboxes
-        function setupTimeSlotCheckboxes() {
-            const timeSlotCheckboxes = document.querySelectorAll('.time-slot-checkbox');
-
-            // Handle individual checkbox changes
-            timeSlotCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', updateSelectedTimeSlots);
-            });
-
-            // Handle select all checkbox
-            if (selectAllCheckbox) {
-                selectAllCheckbox.addEventListener('change', function() {
-                    timeSlotCheckboxes.forEach(checkbox => {
-                        checkbox.checked = this.checked;
-                    });
-
-                    updateSelectedTimeSlots();
-                });
-            }
-
-            // Clear previous selection
-            if (selectAllCheckbox) {
-                selectAllCheckbox.checked = false;
-            }
-            updateSelectedTimeSlots();
-        }
-
-        // Update selected time slots
-        function updateSelectedTimeSlots() {
-            const selectedTimeSlots = [];
-            const timeSlotCheckboxes = document.querySelectorAll('.time-slot-checkbox:checked');
-
-            timeSlotCheckboxes.forEach(checkbox => {
-                try {
-                    const slotData = JSON.parse(checkbox.dataset.slot);
-                    selectedTimeSlots.push(slotData);
-                } catch (e) {
-                    console.error('Error parsing slot data:', e);
-                }
-            });
-
-            // Enable/disable send button based on selection
-            if (sendTimeSlotsBtn) {
-                sendTimeSlotsBtn.disabled = selectedTimeSlots.length === 0;
-            }
-
-            // Update hidden input with selected time slots
-            if (selectedTimeSlotsJson) {
-                selectedTimeSlotsJson.value = JSON.stringify(selectedTimeSlots);
-            }
-
-            // Update select all checkbox state
-            const allCheckboxes = document.querySelectorAll('.time-slot-checkbox');
-            if (selectAllCheckbox && allCheckboxes.length > 0) {
-                selectAllCheckbox.checked = timeSlotCheckboxes.length > 0 &&
-                                        timeSlotCheckboxes.length === allCheckboxes.length;
-            }
-
-            debugLog('Selected time slots updated:', selectedTimeSlots.length);
-        }
-
-        // Send time slots button
-        if (sendTimeSlotsBtn) {
-            sendTimeSlotsBtn.addEventListener('click', function() {
-                const messageText = document.getElementById('timeSlotMessageText').value.trim();
-                const selectedTimeSlots = selectedTimeSlotsJson ? selectedTimeSlotsJson.value : '[]';
-
-                if (!messageText) {
-                    alert('Please enter a message to accompany the time slots');
-                    return;
-                }
-
-                if (!selectedTimeSlots || selectedTimeSlots === '[]') {
-                    alert('Please select at least one time slot');
-                    return;
-                }
-
-                try {
-                    // Show loading state
-                    sendTimeSlotsBtn.disabled = true;
-                    sendTimeSlotsBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
-
-                    // Get the form
-                    const form = document.getElementById('timeSlotsForm');
-                    if (!form) {
-                        console.error('Form not found');
-                        alert('Error: Form not found');
-
-                        // Reset button state
-                        sendTimeSlotsBtn.disabled = false;
-                        sendTimeSlotsBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Send Time Slots';
-                        return;
-                    }
-
-                    // Log form data before submission (for debugging)
-                    console.log('Submitting form with data:', {
-                        message_text: messageText,
-                        time_slots: selectedTimeSlots,
-                        request_id: '<?= $coachingServiceRequest->coaching_service_request_id ?>'
-                    });
-
-                    // Submit the form
-                    form.submit();
-                } catch (error) {
-                    console.error('Error submitting form:', error);
-                    alert('An error occurred while sending time slots. Please try again.');
-
-                    // Reset button state
-                    sendTimeSlotsBtn.disabled = false;
-                    sendTimeSlotsBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Send Time Slots';
-                }
-            });
-        }
-
-        // Payment request template button
-        $('#paymentRequestBtn').click(function() {
-            const template = document.getElementById('payment-request-template').innerHTML;
-            const messageText = document.getElementById('messageText');
-            messageText.value = template;
-
-            // Focus on the text area
-            messageText.focus();
-        });
-
-        // Mark as paid button functionality
-        const markAsPaidBtn = document.getElementById('markAsPaidBtn');
-        if (markAsPaidBtn) {
-            markAsPaidBtn.addEventListener('click', function() {
-                $('#markAsPaidModal').modal('show');
-            });
-        }
-
-        // Process payment elements in existing messages
-        processPaymentElements();
-
-        // Function to process payment elements in messages
-        function processPaymentElements() {
-            // Process payment buttons
-            document.querySelectorAll('.message-bubble').forEach(message => {
-                // First check for existing payment containers and initialize them
-                const existingContainers = message.querySelectorAll('[data-payment-container]');
-                existingContainers.forEach(container => {
-                    const paymentId = container.dataset.paymentContainer;
-                    if (paymentId) {
-                        // Check the payment status from our payment history
-                        const isPaid = checkPaymentPaidStatus(paymentId);
-
-                        // Update the UI based on payment status
-                        const button = container.querySelector('.payment-button');
-                        if (button) {
-                            button.classList.remove('btn-warning', 'btn-success');
-                            button.classList.add(isPaid ? 'btn-success' : 'btn-warning');
-                            button.innerHTML = `<i class="fas fa-${isPaid ? 'check-circle' : 'credit-card'} mr-1"></i> ${isPaid ? 'Payment Complete' : 'Payment Button'}`;
-                        }
-
-                        // Update the badge
-                        const badge = container.querySelector('.badge');
-                        if (badge) {
-                            badge.classList.remove('badge-light', 'badge-success');
-                            badge.classList.add(isPaid ? 'badge-success' : 'badge-light');
-                            badge.textContent = isPaid ? 'PAID' : 'PENDING';
-                        }
-                    }
-                });
-            });
-        }
-
-        // Function to check if a payment is paid from payment history
-        function checkPaymentPaidStatus(paymentId) {
-            // This is a simplified version - in a real app you'd check from your actual payment data
-            // Let's assume we've already checked payments in PHP and want to check if this payment ID is in our paid list
-
-            <?php
-            // Generate JavaScript array of paid payment IDs
-            $paidPaymentIds = [];
-            if (!empty($coachingServiceRequest->coaching_service_payments)) {
-                foreach ($coachingServiceRequest->coaching_service_payments as $payment) {
-                    if ($payment->status === 'paid') {
-                        $paidPaymentIds[] = $payment->payment_id;
-                    }
-                }
-            }
-            echo "const paidPaymentIds = " . json_encode($paidPaymentIds) . ";";
-            ?>
-
-            // Check if this payment ID is in our list of paid payments
-            if (paymentId.includes('|')) {
-                // Handle combined IDs (session|db format)
-                const parts = paymentId.split('|');
-                return paidPaymentIds.includes(parts[0]) || paidPaymentIds.includes(parts[1]);
-            }
-
-            return paidPaymentIds.includes(paymentId);
-        }
     });
-</script>
-<?php $this->end(); ?>
 
-<!-- Time Slots Modal -->
+    // Initialize datepicker
+    try {
+        datepicker.datepicker({
+            minDate: 0, // Today
+            maxDate: '+60d', // Allow up to 60 days in the future
+            dateFormat: 'yy-mm-dd',
+            firstDay: 1, // Start week on Monday
+            showOtherMonths: true,
+            selectOtherMonths: true,
+            changeMonth: true,
+            changeYear: true,
+            inline: true, // Show inline immediately
+            onSelect: function(dateText) {
+                console.log('Date selected:', dateText);
+                $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                }));
+                $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
+                $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
+            }
+        });
+        console.log('Datepicker initialized');
+    } catch (e) {
+        console.error('Failed to initialize datepicker:', e);
+    }
+});
+</script>
+
+<!-- Select Available Time Slots Modal -->
 <div class="modal fade" id="timeSlotsModal" tabindex="-1" role="dialog" aria-labelledby="timeSlotsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
@@ -1118,13 +780,19 @@ use Cake\Utility\Inflector;
                 </button>
             </div>
             <div class="modal-body">
+                <!-- Debug: Expected form URL should be /admin/coaching-service-requests/send-time-slots/<?= h($coachingServiceRequest->coaching_service_request_id) ?> -->
                 <?= $this->Form->create(null, [
-                    'url' => ['action' => 'sendTimeSlots', $coachingServiceRequest->coaching_service_request_id],
+                    'url' => $this->Url->build([
+                        'prefix' => 'Admin',
+                        'controller' => 'CoachingServiceRequests', 
+                        'action' => 'sendTimeSlots', 
+                        $coachingServiceRequest->coaching_service_request_id
+                    ]),
                     'id' => 'timeSlotsForm',
                     'type' => 'post'
                 ]) ?>
-
-                <!-- Include _csrfToken field explicitly -->
+                
+                <!-- Explicit CSRF token -->
                 <?= $this->Form->hidden('_csrfToken', [
                     'value' => $this->request->getAttribute('csrfToken')
                 ]) ?>
@@ -1140,19 +808,19 @@ use Cake\Utility\Inflector;
                         <h5 class="font-weight-bold mb-3">Select a Date</h5>
                         <div class="card shadow-sm mb-4">
                             <div class="card-body p-2">
-                                <!-- Improved datepicker with larger display -->
+                                <!-- Calendar will load here automatically -->
                                 <div id="datepicker" class="border p-2 rounded"></div>
                             </div>
                         </div>
 
-                        <!-- Clear visual call to action for loading time slots -->
+                        <!-- Load time slots button -->
                         <button type="button" id="loadTimeSlots" class="btn btn-primary btn-block">
                             <i class="fas fa-clock mr-1"></i> Load Time Slots
                         </button>
 
-                        <!-- Add helper text -->
+                        <!-- Helper text -->
                         <p class="small text-muted mt-2 text-center">
-                            First select a date, then click "Load Time Slots" to see available times
+                            Click a date above, then click "Load Time Slots"
                         </p>
                     </div>
 
@@ -1167,7 +835,7 @@ use Cake\Utility\Inflector;
                         <!-- Empty State -->
                         <div id="timeSlots-empty" class="text-center py-4">
                             <i class="fas fa-calendar-day fa-3x text-gray-300 mb-3"></i>
-                            <p class="text-gray-500">Select a date and click "Load Time Slots"</p>
+                            <p class="text-gray-500">Click a date on the calendar and load time slots</p>
                             <p class="text-sm text-gray-400">Available time slots will appear here</p>
                         </div>
 
@@ -1292,37 +960,6 @@ use Cake\Utility\Inflector;
     </div>
 </div>
 
-<!-- Payment Templates -->
-<div id="payment-request-template" class="d-none">
-**Payment Request**
-
-**Service:** Coaching Service: <?= h($coachingServiceRequest->service_title) ?>
-**Amount:** $<?= number_format($coachingServiceRequest->final_price ?? 0, 2) ?>
-
-Please click the button below to complete your payment. Once payment is processed, you'll receive a confirmation and we'll begin work on your coaching request.
-
-[PAYMENT_BUTTON]<?= bin2hex(random_bytes(8)) ?>[/PAYMENT_BUTTON]
-</div>
-
-<div id="payment-confirmation-template" class="d-none">
-[PAYMENT_CONFIRMATION]
-**Payment Confirmation**
-
-Your payment of **$<?= number_format($coachingServiceRequest->final_price ?? 0, 2) ?>** for **<?= h($coachingServiceRequest->service_title) ?>** has been received.
-
-Thank you for your payment. We can now proceed with your coaching service as discussed.
-</div>
-
-<div id="time-slots-template" class="d-none">
-**Available Time Slots:**
-
-- Monday, June 3, 2024: 10:00 AM - 11:00 AM
-- Tuesday, June 4, 2024: 2:00 PM - 3:00 PM
-- Thursday, June 6, 2024: 11:00 AM - 12:00 PM
-
-Please select one of the time slots above for our coaching session by clicking the "Accept" button next to your preferred time.
-</div>
-
 <!-- Payment Request Modal -->
 <div class="modal fade" id="paymentRequestModal" tabindex="-1" role="dialog" aria-labelledby="paymentRequestModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
@@ -1388,6 +1025,27 @@ Please select one of the time slots above for our coaching session by clicking t
         </div>
     </div>
 </div>
+
+<!-- Payment Templates -->
+<div id="payment-request-template" class="d-none">
+**Payment Request**
+
+**Service:** Coaching Service: <?= h($coachingServiceRequest->service_title) ?>
+**Amount:** $<?= number_format($coachingServiceRequest->final_price ?? 0, 2) ?>
+
+Please click the button below to complete your payment. Once payment is processed, you'll receive a confirmation and we'll begin work on your coaching request.
+
+[PAYMENT_BUTTON]<?= bin2hex(random_bytes(8)) ?>[/PAYMENT_BUTTON]
+</div>
+
+<div id="payment-confirmation-template" class="d-none">
+[PAYMENT_CONFIRMATION]
+**Payment Confirmation**
+
+Your payment of **$<?= number_format($coachingServiceRequest->final_price ?? 0, 2) ?>** for **<?= h($coachingServiceRequest->service_title) ?>** has been received.
+
+Thank you for your payment. We can now proceed with your coaching service as discussed.
+[/PAYMENT_CONFIRMATION]
 </div>
 
 <?php

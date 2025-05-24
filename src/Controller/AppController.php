@@ -51,8 +51,34 @@ class AppController extends Controller
          * see https://book.cakephp.org/5/en/controllers/components/form-protection.html
          */
         $this->loadComponent('FormProtection', [
-            'unlockedActions' => ['add', 'edit', 'uploadDocument', 'paymentSuccess'],
-            'unlockedFields' => ['document'],
+            'unlockedActions' => [
+                'add', 
+                'edit', 
+                'uploadDocument', 
+                'paymentSuccess',
+                'sendTimeSlots',
+                'sendMessage', 
+                'sendPaymentRequest',
+                'updateStatus',
+                'setPrice',
+                'markAsPaid',
+                'fetchMessages',
+                'getAvailableTimeSlots'
+            ],
+            'unlockedFields' => [
+                'document', 
+                'message_text', 
+                'time_slots', 
+                'amount', 
+                'description',
+                'status',
+                'final_price',
+                'payment_id',
+                '_csrfToken',
+                'writing_service_request_id',
+                'coaching_service_request_id'
+            ],
+            'validatePost' => false, // Temporarily disable for debugging
         ]);
     }
 }

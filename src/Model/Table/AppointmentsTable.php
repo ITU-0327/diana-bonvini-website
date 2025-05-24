@@ -47,6 +47,16 @@ class AppointmentsTable extends Table
             'foreignKey' => 'user_id',
             'joinType' => 'INNER',
         ]);
+        
+        $this->belongsTo('WritingServiceRequests', [
+            'foreignKey' => 'writing_service_request_id',
+            'joinType' => 'LEFT',
+        ]);
+        
+        $this->belongsTo('CoachingServiceRequests', [
+            'foreignKey' => 'coaching_service_request_id',
+            'joinType' => 'LEFT',
+        ]);
     }
 
     /**
@@ -87,6 +97,18 @@ class AppointmentsTable extends Table
             ->notEmptyString('status');
 
         $validator
+            ->scalar('location')
+            ->allowEmptyString('location');
+
+        $validator
+            ->scalar('description')
+            ->allowEmptyString('description');
+
+        $validator
+            ->scalar('meeting_link')
+            ->allowEmptyString('meeting_link');
+
+        $validator
             ->scalar('google_calendar_event_id')
             ->maxLength('google_calendar_event_id', 255)
             ->allowEmptyString('google_calendar_event_id');
@@ -94,6 +116,18 @@ class AppointmentsTable extends Table
         $validator
             ->boolean('is_deleted')
             ->notEmptyString('is_deleted');
+
+        $validator
+            ->boolean('is_google_synced')
+            ->allowEmptyString('is_google_synced');
+
+        $validator
+            ->uuid('writing_service_request_id')
+            ->allowEmptyString('writing_service_request_id');
+
+        $validator
+            ->uuid('coaching_service_request_id')
+            ->allowEmptyString('coaching_service_request_id');
 
         $validator
             ->dateTime('created_at')

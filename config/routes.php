@@ -174,12 +174,17 @@ return function (RouteBuilder $routes): void {
 
         // Endpoint for sending time slots to clients
         $builder->connect('/writing-service-requests/send-time-slots/:id', ['controller' => 'WritingServiceRequests', 'action' => 'sendTimeSlots'])
-            ->setPatterns(['id' => '[a-zA-Z0-9-]+'])
+            ->setPatterns(['id' => '[a-zA-Z0-9\-_]+'])
+            ->setPass(['id']);
+
+        // Test route for debugging
+        $builder->connect('/writing-service-requests/test-routing/:id', ['controller' => 'WritingServiceRequests', 'action' => 'testRouting'])
+            ->setPatterns(['id' => '[a-zA-Z0-9\-_]+'])
             ->setPass(['id']);
 
         // Endpoint for sending coaching time slots to clients
         $builder->connect('/coaching-service-requests/send-time-slots/:id', ['controller' => 'CoachingServiceRequests', 'action' => 'sendTimeSlots'])
-            ->setPatterns(['id' => '[a-zA-Z0-9-]+'])
+            ->setPatterns(['id' => '[a-zA-Z0-9\-_]+'])
             ->setPass(['id']);
 
         // Google Calendar Auth routes

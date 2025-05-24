@@ -30,6 +30,11 @@ class CalendarController extends AppController
      * @var \App\Service\GoogleCalendarService
      */
     protected GoogleCalendarService $googleCalendarService;
+    
+    /**
+     * @var \App\Model\Table\GoogleCalendarSettingsTable|null
+     */
+    protected $GoogleCalendarSettings = null;
 
     /**
      * Initialize method
@@ -94,7 +99,7 @@ class CalendarController extends AppController
         // Find an admin user for calendar availability
         $adminUser = $this->Users->find()
             ->where(['user_type' => 'admin', 'is_verified' => true])
-            ->order(['last_login' => 'DESC'])
+            ->orderBy(['last_login' => 'DESC'])
             ->first();
         
         if (empty($adminUser)) {
@@ -109,8 +114,8 @@ class CalendarController extends AppController
         $writingServiceRequest = null;
         if (!empty($requestId)) {
             try {
-                $writingServiceRequest = $this->WritingServiceRequests->get($requestId, [
-                    'contain' => ['Users'],
+                $writingServiceRequest = $this->WritingServiceRequests->get($requestId, contain: [
+                    'Users'
                 ]);
             } catch (Exception $e) {
                 $this->Flash->error(__('Invalid writing service request.'));
@@ -143,16 +148,16 @@ class CalendarController extends AppController
             // Find an admin user for calendar availability
             $adminUser = $this->Users->find()
                 ->where(['user_type' => 'admin', 'is_verified' => true])
-                ->order(['last_login' => 'DESC'])
+                ->orderBy(['last_login' => 'DESC'])
                 ->first();
             
             if (!empty($adminUser)) {
                 $dateObj = new DateTime($date, new DateTimeZone(date_default_timezone_get()));
                 
-                // Define working hours (9 AM to 5 PM by default)
+                // Define working hours (24 hours a day)
                 $workingHours = [
-                    'start' => '09:00',
-                    'end' => '17:00',
+                    'start' => '00:00',
+                    'end' => '23:59',
                 ];
                 
                 // Get free time slots
@@ -186,9 +191,21 @@ class CalendarController extends AppController
         $messageId = $this->request->getQuery('message_id');
         $type = $this->request->getQuery('type', 'writing'); // Default to 'writing' for backward compatibility
         
-        // URL decode parameters to handle URL encoded characters
-        $date = urldecode($date);
-        $time = urldecode($time);
+        // URL decode parameters to handle URL encoded characters (decode twice if double-encoded)
+        $date = urldecode(urldecode($date));
+        $time = urldecode(urldecode($time));
+        
+        // Clean up any remaining encoded characters or malformed data
+        $date = str_replace('+', ' ', $date);
+        $time = str_replace('+', ' ', $time);
+        
+        // Log the cleaned parameters for debugging
+        \Cake\Log\Log::debug('AcceptTimeSlot - Cleaned parameters:', [
+            'date' => $date,
+            'time' => $time,
+            'requestId' => $requestId,
+            'type' => $type
+        ]);
         
         if (empty($date) || empty($time) || empty($requestId)) {
             $this->Flash->error(__('Missing required parameters.'));
@@ -325,7 +342,7 @@ class CalendarController extends AppController
             // Find an admin user for the appointment
             $adminUser = $this->Users->find()
                 ->where(['user_type' => 'admin', 'is_verified' => true])
-                ->order(['last_login' => 'DESC'])
+                ->orderBy(['last_login' => 'DESC'])
                 ->first();
             
             if (empty($adminUser)) {
@@ -340,11 +357,13 @@ class CalendarController extends AppController
             if ($type === 'coaching') {
                 // Load the CoachingServiceRequests model if not already loaded
                 try {
-                    $this->CoachingServiceRequests = $this->fetchTable('CoachingServiceRequests');
+                    if (!isset($this->CoachingServiceRequests)) {
+                        $this->CoachingServiceRequests = $this->fetchTable('CoachingServiceRequests');
+                    }
                     
                     // Get the coaching service request
-                    $serviceRequest = $this->CoachingServiceRequests->get($requestId, [
-                        'contain' => ['Users']
+                    $serviceRequest = $this->CoachingServiceRequests->get($requestId, contain: [
+                        'Users'
                     ]);
                     
                     // Check if the writing service request belongs to the current user
@@ -364,9 +383,9 @@ class CalendarController extends AppController
             } else {
             // Get the writing service request
                 try {
-                    $serviceRequest = $this->WritingServiceRequests->get($requestId, [
-                'contain' => ['Users']
-            ]);
+                    $serviceRequest = $this->WritingServiceRequests->get($requestId, contain: [
+                        'Users'
+                    ]);
             
             // Check if the writing service request belongs to the current user
                     if ($serviceRequest->user_id !== $user->user_id) {
@@ -433,6 +452,13 @@ class CalendarController extends AppController
             $appointment->is_google_synced = false;
             $appointment->description = 'Consultation for ' . $requestTypeDesc . ' request: ' . $requestTitle . ' (ID: ' . $requestId . ')';
             
+            // Set the appropriate service request ID based on type
+            if ($type === 'coaching') {
+                $appointment->coaching_service_request_id = $requestId;
+            } else {
+                $appointment->writing_service_request_id = $requestId;
+            }
+            
             // Save the appointment
             if ($this->Appointments->save($appointment)) {
                 // Create Google Calendar event and get Google Meet link
@@ -470,9 +496,20 @@ class CalendarController extends AppController
                     }
                 }
                 
-                // If Google Calendar sync failed, create a generic Meet link
+                // If Google Calendar sync failed, create a better generic Meet link
                 if (!$meetLink) {
-                    $meetLink = "https://meet.google.com/lookup/" . substr(md5($appointment->appointment_id . time()), 0, 10);
+                    // Create a more professional meeting room name
+                    $dateStr = $appointment->appointment_date->format('Y-m-d');
+                    $timeStr = $appointment->appointment_time->format('Hi');
+                    $userInitials = strtolower(substr($user->first_name, 0, 1) . substr($user->last_name, 0, 1));
+                    
+                    // Generate a consistent meeting room code
+                    $meetingCode = 'diana-' . $userInitials . '-' . $dateStr . '-' . $timeStr;
+                    $meetingCode = preg_replace('/[^a-z0-9\-]/', '', $meetingCode); // Clean the code
+                    
+                    // Create Google Meet link with professional room name
+                    $meetLink = "https://meet.google.com/" . substr(md5($meetingCode), 0, 10) . "-" . substr(md5($appointment->appointment_id), 0, 10) . "-" . substr(md5(time()), 0, 10);
+                    
                     $appointment->meeting_link = $meetLink;
                     $this->Appointments->save($appointment);
                 }
@@ -485,7 +522,9 @@ class CalendarController extends AppController
                 
                 if ($type === 'coaching') {
                     // For coaching service requests, we need to use the CoachingRequestMessages table
-                    $this->CoachingRequestMessages = $this->fetchTable('CoachingRequestMessages');
+                    if (!isset($this->CoachingRequestMessages)) {
+                        $this->CoachingRequestMessages = $this->fetchTable('CoachingRequestMessages');
+                    }
                     
                     $messageEntity = $this->CoachingRequestMessages->newEntity([
                         'user_id' => $user->user_id,
@@ -522,12 +561,12 @@ class CalendarController extends AppController
                             $containList[] = 'CoachingServiceRequests';
                         }
                         
-                        $appointment = $this->Appointments->get($appointment->appointment_id, [
-                            'contain' => $containList,
+                        $appointment = $this->Appointments->get($appointment->appointment_id, contain: [
+                            'Users'
                         ]);
                     } catch (\Exception $e1) {
-                        $appointment = $this->Appointments->get($appointment->appointment_id, [
-                            'contain' => ['Users'],
+                        $appointment = $this->Appointments->get($appointment->appointment_id, contain: [
+                            'Users'
                         ]);
                     }
                     
@@ -546,8 +585,8 @@ class CalendarController extends AppController
                     // Send confirmation to customer
                     try {
                         // Get a fresh instance of the appointment with updated meeting link
-                        $freshAppointment = $this->Appointments->get($appointment->appointment_id, [
-                            'contain' => ['Users'],
+                        $freshAppointment = $this->Appointments->get($appointment->appointment_id, contain: [
+                            'Users'
                         ]);
                         
                         // Use the AppointmentMailer directly for better consistency
@@ -695,7 +734,7 @@ class CalendarController extends AppController
                 // Find an admin user for syncing with Google Calendar
                 $adminUser = $this->Users->find()
                     ->where(['user_type' => 'admin', 'is_verified' => true])
-                    ->order(['last_login' => 'DESC'])
+                    ->orderBy(['last_login' => 'DESC'])
                     ->first();
 
                 if (!empty($adminUser)) {
@@ -719,8 +758,18 @@ class CalendarController extends AppController
                                 $appointment->is_google_synced = true;
                                 $this->Appointments->save($appointment);
                             } else {
-                                // Create a generic Meet link if Google sync failed
-                                $meetLink = "https://meet.google.com/lookup/" . substr(md5($appointment->appointment_id), 0, 10);
+                                // Create a better generic Meet link if Google sync failed
+                                $dateStr = $appointment->appointment_date->format('Y-m-d');
+                                $timeStr = $appointment->appointment_time->format('Hi');
+                                $userInitials = strtolower(substr($user->first_name, 0, 1) . substr($user->last_name, 0, 1));
+                                
+                                // Generate a consistent meeting room code
+                                $meetingCode = 'diana-' . $userInitials . '-' . $dateStr . '-' . $timeStr;
+                                $meetingCode = preg_replace('/[^a-z0-9\-]/', '', $meetingCode); // Clean the code
+                                
+                                // Create Google Meet link with professional room name
+                                $meetLink = "https://meet.google.com/" . substr(md5($meetingCode), 0, 10) . "-" . substr(md5($appointment->appointment_id), 0, 10) . "-" . substr(md5(time()), 0, 10);
+                                
                                 $appointment->meeting_link = $meetLink;
                                 $this->Appointments->save($appointment);
                             }
@@ -741,8 +790,8 @@ class CalendarController extends AppController
                                 $containList[] = 'WritingServiceRequests';
                             }
                             
-                            $appointment = $this->Appointments->get($appointment->appointment_id, [
-                                'contain' => $containList,
+                            $appointment = $this->Appointments->get($appointment->appointment_id, contain: [
+                                'Users'
                             ]);
                         } catch (\Exception $e1) {
                             // Fallback to just getting the appointment without relationships
@@ -837,7 +886,7 @@ class CalendarController extends AppController
                 'Appointments.appointment_date >=' => date('Y-m-d'),
                 'Appointments.is_deleted' => false,
             ])
-            ->order(['Appointments.appointment_date' => 'ASC', 'Appointments.appointment_time' => 'ASC'])
+            ->orderBy(['Appointments.appointment_date' => 'ASC', 'Appointments.appointment_time' => 'ASC'])
             ->all();
         
         // Get past appointments
@@ -848,7 +897,7 @@ class CalendarController extends AppController
                 'Appointments.appointment_date <' => date('Y-m-d'),
                 'Appointments.is_deleted' => false,
             ])
-            ->order(['Appointments.appointment_date' => 'DESC', 'Appointments.appointment_time' => 'DESC'])
+            ->orderBy(['Appointments.appointment_date' => 'DESC', 'Appointments.appointment_time' => 'DESC'])
             ->all();
         
         $this->set(compact('upcomingAppointments', 'pastAppointments'));
@@ -910,7 +959,7 @@ class CalendarController extends AppController
             // Find an admin user for syncing with Google Calendar
             $adminUser = $this->Users->find()
                 ->where(['user_type' => 'admin', 'is_verified' => true])
-                ->order(['last_login' => 'DESC'])
+                ->orderBy(['last_login' => 'DESC'])
                 ->first();
 
             if (!empty($adminUser) && $appointment->is_google_synced && !empty($appointment->google_calendar_event_id)) {
@@ -921,8 +970,8 @@ class CalendarController extends AppController
             // Send cancellation emails
             try {
                 // Get fresh appointment data with related entities
-                $appointment = $this->Appointments->get($appointment->appointment_id, [
-                    'contain' => ['Users', 'WritingServiceRequests'],
+                $appointment = $this->Appointments->get($appointment->appointment_id, contain: [
+                    'Users', 'WritingServiceRequests'
                 ]);
 
                 // Send cancellation to customer
@@ -1010,10 +1059,10 @@ class CalendarController extends AppController
             // For days within booking window, check availability
             $hasAvailability = false;
             if ($isWithinBookingWindow) {
-                // Define working hours (9 AM to 5 PM by default)
+                // Define working hours (24 hours a day)
                 $workingHours = [
-                    'start' => '09:00',
-                    'end' => '17:00',
+                    'start' => '00:00',
+                    'end' => '23:59',
                 ];
                 
                 // Get free time slots

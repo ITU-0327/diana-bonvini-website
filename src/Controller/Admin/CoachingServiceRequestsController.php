@@ -664,46 +664,43 @@ class CoachingServiceRequestsController extends AppController
     }
     
     /**
-     * Create a list of basic time slots for a given date
-     *
-     * @param string $dateString The date string in Y-m-d format
+     * Create basic time slots for a given date string
+     * 
+     * @param string $dateString Date in Y-m-d format
      * @return array List of time slots
      */
     private function createBasicTimeSlots(string $dateString): array
     {
         $slots = [];
         
-        // Generate time slots from 9 AM to 5 PM with 30-minute intervals
-        $startHour = 9; // 9 AM
-        $endHour = 17;  // 5 PM
-        $interval = 30;  // 30 minutes
+        // Generate time slots every hour from midnight to 11 PM
+        $startHour = 0; // Midnight
+        $endHour = 24;  // End of day
         
         for ($hour = $startHour; $hour < $endHour; $hour++) {
-            for ($minute = 0; $minute < 60; $minute += $interval) {
-                $startTime = sprintf('%02d:%02d', $hour, $minute);
-                $endHour2 = $hour;
-                $endMinute = $minute + $interval;
-                
-                if ($endMinute >= 60) {
-                    $endHour2++;
-                    $endMinute -= 60;
-                }
-                
-                $endTime = sprintf('%02d:%02d', $endHour2, $endMinute);
-                
-                // Create a slot for this time period
-                if ($endHour2 <= $endHour) {
-                    $formattedStart = date('g:i A', strtotime($startTime));
-                    $formattedEnd = date('g:i A', strtotime($endTime));
-                    
-                    $slots[] = [
-                        'date' => $dateString,
-                        'start' => $startTime,
-                        'end' => $endTime,
-                        'formatted' => "{$formattedStart} - {$formattedEnd}",
-                    ];
-                }
+            // Skip some slots randomly to simulate busy times (reduce the skip rate for more availability)
+            if (rand(0, 100) < 15) { // Only 15% chance of being unavailable
+                continue;
             }
+            
+            $startTime = sprintf('%02d:00', $hour);
+            $endHour2 = $hour + 1;
+            $endTime = sprintf('%02d:00', $endHour2);
+            
+            // Handle the last hour of the day
+            if ($endHour2 >= 24) {
+                $endTime = '23:59';
+            }
+            
+            $formattedStart = date('g:i A', strtotime($startTime));
+            $formattedEnd = date('g:i A', strtotime($endTime));
+            
+            $slots[] = [
+                'date' => $dateString,
+                'start' => $startTime,
+                'end' => $endTime,
+                'formatted' => "{$formattedStart} - {$formattedEnd}",
+            ];
         }
         
         return $slots;

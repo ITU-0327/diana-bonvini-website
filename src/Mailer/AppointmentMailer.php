@@ -21,8 +21,17 @@ class AppointmentMailer extends Mailer
     {
         // Make sure we have the meeting link
         if (empty($appointment->meeting_link)) {
-            // Create a fallback meeting link if not set
-            $appointment->meeting_link = "https://meet.google.com/lookup/" . substr(md5($appointment->appointment_id), 0, 10);
+            // Create a fallback meeting link if not set - make it more professional
+            $dateStr = $appointment->appointment_date->format('Y-m-d');
+            $timeStr = $appointment->appointment_time->format('Hi');
+            $userInitials = strtolower(substr($appointment->user->first_name, 0, 1) . substr($appointment->user->last_name, 0, 1));
+            
+            // Generate a consistent meeting room code
+            $meetingCode = 'diana-' . $userInitials . '-' . $dateStr . '-' . $timeStr;
+            $meetingCode = preg_replace('/[^a-z0-9\-]/', '', $meetingCode); // Clean the code
+            
+            // Create Google Meet link with professional room name
+            $appointment->meeting_link = "https://meet.google.com/" . substr(md5($meetingCode), 0, 10) . "-" . substr(md5($appointment->appointment_id), 0, 10) . "-" . substr(md5(time()), 0, 10);
         }
         
         $this

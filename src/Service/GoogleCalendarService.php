@@ -11,6 +11,7 @@ use Google\Service\Calendar as GoogleCalendar;
 use Google\Service\Calendar\Event;
 use Google\Service\Calendar\EventDateTime;
 use Google\Service\Calendar\EventAttendee;
+use Google\Service\Calendar\EventReminders;
 use Google\Service\Calendar\ConferenceData;
 use Google\Service\Calendar\CreateConferenceRequest;
 use DateTime;
@@ -393,9 +394,9 @@ class GoogleCalendarService
             $event->setConferenceData($conferenceData);
 
             // Add additional event properties
-            $event->setReminders([
-                'useDefault' => true,
-            ]);
+            $reminders = new \Google\Service\Calendar\EventReminders();
+            $reminders->setUseDefault(true);
+            $event->setReminders($reminders);
 
             // Insert event to Google Calendar
             try {
@@ -820,8 +821,8 @@ class GoogleCalendarService
         // Default working hours if not provided
         if (empty($workingHours)) {
             $workingHours = [
-                'start' => '09:00',
-                'end' => '17:00',
+                'start' => '00:00',
+                'end' => '23:59',
             ];
         }
 
