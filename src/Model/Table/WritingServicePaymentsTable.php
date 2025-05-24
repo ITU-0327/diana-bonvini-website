@@ -74,7 +74,7 @@ class WritingServicePaymentsTable extends Table
 
         $validator
             ->dateTime('payment_date')
-            ->notEmptyDateTime('payment_date');
+            ->allowEmptyDateTime('payment_date');
 
         $validator
             ->scalar('payment_method')
@@ -92,11 +92,11 @@ class WritingServicePaymentsTable extends Table
 
         $validator
             ->dateTime('created_at')
-            ->notEmptyDateTime('created_at');
+            ->allowEmptyDateTime('created_at');
 
         $validator
             ->dateTime('updated_at')
-            ->notEmptyDateTime('updated_at');
+            ->allowEmptyDateTime('updated_at');
 
         return $validator;
     }

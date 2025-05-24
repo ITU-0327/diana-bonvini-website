@@ -44,9 +44,7 @@ class WritingServiceRequestsController extends AppController
         }
 
         $query = $this->WritingServiceRequests->find()
-            ->contain(['Users', 'WritingServicePayments' => function ($q) {
-                return $q->where(['status' => 'paid']);
-            }])
+            ->contain(['Users', 'WritingServicePayments'])
             ->where(['WritingServiceRequests.user_id' => $userId]);
 
         $this->paginate = [
@@ -86,8 +84,7 @@ class WritingServiceRequestsController extends AppController
                         ->orderBy(['RequestMessages.created_at' => 'ASC']);
                 },
                 'WritingServicePayments' => function ($q) {
-                    return $q->where(['WritingServicePayments.status' => 'paid'])
-                        ->orderBy(['WritingServicePayments.created_at' => 'DESC']);
+                    return $q->orderBy(['WritingServicePayments.created_at' => 'DESC']);
                 },
             ],
         );
@@ -1760,51 +1757,67 @@ class WritingServiceRequestsController extends AppController
             // Check if the writing service request exists
             $writingServiceRequest = $this->WritingServiceRequests->get($id);
 
-            // Check if we can find the payment data in the session
+            // The payment ID should be just the database payment ID now
+            $dbPaymentId = trim($paymentId);
+            
+            // Try to get payment data from database first (new system)
+            $writingServicePaymentsTable = $this->fetchTable('WritingServicePayments');
+            $paymentData = null;
+            
+            try {
+                $paymentEntity = $writingServicePaymentsTable->get($dbPaymentId);
+
+                // If payment is already paid, redirect to view with success message
+                if ($paymentEntity->status === 'paid') {
+                    $this->Flash->success(__('This payment has already been completed.'));
+                    return $this->redirect(['action' => 'view', $id]);
+                }
+
+                // Create session data for this payment (required for the pay method)
+                $sessionPaymentId = 'db_' . $dbPaymentId . '_' . time();
+                $paymentData = [
+                    'amount' => (string)$paymentEntity->amount,
+                    'description' => 'Writing Service Payment',
+                    'writing_service_request_id' => $id,
+                    'created' => time(),
+                    'status' => $paymentEntity->status,
+                    'db_payment_id' => $dbPaymentId,
+                ];
+
+                // Store in session for the pay method to use
+                $this->request->getSession()->write("WsrPayments.$sessionPaymentId", $paymentData);
+                
+                // Create combined payment ID for the pay method
+                $combinedPaymentId = $sessionPaymentId . '|' . $dbPaymentId;
+                
+                $this->log('Created payment data from database record: ' . json_encode($paymentData), 'debug');
+                
+                // Call the regular pay method with the extracted parameters
+                return $this->pay($id, $combinedPaymentId);
+                
+            } catch (Exception $e) {
+                $this->log('Error retrieving payment from database: ' . $e->getMessage(), 'error');
+            }
+
+            // Fallback: Try session-based payment (old system)
             $parts = explode('|', urldecode($paymentId));
             $sessionPaymentId = $parts[0];
-            $paymentData = $this->request->getSession()->read("WsrPayments.$sessionPaymentId");
+            $sessionPaymentData = $this->request->getSession()->read("WsrPayments.$sessionPaymentId");
 
             $this->log('Payment data retrieved from session: ' . json_encode([
                     'sessionPaymentId' => $sessionPaymentId,
-                    'paymentData' => $paymentData,
+                    'paymentData' => $sessionPaymentData,
                 ]), 'debug');
 
-            // If payment data doesn't exist in the session, try to get it from the database
-            if (!$paymentData && isset($parts[1])) {
-                $dbPaymentId = $parts[1];
-
-                // Get payment data from database
-                $writingServicePaymentsTable = $this->fetchTable('WritingServicePayments');
-                try {
-                    $paymentEntity = $writingServicePaymentsTable->get($dbPaymentId);
-
-                    // Create session data for this payment
-                    $paymentData = [
-                        'amount' => (string)$paymentEntity->amount,
-                        'description' => 'Writing service payment',
-                        'writing_service_request_id' => $id,
-                        'created' => time(),
-                        'status' => $paymentEntity->status,
-                        'db_payment_id' => $dbPaymentId,
-                    ];
-
-                    $this->request->getSession()->write("WsrPayments.$sessionPaymentId", $paymentData);
-                    $this->log('Created payment data from database record: ' . json_encode($paymentData), 'debug');
-                } catch (Exception $e) {
-                    $this->log('Error retrieving payment from database: ' . $e->getMessage(), 'error');
-                }
+            if ($sessionPaymentData) {
+                // Call the regular pay method with the original parameters
+                return $this->pay($id, $paymentId);
             }
 
-            // If we still don't have payment data, fail
-            if (!$paymentData) {
-                $this->Flash->error('Invalid payment request. Payment information not found.');
+            // If we reach here, we couldn't find payment data anywhere
+            $this->Flash->error('Invalid payment request. Payment information not found.');
+            return $this->redirect(['action' => 'view', $id]);
 
-                return $this->redirect(['action' => 'view', $id]);
-            }
-
-            // Call the regular pay method with the extracted parameters
-            return $this->pay($id, $paymentId);
         } catch (Exception $e) {
             $this->log('payDirect error: ' . $e->getMessage(), 'error');
             $this->Flash->error('Error processing payment: ' . $e->getMessage());

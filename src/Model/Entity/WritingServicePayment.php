@@ -33,6 +33,7 @@ class WritingServicePayment extends Entity
      * @var array<string, bool>
      */
     protected array $_accessible = [
+        'writing_service_payment_id' => true,
         'writing_service_request_id' => true,
         'amount' => true,
         'transaction_id' => true,

@@ -316,37 +316,84 @@ $this->assign('title', __('Writing Service Request Details'));
                                 <table id="payment-history-table" class="table table-sm table-hover border">
                                     <thead class="bg-light">
                                         <tr>
-                                            <th>ID</th>
+                                            <th>Payment #</th>
                                             <th>Amount</th>
-                                            <th>Date</th>
+                                            <th>Date Created</th>
                                             <th>Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php foreach ($writingServiceRequest->writing_service_payments as $payment): ?>
-                                            <tr>
-                                                <td class="small text-muted">
-                                                    <?= h($payment->writing_service_payment_id) ?>
+                                            <tr class="<?= $payment->status === 'paid' ? 'table-success' : 'table-warning' ?>">
+                                                <td class="small font-weight-bold">
+                                                    #<?= h($payment->writing_service_payment_id) ?>
                                                 </td>
                                                 <td class="font-weight-bold">
                                                     $<?= number_format($payment->amount, 2) ?>
                                                 </td>
                                                 <td class="text-muted small">
-                                                    <?= $payment->payment_date ? $payment->payment_date->format('M j, Y g:i A') : 'Pending' ?>
+                                                    <?= $payment->created_at ? $payment->created_at->format('M j, Y g:i A') : 'Unknown' ?>
                                                 </td>
                                                 <td>
-                                                    <span class="badge badge-<?= $payment->status === 'paid' ? 'success' : 'warning' ?>">
-                                                        <?= ucfirst($payment->status) ?>
-                                                    </span>
+                                                    <?php if ($payment->status === 'paid'): ?>
+                                                        <span class="badge badge-success">
+                                                            <i class="fas fa-check-circle mr-1"></i>Paid
+                                                        </span>
+                                                        <?php if ($payment->payment_date): ?>
+                                                            <small class="d-block text-muted mt-1">
+                                                                <?= $payment->payment_date->format('M j, Y g:i A') ?>
+                                                            </small>
+                                                        <?php endif; ?>
+                                                    <?php else: ?>
+                                                        <span class="badge badge-warning">
+                                                            <i class="fas fa-clock mr-1"></i>Pending
+                                                        </span>
+                                                        <small class="d-block text-muted mt-1">Awaiting payment</small>
+                                                    <?php endif; ?>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>
+                                    <tfoot class="bg-light">
+                                        <tr>
+                                            <td colspan="3" class="text-right font-weight-bold">Total Requests:</td>
+                                            <td class="font-weight-bold"><?= count($writingServiceRequest->writing_service_payments) ?></td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
+                            </div>
+                            
+                            <!-- Payment Statistics -->
+                            <div class="row mt-2">
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        <i class="fas fa-check-circle text-success mr-1"></i>
+                                        Paid: <?php 
+                                            $paidCount = 0;
+                                            foreach ($writingServiceRequest->writing_service_payments as $payment) {
+                                                if ($payment->status === 'paid') $paidCount++;
+                                            }
+                                            echo $paidCount;
+                                        ?>
+                                    </small>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock text-warning mr-1"></i>
+                                        Pending: <?php 
+                                            $pendingCount = 0;
+                                            foreach ($writingServiceRequest->writing_service_payments as $payment) {
+                                                if ($payment->status === 'pending') $pendingCount++;
+                                            }
+                                            echo $pendingCount;
+                                        ?>
+                                    </small>
+                                </div>
                             </div>
                         <?php else: ?>
                             <div class="text-center p-3 bg-light rounded border text-muted">
                                 <i class="fas fa-info-circle mr-1"></i> No payment requests yet
+                                <small class="d-block mt-1">Use the "Send Payment Request" button above to create payment requests for this service.</small>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -824,11 +871,23 @@ $this->assign('title', __('Writing Service Request Details'));
                 }
 
                 // Show loading state
+                const originalButtonContent = sendPaymentRequestBtn.innerHTML;
                 sendPaymentRequestBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
                 sendPaymentRequestBtn.disabled = true;
 
                 // Submit the form
                 paymentRequestForm.submit();
+            });
+
+            // Reset modal when it's closed
+            $('#paymentRequestModal').on('hidden.bs.modal', function () {
+                // Reset form values
+                document.getElementById('amount').value = '';
+                document.getElementById('description').value = 'Writing Service: <?= addslashes($writingServiceRequest->service_title) ?>';
+                
+                // Reset button state
+                sendPaymentRequestBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Send Payment Request';
+                sendPaymentRequestBtn.disabled = false;
             });
         }
 
@@ -1128,11 +1187,11 @@ $this->assign('title', __('Writing Service Request Details'));
                             'id' => 'amount',
                             'placeholder' => 'Enter amount',
                             'required' => true,
-                            'value' => $writingServiceRequest->final_price ?: '',
+                            'value' => '',
                             'label' => false
                         ]) ?>
                     </div>
-                    <small class="form-text text-muted">Enter the amount to charge the client.</small>
+                    <small class="form-text text-muted">Enter the amount to charge the client for this specific service.</small>
                 </div>
 
                 <div class="form-group">
@@ -1142,10 +1201,10 @@ $this->assign('title', __('Writing Service Request Details'));
                         'id' => 'description',
                         'required' => true,
                         'rows' => 3,
-                        'placeholder' => 'e.g., Editorial review fee',
+                        'placeholder' => 'e.g., Editorial review fee, Writing consultation, Proofreading service',
                         'value' => 'Writing Service: ' . $writingServiceRequest->service_title,
                     ]) ?>
-                    <small class="form-text text-muted">Briefly describe what this payment is for.</small>
+                    <small class="form-text text-muted">Briefly describe what this payment is for. This will be visible to the client.</small>
                 </div>
 
                 <?= $this->Form->end() ?>

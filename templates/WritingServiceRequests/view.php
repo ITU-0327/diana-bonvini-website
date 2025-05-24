@@ -344,6 +344,121 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                         </div>
                         </div>
 
+            <!-- Payment History Card -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+                <div class="bg-gradient-to-r from-blue-700 to-blue-600 px-6 py-4">
+                    <h2 class="text-lg font-bold text-white flex justify-between items-center">
+                        <span>Payment History</span>
+                        <?php if (!empty($writingServiceRequest->writing_service_payments)): ?>
+                            <span class="bg-white bg-opacity-20 rounded-full px-2 py-1 text-xs">
+                                <?= count($writingServiceRequest->writing_service_payments) ?>
+                            </span>
+                        <?php endif; ?>
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <?php if (!empty($writingServiceRequest->writing_service_payments)): ?>
+                        <div class="space-y-3">
+                            <?php foreach ($writingServiceRequest->writing_service_payments as $payment): ?>
+                                <div class="border rounded-lg p-3 <?= $payment->status === 'paid' ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50' ?>">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div class="flex-1">
+                                            <div class="text-sm font-medium text-gray-900">
+                                                Payment #<?= h($payment->writing_service_payment_id) ?>
+                                            </div>
+                                            <div class="text-sm text-gray-500">
+                                                <?= $payment->created_at ? $payment->created_at->format('M j, Y g:i A') : 'Unknown' ?>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-lg font-bold text-gray-900">
+                                                $<?= number_format($payment->amount, 2) ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <div class="flex items-center">
+                                            <?php if ($payment->status === 'paid'): ?>
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                    </svg>
+                                                    Paid
+                                                </span>
+                                                <?php if ($payment->payment_date): ?>
+                                                    <span class="ml-2 text-xs text-gray-500">
+                                                        on <?= $payment->payment_date->format('M j, Y') ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            <?php else: ?>
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    Pending
+                                                </span>
+                                                <span class="ml-2 text-xs text-gray-500">Awaiting payment</span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php if ($payment->transaction_id): ?>
+                                            <div class="text-xs text-gray-400">
+                                                ID: <?= h($payment->transaction_id) ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        
+                        <!-- Payment Summary -->
+                        <div class="mt-4 pt-4 border-t border-gray-200">
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div class="text-center">
+                                    <div class="font-medium text-green-600">
+                                        <?php 
+                                            $paidCount = 0;
+                                            $paidTotal = 0;
+                                            foreach ($writingServiceRequest->writing_service_payments as $payment) {
+                                                if ($payment->status === 'paid') {
+                                                    $paidCount++;
+                                                    $paidTotal += $payment->amount;
+                                                }
+                                            }
+                                            echo $paidCount;
+                                        ?> Paid
+                                    </div>
+                                    <div class="text-xs text-gray-500">$<?= number_format($paidTotal, 2) ?></div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="font-medium text-yellow-600">
+                                        <?php 
+                                            $pendingCount = 0;
+                                            $pendingTotal = 0;
+                                            foreach ($writingServiceRequest->writing_service_payments as $payment) {
+                                                if ($payment->status === 'pending') {
+                                                    $pendingCount++;
+                                                    $pendingTotal += $payment->amount;
+                                                }
+                                            }
+                                            echo $pendingCount;
+                                        ?> Pending
+                                    </div>
+                                    <div class="text-xs text-gray-500">$<?= number_format($pendingTotal, 2) ?></div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <div class="text-center py-6">
+                            <svg class="mx-auto h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                            </svg>
+                            <p class="text-sm text-gray-500">No payment requests yet</p>
+                            <p class="text-xs text-gray-400 mt-1">Payment requests will appear here</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
             <!-- Actions Card -->
             <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
                 <div class="bg-gradient-to-r from-gray-700 to-gray-600 px-6 py-4">
