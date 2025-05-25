@@ -93,9 +93,10 @@ class WritingServiceRequestsController extends AppController
         $appointmentsTable = $this->fetchTable('Appointments');
         $appointments = $appointmentsTable->find()
             ->where([
-                'user_id' => $user->user_id,
+                'writing_service_request_id' => $id,
                 'is_deleted' => false,
             ])
+            ->orderBy(['appointment_date' => 'ASC', 'appointment_time' => 'ASC'])
             ->toArray();
 
         // Fetch request documents

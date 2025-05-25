@@ -414,25 +414,46 @@ class CalendarController extends AppController
                 }
             }
             
-            // Check if an appointment already exists for this time slot and request
+            // Check if an appointment already exists for this exact time slot and request (prevent exact duplicates only)
             $existingAppointment = $this->Appointments->find()
                 ->where([
-                    'user_id' => $user->user_id,
                     'appointment_date' => new \Cake\I18n\Date($formattedDate),
                     'appointment_time' => new \Cake\I18n\Time($time),
                     'status !=' => 'cancelled',
                     'is_deleted' => false
                 ])
+                ->where(function ($exp) use ($requestId, $type) {
+                    if ($type === 'coaching') {
+                        return $exp->eq('coaching_service_request_id', $requestId);
+                    } else {
+                        return $exp->eq('writing_service_request_id', $requestId);
+                    }
+                })
                 ->first();
                 
             if ($existingAppointment) {
-                $this->Flash->info(__('You already have an appointment for this time slot. No new appointment was created.'));
+                $this->Flash->info(__('This specific time slot has already been confirmed for this request.'));
                 if ($type === 'coaching') {
                     return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'view', $requestId, '#' => 'messages']);
                 } else {
                 return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId, '#' => 'messages']);
                 }
             }
+            
+            // Count existing appointments for this request to inform the user
+            $existingCount = $this->Appointments->find()
+                ->where([
+                    'status !=' => 'cancelled',
+                    'is_deleted' => false
+                ])
+                ->where(function ($exp) use ($requestId, $type) {
+                    if ($type === 'coaching') {
+                        return $exp->eq('coaching_service_request_id', $requestId);
+                    } else {
+                        return $exp->eq('writing_service_request_id', $requestId);
+                    }
+                })
+                ->count();
             
             // Set appointment details
             $appointment->user_id = $user->user_id;

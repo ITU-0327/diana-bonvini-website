@@ -117,10 +117,10 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
 
                                                 // Parse time slots
                                                 if (preg_match_all('/- ([^:]+): ([^\n]+)/', $parts[1], $matches, PREG_SET_ORDER)) {
-                                                            echo '<div class="time-slots-list space-y-2 mt-2">';
+                                                    echo '<div class="time-slots-list space-y-2 mt-2">';
 
-                                                    // Check if ANY appointment exists for this request
-                                                    $hasAnyAppointment = false;
+                                                    // Get all confirmed appointments for this request to check which slots are taken
+                                                    $confirmedAppointments = [];
                                                     if (isset($appointments)) {
                                                         foreach ($appointments as $appointment) {
                                                             if (
@@ -128,8 +128,10 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                                 $appointment->status != 'cancelled' &&
                                                                 $appointment->is_deleted == false
                                                             ) {
-                                                                $hasAnyAppointment = true;
-                                                                break;
+                                                                $confirmedAppointments[] = [
+                                                                    'date' => $appointment->appointment_date->format('l, F j, Y'),
+                                                                    'time' => $appointment->appointment_time->format('g:i A')
+                                                                ];
                                                             }
                                                         }
                                                     }
@@ -138,60 +140,57 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                         $date = trim($match[1]);
                                                         $time = trim($match[2]);
 
-                                                        // Check if this specific slot matches the confirmed appointment
-                                                        $isThisSlotBooked = false;
-                                                        if (isset($appointments)) {
-                                                            foreach ($appointments as $appointment) {
-                                                                if (
-                                                                    $appointment->appointment_date->format('l, F j, Y') == $date &&
-                                                                    $appointment->appointment_time->format('g:i A') == substr($time, 0, 7) &&
-                                                                    $appointment->status != 'cancelled' &&
-                                                                    $appointment->is_deleted == false
-                                                                ) {
-                                                                    $isThisSlotBooked = true;
-                                                                    break;
-                                                                }
+                                                        // Check if this specific slot is already confirmed
+                                                        $isThisSlotConfirmed = false;
+                                                        foreach ($confirmedAppointments as $confirmed) {
+                                                            if ($confirmed['date'] == $date && substr($confirmed['time'], 0, 7) == substr($time, 0, 7)) {
+                                                                $isThisSlotConfirmed = true;
+                                                                break;
                                                             }
                                                         }
 
-                                                                // Create timeslot item with modern styling
-                                                                echo '<div class="flex justify-between items-center p-2 bg-gray-50 rounded">';
-                                                                echo '<div>';
-                                                                echo '<div class="text-sm font-medium">' . h($date) . '</div>';
-                                                                echo '<div class="text-xs text-gray-500">' . h($time) . '</div>';
+                                                        // Create timeslot item with modern styling
+                                                        echo '<div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border">';
+                                                        echo '<div>';
+                                                        echo '<div class="text-sm font-medium">' . h($date) . '</div>';
+                                                        echo '<div class="text-xs text-gray-500">' . h($time) . '</div>';
                                                         echo '</div>';
 
-                                                        if ($hasAnyAppointment) {
-                                                            // If this is the booked slot, show it as confirmed
-                                                            if ($isThisSlotBooked) {
-                                                                        echo '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">';
-                                                                        echo '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">';
-                                                                        echo '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
-                                                                        echo 'Confirmed</span>';
-                                                            } else {
-                                                                // For other slots, show as unavailable
-                                                                        echo '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">';
-                                                                        echo '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">';
-                                                                        echo '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
-                                                                        echo 'Unavailable</span>';
-                                                            }
+                                                        if ($isThisSlotConfirmed) {
+                                                            // This slot is already confirmed
+                                                            echo '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">';
+                                                            echo '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">';
+                                                            echo '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+                                                            echo 'Confirmed</span>';
                                                         } else {
-                                                            // No appointment exists yet, show normal accept button
+                                                            // This slot is available - show Accept button
                                                             echo '<a href="' . $this->Url->build(['controller' => 'Calendar', 'action' => 'acceptTimeSlot', '?' => [
                                                                 'date' => urlencode($date),
                                                                 'time' => urlencode($time),
                                                                 'request_id' => $writingServiceRequest->writing_service_request_id,
                                                                 'message_id' => $msg->request_message_id,
-                                                                    ]]) . '" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200">';
-                                                                    echo '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">';
-                                                                    echo '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
-                                                                    echo 'Accept</a>';
+                                                                'type' => 'writing'
+                                                            ]]) . '" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors duration-200">';
+                                                            echo '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">';
+                                                            echo '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+                                                            echo 'Accept</a>';
                                                         }
 
                                                         echo '</div>';
                                                     }
 
                                                     echo '</div>';
+                                                    
+                                                    // Add helpful text for customers
+                                                    if (count($confirmedAppointments) > 0) {
+                                                        echo '<div class="mt-3 p-2 bg-blue-50 rounded text-xs text-blue-700">';
+                                                        echo '<strong>Note:</strong> You can accept additional time slots if needed. Confirmed slots show with a green checkmark.';
+                                                        echo '</div>';
+                                                    } else {
+                                                        echo '<div class="mt-3 p-2 bg-blue-50 rounded text-xs text-blue-700">';
+                                                        echo '<strong>Choose your preferred time:</strong> Click "Accept" next to your preferred time slot(s). You can select multiple slots if needed.';
+                                                        echo '</div>';
+                                                    }
                                                 }
                                             }
                                                     // Handle payment buttons
