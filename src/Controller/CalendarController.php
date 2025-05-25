@@ -56,18 +56,6 @@ class CalendarController extends AppController
     {
         parent::initialize();
         
-        $this->Appointments = $this->fetchTable('Appointments');
-        $this->WritingServiceRequests = $this->fetchTable('WritingServiceRequests');
-        $this->Users = $this->fetchTable('Users');
-        $this->RequestMessages = $this->fetchTable('RequestMessages');
-        
-        try {
-            // Try to load GoogleCalendarSettings if it exists
-            $this->GoogleCalendarSettings = $this->fetchTable('GoogleCalendarSettings');
-        } catch (\Exception $e) {
-            \Cake\Log\Log::warning('GoogleCalendarSettings table not available: ' . $e->getMessage());
-        }
-        
         $this->googleCalendarService = new GoogleCalendarService();
     }
     
@@ -127,7 +115,8 @@ class CalendarController extends AppController
         $today = new DateTime('now', new DateTimeZone(date_default_timezone_get()));
         
         // Find an admin user for calendar availability
-        $adminUser = $this->Users->find()
+        $usersTable = $this->fetchTable('Users');
+        $adminUser = $usersTable->find()
             ->where(['user_type' => 'admin', 'is_verified' => true])
             ->orderBy(['last_login' => 'DESC'])
             ->first();
@@ -144,7 +133,8 @@ class CalendarController extends AppController
         $writingServiceRequest = null;
         if (!empty($requestId)) {
             try {
-                $writingServiceRequest = $this->WritingServiceRequests->get($requestId, contain: [
+                $writingServiceRequestsTable = $this->fetchTable('WritingServiceRequests');
+                $writingServiceRequest = $writingServiceRequestsTable->get($requestId, contain: [
                     'Users'
                 ]);
             } catch (Exception $e) {
@@ -176,7 +166,8 @@ class CalendarController extends AppController
         
         if (!empty($date) && strtotime($date)) {
             // Find an admin user for calendar availability
-            $adminUser = $this->Users->find()
+            $usersTable = $this->fetchTable('Users');
+            $adminUser = $usersTable->find()
                 ->where(['user_type' => 'admin', 'is_verified' => true])
                 ->orderBy(['last_login' => 'DESC'])
                 ->first();
@@ -349,10 +340,12 @@ class CalendarController extends AppController
         
         try {
             // Create a new appointment
-            $appointment = $this->Appointments->newEmptyEntity();
+            $appointmentsTable = $this->fetchTable('Appointments');
+            $appointment = $appointmentsTable->newEmptyEntity();
             
             // Find an admin user for the appointment
-            $adminUser = $this->Users->find()
+            $usersTable = $this->fetchTable('Users');
+            $adminUser = $usersTable->find()
                 ->where(['user_type' => 'admin', 'is_verified' => true])
                 ->orderBy(['last_login' => 'DESC'])
                 ->first();
@@ -369,12 +362,10 @@ class CalendarController extends AppController
             if ($type === 'coaching') {
                 // Load the CoachingServiceRequests model if not already loaded
                 try {
-                    if (!isset($this->CoachingServiceRequests)) {
-                    $this->CoachingServiceRequests = $this->fetchTable('CoachingServiceRequests');
-                    }
+                    $coachingServiceRequestsTable = $this->fetchTable('CoachingServiceRequests');
                     
                     // Get the coaching service request
-                    $serviceRequest = $this->CoachingServiceRequests->get($requestId, contain: [
+                    $serviceRequest = $coachingServiceRequestsTable->get($requestId, contain: [
                         'Users'
                     ]);
                     
@@ -395,7 +386,8 @@ class CalendarController extends AppController
             } else {
             // Get the writing service request
                 try {
-                    $serviceRequest = $this->WritingServiceRequests->get($requestId, contain: [
+                    $writingServiceRequestsTable = $this->fetchTable('WritingServiceRequests');
+                    $serviceRequest = $writingServiceRequestsTable->get($requestId, contain: [
                         'Users'
             ]);
             
@@ -415,7 +407,7 @@ class CalendarController extends AppController
             }
             
             // Check if an appointment already exists for this exact time slot and request (prevent exact duplicates only)
-            $existingAppointment = $this->Appointments->find()
+            $existingAppointment = $appointmentsTable->find()
                 ->where([
                     'appointment_date' => new \Cake\I18n\Date($formattedDate),
                     'appointment_time' => new \Cake\I18n\Time($time),
@@ -441,7 +433,7 @@ class CalendarController extends AppController
             }
             
             // Count existing appointments for this request to inform the user
-            $existingCount = $this->Appointments->find()
+            $existingCount = $appointmentsTable->find()
                 ->where([
                     'status !=' => 'cancelled',
                     'is_deleted' => false
@@ -498,7 +490,7 @@ class CalendarController extends AppController
             $isGoogleSynced = false;
             
             // First, save the appointment so we have an ID for Google Calendar
-            $tempAppointment = $this->Appointments->save($appointment);
+            $tempAppointment = $appointmentsTable->save($appointment);
             if (!$tempAppointment) {
                 $this->Flash->error(__('Failed to create appointment record. Please try again.'));
                 if ($type === 'coaching') {
@@ -514,15 +506,21 @@ class CalendarController extends AppController
             // Try to create via Google Calendar API first (this creates real Meet rooms)
             try {
                 // Find an admin user for calendar integration
-                $adminUser = $this->Users->find()
+                $adminUser = $usersTable->find()
                     ->where(['user_type' => 'admin', 'is_verified' => true])
                     ->orderBy(['last_login' => 'DESC'])
                     ->first();
                 
-                if (!empty($adminUser) && isset($this->GoogleCalendarSettings)) {
-                    $adminCalendarSettings = $this->GoogleCalendarSettings->find()
-                        ->where(['user_id' => $adminUser->user_id, 'is_active' => true])
-                        ->first();
+                if (!empty($adminUser)) {
+                    try {
+                        $googleCalendarSettingsTable = $this->fetchTable('GoogleCalendarSettings');
+                        $adminCalendarSettings = $googleCalendarSettingsTable->find()
+                            ->where(['user_id' => $adminUser->user_id, 'is_active' => true])
+                            ->first();
+                    } catch (\Exception $e) {
+                        $adminCalendarSettings = null;
+                        \Cake\Log\Log::warning('GoogleCalendarSettings table not available: ' . $e->getMessage());
+                    }
                     
                     if (!empty($adminCalendarSettings)) {
                         \Cake\Log\Log::info('🗓️ Creating Google Calendar event for appointment with admin user: ' . $adminUser->user_id);
@@ -564,11 +562,7 @@ class CalendarController extends AppController
                         \Cake\Log\Log::warning('⚠️ Admin user does not have active Google Calendar settings');
                     }
                 } else {
-                    if (empty($adminUser)) {
-                        \Cake\Log\Log::warning('⚠️ No admin user found for Google Calendar integration');
-                    } else {
-                        \Cake\Log\Log::warning('⚠️ GoogleCalendarSettings table not available');
-                    }
+                    \Cake\Log\Log::warning('⚠️ No admin user found for Google Calendar integration');
                 }
             } catch (\Exception $e) {
                 // Log error but continue with fallback
@@ -589,7 +583,7 @@ class CalendarController extends AppController
             $appointment->meeting_link = $realMeetLink;
             
             // Save/update the appointment with the meeting link and Google Calendar info
-            $finalAppointment = $this->Appointments->save($appointment);
+            $finalAppointment = $appointmentsTable->save($appointment);
             if ($finalAppointment) {
                 \Cake\Log\Log::info('💾 Appointment saved successfully with meeting link');
                 
@@ -605,32 +599,38 @@ class CalendarController extends AppController
                 $message .= "Your appointment has been scheduled for **" . $dateObj->format('l, F j, Y') . " at " . 
                     (new \DateTime($time))->format('g:i A') . "**.\n\n";
                 $message .= "**Google Meet Link:** " . $realMeetLink . "\n\n";
+                
+                // Add information about multiple appointments
+                if ($existingCount > 0) {
+                    $message .= "This is appointment #" . ($existingCount + 1) . " for this request. ";
+                    $message .= "You can accept additional time slots if needed by clicking 'Accept' on other available slots.\n\n";
+                }
+                
                 $message .= "A confirmation email has been sent to your email address with all the details. I look forward to our meeting!";
                 
                 if ($type === 'coaching') {
                     // For coaching service requests, we need to use the CoachingRequestMessages table
-                    if (!isset($this->CoachingRequestMessages)) {
-                        $this->CoachingRequestMessages = $this->fetchTable('CoachingRequestMessages');
-                    }
+                    $coachingRequestMessagesTable = $this->fetchTable('CoachingRequestMessages');
                     
-                    $messageEntity = $this->CoachingRequestMessages->newEntity([
+                    $messageEntity = $coachingRequestMessagesTable->newEntity([
                         'user_id' => $user->user_id,
                         'coaching_service_request_id' => $requestId,
                         'message' => $message,
                         'is_read' => false
                     ]);
                     
-                    $this->CoachingRequestMessages->save($messageEntity);
+                    $coachingRequestMessagesTable->save($messageEntity);
                 } else {
                     // For writing service requests, we use the RequestMessages table
-                    $messageEntity = $this->RequestMessages->newEntity([
+                    $requestMessagesTable = $this->fetchTable('RequestMessages');
+                    $messageEntity = $requestMessagesTable->newEntity([
                         'user_id' => $user->user_id,
                         'writing_service_request_id' => $requestId,
                         'message' => $message,
                         'is_read' => false
                     ]);
                     
-                    $this->RequestMessages->save($messageEntity);
+                    $requestMessagesTable->save($messageEntity);
                 }
                 
                 // Send confirmation emails
@@ -643,9 +643,10 @@ class CalendarController extends AppController
                         $containList[] = 'WritingServiceRequests';
                     }
                     
-                    $appointmentWithRelations = $this->Appointments->get($appointment->appointment_id, [
-                        'contain' => $containList
-                    ]);
+                    $appointmentWithRelations = $appointmentsTable->get(
+                        $appointment->appointment_id, 
+                        contain: $containList
+                    );
                     
                     // Send confirmation to customer using enhanced template
                     try {
@@ -680,7 +681,13 @@ class CalendarController extends AppController
                 }
                 
                 // Always show success message
-                $this->Flash->success(__('Appointment confirmed for {0} at {1}. You will receive a confirmation email shortly with the Google Meet link.', 
+                $successMessage = 'Appointment confirmed for {0} at {1}.';
+                if ($existingCount > 0) {
+                    $successMessage .= ' This is appointment #' . ($existingCount + 1) . ' for this request.';
+                }
+                $successMessage .= ' You can accept additional time slots if needed. Check your email for confirmation details.';
+                
+                $this->Flash->success(__($successMessage, 
                     $dateObj->format('l, F j, Y'), 
                     (new \DateTime($time))->format('g:i A')
                 ));
