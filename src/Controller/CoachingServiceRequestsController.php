@@ -678,12 +678,19 @@ class CoachingServiceRequestsController extends AppController
             
             $this->log('Using Stripe secret key: ' . substr(Configure::read('Stripe.secret'), 0, 10) . '...', 'debug');
             
-            // Create checkout session for payment with correct URLs
-            $currentHost = $this->request->getEnv('HTTP_HOST');
-            $scheme = $this->request->getEnv('HTTPS') ? 'https' : 'http';
+            // Create checkout session for payment with correct URLs using Router::url for proper HTTPS detection
+            $successUrl = Router::url([
+                'controller' => 'CoachingServiceRequests',
+                'action' => 'paymentSuccess',
+                $id,
+                $paymentId
+            ], true);
             
-            $successUrl = $scheme . '://' . $currentHost . '/coaching-service-requests/payment-success/' . $id . '/' . $paymentId;
-            $cancelUrl = $scheme . '://' . $currentHost . '/coaching-service-requests/view/' . $id;
+            $cancelUrl = Router::url([
+                'controller' => 'CoachingServiceRequests',
+                'action' => 'view',
+                $id
+            ], true);
             
             $this->log('Creating Stripe session with params: ' . json_encode([
                 'line_items' => [
