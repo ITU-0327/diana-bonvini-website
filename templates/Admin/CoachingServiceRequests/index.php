@@ -192,14 +192,18 @@ foreach ($coachingServiceRequests as $request) {
                                     <th>Price</th>
                                     <th>Status</th>
                                     <th>Created</th>
-                                    <th class="text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if (count($coachingServiceRequests) > 0) : ?>
                                     <?php foreach ($coachingServiceRequests as $request) : ?>
-                                        <tr class="request-row" data-status="<?= h($request->request_status ?? '') ?>">
-                                            <td class="align-middle"><?= h(substr($request->coaching_service_request_id, 0, 8)) ?></td>
+                                        <tr class="request-row hover-clickable cursor-pointer transition-colors" 
+                                            data-status="<?= h($request->request_status ?? '') ?>"
+                                            data-href="<?= $this->Url->build(['action' => 'view', $request->coaching_service_request_id]) ?>"
+                                            onclick="window.location.href = this.dataset.href">
+                                            <td class="align-middle">
+                                                <span class="text-primary font-weight-bold"><?= h(substr($request->coaching_service_request_id, 0, 8)) ?></span>
+                                            </td>
                                             <td class="align-middle font-weight-bold"><?= h($request->service_title) ?></td>
                                             <td class="align-middle">
                                                 <?php if (isset($request->user) && $request->user) : ?>
@@ -221,9 +225,9 @@ foreach ($coachingServiceRequests as $request) {
                                                 }
                                                 ?>
                                                 <?php if ($totalPaid > 0) : ?>
-                                                    <span class="font-weight-bold">$<?= number_format($totalPaid, 2) ?></span>
+                                                    <span class="font-weight-bold text-success">$<?= number_format($totalPaid, 2) ?></span>
                                                 <?php else : ?>
-                                                    <span class="badge bg-warning">No Payments</span>
+                                                    <span class="text-muted">$0.00</span>
                                                 <?php endif; ?>
                                             </td>
                                             <td class="align-middle">
@@ -249,18 +253,11 @@ foreach ($coachingServiceRequests as $request) {
                                                     -
                                                 <?php endif; ?>
                                             </td>
-                                            <td class="align-middle text-center">
-                                                <div class="btn-group d-flex justify-content-center">
-                                                    <a href="<?= $this->Url->build(['action' => 'view', $request->coaching_service_request_id]) ?>" class="btn btn-sm btn-info" data-bs-toggle="tooltip" title="View Details">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                </div>
-                                            </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php else : ?>
                                     <tr>
-                                        <td colspan="8" class="text-center py-5">
+                                        <td colspan="7" class="text-center py-5">
                                             <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                                             <p class="mb-0">No coaching service requests found</p>
                                         </td>
@@ -359,6 +356,28 @@ foreach ($coachingServiceRequests as $request) {
     .table-striped tbody tr:nth-of-type(odd) {
         background-color: rgba(0,0,0,.05);
     }
+
+    /* Clickable row styles */
+    .hover-clickable {
+        transition: background-color 0.2s ease;
+        cursor: pointer;
+    }
+
+    .hover-clickable:hover {
+        background-color: #f8f9fa !important;
+    }
+
+    .hover-clickable:focus {
+        background-color: #e3f2fd !important;
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .transition-colors {
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
 </style>
 
 <?php $this->append('script'); ?>
@@ -454,6 +473,50 @@ foreach ($coachingServiceRequests as $request) {
                 row.css('display', display ? '' : 'none');
             });
         }
+
+        // Handle clickable rows
+        const clickableRows = document.querySelectorAll('tr[data-href]');
+        clickableRows.forEach(row => {
+            // Add keyboard accessibility
+            row.setAttribute('tabindex', '0');
+            row.setAttribute('role', 'button');
+            row.setAttribute('aria-label', 'View request details');
+
+            // Handle keyboard navigation
+            row.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    window.location.href = this.dataset.href;
+                }
+            });
+
+            // Add visual feedback for focus
+            row.addEventListener('focus', function() {
+                this.style.outline = '2px solid #007bff';
+                this.style.outlineOffset = '-2px';
+            });
+
+            row.addEventListener('blur', function() {
+                this.style.outline = '';
+                this.style.outlineOffset = '';
+            });
+
+            // Handle mouse clicks (including middle-click for new tabs)
+            row.addEventListener('click', function(e) {
+                if (e.ctrlKey || e.metaKey || e.button === 1) {
+                    // Ctrl/Cmd+click or middle click - open in new tab
+                    window.open(this.dataset.href, '_blank');
+                } else {
+                    // Regular click - navigate in same tab
+                    window.location.href = this.dataset.href;
+                }
+            });
+
+            // Prevent text selection when clicking
+            row.addEventListener('selectstart', function(e) {
+                e.preventDefault();
+            });
+        });
     });
 </script>
 <?php $this->end(); ?> 

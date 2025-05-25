@@ -134,20 +134,15 @@ $this->assign('title', __('Orders'));
                     <tbody>
                         <?php if (count($orders) > 0) : ?>
                             <?php foreach ($orders as $order) : ?>
-                            <tr class="order-row" data-status="<?= h($order->order_status ?? '') ?>">
+                            <tr class="order-row hover-clickable cursor-pointer transition-colors duration-200" 
+                                data-status="<?= h($order->order_status ?? '') ?>"
+                                data-href="<?= $this->Url->build(['controller' => 'Orders', 'action' => 'view', $order->order_id]) ?>"
+                                onclick="window.location.href = this.dataset.href">
                                 <td class="align-middle">
-                                    <?= $this->Html->link(
-                                        '#' . h($order->order_id),
-                                        ['controller' => 'Orders', 'action' => 'view', $order->order_id],
-                                        ['class' => 'text-decoration-none', 'data-bs-toggle' => 'tooltip', 'title' => 'View Order Details'],
-                                    ) ?>
+                                    <span class="text-primary font-weight-bold">#<?= h($order->order_id) ?></span>
                                 </td>
                                 <td class="align-middle">
-                                    <?= $this->Html->link(
-                                        h($order->user->first_name . ' ' . $order->user->last_name),
-                                        ['controller' => 'Users', 'action' => 'view', $order->user->user_id],
-                                        ['class' => 'text-decoration-none', 'data-bs-toggle' => 'tooltip', 'title' => 'View Customer Profile'],
-                                    ) ?>
+                                    <?= h($order->user->first_name . ' ' . $order->user->last_name) ?>
                                 </td>
                                 <td class="align-middle">
                                     <?php if (isset($order->order_date)) : ?>
@@ -466,6 +461,50 @@ $this->assign('title', __('Orders'));
 
         // Initialize with default sort
         sortOrders();
+
+        // Handle clickable rows
+        const clickableRows = document.querySelectorAll('tr[data-href]');
+        clickableRows.forEach(row => {
+            // Add keyboard accessibility
+            row.setAttribute('tabindex', '0');
+            row.setAttribute('role', 'button');
+            row.setAttribute('aria-label', 'View order details');
+
+            // Handle keyboard navigation
+            row.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    window.location.href = this.dataset.href;
+                }
+            });
+
+            // Add visual feedback for focus
+            row.addEventListener('focus', function() {
+                this.style.outline = '2px solid #007bff';
+                this.style.outlineOffset = '-2px';
+            });
+
+            row.addEventListener('blur', function() {
+                this.style.outline = '';
+                this.style.outlineOffset = '';
+            });
+
+            // Handle mouse clicks (including middle-click for new tabs)
+            row.addEventListener('click', function(e) {
+                if (e.ctrlKey || e.metaKey || e.button === 1) {
+                    // Ctrl/Cmd+click or middle click - open in new tab
+                    window.open(this.dataset.href, '_blank');
+                } else {
+                    // Regular click - navigate in same tab
+                    window.location.href = this.dataset.href;
+                }
+            });
+
+            // Prevent text selection when clicking
+            row.addEventListener('selectstart', function(e) {
+                e.preventDefault();
+            });
+        });
     });
 </script>
 
@@ -533,5 +572,27 @@ $this->assign('title', __('Orders'));
         white-space: nowrap;
         vertical-align: baseline;
         border-radius: 0.25rem;
+    }
+
+    /* Clickable row styles */
+    .hover-clickable {
+        transition: background-color 0.2s ease;
+        cursor: pointer;
+    }
+
+    .hover-clickable:hover {
+        background-color: #f8f9fa !important;
+    }
+
+    .hover-clickable:focus {
+        background-color: #e3f2fd !important;
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .transition-colors {
+        transition: background-color 0.2s ease, color 0.2s ease;
     }
 </style>

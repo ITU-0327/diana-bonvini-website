@@ -159,21 +159,17 @@ $this->assign('title', __('Writing Service Management'));
                             <tbody>
                                 <?php if (count($writingServiceRequests) > 0) : ?>
                                     <?php foreach ($writingServiceRequests as $request) : ?>
-                                        <tr class="request-row" data-status="<?= h($request->request_status ?? '') ?>" data-created-date="<?= isset($request->created_at) ? $request->created_at->format('Y-m-d') : '' ?>">
+                                        <tr class="request-row hover-clickable cursor-pointer transition-colors" 
+                                            data-status="<?= h($request->request_status ?? '') ?>" 
+                                            data-created-date="<?= isset($request->created_at) ? $request->created_at->format('Y-m-d') : '' ?>"
+                                            data-href="<?= $this->Url->build(['action' => 'view', $request->writing_service_request_id]) ?>"
+                                            onclick="window.location.href = this.dataset.href">
                                             <td class="align-middle">
-                                                <?= $this->Html->link(
-                                                    h($request->writing_service_request_id),
-                                                    ['action' => 'view', $request->writing_service_request_id],
-                                                    ['class' => 'text-decoration-none', 'data-bs-toggle' => 'tooltip', 'title' => 'View Request Details'],
-                                                ) ?>
+                                                <span class="text-primary font-weight-bold"><?= h($request->writing_service_request_id) ?></span>
                                             </td>
                                             <td class="align-middle font-weight-bold"><?= h($request->service_title) ?></td>
                                             <td class="align-middle">
-                                                <?= $this->Html->link(
-                                                    h($request->user->first_name . ' ' . $request->user->last_name),
-                                                    ['controller' => 'Users', 'action' => 'view', $request->user->user_id],
-                                                    ['class' => 'text-decoration-none', 'target' => '_blank', 'data-bs-toggle' => 'tooltip', 'title' => 'View Client Profile'],
-                                                ) ?>
+                                                <span class="text-dark"><?= h($request->user->first_name . ' ' . $request->user->last_name) ?></span>
                                             </td>
                                             <td class="align-middle"><?= h(Inflector::humanize($request->service_type ?? 'Other')) ?></td>
                                             <td class="align-middle">
@@ -217,7 +213,7 @@ $this->assign('title', __('Writing Service Management'));
                                     <?php endforeach; ?>
                                 <?php else : ?>
                                     <tr>
-                                        <td colspan="8" class="text-center py-5">
+                                        <td colspan="7" class="text-center py-5">
                                             <div class="mb-3">
                                                 <i class="fas fa-inbox fa-3x text-gray-300"></i>
                                             </div>
@@ -375,6 +371,28 @@ $this->assign('title', __('Writing Service Management'));
     .table-striped tbody tr:nth-of-type(odd) {
         background-color: rgba(0,0,0,.05);
     }
+
+    /* Clickable row styles */
+    .hover-clickable {
+        transition: background-color 0.2s ease;
+        cursor: pointer;
+    }
+
+    .hover-clickable:hover {
+        background-color: #f8f9fa !important;
+    }
+
+    .hover-clickable:focus {
+        background-color: #e3f2fd !important;
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .transition-colors {
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
 </style>
 
 <script>
@@ -465,5 +483,49 @@ $this->assign('title', __('Writing Service Management'));
                 row.style.display = display ? '' : 'none';
             });
         }
+
+        // Handle clickable rows
+        const clickableRows = document.querySelectorAll('tr[data-href]');
+        clickableRows.forEach(row => {
+            // Add keyboard accessibility
+            row.setAttribute('tabindex', '0');
+            row.setAttribute('role', 'button');
+            row.setAttribute('aria-label', 'View request details');
+
+            // Handle keyboard navigation
+            row.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    window.location.href = this.dataset.href;
+                }
+            });
+
+            // Add visual feedback for focus
+            row.addEventListener('focus', function() {
+                this.style.outline = '2px solid #007bff';
+                this.style.outlineOffset = '-2px';
+            });
+
+            row.addEventListener('blur', function() {
+                this.style.outline = '';
+                this.style.outlineOffset = '';
+            });
+
+            // Handle mouse clicks (including middle-click for new tabs)
+            row.addEventListener('click', function(e) {
+                if (e.ctrlKey || e.metaKey || e.button === 1) {
+                    // Ctrl/Cmd+click or middle click - open in new tab
+                    window.open(this.dataset.href, '_blank');
+                } else {
+                    // Regular click - navigate in same tab
+                    window.location.href = this.dataset.href;
+                }
+            });
+
+            // Prevent text selection when clicking
+            row.addEventListener('selectstart', function(e) {
+                e.preventDefault();
+            });
+        });
     });
 </script>
