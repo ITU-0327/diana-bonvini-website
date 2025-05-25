@@ -2,11 +2,10 @@
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\CoachingServiceRequest $coachingServiceRequest
- * @var \App\Model\Entity\Appointment[] $appointments
- * @var \App\Model\Entity\CoachingRequestDocument[] $coachingRequestDocuments
+ * @var array<\App\Model\Entity\Appointment> $appointments
+ * @var array<\App\Model\Entity\CoachingRequestDocument> $coachingRequestDocuments
  */
 
-use Cake\I18n\FrozenTime;
 ?>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -19,7 +18,7 @@ use Cake\I18n\FrozenTime;
                     <div class="flex justify-between items-center">
                         <h1 class="text-xl font-bold text-white">Coaching Request Details</h1>
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium 
-                            <?php 
+                            <?php
                             $statusColors = [
                                 'pending' => 'bg-yellow-100 text-yellow-800',
                                 'in_progress' => 'bg-blue-100 text-blue-800',
@@ -50,7 +49,7 @@ use Cake\I18n\FrozenTime;
                         </p>
                     </div>
 
-                    <?php if (!empty($coachingServiceRequest->notes)): ?>
+                    <?php if (!empty($coachingServiceRequest->notes)) : ?>
                         <div class="mb-6">
                             <h3 class="text-md font-semibold text-gray-900 mb-2">Your Notes</h3>
                             <div class="bg-gray-50 rounded p-3 text-gray-700">
@@ -59,7 +58,7 @@ use Cake\I18n\FrozenTime;
                         </div>
                     <?php endif; ?>
 
-                    <?php if (!empty($coachingServiceRequest->document)): ?>
+                    <?php if (!empty($coachingServiceRequest->document)) : ?>
                         <div class="mb-6">
                             <h3 class="text-md font-semibold text-gray-900 mb-2">Attached Document</h3>
                             <div class="flex items-center space-x-3">
@@ -73,7 +72,7 @@ use Cake\I18n\FrozenTime;
                                         <?= $this->Html->link(
                                             basename($coachingServiceRequest->document),
                                             '/' . $coachingServiceRequest->document,
-                                            ['target' => '_blank', 'class' => 'hover:underline']
+                                            ['target' => '_blank', 'class' => 'hover:underline'],
                                         ) ?>
                                     </p>
                                 </div>
@@ -82,19 +81,19 @@ use Cake\I18n\FrozenTime;
                     <?php endif; ?>
 
                     <!-- Documents Section -->
-                    <?php if (!empty($coachingRequestDocuments)): ?>
+                    <?php if (!empty($coachingRequestDocuments)) : ?>
                         <div class="mb-6">
                             <h3 class="text-md font-semibold text-gray-900 mb-2">Documents</h3>
                             <div class="bg-gray-50 rounded-lg border border-gray-200">
                                 <ul class="divide-y divide-gray-200">
-                                    <?php foreach ($coachingRequestDocuments as $document): ?>
+                                    <?php foreach ($coachingRequestDocuments as $document) : ?>
                                         <li class="px-4 py-3">
                                             <div class="flex items-center justify-between">
                                                 <div class="flex items-center space-x-3">
                                                     <?php
                                                     $iconClass = 'text-gray-400';
                                                     $fileType = strtolower(pathinfo($document->document_name, PATHINFO_EXTENSION));
-                                                    
+
                                                     if (in_array($fileType, ['pdf'])) {
                                                         $fileIcon = '<svg class="h-6 w-6 ' . $iconClass . '" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"></path></svg>';
                                                     } elseif (in_array($fileType, ['jpg', 'jpeg', 'png', 'gif'])) {
@@ -122,7 +121,7 @@ use Cake\I18n\FrozenTime;
                                                     <?= $this->Html->link(
                                                         '<span class="sr-only">Download</span><svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>',
                                                         '/' . $document->document_path,
-                                                        ['escape' => false, 'target' => '_blank', 'class' => 'text-blue-600 hover:text-blue-800']
+                                                        ['escape' => false, 'target' => '_blank', 'class' => 'text-blue-600 hover:text-blue-800'],
                                                     ) ?>
                                                 </div>
                                             </div>
@@ -139,14 +138,14 @@ use Cake\I18n\FrozenTime;
                             <?= $this->Html->link(
                                 '<i class="fas fa-arrow-left mr-1"></i> Back to List',
                                 ['action' => 'index'],
-                                ['class' => 'bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center text-sm', 'escape' => false]
+                                ['class' => 'bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center text-sm', 'escape' => false],
                             ) ?>
                         </div>
                         <div>
                             <?= $this->Html->link(
                                 '<i class="fas fa-edit mr-1"></i> Edit Request',
                                 ['action' => 'edit', $coachingServiceRequest->coaching_service_request_id],
-                                ['class' => 'bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold py-2 px-4 rounded inline-flex items-center text-sm', 'escape' => false]
+                                ['class' => 'bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold py-2 px-4 rounded inline-flex items-center text-sm', 'escape' => false],
                             ) ?>
                         </div>
                     </div>
@@ -161,50 +160,50 @@ use Cake\I18n\FrozenTime;
                 <div class="p-6">
                     <!-- Messages Container -->
                     <div class="space-y-4 mb-6">
-                        <?php if (!empty($coachingServiceRequest->coaching_request_messages)): ?>
-                            <?php foreach ($coachingServiceRequest->coaching_request_messages as $message): ?>
-                                <?php 
+                        <?php if (!empty($coachingServiceRequest->coaching_request_messages)) : ?>
+                            <?php foreach ($coachingServiceRequest->coaching_request_messages as $message) : ?>
+                                <?php
                                 $isAdmin = isset($message->user) && $message->user->user_type === 'admin';
-                                $bubbleClass = $isAdmin 
-                                    ? 'bg-indigo-100 text-gray-800' 
+                                $bubbleClass = $isAdmin
+                                    ? 'bg-indigo-100 text-gray-800'
                                     : 'bg-blue-600 text-white';
                                 $alignClass = $isAdmin ? 'justify-start' : 'justify-end';
                                 ?>
                                 <div class="flex <?= $alignClass ?>">
                                     <div class="max-w-lg">
                                         <div class="flex items-end space-x-2">
-                                            <?php if ($isAdmin): ?>
+                                            <?php if ($isAdmin) : ?>
                                                 <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-sm font-medium">A</div>
                                             <?php endif; ?>
                                             <div>
                                                 <div class="px-4 py-2 rounded-lg <?= $bubbleClass ?>">
-                                                    <?php 
+                                                    <?php
                                                     // Processing for markdown-like format
                                                     $messageText = nl2br(h($message->message));
-                                                    
+
                                                     // Handle bold text with **
                                                     $messageText = preg_replace('/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $messageText);
-                                                    
+
                                                     // Check if this message contains time slots
                                                     if ($isAdmin && strpos($message->message, '**Available Time Slots:**') !== false) {
                                                         // This is a time slots message, format it specially
                                                         $parts = explode('**Available Time Slots:**', $message->message, 2);
-                                                        
+
                                                         // Process the first part with proper bold formatting
                                                         $firstPart = nl2br(h($parts[0]));
                                                         $firstPart = preg_replace('/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $firstPart);
                                                         echo $firstPart . '<br>';
-                                                        
+
                                                         echo '<div class="font-semibold mt-2 mb-1 text-indigo-800">Available Time Slots:</div>';
-                                                        
+
                                                         // Parse time slots
                                                         if (preg_match_all('/- ([^:]+): ([^\n]+)/', $parts[1], $matches, PREG_SET_ORDER)) {
                                                             echo '<div class="space-y-2 mt-2">';
-                                                            
+
                                                             foreach ($matches as $match) {
                                                                 $date = trim($match[1]);
                                                                 $time = trim($match[2]);
-                                                                
+
                                                                 // Check if this specific slot is already booked
                                                                 $isThisSlotBooked = false;
                                                                 if (isset($appointments)) {
@@ -221,14 +220,14 @@ use Cake\I18n\FrozenTime;
                                                                         }
                                                                     }
                                                                 }
-                                                                
+
                                                                 // Create timeslot item with modern styling
                                                                 echo '<div class="flex justify-between items-center p-2 bg-gray-50 rounded">';
                                                                 echo '<div>';
                                                                 echo '<div class="text-sm font-medium">' . h($date) . '</div>';
                                                                 echo '<div class="text-xs text-gray-500">' . h($time) . '</div>';
                                                                 echo '</div>';
-                                                                
+
                                                                 if ($isThisSlotBooked) {
                                                                     // This specific slot is booked, show it as confirmed
                                                                     echo '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">';
@@ -242,23 +241,23 @@ use Cake\I18n\FrozenTime;
                                                                         'time' => urlencode($time),
                                                                         'request_id' => $coachingServiceRequest->coaching_service_request_id,
                                                                         'message_id' => $message->coaching_request_message_id,
-                                                                        'type' => 'coaching'
+                                                                        'type' => 'coaching',
                                                                     ]]) . '" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200">';
                                                                     echo '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">';
                                                                     echo '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
                                                                     echo 'Accept</a>';
                                                                 }
-                                                                
+
                                                                 echo '</div>';
                                                             }
-                                                            
+
                                                             echo '</div>';
                                                         }
-                                                    } 
+                                                    }
                                                     // Handle payment button special markup
-                                                    else if (strpos($message->message, '[PAYMENT_BUTTON]') !== false) {
+                                                    elseif (strpos($message->message, '[PAYMENT_BUTTON]') !== false) {
                                                         $buttonPattern = '/\[PAYMENT_BUTTON\](.*?)\[\/PAYMENT_BUTTON\]/s';
-                                                        $messageText = preg_replace_callback($buttonPattern, function($matches) use ($coachingServiceRequest) {
+                                                        $messageText = preg_replace_callback($buttonPattern, function ($matches) use ($coachingServiceRequest) {
                                                             $paymentId = $matches[1];
                                                             $requestId = $coachingServiceRequest->coaching_service_request_id;
 
@@ -289,29 +288,29 @@ use Cake\I18n\FrozenTime;
                                                             $statusText = $isPaid ? 'Payment received' : 'Checking payment status...';
 
                                                             // Use payDirect URL with query parameters for more reliable payment processing
-                                                            $payUrl = $isPaid 
-                                                                ? 'javascript:void(0)' 
+                                                            $payUrl = $isPaid
+                                                                ? 'javascript:void(0)'
                                                                 : '/coaching-service-requests/payDirect?id=' . $requestId . '&paymentId=' . $paymentId;
 
-                                                            return '<div class="'.$containerClass.'" data-payment-container="'.$paymentId.'">
+                                                            return '<div class="' . $containerClass . '" data-payment-container="' . $paymentId . '">
                                                                 <!-- Payment button -->
                                                                 <div class="payment-button-container">
-                                                                    <a href="'.$payUrl.'"
-                                                                       class="'.$buttonClass.'"
-                                                                       '.($isPaid ? 'disabled="disabled"' : 'data-payment-id="'.$paymentId.'').'>
-                                                                        '.$buttonIcon.'
-                                                                        '.$buttonText.'
+                                                                    <a href="' . $payUrl . '"
+                                                                       class="' . $buttonClass . '"
+                                                                       ' . ($isPaid ? 'disabled="disabled"' : 'data-payment-id="' . $paymentId . '') . '>
+                                                                        ' . $buttonIcon . '
+                                                                        ' . $buttonText . '
                                                                     </a>
                                                                 </div>
                                                                 <!-- Payment status indicator -->
-                                                                <div class="'.$statusClass.'">
-                                                                    <span class="status-icon mr-1">'.$statusIcon.'</span>
-                                                                    <span class="status-text '.($isPaid ? 'text-green-600 font-medium' : '').'">'.$statusText.'</span>
+                                                                <div class="' . $statusClass . '">
+                                                                    <span class="status-icon mr-1">' . $statusIcon . '</span>
+                                                                    <span class="status-text ' . ($isPaid ? 'text-green-600 font-medium' : '') . '">' . $statusText . '</span>
                                                                     <span class="status-date ml-2"></span>
                                                                 </div>
                                                             </div>';
                                                         }, $messageText);
-                                                        
+
                                                         echo $messageText;
                                                     } else {
                                                         echo $messageText;
@@ -329,7 +328,7 @@ use Cake\I18n\FrozenTime;
                                     </div>
                                 </div>
                             <?php endforeach; ?>
-                        <?php else: ?>
+                        <?php else : ?>
                             <div class="text-center py-8">
                                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -347,7 +346,7 @@ use Cake\I18n\FrozenTime;
                     ]) ?>
                     <div class="mt-4">
                         <?= $this->Form->textarea('reply_message', [
-                            'rows' => 3, 
+                            'rows' => 3,
                             'placeholder' => 'Type your message here...',
                             'class' => 'block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm',
                             'required' => true,
@@ -405,7 +404,7 @@ use Cake\I18n\FrozenTime;
                 <div class="bg-gradient-to-r from-blue-700 to-blue-600 px-6 py-4">
                     <h2 class="text-lg font-bold text-white flex justify-between items-center">
                         <span>Payment History</span>
-                        <?php if (!empty($coachingServiceRequest->coaching_service_payments)): ?>
+                        <?php if (!empty($coachingServiceRequest->coaching_service_payments)) : ?>
                             <span class="bg-white bg-opacity-20 rounded-full px-2 py-1 text-xs">
                                 <?= count($coachingServiceRequest->coaching_service_payments) ?>
                             </span>
@@ -413,11 +412,11 @@ use Cake\I18n\FrozenTime;
                     </h2>
                 </div>
                 <div class="p-6">
-                    <?php if (!empty($coachingServiceRequest->coaching_service_payments)): ?>
+                    <?php if (!empty($coachingServiceRequest->coaching_service_payments)) : ?>
                         <div class="space-y-3">
-                            <?php 
+                            <?php
                             $paymentNumber = 1;
-                            foreach ($coachingServiceRequest->coaching_service_payments as $payment): ?>
+                            foreach ($coachingServiceRequest->coaching_service_payments as $payment) : ?>
                                 <div class="border rounded-lg p-3 <?= $payment->status === 'paid' ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50' ?>">
                                     <div class="flex justify-between items-start mb-2">
                                         <div class="flex-1">
@@ -436,19 +435,19 @@ use Cake\I18n\FrozenTime;
                                     </div>
                                     <div class="flex justify-between items-center">
                                         <div class="flex items-center">
-                                            <?php if ($payment->status === 'paid'): ?>
+                                            <?php if ($payment->status === 'paid') : ?>
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                     <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                                     </svg>
                                                     Paid
                                                 </span>
-                                                <?php if ($payment->payment_date): ?>
+                                                <?php if ($payment->payment_date) : ?>
                                                     <span class="ml-2 text-xs text-gray-500">
                                                         on <?= $payment->payment_date->format('M j, Y') ?>
                                                     </span>
                                                 <?php endif; ?>
-                                            <?php else: ?>
+                                            <?php else : ?>
                                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                                                     <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -458,15 +457,15 @@ use Cake\I18n\FrozenTime;
                                                 <span class="ml-2 text-xs text-gray-500">Awaiting payment</span>
                                             <?php endif; ?>
                                         </div>
-                                        <?php if ($payment->transaction_id): ?>
+                                        <?php if ($payment->transaction_id) : ?>
                                             <div class="text-xs text-gray-400">
                                                 ID: <?= h($payment->transaction_id) ?>
                                             </div>
                                         <?php endif; ?>
                                     </div>
                                 </div>
-                            <?php 
-                            $paymentNumber++;
+                                <?php
+                                $paymentNumber++;
                             endforeach; ?>
                         </div>
                         
@@ -475,15 +474,15 @@ use Cake\I18n\FrozenTime;
                             <div class="grid grid-cols-2 gap-4 text-sm">
                                 <div class="text-center">
                                     <div class="font-medium text-green-600">
-                                        <?php 
+                                        <?php
                                             $paidCount = 0;
                                             $paidTotal = 0;
-                                            foreach ($coachingServiceRequest->coaching_service_payments as $payment) {
-                                                if ($payment->status === 'paid') {
-                                                    $paidCount++;
-                                                    $paidTotal += $payment->amount;
-                                                }
+                                        foreach ($coachingServiceRequest->coaching_service_payments as $payment) {
+                                            if ($payment->status === 'paid') {
+                                                $paidCount++;
+                                                $paidTotal += $payment->amount;
                                             }
+                                        }
                                             echo $paidCount;
                                         ?> Paid
                                     </div>
@@ -491,15 +490,15 @@ use Cake\I18n\FrozenTime;
                                 </div>
                                 <div class="text-center">
                                     <div class="font-medium text-yellow-600">
-                                        <?php 
+                                        <?php
                                             $pendingCount = 0;
                                             $pendingTotal = 0;
-                                            foreach ($coachingServiceRequest->coaching_service_payments as $payment) {
-                                                if ($payment->status === 'pending') {
-                                                    $pendingCount++;
-                                                    $pendingTotal += $payment->amount;
-                                                }
+                                        foreach ($coachingServiceRequest->coaching_service_payments as $payment) {
+                                            if ($payment->status === 'pending') {
+                                                $pendingCount++;
+                                                $pendingTotal += $payment->amount;
                                             }
+                                        }
                                             echo $pendingCount;
                                         ?> Pending
                                     </div>
@@ -507,7 +506,7 @@ use Cake\I18n\FrozenTime;
                                 </div>
                             </div>
                         </div>
-                    <?php else: ?>
+                    <?php else : ?>
                         <div class="text-center py-6">
                             <svg class="mx-auto h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
