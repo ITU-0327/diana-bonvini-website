@@ -1465,16 +1465,63 @@ class WritingServiceRequestsController extends AppController
             return $this->redirect(['action' => $redirectAction]);
         }
 
+        // Use a more robust path creation approach
         $uploadPath = WWW_ROOT . 'uploads' . DS . 'documents';
+        
+        // Check if directory exists, and create it if it doesn't
         if (!is_dir($uploadPath)) {
-            mkdir($uploadPath, 0755, true);
+            try {
+                // Try to create directory with more permissive permissions
+                if (!mkdir($uploadPath, 0777, true)) {
+                    $this->log('Failed to create upload directory: ' . $uploadPath, 'error');
+                    $this->Flash->error(__('Unable to create upload directory. Please contact administrator.'));
+                    return $this->redirect(['action' => $redirectAction]);
+                }
+                
+                // Set permissions explicitly after creation
+                chmod($uploadPath, 0777);
+                $this->log('Successfully created upload directory: ' . $uploadPath, 'info');
+            } catch (\Exception $e) {
+                $this->log('Exception creating upload directory: ' . $e->getMessage(), 'error');
+                $this->Flash->error(__('Upload directory creation failed. Please contact administrator.'));
+                return $this->redirect(['action' => $redirectAction]);
+            }
+        }
+        
+        // Verify directory is writable
+        if (!is_writable($uploadPath)) {
+            $this->log('Upload directory is not writable: ' . $uploadPath, 'error');
+            $this->Flash->error(__('Upload directory is not writable. Please contact administrator.'));
+            return $this->redirect(['action' => $redirectAction]);
         }
 
-        $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9_.]/', '_', $file->getClientFilename() ?? '');
+        // Generate safe filename
+        $originalFilename = $file->getClientFilename() ?? 'document';
+        $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9_.-]/', '_', $originalFilename);
         $filePath = $uploadPath . DS . $filename;
-        $file->moveTo($filePath);
-
-        return 'uploads/documents/' . $filename;
+        
+        try {
+            // Move the uploaded file
+            $file->moveTo($filePath);
+            
+            // Verify file was moved successfully
+            if (!file_exists($filePath)) {
+                $this->log('File was not moved successfully to: ' . $filePath, 'error');
+                $this->Flash->error(__('File upload failed. Please try again.'));
+                return $this->redirect(['action' => $redirectAction]);
+            }
+            
+            // Set file permissions
+            chmod($filePath, 0644);
+            
+            $this->log('File uploaded successfully: ' . $filename, 'info');
+            return 'uploads/documents/' . $filename;
+            
+        } catch (\Exception $e) {
+            $this->log('File upload exception: ' . $e->getMessage(), 'error');
+            $this->Flash->error(__('File upload failed: {0}', $e->getMessage()));
+            return $this->redirect(['action' => $redirectAction]);
+        }
     }
 
     /**
