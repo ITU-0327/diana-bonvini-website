@@ -475,4 +475,27 @@ class PaymentMailer extends Mailer
             ->viewBuilder()
                 ->setTemplate('coaching_new_request_notification');
     }
+    
+    /**
+     * Send a notification to the client when admin sends time slots for writing service
+     *
+     * @param \App\Model\Entity\WritingServiceRequest $writingServiceRequest The writing service request
+     * @param string $timeSlots The formatted time slots text
+     * @param string $adminName The admin's name
+     * @return void
+     */
+    public function customerWritingTimeSlotsNotification($writingServiceRequest, $timeSlots, $adminName)
+    {
+        $this->setTo($writingServiceRequest->user->email)
+            ->setSubject('Time Slots Available for Your Writing Request #' . $writingServiceRequest->writing_service_request_id)
+            ->setEmailFormat('both')
+            ->setViewVars([
+                'client_name' => $writingServiceRequest->user->first_name . ' ' . $writingServiceRequest->user->last_name,
+                'admin_name' => $adminName,
+                'writing_service_request' => $writingServiceRequest,
+                'time_slots' => $timeSlots
+            ])
+            ->viewBuilder()
+                ->setTemplate('writing_time_slots');
+    }
 } 

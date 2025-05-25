@@ -665,7 +665,7 @@ class CoachingServiceRequestsController extends AppController
     
     /**
      * Create basic time slots for a given date string
-     * 
+     *
      * @param string $dateString Date in Y-m-d format
      * @return array List of time slots
      */
@@ -686,21 +686,21 @@ class CoachingServiceRequestsController extends AppController
             $startTime = sprintf('%02d:00', $hour);
             $endHour2 = $hour + 1;
             $endTime = sprintf('%02d:00', $endHour2);
-            
+                
             // Handle the last hour of the day
             if ($endHour2 >= 24) {
                 $endTime = '23:59';
             }
             
-            $formattedStart = date('g:i A', strtotime($startTime));
-            $formattedEnd = date('g:i A', strtotime($endTime));
-            
-            $slots[] = [
-                'date' => $dateString,
-                'start' => $startTime,
-                'end' => $endTime,
-                'formatted' => "{$formattedStart} - {$formattedEnd}",
-            ];
+                    $formattedStart = date('g:i A', strtotime($startTime));
+                    $formattedEnd = date('g:i A', strtotime($endTime));
+                    
+                    $slots[] = [
+                        'date' => $dateString,
+                        'start' => $startTime,
+                        'end' => $endTime,
+                        'formatted' => "{$formattedStart} - {$formattedEnd}",
+                    ];
         }
         
         return $slots;

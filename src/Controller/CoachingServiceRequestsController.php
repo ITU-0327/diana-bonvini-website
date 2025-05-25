@@ -1000,10 +1000,10 @@ class CoachingServiceRequestsController extends AppController
             $messagesQuery = $this->CoachingServiceRequests->CoachingRequestMessages->find()
                 ->contain(['Users'])
                 ->where([
-                    'coaching_service_request_id' => $id,
-                    'is_deleted' => false,
+                    'CoachingRequestMessages.coaching_service_request_id' => $id,
+                    'CoachingRequestMessages.is_deleted' => false,
                 ])
-                ->orderBy(['created_at' => 'ASC']);
+                ->orderBy(['CoachingRequestMessages.created_at' => 'ASC']);
 
             if (!empty($lastMessageId)) {
                 $messagesQuery->andWhere([

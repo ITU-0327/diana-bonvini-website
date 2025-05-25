@@ -201,31 +201,21 @@ use Cake\I18n\FrozenTime;
                                                         if (preg_match_all('/- ([^:]+): ([^\n]+)/', $parts[1], $matches, PREG_SET_ORDER)) {
                                                             echo '<div class="space-y-2 mt-2">';
                                                             
-                                                            // Check if ANY appointment exists for this request
-                                                            $hasAnyAppointment = false;
-                                                            if (isset($appointments)) {
-                                                                foreach ($appointments as $appointment) {
-                                                                    if ($appointment->coaching_service_request_id == $coachingServiceRequest->coaching_service_request_id &&
-                                                                        $appointment->status != 'cancelled' &&
-                                                                        $appointment->is_deleted == false) {
-                                                                        $hasAnyAppointment = true;
-                                                                        break;
-                                                                    }
-                                                                }
-                                                            }
-                                                            
                                                             foreach ($matches as $match) {
                                                                 $date = trim($match[1]);
                                                                 $time = trim($match[2]);
                                                                 
-                                                                // Check if this specific slot matches the confirmed appointment
+                                                                // Check if this specific slot is already booked
                                                                 $isThisSlotBooked = false;
                                                                 if (isset($appointments)) {
                                                                     foreach ($appointments as $appointment) {
-                                                                        if ($appointment->appointment_date->format('l, F j, Y') == $date &&
+                                                                        if (
+                                                                            $appointment->coaching_service_request_id == $coachingServiceRequest->coaching_service_request_id &&
+                                                                            $appointment->appointment_date->format('l, F j, Y') == $date &&
                                                                             $appointment->appointment_time->format('g:i A') == substr($time, 0, 7) &&
                                                                             $appointment->status != 'cancelled' &&
-                                                                            $appointment->is_deleted == false) {
+                                                                            $appointment->is_deleted == false
+                                                                        ) {
                                                                             $isThisSlotBooked = true;
                                                                             break;
                                                                         }
@@ -239,22 +229,14 @@ use Cake\I18n\FrozenTime;
                                                                 echo '<div class="text-xs text-gray-500">' . h($time) . '</div>';
                                                                 echo '</div>';
                                                                 
-                                                                if ($hasAnyAppointment) {
-                                                                    // If this is the booked slot, show it as confirmed
-                                                                    if ($isThisSlotBooked) {
-                                                                        echo '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">';
-                                                                        echo '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">';
-                                                                        echo '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
-                                                                        echo 'Confirmed</span>';
-                                                                    } else {
-                                                                        // For other slots, show as unavailable
-                                                                        echo '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">';
-                                                                        echo '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">';
-                                                                        echo '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
-                                                                        echo 'Unavailable</span>';
-                                                                    }
+                                                                if ($isThisSlotBooked) {
+                                                                    // This specific slot is booked, show it as confirmed
+                                                                    echo '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">';
+                                                                    echo '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">';
+                                                                    echo '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+                                                                    echo 'Confirmed</span>';
                                                                 } else {
-                                                                    // No appointment exists yet, show normal accept button
+                                                                    // This slot is available for booking
                                                                     echo '<a href="' . $this->Url->build(['controller' => 'Calendar', 'action' => 'acceptTimeSlot', '?' => [
                                                                         'date' => urlencode($date),
                                                                         'time' => urlencode($time),

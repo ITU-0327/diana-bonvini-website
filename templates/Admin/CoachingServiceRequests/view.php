@@ -655,6 +655,111 @@ use Cake\Utility\Inflector;
     animation: spin 1s linear infinite;
 }
 
+/* CRITICAL DATEPICKER STYLES - THESE ENSURE THE DATEPICKER IS VISIBLE */
+/* Ensure the datepicker container is visible */
+#datepicker {
+    min-height: 200px !important;
+    width: 100% !important;
+    background: white !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4px !important;
+}
+
+/* Make inline datepicker fill the container nicely */
+#datepicker .ui-datepicker {
+    width: 100% !important;
+    margin: 0 !important;
+    position: static !important;
+    display: block !important;
+}
+
+/* Fallback styles in case jQuery UI CSS doesn't load */
+.ui-datepicker {
+    z-index: 9999 !important;
+    background: #fff !important;
+    border: 1px solid #ddd !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    font-size: 13px !important;
+    padding: 0 !important;
+    font-family: Arial, sans-serif !important;
+}
+
+.ui-datepicker table {
+    width: 100% !important;
+    margin: 0 !important;
+    border-collapse: collapse !important;
+}
+
+.ui-datepicker td, .ui-datepicker th {
+    padding: 2px !important;
+    text-align: center !important;
+    border: 1px solid #e0e0e0 !important;
+}
+
+.ui-datepicker td a {
+    padding: 8px !important;
+    text-align: center !important;
+    display: block !important;
+    text-decoration: none !important;
+    color: #333 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.ui-datepicker td a:hover {
+    background: #4e73df !important;
+    color: white !important;
+}
+
+.ui-datepicker .ui-datepicker-today a {
+    background: #f8f9fa !important;
+    font-weight: bold !important;
+    border: 2px solid #4e73df !important;
+}
+
+.ui-datepicker .ui-state-active a {
+    background: #4e73df !important;
+    color: white !important;
+}
+
+.ui-datepicker .ui-datepicker-header {
+    background: #4e73df !important;
+    color: white !important;
+    text-align: center !important;
+    padding: 10px !important;
+    font-weight: bold !important;
+}
+
+.ui-datepicker .ui-datepicker-prev,
+.ui-datepicker .ui-datepicker-next {
+    cursor: pointer !important;
+    color: white !important;
+    position: absolute !important;
+    top: 10px !important;
+    padding: 5px !important;
+}
+
+.ui-datepicker .ui-datepicker-prev {
+    left: 10px !important;
+}
+
+.ui-datepicker .ui-datepicker-next {
+    right: 10px !important;
+}
+
+.ui-datepicker .ui-datepicker-title {
+    text-align: center !important;
+    font-weight: bold !important;
+}
+
+/* If datepicker still doesn't show, make the container more explicit */
+#datepicker .ui-widget-content {
+    background: white !important;
+    border: 1px solid #ddd !important;
+    display: block !important;
+    visibility: visible !important;
+}
+
 /* Modal z-index fix */
 .modal {
     z-index: 1050 !important;
@@ -665,50 +770,38 @@ use Cake\Utility\Inflector;
 }
 </style>
 
-<!-- Load jQuery UI for datepicker using CakePHP script blocks -->
-<?= $this->Html->css('https://code.jquery.com/ui/1.12.1/themes/ui-lightness/jquery-ui.css') ?>
-<?= $this->Html->script('https://code.jquery.com/ui/1.12.1/jquery-ui.min.js', ['block' => 'scriptBottom']) ?>
+<!-- Load jQuery UI for datepicker directly -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/ui-lightness/jquery-ui.css">
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 <?= $this->Html->script('coaching-service-payments.js', ['block' => true]) ?>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Time slots selection functionality
-    const datepicker = $('#datepicker');
-    const loadTimeSlotsBtn = document.getElementById('loadTimeSlots');
-    const timeSlotsLoading = document.getElementById('timeSlots-loading');
-    const timeSlotsEmpty = document.getElementById('timeSlots-empty');
-    const timeSlotsNone = document.getElementById('timeSlots-none');
-    const timeSlotsContainer = document.getElementById('time-slots-container');
-    const timeSlotsListContainer = document.getElementById('timeSlots-list');
-    const selectedDateDisplay = document.getElementById('selected-date-display');
-    const selectedTimeSlotsJson = document.getElementById('selectedTimeSlotsJson');
-    const selectAllCheckbox = document.getElementById('selectAllTimeSlots');
-    const sendTimeSlotsBtn = document.getElementById('sendTimeSlots');
+    // Ensure jQuery UI is loaded before proceeding
+    console.log('jQuery available:', typeof $ !== 'undefined');
+    console.log('jQuery UI available:', typeof $.ui !== 'undefined');
 
-    // Initialize datepicker when jQuery and jQuery UI are fully loaded
-    $(document).ready(function() {
-        // Initialize datepicker when the modal is shown
+    // Initialize datepicker immediately when modal is shown
         $('#timeSlotsModal').on('shown.bs.modal', function() {
-            console.log('Time slots modal shown, initializing datepicker');
-            initDatepicker();
-        });
-
-        // Initialize datepicker
-        function initDatepicker() {
-            try {
-                const $datepicker = $('#datepicker');
-                
-                // Destroy existing datepicker if it exists
+        console.log('Modal opened, initializing datepicker...');
+        
+        // Wait a bit for modal to fully render
+        setTimeout(function() {
+            const $datepicker = $('#datepicker');
+            console.log('Datepicker element found:', $datepicker.length);
+            
+            if ($datepicker.length && typeof $.fn.datepicker !== 'undefined') {
+                // Destroy existing datepicker if present
                 if ($datepicker.hasClass('hasDatepicker')) {
                     $datepicker.datepicker('destroy');
                 }
-                
-                // Initialize with proper configuration
+
+        // Initialize datepicker
                 $datepicker.datepicker({
-                    minDate: 0, // Today
-                    maxDate: '+60d', // Allow up to 60 days in the future
+                    minDate: 0,
+                    maxDate: '+60d',
                     dateFormat: 'yy-mm-dd',
-                    firstDay: 1, // Start week on Monday
+                    firstDay: 1,
                     showOtherMonths: true,
                     selectOtherMonths: true,
                     changeMonth: true,
@@ -730,41 +823,365 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Force the datepicker to show inline and be visible
                 $datepicker.datepicker('widget').show();
                 console.log('Datepicker initialized successfully');
-            } catch (e) {
-                console.error('Failed to initialize datepicker:', e);
+            } else {
+                console.error('jQuery UI datepicker not available, using fallback HTML5 date input');
+                // Fallback: Create HTML5 date input
+                createFallbackDatePicker($datepicker);
             }
-        }
+        }, 200);
     });
 
-    // Initialize datepicker
-    try {
-        datepicker.datepicker({
-            minDate: 0, // Today
-            maxDate: '+60d', // Allow up to 60 days in the future
-            dateFormat: 'yy-mm-dd',
-            firstDay: 1, // Start week on Monday
-            showOtherMonths: true,
-            selectOtherMonths: true,
-            changeMonth: true,
-            changeYear: true,
-            inline: true, // Show inline immediately
-            onSelect: function(dateText) {
-                console.log('Date selected:', dateText);
-                $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { 
+    // Fallback date picker function
+    function createFallbackDatePicker($container) {
+        console.log('Creating fallback date picker');
+
+        // Get today's date for min attribute
+        const today = new Date();
+        const minDate = today.toISOString().split('T')[0];
+        
+        // Get 60 days from now for max attribute  
+        const maxDate = new Date(today.getTime() + (60 * 24 * 60 * 60 * 1000));
+        const maxDateStr = maxDate.toISOString().split('T')[0];
+        
+        // Create HTML5 date input
+        const dateInput = `
+            <div class="fallback-datepicker p-3">
+                <p class="text-muted mb-3">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Please select a date for your consultation
+                </p>
+                <input type="date" 
+                       id="fallback-date-input" 
+                       class="form-control" 
+                       min="${minDate}" 
+                       max="${maxDateStr}"
+                       style="font-size: 16px; padding: 10px;">
+                <small class="form-text text-muted mt-2">
+                    Select a date between today and ${maxDate.toLocaleDateString()}
+                </small>
+            </div>
+        `;
+        
+        // Replace the datepicker container with HTML5 input
+        $container.html(dateInput);
+        
+        // Add event listener for the fallback input
+        $('#fallback-date-input').on('change', function() {
+            const selectedDate = this.value;
+            if (selectedDate) {
+                console.log('Fallback date selected:', selectedDate);
+                $('#selected-date-display').text(new Date(selectedDate).toLocaleDateString('en-US', { 
                     weekday: 'long', 
                     year: 'numeric', 
                     month: 'long', 
                     day: 'numeric' 
                 }));
-                $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
+                $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + selectedDate + '</span>');
                 $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
             }
         });
-        console.log('Datepicker initialized');
-    } catch (e) {
-        console.error('Failed to initialize datepicker:', e);
     }
-});
+
+    // Also try to initialize datepicker on document ready
+    $(document).ready(function() {
+        console.log('Document ready, jQuery UI datepicker available:', typeof $.fn.datepicker !== 'undefined');
+
+        // Try to initialize datepicker on page load as well
+        if (typeof $.fn.datepicker !== 'undefined') {
+            console.log('Attempting early datepicker initialization');
+            try {
+                const $datepicker = $('#datepicker');
+                if ($datepicker.length && !$datepicker.hasClass('hasDatepicker')) {
+                    $datepicker.datepicker({
+                        minDate: 0,
+                        maxDate: '+60d',
+                        dateFormat: 'yy-mm-dd',
+                        firstDay: 1,
+                        showOtherMonths: true,
+                        selectOtherMonths: true,
+                        changeMonth: true,
+                        changeYear: true,
+                        inline: true,
+                        onSelect: function(dateText) {
+                            console.log('Date selected (early init):', dateText);
+                            $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { 
+                                weekday: 'long', 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric' 
+                            }));
+                            $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
+                            $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
+                        }
+                    });
+                    console.log('Early datepicker initialization successful');
+                }
+            } catch (e) {
+                console.log('Early datepicker initialization failed, will try again on modal open:', e);
+            }
+        }
+    });
+
+    // Time slots selection functionality - MISSING FUNCTIONALITY ADDED
+        const loadTimeSlotsBtn = document.getElementById('loadTimeSlots');
+        const timeSlotsLoading = document.getElementById('timeSlots-loading');
+        const timeSlotsEmpty = document.getElementById('timeSlots-empty');
+        const timeSlotsNone = document.getElementById('timeSlots-none');
+        const timeSlotsContainer = document.getElementById('time-slots-container');
+        const timeSlotsListContainer = document.getElementById('timeSlots-list');
+        const selectedDateDisplay = document.getElementById('selected-date-display');
+        const selectedTimeSlotsJson = document.getElementById('selectedTimeSlotsJson');
+        const selectAllCheckbox = document.getElementById('selectAllTimeSlots');
+        const sendTimeSlotsBtn = document.getElementById('sendTimeSlots');
+
+    // Helper function for debugging
+    function debugLog(message, data) {
+        const debugging = true; // Set to false in production
+        if (debugging && console) {
+            if (data) {
+                console.log(`[CoachingTimeSlots] ${message}:`, data);
+            } else {
+                console.log(`[CoachingTimeSlots] ${message}`);
+            }
+        }
+    }
+
+        // Load time slots when the button is clicked
+        if (loadTimeSlotsBtn) {
+            loadTimeSlotsBtn.addEventListener('click', function() {
+            let selectedDate = null;
+            let formattedDate = null;
+            
+            // Try to get date from jQuery UI datepicker first
+            try {
+                selectedDate = $('#datepicker').datepicker('getDate');
+                if (selectedDate) {
+                // Format date as YYYY-MM-DD
+                const year = selectedDate.getFullYear();
+                const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                const day = String(selectedDate.getDate()).padStart(2, '0');
+                    formattedDate = `${year}-${month}-${day}`;
+                }
+            } catch (e) {
+                console.log('jQuery datepicker not available, checking fallback');
+            }
+            
+            // If jQuery UI datepicker didn't work, try the fallback HTML5 input
+            if (!formattedDate) {
+                const fallbackInput = document.getElementById('fallback-date-input');
+                if (fallbackInput && fallbackInput.value) {
+                    formattedDate = fallbackInput.value;
+                    console.log('Using fallback date input:', formattedDate);
+                }
+            }
+            
+            // Also check the stored date from the fallback
+            if (!formattedDate && window.selectedDateForTimeSlots) {
+                formattedDate = window.selectedDateForTimeSlots;
+                console.log('Using stored fallback date:', formattedDate);
+            }
+            
+            console.log('Load button clicked, formatted date:', formattedDate);
+
+            if (!formattedDate) {
+                alert('Please select a date first');
+                return;
+            }
+
+                loadTimeSlots(formattedDate);
+            });
+        }
+
+        // Function to load time slots for a selected date
+        function loadTimeSlots(date) {
+            debugLog(`Loading time slots for date: ${date}`);
+
+            // Show loading, hide other elements
+        if (timeSlotsEmpty) timeSlotsEmpty.classList.add('d-none');
+        if (timeSlotsNone) timeSlotsNone.classList.add('d-none');
+        if (timeSlotsListContainer) timeSlotsListContainer.classList.add('d-none');
+        if (timeSlotsLoading) timeSlotsLoading.classList.remove('d-none');
+
+            // Format the date for display
+            const formattedDate = new Date(date);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        if (selectedDateDisplay) {
+            selectedDateDisplay.textContent = formattedDate.toLocaleDateString('en-US', options);
+        }
+
+            // Get CSRF token from the document
+            let csrfToken;
+            try {
+                const csrfElement = document.querySelector('input[name="_csrfToken"]');
+                csrfToken = csrfElement ? csrfElement.value : '<?= $this->request->getAttribute('csrfToken') ?>';
+                debugLog('Using CSRF token', csrfToken.substring(0, 10) + '...');
+            } catch (e) {
+                console.error('Error getting CSRF token:', e);
+                csrfToken = '<?= $this->request->getAttribute('csrfToken') ?>';
+            }
+
+        // Build the URL for coaching service requests (not writing service requests)
+            const url = `<?= $this->Url->build(['controller' => 'CoachingServiceRequests', 'action' => 'getAvailableTimeSlots', 'prefix' => 'Admin']) ?>?date=${date}`;
+            debugLog('Fetching from URL', url);
+
+            // Fetch available time slots
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-CSRF-Token': csrfToken,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.json().catch(error => {
+                        console.error('Error parsing JSON response:', error);
+                        throw new Error('Invalid JSON response');
+                    });
+                })
+                .then(data => {
+                    console.log('Time slots data:', data);
+            if (timeSlotsLoading) timeSlotsLoading.classList.add('d-none');
+
+                    if (data.success && data.timeSlots && data.timeSlots.length > 0) {
+                // Hide other states first
+                if (timeSlotsEmpty) timeSlotsEmpty.classList.add('d-none');
+                if (timeSlotsNone) timeSlotsNone.classList.add('d-none');
+                
+                        // Show time slots container
+                if (timeSlotsListContainer) timeSlotsListContainer.classList.remove('d-none');
+
+                        // Populate time slots
+                if (timeSlotsContainer) {
+                        timeSlotsContainer.innerHTML = '';
+
+                        data.timeSlots.forEach(slot => {
+                            const slotDiv = document.createElement('div');
+                            slotDiv.className = 'custom-control custom-checkbox time-slot-item mb-2';
+
+                            const id = `slot-${slot.date}-${slot.start.replace(':', '-')}`;
+
+                            slotDiv.innerHTML = `
+                                <input type="checkbox" class="custom-control-input time-slot-checkbox" id="${id}" data-slot='${JSON.stringify(slot)}'>
+                                <label class="custom-control-label" for="${id}">
+                                    ${slot.formatted}
+                                </label>
+                            `;
+
+                            timeSlotsContainer.appendChild(slotDiv);
+                        });
+
+                        // Setup the checkboxes for selecting time slots
+                        setupTimeSlotCheckboxes();
+                }
+                    } else {
+                // Hide other states first
+                if (timeSlotsEmpty) timeSlotsEmpty.classList.add('d-none');
+                if (timeSlotsListContainer) timeSlotsListContainer.classList.add('d-none');
+                
+                        console.log('No time slots available or success is false');
+                        // Show no time slots message
+                if (timeSlotsNone) timeSlotsNone.classList.remove('d-none');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading time slots:', error);
+            if (timeSlotsLoading) timeSlotsLoading.classList.add('d-none');
+            if (timeSlotsNone) timeSlotsNone.classList.remove('d-none');
+                    alert('Error loading time slots: ' + error.message);
+                });
+        }
+
+        // Setup time slot checkboxes
+        function setupTimeSlotCheckboxes() {
+            const timeSlotCheckboxes = document.querySelectorAll('.time-slot-checkbox');
+
+            // Handle individual checkbox changes
+            timeSlotCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectedTimeSlots);
+            });
+
+            // Handle select all checkbox
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    timeSlotCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
+
+                    updateSelectedTimeSlots();
+                });
+            }
+
+            // Clear previous selection
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = false;
+            }
+            updateSelectedTimeSlots();
+        }
+
+        // Update selected time slots
+        function updateSelectedTimeSlots() {
+            const selectedTimeSlots = [];
+            const timeSlotCheckboxes = document.querySelectorAll('.time-slot-checkbox:checked');
+
+            timeSlotCheckboxes.forEach(checkbox => {
+                    const slotData = JSON.parse(checkbox.dataset.slot);
+                    selectedTimeSlots.push(slotData);
+            });
+
+            // Update hidden input with selected time slots
+            if (selectedTimeSlotsJson) {
+                selectedTimeSlotsJson.value = JSON.stringify(selectedTimeSlots);
+            }
+
+        // Enable/disable send button based on selection
+        if (sendTimeSlotsBtn) {
+            sendTimeSlotsBtn.disabled = selectedTimeSlots.length === 0;
+        }
+
+            // Update select all checkbox state
+            const allCheckboxes = document.querySelectorAll('.time-slot-checkbox');
+            if (selectAllCheckbox && allCheckboxes.length > 0) {
+                selectAllCheckbox.checked = timeSlotCheckboxes.length > 0 &&
+                                        timeSlotCheckboxes.length === allCheckboxes.length;
+            }
+        }
+
+        // Send time slots button
+        if (sendTimeSlotsBtn) {
+            sendTimeSlotsBtn.addEventListener('click', function() {
+            const messageText = document.getElementById('timeSlotMessageText');
+            const selectedTimeSlots = selectedTimeSlotsJson;
+
+            if (!messageText || !messageText.value.trim()) {
+                    alert('Please enter a message to accompany the time slots');
+                    return;
+                }
+
+            if (!selectedTimeSlots || selectedTimeSlots.value === '[]') {
+                    alert('Please select at least one time slot');
+                    return;
+                }
+
+                try {
+                    // Show loading state
+                    sendTimeSlotsBtn.disabled = true;
+                    sendTimeSlotsBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
+
+                    // Submit the form
+                document.getElementById('timeSlotsForm').submit();
+                } catch (error) {
+                    console.error('Error submitting form:', error);
+                    alert('An error occurred while sending time slots. Please try again.');
+
+                    // Reset button state
+                    sendTimeSlotsBtn.disabled = false;
+                    sendTimeSlotsBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Send Time Slots';
+                }
+            });
+        }
+    });
 </script>
 
 <!-- Select Available Time Slots Modal -->
@@ -791,7 +1208,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'id' => 'timeSlotsForm',
                     'type' => 'post'
                 ]) ?>
-                
+
                 <!-- Explicit CSRF token -->
                 <?= $this->Form->hidden('_csrfToken', [
                     'value' => $this->request->getAttribute('csrfToken')

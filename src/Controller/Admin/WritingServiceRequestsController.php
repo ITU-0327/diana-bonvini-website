@@ -827,25 +827,25 @@ class WritingServiceRequestsController extends BaseAdminController
         for ($hour = $startHour; $hour < $endHour; $hour++) {
             // Skip some slots randomly to simulate busy times (reduce the skip rate for more availability)
             if (rand(0, 100) < 15) { // Only 15% chance of being unavailable
-                continue;
-            }
+                    continue;
+                }
 
             $slotDate->setTime($hour, 0, 0); // Start at the top of each hour
 
-            $startTime = $slotDate->format('H:i');
+                $startTime = $slotDate->format('H:i');
             $slotDate->modify('+1 hour');
-            $endTime = $slotDate->format('H:i');
+                $endTime = $slotDate->format('H:i');
 
             // Format for display (12-hour format)
             $startTimeFormatted = $slotDate->setTime($hour, 0, 0)->format('g:i A');
             $endTimeFormatted = $slotDate->modify('+1 hour')->format('g:i A');
 
-            $slots[] = [
-                'date' => $date->format('Y-m-d'),
-                'start' => $startTime,
-                'end' => $endTime,
+                $slots[] = [
+                    'date' => $date->format('Y-m-d'),
+                    'start' => $startTime,
+                    'end' => $endTime,
                 'formatted' => $startTimeFormatted . ' - ' . $endTimeFormatted,
-            ];
+                ];
         }
 
         $this->log('Created ' . count($slots) . ' mock time slots', 'debug');
@@ -888,12 +888,12 @@ class WritingServiceRequestsController extends BaseAdminController
         ];
 
         foreach ($availableHours as $slot) {
-            $slots[] = [
-                'date' => $dateString,
+        $slots[] = [
+            'date' => $dateString,
                 'start' => $slot['start'],
                 'end' => $slot['end'],
                 'formatted' => $slot['formatted'],
-            ];
+        ];
         }
 
         return $slots;
@@ -1057,6 +1057,27 @@ class WritingServiceRequestsController extends BaseAdminController
                 );
 
                 $this->Flash->success(__('Time slots sent successfully.'));
+                
+                // Notify the client via email
+                try {
+                    $requestWithUser = $this->WritingServiceRequests->get($id, contain: ['Users']);
+                    
+                    if (!empty($requestWithUser->user) && !empty($requestWithUser->user->email)) {
+                        // Use the already formatted time slots for email
+                        $timeSlotsText = implode("\n", $formattedSlots);
+                        
+                        // Send notification
+                        $mailer = new \App\Mailer\PaymentMailer('default');
+                        $mailer->customerWritingTimeSlotsNotification(
+                            $requestWithUser,
+                            $timeSlotsText,
+                            'Diana Bonvini'
+                        );
+                        $mailer->deliverAsync();
+                    }
+                } catch (\Exception $e) {
+                    $this->log('Failed to send time slots notification: ' . $e->getMessage(), 'error');
+                }
 
                 // If the request status is pending, update it to in_progress
                 if ($writingServiceRequest->request_status === 'pending') {

@@ -890,30 +890,30 @@ $this->assign('title', __('Writing Service Request Details'));
                     if ($datepicker.hasClass('hasDatepicker')) {
                         $datepicker.datepicker('destroy');
                     }
-                    
-                    // Initialize datepicker
+
+        // Initialize datepicker
                     $datepicker.datepicker({
                         minDate: 0,
                         maxDate: '+60d',
-                        dateFormat: 'yy-mm-dd',
+                    dateFormat: 'yy-mm-dd',
                         firstDay: 1,
-                        showOtherMonths: true,
-                        selectOtherMonths: true,
+                    showOtherMonths: true,
+                    selectOtherMonths: true,
                         changeMonth: true,
                         changeYear: true,
                         inline: true, // Show inline immediately
-                        onSelect: function(dateText) {
-                            console.log('Date selected:', dateText);
+                    onSelect: function(dateText) {
+                        console.log('Date selected:', dateText);
                             $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { 
                                 weekday: 'long', 
                                 year: 'numeric', 
                                 month: 'long', 
                                 day: 'numeric' 
                             }));
-                            $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
-                            $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
-                        }
-                    });
+                        $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
+                        $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
+                    }
+                });
                     
                     // Force the datepicker to show inline and be visible
                     $datepicker.datepicker('widget').show();
@@ -1149,10 +1149,10 @@ $this->assign('title', __('Writing Service Request Details'));
                 try {
                     selectedDate = datepicker.datepicker('getDate');
                     if (selectedDate) {
-                        // Format date as YYYY-MM-DD
-                        const year = selectedDate.getFullYear();
-                        const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-                        const day = String(selectedDate.getDate()).padStart(2, '0');
+                // Format date as YYYY-MM-DD
+                const year = selectedDate.getFullYear();
+                const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                const day = String(selectedDate.getDate()).padStart(2, '0');
                         formattedDate = `${year}-${month}-${day}`;
                     }
                 } catch (e) {
@@ -1764,10 +1764,10 @@ $this->assign('title', __('Writing Service Request Details'));
                 try {
                     selectedDate = datepicker.datepicker('getDate');
                     if (selectedDate) {
-                        // Format date as YYYY-MM-DD
-                        const year = selectedDate.getFullYear();
-                        const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-                        const day = String(selectedDate.getDate()).padStart(2, '0');
+                // Format date as YYYY-MM-DD
+                const year = selectedDate.getFullYear();
+                const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                const day = String(selectedDate.getDate()).padStart(2, '0');
                         formattedDate = `${year}-${month}-${day}`;
                     }
                 } catch (e) {

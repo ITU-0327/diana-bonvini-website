@@ -3,14 +3,25 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Controller\AppController;
+use App\Model\Table\WritingServiceRequestsTable;
+use App\Model\Table\AppointmentsTable;
+use App\Model\Table\GoogleCalendarSettingsTable;
+use App\Model\Table\RequestMessagesTable;
+use App\Model\Table\CoachingServiceRequestsTable;
+use App\Model\Table\CoachingRequestMessagesTable;
+use App\Model\Table\UsersTable;
 use App\Mailer\AppointmentMailer;
 use App\Service\GoogleCalendarService;
+use Cake\Datasource\Exception\RecordNotFoundException;
+use Cake\Http\Response;
 use Cake\I18n\Date;
 use Cake\I18n\Time;
-use Cake\Mailer\MailerAwareTrait;
 use DateTime;
-use DateTimeZone;
 use Exception;
+use Cake\Mailer\MailerAwareTrait;
+use DateTimeZone;
+use Cake\Event\EventInterface;
 
 /**
  * Calendar Controller
@@ -58,9 +69,28 @@ class CalendarController extends AppController
         }
         
         $this->googleCalendarService = new GoogleCalendarService();
+    }
+    
+    /**
+     * Before filter callback
+     *
+     * @param \Cake\Event\EventInterface $event The event object.
+     * @return void
+     */
+    public function beforeFilter(\Cake\Event\EventInterface $event): void
+    {
+        parent::beforeFilter($event);
         
-        // Allow availability and book methods for unauthenticated users
+        // Allow availability and book methods for unauthenticated users (but NOT acceptTimeSlot)
         $this->Authentication->addUnauthenticatedActions(['availability', 'book', 'getTimeSlots']);
+        
+        // IMPORTANT: Override all FormProtection settings to ensure acceptTimeSlot works
+        $this->FormProtection->setConfig([
+            'unlockedActions' => [
+                'availability', 'book', 'getTimeSlots', 'acceptTimeSlot'
+            ],
+            'validatePost' => false
+        ]);
     }
     
     /**
@@ -170,9 +200,7 @@ class CalendarController extends AppController
     }
     
     /**
-     * Accept a time slot from chat
-     *
-     * @return \Cake\Http\Response|null
+     * Accept a time slot and create an appointment
      */
     public function acceptTimeSlot()
     {
@@ -310,27 +338,11 @@ class CalendarController extends AppController
                     }
                 }
             } else {
-                // One more fallback - try to extract month, day, year from anywhere in the string
-                if (preg_match('/(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}/i', $date, $dateMatch)) {
-                    try {
-                        $extractedDate = new \DateTime($dateMatch[0]);
-                        $formattedDate = $extractedDate->format('Y-m-d');
-                        $dateObj = $extractedDate;
-                    } catch (\Exception $e3) {
                         $this->Flash->error(__('Could not parse the appointment date.'));
                         if ($type === 'coaching') {
                             return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'view', $requestId]);
                         } else {
                         return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
-                        }
-                    }
-                } else {
-                    $this->Flash->error(__('Could not parse the appointment date.'));
-                    if ($type === 'coaching') {
-                        return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'view', $requestId]);
-                    } else {
-                    return $this->redirect(['controller' => 'WritingServiceRequests', 'action' => 'view', $requestId]);
-                    }
                 }
             }
         }
@@ -358,7 +370,7 @@ class CalendarController extends AppController
                 // Load the CoachingServiceRequests model if not already loaded
                 try {
                     if (!isset($this->CoachingServiceRequests)) {
-                        $this->CoachingServiceRequests = $this->fetchTable('CoachingServiceRequests');
+                    $this->CoachingServiceRequests = $this->fetchTable('CoachingServiceRequests');
                     }
                     
                     // Get the coaching service request
@@ -366,7 +378,7 @@ class CalendarController extends AppController
                         'Users'
                     ]);
                     
-                    // Check if the writing service request belongs to the current user
+                    // Check if the coaching service request belongs to the current user
                     if ($serviceRequest->user_id !== $user->user_id) {
                         $this->Flash->error(__('You can only book appointments for your own coaching service requests.'));
                         return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'index']);
@@ -385,7 +397,7 @@ class CalendarController extends AppController
                 try {
                     $serviceRequest = $this->WritingServiceRequests->get($requestId, contain: [
                         'Users'
-                    ]);
+            ]);
             
             // Check if the writing service request belongs to the current user
                     if ($serviceRequest->user_id !== $user->user_id) {
@@ -459,71 +471,32 @@ class CalendarController extends AppController
                 $appointment->writing_service_request_id = $requestId;
             }
             
+            // Generate a Google Meet link
+            $dateStr = $appointment->appointment_date->format('Y-m-d');
+            $timeStr = $appointment->appointment_time->format('Hi');
+            $userInitials = strtolower(substr($user->first_name, 0, 1) . substr($user->last_name, 0, 1));
+            
+            // Generate a consistent meeting room code
+            $meetingCode = 'diana-' . $userInitials . '-' . $dateStr . '-' . $timeStr . '-' . $type;
+            $meetingCode = preg_replace('/[^a-z0-9\-]/', '', $meetingCode); // Clean the code
+            
+            // Create Google Meet link with professional room name
+            $meetLink = "https://meet.google.com/" . substr(md5($meetingCode), 0, 10) . "-" . substr(md5((string)($appointment->coaching_service_request_id ?? $appointment->writing_service_request_id ?? '')), 0, 10) . "-" . substr(md5((string)time()), 0, 10);
+                                $appointment->meeting_link = $meetLink;
+            
             // Save the appointment
             if ($this->Appointments->save($appointment)) {
-                // Create Google Calendar event and get Google Meet link
-                $eventId = null;
-                $meetLink = null;
-                
-                // Check if admin has Google Calendar configured
-                $adminHasCalendarConfig = false;
-                if (isset($this->GoogleCalendarSettings)) {
-                    $adminCalendarSettings = $this->GoogleCalendarSettings->find()
-                        ->where(['user_id' => $adminUser->user_id, 'is_active' => true])
-                        ->first();
-                    $adminHasCalendarConfig = !empty($adminCalendarSettings);
-                }
-                
-                if ($adminHasCalendarConfig) {
-                    try {
-                        // Create Google Calendar event
-                        $eventId = $this->googleCalendarService->createAppointmentEvent($appointment, $adminUser->user_id);
-    
-                        if ($eventId) {
-                            // Get the Google Meet link and update the appointment
-                            $event = $this->googleCalendarService->getEvent($eventId, $adminUser->user_id);
-                            $meetLink = $this->googleCalendarService->getMeetLink($event);
-                            
-                            if ($meetLink) {
-                                $appointment->meeting_link = $meetLink;
-                                $appointment->google_calendar_event_id = $eventId;
-                                $appointment->is_google_synced = true;
-                                $this->Appointments->save($appointment);
-                            }
-                        }
-                    } catch (\Exception $e) {
-                        // Log error but continue with fallback
-                    }
-                }
-                
-                // If Google Calendar sync failed, create a better generic Meet link
-                if (!$meetLink) {
-                    // Create a more professional meeting room name
-                    $dateStr = $appointment->appointment_date->format('Y-m-d');
-                    $timeStr = $appointment->appointment_time->format('Hi');
-                    $userInitials = strtolower(substr($user->first_name, 0, 1) . substr($user->last_name, 0, 1));
-                    
-                    // Generate a consistent meeting room code
-                    $meetingCode = 'diana-' . $userInitials . '-' . $dateStr . '-' . $timeStr;
-                    $meetingCode = preg_replace('/[^a-z0-9\-]/', '', $meetingCode); // Clean the code
-                    
-                    // Create Google Meet link with professional room name
-                    $meetLink = "https://meet.google.com/" . substr(md5($meetingCode), 0, 10) . "-" . substr(md5($appointment->appointment_id), 0, 10) . "-" . substr(md5(time()), 0, 10);
-                    
-                    $appointment->meeting_link = $meetLink;
-                    $this->Appointments->save($appointment);
-                }
-                
                 // Send confirmation message in the chat
                 $message = "✅ **Appointment Confirmed**\n\n";
                 $message .= "Your appointment has been scheduled for **" . $dateObj->format('l, F j, Y') . " at " . 
                     (new \DateTime($time))->format('g:i A') . "**.\n\n";
-                $message .= "A confirmation email has been sent to your email address with all the details and meeting link. I look forward to our meeting!";
+                $message .= "**Google Meet Link:** " . $meetLink . "\n\n";
+                $message .= "A confirmation email has been sent to your email address with all the details. I look forward to our meeting!";
                 
                 if ($type === 'coaching') {
                     // For coaching service requests, we need to use the CoachingRequestMessages table
                     if (!isset($this->CoachingRequestMessages)) {
-                        $this->CoachingRequestMessages = $this->fetchTable('CoachingRequestMessages');
+                    $this->CoachingRequestMessages = $this->fetchTable('CoachingRequestMessages');
                     }
                     
                     $messageEntity = $this->CoachingRequestMessages->newEntity([
@@ -548,56 +521,55 @@ class CalendarController extends AppController
                 
                 // Send confirmation emails
                 try {
-                    // Get fresh appointment data with related entities
-                    try {
-                        // Check if the WritingServiceRequests association exists
-                        $containList = ['Users'];
-                        
-                        $columns = $this->Appointments->getSchema()->columns();
-                        if (in_array('writing_service_request_id', $columns)) {
-                            $containList[] = 'WritingServiceRequests';
-                        }
-                        if (in_array('coaching_service_request_id', $columns)) {
-                            $containList[] = 'CoachingServiceRequests';
-                        }
-                        
-                        $appointment = $this->Appointments->get($appointment->appointment_id, contain: [
-                            'Users'
-                        ]);
-                    } catch (\Exception $e1) {
-                        $appointment = $this->Appointments->get($appointment->appointment_id, contain: [
-                            'Users'
-                        ]);
-                    }
-                    
-                    // Send email to admin
+                    // Create the appointment mailer
                     $mailer = new AppointmentMailer();
                     
+                    // Send email to admin
                     try {
-                        // Send admin notification with fixed email
                         $adminEmail = 'diana@dianabonvini.com';
                         $adminName = 'Diana Bonvini';
-                        $mailer->send('adminNotification', [$appointment, $adminEmail, $adminName]);
+                        
+                        // Create a basic admin notification email
+                        $adminMailer = new \Cake\Mailer\Mailer('default');
+                        $adminMailer
+                            ->setTo($adminEmail)
+                            ->setSubject('New Appointment Booked - ' . $requestTitle)
+                            ->setEmailFormat('html')
+                            ->deliver("
+                                <h3>New Appointment Confirmation</h3>
+                                <p><strong>Client:</strong> {$user->first_name} {$user->last_name} ({$user->email})</p>
+                                <p><strong>Service:</strong> {$requestTitle}</p>
+                                <p><strong>Date:</strong> " . $dateObj->format('l, F j, Y') . "</p>
+                                <p><strong>Time:</strong> " . (new \DateTime($time))->format('g:i A') . "</p>
+                                <p><strong>Google Meet Link:</strong> <a href=\"{$meetLink}\">{$meetLink}</a></p>
+                                <p><strong>Request ID:</strong> {$requestId}</p>
+                                <p>Please make sure to be available at the scheduled time.</p>
+                            ");
                     } catch (\Exception $e2) {
                         // Continue even if admin email fails
                     }
                     
                     // Send confirmation to customer
                     try {
-                        // Get a fresh instance of the appointment with updated meeting link
-                        $freshAppointment = $this->Appointments->get($appointment->appointment_id, contain: [
-                            'Users'
-                        ]);
-                        
-                        // Use the AppointmentMailer directly for better consistency
-                        try {
-                            $mailer = new \App\Mailer\AppointmentMailer('default');
-                            $mailer->appointmentConfirmation($freshAppointment);
-                            $mailer->deliver();
-                        } catch (\Exception $e4) {
-                            // Fall back to previous method if the AppointmentMailer fails
-                            $mailer->send('appointmentConfirmation', [$freshAppointment]);
-                        }
+                        $customerMailer = new \Cake\Mailer\Mailer('default');
+                        $customerMailer
+                            ->setTo($user->email)
+                            ->setSubject('Appointment Confirmed - ' . $requestTitle)
+                            ->setEmailFormat('html')
+                            ->deliver("
+                                <h3>Your Appointment is Confirmed!</h3>
+                                <p>Dear {$user->first_name},</p>
+                                <p>Your appointment has been successfully booked for the following:</p>
+                                <ul>
+                                    <li><strong>Service:</strong> {$requestTitle}</li>
+                                    <li><strong>Date:</strong> " . $dateObj->format('l, F j, Y') . "</li>
+                                    <li><strong>Time:</strong> " . (new \DateTime($time))->format('g:i A') . "</li>
+                                    <li><strong>Duration:</strong> 30 minutes</li>
+                                </ul>
+                                <p><strong>Join the meeting:</strong> <a href=\"{$meetLink}\" style=\"background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;\">Join Google Meet</a></p>
+                                <p>Please save this link and be available at the scheduled time. If you need to reschedule or have any questions, please contact us.</p>
+                                <p>Best regards,<br>Diana Bonvini</p>
+                            ");
                     } catch (\Exception $e3) {
                         // Continue even if customer email fails
                     }
@@ -605,8 +577,8 @@ class CalendarController extends AppController
                     // Continue even if email process fails
                 }
                 
-                // Always show success message even if Google Calendar sync failed
-                $this->Flash->success(__('Appointment confirmed for {0} at {1}. You will receive a confirmation email shortly.', 
+                // Always show success message
+                $this->Flash->success(__('Appointment confirmed for {0} at {1}. You will receive a confirmation email shortly with the Google Meet link.', 
                     $dateObj->format('l, F j, Y'), 
                     (new \DateTime($time))->format('g:i A')
                 ));
@@ -625,7 +597,8 @@ class CalendarController extends AppController
                 }
             }
         } catch (\Exception $e) {
-            $this->Flash->error(__('An error occurred: {0}', $e->getMessage()));
+            \Cake\Log\Log::error('AcceptTimeSlot error: ' . $e->getMessage());
+            $this->Flash->error(__('An error occurred while booking the appointment. Please try again.'));
             if ($type === 'coaching') {
                 return $this->redirect(['controller' => 'CoachingServiceRequests', 'action' => 'view', $requestId]);
             } else {
