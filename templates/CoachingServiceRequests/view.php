@@ -17,7 +17,7 @@
                 <div class="bg-gradient-to-r from-blue-700 to-blue-500 px-6 py-4">
                     <div class="flex justify-between items-center">
                         <h1 class="text-xl font-bold text-white">Coaching Request Details</h1>
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium 
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
                             <?php
                             $statusColors = [
                                 'pending' => 'bg-yellow-100 text-yellow-800',
@@ -42,7 +42,7 @@
                             <span class="font-medium">Type:</span> <?= h($coachingServiceRequest->service_type) ?>
                         </p>
                         <p class="text-sm text-gray-600 mb-1">
-                            <span class="font-medium">Created:</span> 
+                            <span class="font-medium">Created:</span>
                             <span class="local-time" data-datetime="<?= $coachingServiceRequest->created_at->jsonSerialize() ?>">
                                 <?= $coachingServiceRequest->created_at->format('Y-m-d H:i') ?>
                             </span>
@@ -110,7 +110,7 @@
                                                     <div>
                                                         <p class="text-sm font-medium text-gray-900"><?= h($document->document_name) ?></p>
                                                         <p class="text-xs text-gray-500">
-                                                            <?= h(ucfirst($document->uploaded_by)) ?> · 
+                                                            <?= h(ucfirst($document->uploaded_by)) ?> ·
                                                             <span class="local-time" data-datetime="<?= $document->created_at->jsonSerialize() ?>">
                                                                 <?= $document->created_at->format('Y-m-d H:i') ?>
                                                             </span>
@@ -159,7 +159,7 @@
                 </div>
                 <div class="p-6">
                     <!-- Messages Container -->
-                    <div class="space-y-4 mb-6">
+                    <div class="space-y-4 mb-6 max-h-[400px] overflow-y-auto">
                         <?php if (!empty($coachingServiceRequest->coaching_request_messages)) : ?>
                             <?php foreach ($coachingServiceRequest->coaching_request_messages as $message) : ?>
                                 <?php
@@ -318,7 +318,7 @@
                                                     ?>
                                                 </div>
                                                 <div class="mt-1 text-xs text-gray-500">
-                                                    <?= $isAdmin ? 'Admin' : 'You' ?> · 
+                                                    <?= $isAdmin ? 'Admin' : 'You' ?> ·
                                                     <span class="local-time" data-datetime="<?= $message->created_at->jsonSerialize() ?>">
                                                         <?= $message->created_at->format('Y-m-d H:i') ?>
                                                     </span>
@@ -468,7 +468,7 @@
                                 $paymentNumber++;
                             endforeach; ?>
                         </div>
-                        
+
                         <!-- Payment Summary -->
                         <div class="mt-4 pt-4 border-t border-gray-200">
                             <div class="grid grid-cols-2 gap-4 text-sm">
@@ -554,11 +554,11 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const timeElements = document.querySelectorAll('.local-time');
-        
+
         timeElements.forEach(el => {
             const isoTime = el.dataset.datetime;
             const date = new Date(isoTime);
-            
+
             el.textContent = date.toLocaleString(undefined, {
                 year: 'numeric',
                 month: '2-digit',
@@ -576,23 +576,23 @@
                 messagesSection.scrollIntoView();
             }
         }
-        
+
         // Auto-check for payment status updates on page load
         checkPaymentStatuses();
-        
+
         // Setup regular payment status checking
         setInterval(checkPaymentStatuses, 30000); // Check every 30 seconds
     });
-    
+
     // Function to check payment statuses
     function checkPaymentStatuses() {
         const requestId = '<?= $coachingServiceRequest->coaching_service_request_id ?>';
         const paymentButtons = document.querySelectorAll('[data-payment-id]');
-        
+
         if (paymentButtons.length === 0) return;
-        
+
         const paymentIds = Array.from(paymentButtons).map(btn => btn.dataset.paymentId);
-        
+
         fetch(`/coaching-service-requests/checkPaymentStatus/${requestId}`, {
             method: 'POST',
             body: JSON.stringify({ paymentIds }),
@@ -612,15 +612,15 @@
             console.error('Error checking payment status:', error);
         });
     }
-    
+
     // Function to update payment UI based on status
     function updatePaymentUI(payments) {
         payments.forEach(payment => {
             if (!payment.isPaid) return; // Only update if payment is now paid
-            
+
             const container = document.querySelector(`[data-payment-container="${payment.id}"]`);
             if (!container) return;
-            
+
             // Update button to show completed state
             const button = container.querySelector('.payment-button');
             if (button) {
@@ -633,19 +633,19 @@
                     </div>
                 `;
             }
-            
+
             // Show payment status message
             const statusDiv = container.querySelector('.payment-status');
             if (statusDiv) {
                 statusDiv.classList.remove('hidden');
                 statusDiv.classList.add('payment-completed');
-                
+
                 const statusText = statusDiv.querySelector('.status-text');
                 if (statusText) {
                     statusText.textContent = 'Payment received';
                     statusText.classList.add('text-green-600', 'font-medium');
                 }
-                
+
                 const statusDate = statusDiv.querySelector('.status-date');
                 if (statusDate && payment.paidDate) {
                     const paidDate = new Date(payment.paidDate);
@@ -654,4 +654,4 @@
             }
         });
     }
-</script> 
+</script>
