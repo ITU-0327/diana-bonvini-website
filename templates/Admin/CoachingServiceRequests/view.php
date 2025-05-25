@@ -1115,51 +1115,53 @@ document.addEventListener('DOMContentLoaded', function() {
     // Enhanced form validation for payment modals
     const paymentRequestForm = document.getElementById('paymentRequestForm');
     if (paymentRequestForm) {
-        paymentRequestForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
+        console.log('Payment request form found:', paymentRequestForm);
+        console.log('Form action:', paymentRequestForm.action);
+        console.log('Form method:', paymentRequestForm.method);
+        
+        paymentRequestForm.addEventListener('submit', function(e) {
+            console.log('=== PAYMENT REQUEST FORM SUBMISSION ===');
+            console.log('Event:', e);
+            console.log('Form:', this);
 
             const amount = this.querySelector('input[name="amount"]').value;
             const description = this.querySelector('textarea[name="description"]').value;
+            
+            console.log('Form data:');
+            console.log('- Amount:', amount);
+            console.log('- Description:', description);
 
+            // Validate amount
             if (!amount || parseFloat(amount) <= 0) {
-                await showCustomConfirmation(
-                    'Invalid Amount',
-                    'Please enter a valid payment amount.',
-                    '<i class="fas fa-exclamation-circle mr-1"></i> The amount must be greater than $0.00',
-                    'OK',
-                    'btn-warning'
-                );
-                return;
+                e.preventDefault();
+                console.log('VALIDATION FAILED: Invalid amount');
+                alert('Please enter a valid payment amount greater than $0.00');
+                return false;
             }
 
+            // Validate description
             if (!description.trim()) {
-                await showCustomConfirmation(
-                    'Missing Description',
-                    'Please enter a payment description.',
-                    '<i class="fas fa-info-circle mr-1"></i> This helps the client understand what the payment is for.',
-                    'OK',
-                    'btn-warning'
-                );
-                return;
+                e.preventDefault();
+                console.log('VALIDATION FAILED: Missing description');
+                alert('Please enter a payment description.');
+                return false;
             }
 
-            // Confirm payment request
-            const confirmed = await showCustomConfirmation(
-                'Send Payment Request',
-                `Send a payment request for <strong>$${parseFloat(amount).toFixed(2)}</strong>?`,
-                '<i class="fas fa-envelope mr-1"></i> The client will receive an email with a payment link.',
-                'Send Request',
-                'btn-success'
-            );
-
-            if (confirmed) {
-                // Show loading state
-                const submitBtn = this.querySelector('button[type="submit"]');
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Sending...';
-                this.submit();
-            }
+            // If validation passes, allow form to submit naturally
+            console.log('VALIDATION PASSED: Allowing form submission');
+            console.log('Form will submit to:', this.action);
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Sending...';
+            
+            // Form will submit naturally
+            console.log('Form submission proceeding...');
+            return true;
         });
+    } else {
+        console.error('Payment request form NOT FOUND - this is the problem!');
+        console.log('Available forms on page:', document.querySelectorAll('form'));
     }
 
     const markAsPaidForm = document.getElementById('markAsPaidForm');
@@ -1453,11 +1455,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 'id' => 'markAsPaidForm'
             ]) ?>
 
-            <!-- Include _csrfToken field explicitly -->
-            <?= $this->Form->hidden('_csrfToken', [
-                'value' => $this->request->getAttribute('csrfToken')
-            ]) ?>
-
             <div class="modal-body">
                 <p class="text-muted mb-3">Record a manual payment for this coaching service request. The client will be notified of the payment being recorded.</p>
 
@@ -1507,14 +1504,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 </button>
             </div>
             <div class="modal-body">
+                <?php 
+                $formUrl = $this->Url->build(['action' => 'sendPaymentRequest', $coachingServiceRequest->coaching_service_request_id]);
+                echo "<!-- DEBUG: Form URL will be: " . $formUrl . " -->";
+                ?>
                 <?= $this->Form->create(null, [
                     'url' => ['action' => 'sendPaymentRequest', $coachingServiceRequest->coaching_service_request_id],
                     'id' => 'paymentRequestForm',
-                ]) ?>
-
-                <!-- Include _csrfToken field explicitly -->
-                <?= $this->Form->hidden('_csrfToken', [
-                    'value' => $this->request->getAttribute('csrfToken')
                 ]) ?>
 
                 <div class="form-group">

@@ -9,6 +9,7 @@ use Cake\Event\EventInterface;
 use Cake\Core\Configure;
 use Cake\Utility\Text;
 use Psr\Http\Message\UploadedFileInterface;
+use Exception;
 
 /**
  * CoachingServiceRequests Controller
@@ -52,7 +53,10 @@ class CoachingServiceRequestsController extends AppController
                     'getAvailableTimeSlots',
                     'sendTimeSlots',
                     'updateStatus',
-                    'markAsPaid'
+                    'markAsPaid',
+                    'sendPaymentRequest',
+                    'sendMessage',
+                    'uploadDocument'
                 ]
             ]);
         }
@@ -180,6 +184,7 @@ class CoachingServiceRequestsController extends AppController
      */
     public function sendPaymentRequest(?string $id = null)
     {
+        $this->log('sendPaymentRequest called with id: ' . ($id ?? 'null'), 'debug');
         $this->request->allowMethod(['post']);
 
         /** @var \App\Model\Entity\User $admin */
@@ -187,11 +192,14 @@ class CoachingServiceRequestsController extends AppController
         $coachingServiceRequest = $this->CoachingServiceRequests->get($id);
 
         $data = $this->request->getData();
+        $this->log('Request data received: ' . json_encode($data), 'debug');
+        
         $amount = $data['amount'] ?? null;
         $description = $data['description'] ?? 'Coaching service fee';
 
         // Validate amount
         if (empty($amount) || !is_numeric($amount) || (float)$amount <= 0) {
+            $this->log('Invalid amount provided: ' . ($amount ?? 'null'), 'error');
             $this->Flash->error(__('Please provide a valid payment amount.'));
             return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
         }
@@ -281,6 +289,7 @@ class CoachingServiceRequestsController extends AppController
             $this->Flash->error(__('An error occurred while creating the payment request. Please try again.'));
         }
 
+        $this->log('sendPaymentRequest completed successfully for id: ' . $id, 'debug');
         return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
     }
 
