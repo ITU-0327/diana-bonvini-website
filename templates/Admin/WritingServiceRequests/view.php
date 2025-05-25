@@ -208,6 +208,10 @@ $this->assign('title', __('Writing Service Request Details'));
 
                         <div class="form-group mb-0 d-flex justify-content-between align-items-center">
                             <div class="action-buttons">
+                                <!-- Quick file upload -->
+                                <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal" data-target="#quickUploadModal" title="Quick File Upload">
+                                    <i class="fas fa-paperclip"></i>
+                                </button>
                             </div>
                             <button type="submit" class="btn btn-primary px-4" id="sendButton">
                                 <i class="fas fa-paper-plane mr-1"></i>
@@ -246,9 +250,9 @@ $this->assign('title', __('Writing Service Request Details'));
                                         'class' => 'form-control-file',
                                         'label' => false,
                                         'required' => true,
-                                        'accept' => '.pdf,.doc,.docx,.txt,.jpg,.jpeg',
+                                        'accept' => '.pdf,.doc,.docx',
                                     ]) ?>
-                                    <small class="form-text text-muted">Accepted: PDF, Word, TXT, or JPEG files</small>
+                                    <small class="form-text text-muted">Accepted: PDF and Word documents only</small>
                                 </div>
                                 <button type="submit" class="btn btn-primary btn-sm btn-block">
                                     <i class="fas fa-upload mr-1"></i> Upload Document
@@ -2360,3 +2364,46 @@ function formatFileSize(int $bytes): string
     }
 }
 ?>
+
+<?php $this->end(); ?>
+
+<!-- Quick Upload Modal -->
+<div class="modal fade" id="quickUploadModal" tabindex="-1" role="dialog" aria-labelledby="quickUploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickUploadModalLabel">
+                    <i class="fas fa-paperclip mr-2"></i>Quick File Upload
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <?= $this->Form->create(null, [
+                'url' => ['prefix' => 'Admin', 'controller' => 'WritingServiceRequests', 'action' => 'uploadDocument', $writingServiceRequest->writing_service_request_id],
+                'type' => 'file',
+                'id' => 'quickUploadForm'
+            ]) ?>
+            <div class="modal-body">
+                <p class="text-muted">Quickly upload a document to share with the customer. The upload will automatically add a message to the chat.</p>
+                <div class="form-group">
+                    <label for="quickDocument" class="font-weight-bold">Select Document</label>
+                    <?= $this->Form->file('document', [
+                        'class' => 'form-control-file',
+                        'id' => 'quickDocument',
+                        'required' => true,
+                        'accept' => '.pdf,.doc,.docx'
+                    ]) ?>
+                    <small class="form-text text-muted">Accepted file types: PDF and Word documents only</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-upload mr-1"></i>Upload & Send
+                </button>
+            </div>
+            <?= $this->Form->end() ?>
+        </div>
+    </div>
+</div>

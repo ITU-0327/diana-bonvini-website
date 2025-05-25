@@ -112,6 +112,16 @@ class WritingServiceRequestsController extends BaseAdminController
             },
         ]);
 
+        // Fetch request documents
+        $requestDocumentsTable = $this->fetchTable('RequestDocuments');
+        $requestDocuments = $requestDocumentsTable->find()
+            ->where([
+                'writing_service_request_id' => $id,
+                'is_deleted' => false,
+            ])
+            ->orderBy(['created_at' => 'DESC'])
+            ->toArray();
+
         // Mark messages from client as read when admin views them
         $this->markMessagesAsRead($writingServiceRequest, $user->user_id);
 
@@ -177,7 +187,7 @@ class WritingServiceRequestsController extends BaseAdminController
             }
         }
 
-        $this->set(compact('writingServiceRequest'));
+        $this->set(compact('writingServiceRequest', 'requestDocuments'));
     }
 
     /**
@@ -1139,13 +1149,11 @@ class WritingServiceRequestsController extends BaseAdminController
         }
         $allowedMimeTypes = [
             'application/pdf',
-            'image/jpeg',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'application/msword',
-            'text/plain',
         ];
         if (!in_array($file->getClientMediaType(), $allowedMimeTypes)) {
-            $this->Flash->error(__('Invalid file type. Please upload PDF, Word, or TXT documents only.'));
+            $this->Flash->error(__('Invalid file type. Please upload PDF or Word documents only.'));
             return $this->redirect(['action' => $redirectAction]);
         }
         $uploadPath = WWW_ROOT . 'uploads' . DS . 'documents';

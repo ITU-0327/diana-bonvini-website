@@ -118,16 +118,30 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                 if (preg_match_all('/- ([^:]+): ([^\n]+)/', $parts[1], $matches, PREG_SET_ORDER)) {
                                                             echo '<div class="time-slots-list space-y-2 mt-2">';
 
+                                                    // Check if ANY appointment exists for this request
+                                                    $hasAnyAppointment = false;
+                                                    if (isset($appointments)) {
+                                                        foreach ($appointments as $appointment) {
+                                                            if (
+                                                                $appointment->writing_service_request_id == $writingServiceRequest->writing_service_request_id &&
+                                                                $appointment->status != 'cancelled' &&
+                                                                $appointment->is_deleted == false
+                                                            ) {
+                                                                $hasAnyAppointment = true;
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+
                                                     foreach ($matches as $match) {
                                                         $date = trim($match[1]);
                                                         $time = trim($match[2]);
 
-                                                        // Check if this specific slot is already booked
+                                                        // Check if this specific slot matches the confirmed appointment
                                                         $isThisSlotBooked = false;
                                                         if (isset($appointments)) {
                                                             foreach ($appointments as $appointment) {
                                                                 if (
-                                                                    $appointment->writing_service_request_id == $writingServiceRequest->writing_service_request_id &&
                                                                     $appointment->appointment_date->format('l, F j, Y') == $date &&
                                                                     $appointment->appointment_time->format('g:i A') == substr($time, 0, 7) &&
                                                                     $appointment->status != 'cancelled' &&
@@ -146,20 +160,27 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                                 echo '<div class="text-xs text-gray-500">' . h($time) . '</div>';
                                                         echo '</div>';
 
-                                                        if ($isThisSlotBooked) {
-                                                            // This specific slot is booked, show it as confirmed
+                                                        if ($hasAnyAppointment) {
+                                                            // If this is the booked slot, show it as confirmed
+                                                            if ($isThisSlotBooked) {
                                                                         echo '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">';
                                                                         echo '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">';
                                                                         echo '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
                                                                         echo 'Confirmed</span>';
+                                                            } else {
+                                                                // For other slots, show as unavailable
+                                                                        echo '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">';
+                                                                        echo '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">';
+                                                                        echo '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+                                                                        echo 'Unavailable</span>';
+                                                            }
                                                         } else {
-                                                            // This slot is available for booking
+                                                            // No appointment exists yet, show normal accept button
                                                             echo '<a href="' . $this->Url->build(['controller' => 'Calendar', 'action' => 'acceptTimeSlot', '?' => [
-                                                                'date' => $date,
-                                                                'time' => $time,
+                                                                'date' => urlencode($date),
+                                                                'time' => urlencode($time),
                                                                 'request_id' => $writingServiceRequest->writing_service_request_id,
                                                                 'message_id' => $msg->request_message_id,
-                                                                'type' => 'writing'
                                                                     ]]) . '" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200">';
                                                                     echo '<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">';
                                                                     echo '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
@@ -338,7 +359,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                 <div class="p-6">
                     <?php if (!empty($writingServiceRequest->writing_service_payments)): ?>
                         <div class="space-y-3">
-                            <?php 
+                            <?php
                             $paymentNumber = 1;
                             foreach ($writingServiceRequest->writing_service_payments as $payment): ?>
                                 <div class="border rounded-lg p-3 <?= $payment->status === 'paid' ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50' ?>">
@@ -388,17 +409,17 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                         <?php endif; ?>
                                     </div>
                                 </div>
-                            <?php 
+                            <?php
                             $paymentNumber++;
                             endforeach; ?>
                         </div>
-                        
+
                         <!-- Payment Summary -->
                         <div class="mt-4 pt-4 border-t border-gray-200">
                             <div class="grid grid-cols-2 gap-4 text-sm">
                                 <div class="text-center">
                                     <div class="font-medium text-green-600">
-                                        <?php 
+                                        <?php
                                             $paidCount = 0;
                                             $paidTotal = 0;
                                             foreach ($writingServiceRequest->writing_service_payments as $payment) {
@@ -414,7 +435,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                 </div>
                                 <div class="text-center">
                                     <div class="font-medium text-yellow-600">
-                                        <?php 
+                                        <?php
                                             $pendingCount = 0;
                                             $pendingTotal = 0;
                                             foreach ($writingServiceRequest->writing_service_payments as $payment) {
@@ -441,28 +462,114 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                     <?php endif; ?>
                 </div>
             </div>
-
-            <!-- Actions Card -->
+            <!-- Documents Card -->
             <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-                <div class="bg-gradient-to-r from-gray-700 to-gray-600 px-6 py-4">
-                    <h2 class="text-lg font-bold text-white">Actions</h2>
+                <div class="bg-gradient-to-r from-purple-700 to-purple-500 px-4 py-3">
+                    <h2 class="text-lg font-bold text-white flex justify-between items-center">
+                        <span>Documents</span>
+                        <?php if (!empty($requestDocuments)): ?>
+                            <span class="bg-white bg-opacity-20 rounded-full px-2 py-1 text-xs">
+                                <?= count($requestDocuments) ?>
+                            </span>
+                        <?php endif; ?>
+                    </h2>
+                </div>
+                <div class="p-4">
+                    <!-- Upload Form -->
+                    <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                        <h3 class="text-sm font-semibold text-gray-900 mb-2">Upload Document</h3>
+                        <?= $this->Form->create(null, [
+                            'url' => ['action' => 'uploadDocument', $writingServiceRequest->writing_service_request_id],
+                            'type' => 'file',
+                            'class' => 'space-y-2'
+                        ]) ?>
+                        <div>
+                            <?= $this->Form->file('document', [
+                                'class' => 'block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100',
+                                'accept' => '.pdf,.doc,.docx',
+                                'required' => true
+                            ]) ?>
+                            <p class="mt-1 text-xs text-gray-500">PDF and Word docs only</p>
                         </div>
-                <div class="p-6">
-                                <?= $this->Html->link(
-                                    '<i class="fas fa-arrow-left mr-2"></i> Back to Requests',
-                                    ['action' => 'index'],
-                                    ['class' => 'w-full mb-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 rounded inline-flex items-center justify-center text-sm', 'escape' => false],
-                                ) ?>
-                    <?= $this->Html->link(
-                        '<i class="fas fa-edit mr-2"></i> Edit Request',
-                        ['action' => 'edit', $writingServiceRequest->writing_service_request_id],
-                        ['class' => 'w-full bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold py-2 px-4 rounded inline-flex items-center justify-center text-sm', 'escape' => false],
-                    ) ?>
-                            </div>
+                        <div>
+                            <?= $this->Form->button('Upload', [
+                                'class' => 'w-full inline-flex justify-center items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500',
+                                'type' => 'submit'
+                            ]) ?>
                         </div>
+                        <?= $this->Form->end() ?>
+                    </div>
+
+                    <!-- Documents List -->
+                    <?php if (!empty($requestDocuments)): ?>
+                        <div class="space-y-2">
+                            <h3 class="text-sm font-semibold text-gray-900">Uploaded Documents</h3>
+                            <?php foreach ($requestDocuments as $document): ?>
+                                <div class="border border-gray-200 rounded-lg p-2 hover:bg-gray-50">
+                                    <div class="flex items-start space-x-2">
+                                        <div class="flex-shrink-0 mt-0.5">
+                                            <?php
+                                            $iconClass = match (true) {
+                                                str_contains($document->file_type, 'pdf') => 'text-red-500',
+                                                str_contains($document->file_type, 'word') || str_contains($document->file_type, 'doc') => 'text-blue-700',
+                                                default => 'text-gray-500'
+                                            };
+                                            ?>
+                                            <svg class="w-6 h-6 <?= $iconClass ?>" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs font-medium text-gray-900 truncate mb-1" title="<?= h($document->document_name) ?>">
+                                                <?= h($document->document_name) ?>
+                                            </p>
+                                            <div class="text-xs text-gray-500 space-y-0.5">
+                                                <div class="flex items-center justify-between">
+                                                    <span><?= h(strtoupper(pathinfo($document->document_name, PATHINFO_EXTENSION))) ?></span>
+                                                    <span><?= formatFileSize($document->file_size) ?></span>
+                                                </div>
+                                                <div class="flex items-center justify-between">
+                                                    <span>
+                                                        <?php if (!empty($document->created_at)): ?>
+                                                            <?= $document->created_at->format('M j, Y') ?>
+                                                        <?php else: ?>
+                                                            Unknown date
+                                                        <?php endif; ?>
+                                                    </span>
+                                                    <span class="text-xs">
+                                                        <?= $document->uploaded_by === 'admin' ? 'Admin' : 'You' ?>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2">
+                                                <a href="/<?= h($document->document_path) ?>"
+                                                   target="_blank"
+                                                   class="w-full inline-flex justify-center items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-purple-500">
+                                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                    View Document
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
                         </div>
+                    <?php else: ?>
+                        <div class="text-center py-6">
+                            <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">No documents</h3>
+                            <p class="mt-1 text-xs text-gray-500">Upload documents to share with the admin.</p>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
 
 <!-- Preserving original JavaScript and helper functions at the bottom of the file -->
 <!-- Will be preserved in subsequent edits -->

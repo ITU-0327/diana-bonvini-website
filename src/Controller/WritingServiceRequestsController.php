@@ -1453,14 +1453,12 @@ class WritingServiceRequestsController extends AppController
 
         $allowedMimeTypes = [
             'application/pdf',  // PDF
-            'image/jpeg',       // JPG/JPEG
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
             'application/msword', // DOC
-            'text/plain',       // TXT
         ];
 
         if (!in_array($file->getClientMediaType(), $allowedMimeTypes)) {
-            $this->Flash->error(__('Invalid file type. Please upload PDF, Word, or TXT documents only.'));
+            $this->Flash->error(__('Invalid file type. Please upload PDF or Word documents only.'));
 
             return $this->redirect(['action' => $redirectAction]);
         }
