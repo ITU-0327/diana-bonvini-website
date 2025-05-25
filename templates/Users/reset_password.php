@@ -14,7 +14,9 @@
             </div>
         </div>
 
-        <?= $this->Flash->render() ?>
+        <div class="flash-messages-container">
+            <?= $this->Flash->render() ?>
+        </div>
 
         <h2 class="text-xl font-semibold mb-4">Reset Your Password</h2>
         <p class="mb-4">Enter a new password and confirm it below.</p>
