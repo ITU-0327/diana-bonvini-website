@@ -70,7 +70,11 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                 </div>
                 <div class="p-6">
                     <!-- Messages Container -->
-                    <div class="space-y-4 mb-6" id="chat-messages">
+                    <div
+                        class="chat-container mb-3"
+                        id="chat-messages"
+                        style="max-height:470px; overflow-y:auto; scroll-behavior:smooth;"
+                    >
                         <div class="chat-loading-indicator hidden" id="chat-loading">
                             <i class="fas fa-sync-alt fa-spin mr-1"></i> Updating...
                         </div>
