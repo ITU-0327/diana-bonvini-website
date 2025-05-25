@@ -151,7 +151,7 @@ $this->assign('title', __('Writing Service Management'));
                                     <th>Title</th>
                                     <th>Client</th>
                                     <th>Service Type</th>
-                                    <th>Price</th>
+                                    <th>Amount Paid</th>
                                     <th>Status</th>
                                     <th>Created</th>
                                 </tr>
@@ -177,10 +177,20 @@ $this->assign('title', __('Writing Service Management'));
                                             </td>
                                             <td class="align-middle"><?= h(Inflector::humanize($request->service_type ?? 'Other')) ?></td>
                                             <td class="align-middle">
-                                                <?php if (isset($request->final_price)) : ?>
-                                                    <span class="font-weight-bold">$<?= number_format((float)$request->final_price, 2) ?></span>
+                                                <?php 
+                                                $totalPaid = 0;
+                                                if (isset($request->writing_service_payments) && !empty($request->writing_service_payments)) {
+                                                    foreach ($request->writing_service_payments as $payment) {
+                                                        if ($payment->status === 'paid') {
+                                                            $totalPaid += (float)$payment->amount;
+                                                        }
+                                                    }
+                                                }
+                                                ?>
+                                                <?php if ($totalPaid > 0) : ?>
+                                                    <span class="font-weight-bold text-success">$<?= number_format($totalPaid, 2) ?></span>
                                                 <?php else : ?>
-                                                    <span class="badge bg-warning">Pending Quote</span>
+                                                    <span class="text-muted">$0.00</span>
                                                 <?php endif; ?>
                                             </td>
                                             <td class="align-middle">

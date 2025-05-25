@@ -32,9 +32,14 @@ class WritingServiceRequestsController extends BaseAdminController
     public function index(): void
     {
         $query = $this->WritingServiceRequests->find()
-            ->contain(['Users' => function ($q) {
-                return $q->where(['Users.is_deleted' => false]);
-            }])
+            ->contain([
+                'Users' => function ($q) {
+                    return $q->where(['Users.is_deleted' => false]);
+                },
+                'WritingServicePayments' => function ($q) {
+                    return $q->orderBy(['WritingServicePayments.created_at' => 'DESC']);
+                },
+            ])
             ->where(['WritingServiceRequests.is_deleted' => false])
             ->order(['WritingServiceRequests.created_at' => 'DESC']);
 
@@ -69,12 +74,11 @@ class WritingServiceRequestsController extends BaseAdminController
             ])
             ->count();
 
-        $totalRevenue = $this->WritingServiceRequests->find()
+        $totalRevenue = $this->WritingServiceRequests->WritingServicePayments->find()
             ->where([
-                'WritingServiceRequests.is_deleted' => false,
-                'WritingServiceRequests.final_price IS NOT' => null,
+                'WritingServicePayments.status' => 'paid',
             ])
-            ->select(['total' => $this->WritingServiceRequests->find()->func()->sum('WritingServiceRequests.final_price')])
+            ->select(['total' => $this->WritingServiceRequests->WritingServicePayments->find()->func()->sum('WritingServicePayments.amount')])
             ->first()
             ->total ?? 0;
 
