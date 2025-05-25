@@ -19,31 +19,42 @@ class AppointmentMailer extends Mailer
      */
     public function appointmentConfirmation(Appointment $appointment): void
     {
-        // Make sure we have the meeting link
-        if (empty($appointment->meeting_link)) {
-            // Create a fallback meeting link if not set - make it more professional
-            $dateStr = $appointment->appointment_date->format('Y-m-d');
-            $timeStr = $appointment->appointment_time->format('Hi');
-            $userInitials = strtolower(substr($appointment->user->first_name, 0, 1) . substr($appointment->user->last_name, 0, 1));
-            
-            // Generate a consistent meeting room code
-            $meetingCode = 'diana-' . $userInitials . '-' . $dateStr . '-' . $timeStr;
-            $meetingCode = preg_replace('/[^a-z0-9\-]/', '', $meetingCode); // Clean the code
-            
-            // Create Google Meet link with professional room name
-            $appointment->meeting_link = "https://meet.google.com/" . substr(md5($meetingCode), 0, 10) . "-" . substr(md5($appointment->appointment_id), 0, 10) . "-" . substr(md5(time()), 0, 10);
-        }
+        // The appointment should already have a proper meeting link from the controller
+        // No need to generate fallback here anymore since we handle it properly in CalendarController
         
         $this
             ->setTo($appointment->user->email, $appointment->user->first_name . ' ' . $appointment->user->last_name)
-            ->setSubject('Your Appointment Confirmation')
+            ->setSubject('✅ Your Writing Consultation is Confirmed!')
             ->setEmailFormat('both')
             ->setViewVars([
                 'appointment' => $appointment,
                 'userName' => $appointment->user->first_name,
+                'meetingLink' => $appointment->meeting_link, // Use the actual meeting link generated
             ])
             ->viewBuilder()
                 ->setTemplate('appointment_confirmation')
+                ->setLayout('default');
+    }
+    
+    /**
+     * Build email for coaching appointment confirmation to customer
+     *
+     * @param \App\Model\Entity\Appointment $appointment The appointment entity
+     * @return void
+     */
+    public function coachingAppointmentConfirmation(Appointment $appointment): void
+    {
+        $this
+            ->setTo($appointment->user->email, $appointment->user->first_name . ' ' . $appointment->user->last_name)
+            ->setSubject('✅ Your Coaching Consultation is Confirmed!')
+            ->setEmailFormat('both')
+            ->setViewVars([
+                'appointment' => $appointment,
+                'userName' => $appointment->user->first_name,
+                'meetingLink' => $appointment->meeting_link, // Use the actual meeting link generated
+            ])
+            ->viewBuilder()
+                ->setTemplate('coaching_appointment_confirmation')
                 ->setLayout('default');
     }
     
@@ -60,15 +71,42 @@ class AppointmentMailer extends Mailer
         $this
             ->setEmailFormat('both')
             ->setTo($adminEmail, $adminName)
-            ->setSubject('🔔 New Appointment Confirmed: ' . $appointment->appointment_date->format('M j, Y') . ' at ' . $appointment->appointment_time->format('g:i A'))
+            ->setSubject('🔔 New Appointment Booked: ' . $appointment->user->first_name . ' ' . $appointment->user->last_name . ' - ' . $appointment->appointment_date->format('M j, Y') . ' at ' . $appointment->appointment_time->format('g:i A'))
             ->setViewVars([
                 'appointment' => $appointment,
                 'adminName' => $adminName,
                 'customerName' => $appointment->user->first_name . ' ' . $appointment->user->last_name,
                 'customerEmail' => $appointment->user->email,
+                'meetingLink' => $appointment->meeting_link, // Use the actual meeting link
             ])
             ->viewBuilder()
                 ->setTemplate('admin_appointment_notification')
+                ->setLayout('default');
+    }
+    
+    /**
+     * Build email for coaching appointment confirmation to admin
+     *
+     * @param \App\Model\Entity\Appointment $appointment The appointment entity
+     * @param string $adminEmail Admin email address
+     * @param string $adminName Admin name
+     * @return void
+     */
+    public function coachingAdminNotification(Appointment $appointment, string $adminEmail, string $adminName): void
+    {
+        $this
+            ->setEmailFormat('both')
+            ->setTo($adminEmail, $adminName)
+            ->setSubject('🔔 New Coaching Appointment Booked: ' . $appointment->user->first_name . ' ' . $appointment->user->last_name . ' - ' . $appointment->appointment_date->format('M j, Y') . ' at ' . $appointment->appointment_time->format('g:i A'))
+            ->setViewVars([
+                'appointment' => $appointment,
+                'adminName' => $adminName,
+                'customerName' => $appointment->user->first_name . ' ' . $appointment->user->last_name,
+                'customerEmail' => $appointment->user->email,
+                'meetingLink' => $appointment->meeting_link, // Use the actual meeting link
+            ])
+            ->viewBuilder()
+                ->setTemplate('admin_coaching_appointment_notification')
                 ->setLayout('default');
     }
     

@@ -13,8 +13,8 @@
                 <div style="color: #667eea; font-size: 28px; font-weight: bold;">✓</div>
             </div>
         </div>
-        <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">Appointment Confirmed!</h1>
-        <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Your writing consultation is all set</p>
+        <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">Coaching Appointment Confirmed!</h1>
+        <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">Your coaching consultation is all set</p>
     </div>
 
     <!-- Main Content -->
@@ -23,7 +23,7 @@
         <div style="margin-bottom: 30px;">
             <h2 style="color: #1a202c; margin: 0 0 15px 0; font-size: 24px; font-weight: 600;">Hello <?= h($userName) ?>,</h2>
             <p style="color: #4a5568; margin: 0; font-size: 16px; line-height: 1.6;">
-                Great news! Your writing consultation appointment has been successfully confirmed. We're excited to help you with your writing project.
+                Great news! Your coaching consultation appointment has been successfully confirmed. We're excited to help you achieve your goals and unlock your potential.
             </p>
         </div>
 
@@ -63,7 +63,7 @@
                 <tr>
                     <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; vertical-align: top;">
                         <div style="display: flex; align-items: center;">
-                            <span style="font-size: 16px; margin-right: 8px;">✍️</span>
+                            <span style="font-size: 16px; margin-right: 8px;">🚀</span>
                             <strong style="color: #2d3748; font-size: 14px;">Service:</strong>
                         </div>
                     </td>
@@ -71,21 +71,30 @@
                         <?= ucfirst(str_replace('_', ' ', $appointment->appointment_type)) ?>
                     </td>
                 </tr>
-                <?php if (!empty($appointment->writing_service_request) && isset($appointment->writing_service_request->writing_service_request_id) && isset($appointment->writing_service_request->service_title)): ?>
-                <tr>
-                    <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; vertical-align: top;">
-                        <div style="display: flex; align-items: center;">
-                            <span style="font-size: 16px; margin-right: 8px;">📋</span>
-                            <strong style="color: #2d3748; font-size: 14px;">Project:</strong>
-                        </div>
-                    </td>
-                    <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #4a5568; font-size: 15px; font-weight: 500;">
-                        <?= h($appointment->writing_service_request->service_title) ?>
-                        <div style="color: #a0aec0; font-size: 13px; margin-top: 2px;">
-                            Request ID: <?= h($appointment->writing_service_request->writing_service_request_id) ?>
-                        </div>
-                    </td>
-                </tr>
+                <?php if (!empty($appointment->coaching_service_request_id)): ?>
+                    <?php
+                    // Try to get the coaching service request details
+                    $coachingRequest = null;
+                    if (isset($appointment->coaching_service_request)) {
+                        $coachingRequest = $appointment->coaching_service_request;
+                    }
+                    ?>
+                    <?php if ($coachingRequest && isset($coachingRequest->coaching_service_request_id) && isset($coachingRequest->service_title)): ?>
+                    <tr>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; vertical-align: top;">
+                            <div style="display: flex; align-items: center;">
+                                <span style="font-size: 16px; margin-right: 8px;">📋</span>
+                                <strong style="color: #2d3748; font-size: 14px;">Project:</strong>
+                            </div>
+                        </td>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #4a5568; font-size: 15px; font-weight: 500;">
+                            <?= h($coachingRequest->service_title) ?>
+                            <div style="color: #a0aec0; font-size: 13px; margin-top: 2px;">
+                                Request ID: <?= h($coachingRequest->coaching_service_request_id) ?>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endif; ?>
                 <?php endif; ?>
                 <?php if (!empty($appointment->meeting_link)): ?>
                 <tr>
@@ -126,7 +135,7 @@
         <div style="background-color: #ebf8ff; border: 1px solid #bee3f8; border-radius: 12px; padding: 25px; margin-bottom: 30px;">
             <h3 style="color: #2c5282; margin: 0 0 15px 0; font-size: 18px; font-weight: 600; display: flex; align-items: center;">
                 <span style="font-size: 20px; margin-right: 10px;">📋</span>
-                Pre-Meeting Checklist
+                Pre-Coaching Session Checklist
             </h3>
             <ul style="margin: 0; padding-left: 0; list-style: none; color: #2d3748;">
                 <li style="margin-bottom: 10px; display: flex; align-items: flex-start;">
@@ -139,11 +148,11 @@
                 </li>
                 <li style="margin-bottom: 10px; display: flex; align-items: flex-start;">
                     <span style="color: #48bb78; margin-right: 10px; font-weight: bold;">✓</span>
-                    <span style="line-height: 1.5;">Prepare your questions and any materials you'd like to discuss</span>
+                    <span style="line-height: 1.5;">Prepare your goals, challenges, and questions you'd like to discuss</span>
                 </li>
                 <li style="margin-bottom: 10px; display: flex; align-items: flex-start;">
                     <span style="color: #48bb78; margin-right: 10px; font-weight: bold;">✓</span>
-                    <span style="line-height: 1.5;">Have pen and paper ready for taking notes</span>
+                    <span style="line-height: 1.5;">Have pen and paper ready for taking notes and action items</span>
                 </li>
                 <li style="display: flex; align-items: flex-start;">
                     <span style="color: #48bb78; margin-right: 10px; font-weight: bold;">✓</span>
@@ -179,12 +188,12 @@
             This is an automated confirmation. Please do not reply directly to this email.
         </p>
         <p style="color: #718096; margin: 0; font-size: 12px;">
-            &copy; <?= date('Y') ?> Diana Bonvini Writing Services. All rights reserved.
+            &copy; <?= date('Y') ?> Diana Bonvini Coaching Services. All rights reserved.
         </p>
         <div style="margin-top: 20px;">
             <div style="display: inline-block; background-color: #4a5568; border-radius: 6px; padding: 8px 12px;">
-                <span style="color: white; font-size: 12px; font-weight: 500;">Professional Writing Services</span>
+                <span style="color: white; font-size: 12px; font-weight: 500;">Professional Coaching Services</span>
             </div>
         </div>
     </div>
-</div>
+</div> 

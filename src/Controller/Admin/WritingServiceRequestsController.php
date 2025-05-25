@@ -527,6 +527,33 @@ class WritingServiceRequestsController extends BaseAdminController
                 $writingServiceRequest->request_status = 'in_progress';
                 $this->WritingServiceRequests->save($writingServiceRequest);
             }
+
+            // Send email notification to customer
+            try {
+                // Get a fresh copy of the request with user data
+                $requestWithUser = $this->WritingServiceRequests->get($id, contain: ['Users']);
+                
+                if (!empty($requestWithUser->user) && !empty($requestWithUser->user->email)) {
+                    $adminName = 'Diana Bonvini';
+                    
+                    // Send customer notification
+                    $mailer = new \App\Mailer\PaymentMailer('default');
+                    $mailer->customerMessageNotification(
+                        $requestWithUser,
+                        $messageText,
+                        $adminName
+                    );
+                    $result = $mailer->deliverAsync();
+                    
+                    if ($result) {
+                        $this->log('Customer message notification sent successfully to ' . $requestWithUser->user->email, 'info');
+                    } else {
+                        $this->log('Customer message notification failed to send to ' . $requestWithUser->user->email, 'warning');
+                    }
+                }
+            } catch (\Exception $e) {
+                $this->log('Error sending customer message notification: ' . $e->getMessage(), 'error');
+            }
         } else {
             $this->Flash->error(__('Failed to send message. Please try again.'));
         }

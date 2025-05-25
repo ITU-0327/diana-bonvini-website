@@ -53,84 +53,9 @@ This document provides instructions for setting up the Google Calendar integrati
 
 ```php
 'GoogleCalendar' => [
-    'clientId' => '390449927688-id7k14lnvrs3g9do9supst54nog7clgd.apps.googleusercontent.com',
-    'clientSecret' => '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',
-    'projectId' => 'inspired-cortex-457012-s6',
+    'clientId' => '262189815866-vg63735th3sgsr57ns33mr259t0sacop.apps.googleusercontent.com',
+    'clientSecret' => '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',
+    'projectId' => 'dianbonvini',
     'redirectUri' => 'http://localhost:8765/admin/google-auth/callback',
 ],
 ```
-
-Note: For local development, we're using localhost:8765 as the base URL. For production, you would change this to your actual domain.
-
-2. Save the file and restart your application if necessary
-
-## Step 5: Connect Google Calendar in the Admin Interface
-
-1. Log in to the application as an admin user
-2. Navigate to "Admin" > "Google Auth" (or directly to `/admin/google-auth`)
-3. Click "Connect with Google Calendar"
-4. You'll be redirected to Google's authorization screen
-5. Select the Google account you want to use for the calendar integration
-6. Grant the requested permissions
-7. You'll be redirected back to the application with a success message if authentication is successful
-
-## Step 6: Testing the Integration
-
-1. Navigate to "Admin" > "Calendar"
-2. Try creating a new appointment
-3. Verify that the appointment appears in the connected Google Calendar
-4. Check that meeting links are generated correctly
-
-## Step 7: Setting Up Appointment Reminders
-
-The system includes a command to send automatic reminders for upcoming appointments. To schedule this:
-
-1. Set up a daily cron job to run the reminder command:
-
-```bash
-# Run appointment reminders every day at 9:00 AM
-0 9 * * * cd /path/to/application && bin/cake send_appointment_reminders
-```
-
-2. You can test the command manually with:
-
-```bash
-# Test in dry-run mode (no emails sent)
-bin/cake send_appointment_reminders --dry-run
-
-# Actually send emails
-bin/cake send_appointment_reminders
-```
-
-## Troubleshooting
-
-### Authentication Issues
-
-- If you encounter "Invalid Client" errors, verify that your redirect URI exactly matches what's configured in Google Cloud Console
-- If tokens expire unexpectedly, check your server's date and time settings
-- Ensure your OAuth consent screen is properly configured and published (if using external user type)
-
-### Calendar Syncing Issues
-
-- If appointments don't appear in Google Calendar, check the application logs for error messages
-- Verify that the Google account has write permissions for the calendar being used
-- Check that the application can properly refresh access tokens
-
-### Email Notification Issues
-
-- If confirmation emails aren't being sent, check the email configuration in your application
-- Verify that the reminder cron job is running correctly
-
-## Additional Resources
-
-- [Google Calendar API Documentation](https://developers.google.com/calendar)
-- [OAuth 2.0 for Web Server Applications](https://developers.google.com/identity/protocols/oauth2/web-server)
-- [CakePHP Email Configuration](https://book.cakephp.org/4/en/core-libraries/email.html)
-
-## Security Considerations
-
-- Never commit your `.env` file or any files containing API credentials to version control
-- Use environment variables for all sensitive credentials
-- Regularly review and rotate API credentials
-- Limit the OAuth scopes requested to only what's necessary
-- Keep your Google Cloud project and API dependencies updated

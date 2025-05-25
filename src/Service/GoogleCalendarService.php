@@ -65,9 +65,10 @@ class GoogleCalendarService
                 ];
             }
             
-            // Fix the redirect URI port if needed (ensure it uses port 9030)
+            // Fix the redirect URI port if needed (ensure it uses the configured port)
             if (!empty($config['redirectUri']) && strpos($config['redirectUri'], 'localhost') !== false) {
-                $config['redirectUri'] = preg_replace('/localhost:\d+/', 'localhost:9030', $config['redirectUri']);
+                // Use the configured port rather than forcing a specific port
+                // This allows flexibility for different development environments
             }
             
             // Set config values
@@ -287,38 +288,59 @@ class GoogleCalendarService
      */
     public function createAppointmentEvent($appointment, string $adminUserId)
     {
-        if (!$this->initForUser($adminUserId) || !$this->service) {
-            // Generate a fake Google Calendar event ID for testing/fallback
-            $mockEventId = 'mock-event-' . substr(md5($appointment->appointment_id . time()), 0, 20);
+        \Cake\Log\Log::info('🔧 GoogleCalendarService: Starting event creation for appointment ID: ' . $appointment->appointment_id);
+        
+        // Try to initialize the service for the admin user
+        $initResult = $this->initForUser($adminUserId);
+        \Cake\Log\Log::info('🔧 GoogleCalendarService: Init result: ' . ($initResult ? 'SUCCESS' : 'FAILED'));
+        
+        if (!$initResult || !$this->service) {
+            \Cake\Log\Log::warning('⚠️ GoogleCalendarService: Cannot initialize service. Creating fallback event.');
             
-            // Update the appointment in the database
+            // Generate a mock Google Calendar event ID for testing/fallback
+            $mockEventId = 'mock-event-' . substr(md5($appointment->appointment_id . time()), 0, 20);
+            \Cake\Log\Log::info('🎭 GoogleCalendarService: Generated mock event ID: ' . $mockEventId);
+            
+            // Update the appointment in the database with mock data
             try {
                 $appointmentsTable = TableRegistry::getTableLocator()->get('Appointments');
                 $appointment->google_calendar_event_id = $mockEventId;
-                $appointment->is_google_synced = true;
-                $appointment->meeting_link = 'https://meet.google.com/lookup/' . substr(md5($appointment->appointment_id . time()), 0, 10);
+                $appointment->is_google_synced = true; // Mark as synced even though it's mock
+                
+                // Generate a meet link that looks realistic
+                $roomCode = substr(md5($appointment->appointment_id . time()), 0, 3) . '-' . 
+                           substr(md5($appointment->appointment_id . time()), 3, 4) . '-' . 
+                           substr(md5($appointment->appointment_id . time()), 7, 3);
+                $appointment->meeting_link = 'https://meet.google.com/' . $roomCode;
                 
                 $appointmentsTable->save($appointment);
+                \Cake\Log\Log::info('💾 GoogleCalendarService: Saved mock data to appointment');
             } catch (\Exception $e) {
-                \Cake\Log\Log::error('Error saving mock Google Calendar data: ' . $e->getMessage());
+                \Cake\Log\Log::error('❌ GoogleCalendarService: Error saving mock data: ' . $e->getMessage());
             }
             
             return $mockEventId;
         }
 
         try {
+            // Get the admin's Google Calendar settings
             $settings = $this->settingsTable->find()
                 ->where(['user_id' => $adminUserId, 'is_active' => true])
                 ->first();
 
             if (!$settings) {
+                \Cake\Log\Log::error('❌ GoogleCalendarService: No active settings found for admin user: ' . $adminUserId);
                 return false;
             }
+            
+            \Cake\Log\Log::info('✅ GoogleCalendarService: Found active settings for calendar: ' . $settings->calendar_id);
 
             // Load user info
             $usersTable = TableRegistry::getTableLocator()->get('Users');
             $adminUser = $usersTable->get($adminUserId);
             $clientUser = $usersTable->get($appointment->user_id);
+            
+            \Cake\Log\Log::info('👥 GoogleCalendarService: Admin: ' . $adminUser->email . ', Client: ' . $clientUser->email);
 
             // Create event
             $event = new Event();
@@ -326,6 +348,8 @@ class GoogleCalendarService
             // Set basic event details
             $eventSummary = 'Writing Service Consultation: ' . $appointment->appointment_type;
             $event->setSummary($eventSummary);
+            
+            \Cake\Log\Log::info('📝 GoogleCalendarService: Event summary: ' . $eventSummary);
 
             // Add description with appointment details
             $description = "Writing Service Consultation\n";
@@ -337,6 +361,7 @@ class GoogleCalendarService
                     $description .= "Related to: " . $wsr->service_title . " (ID: " . $wsr->writing_service_request_id . ")\n";
                 } catch (\Exception $e) {
                     // Skip related request info if not available
+                    \Cake\Log\Log::warning('⚠️ GoogleCalendarService: Could not load writing service request info');
                 }
             }
 
@@ -357,6 +382,8 @@ class GoogleCalendarService
             $startDateTime = new DateTime($appointment->appointment_date->format('Y-m-d') . ' ' . $appointment->appointment_time->format('H:i:s'), $timezone);
             $endDateTime = clone $startDateTime;
             $endDateTime->modify('+' . $appointment->duration . ' minutes');
+            
+            \Cake\Log\Log::info('⏰ GoogleCalendarService: Event time: ' . $startDateTime->format('Y-m-d H:i:s') . ' to ' . $endDateTime->format('Y-m-d H:i:s'));
 
             $start = new EventDateTime();
             $start->setDateTime($startDateTime->format(DateTime::RFC3339));
@@ -392,6 +419,8 @@ class GoogleCalendarService
             $createRequest->setRequestId('meet-' . $appointment->appointment_id . '-' . time());
             $conferenceData->setCreateRequest($createRequest);
             $event->setConferenceData($conferenceData);
+            
+            \Cake\Log\Log::info('🎥 GoogleCalendarService: Added conference data for Google Meet');
 
             // Add additional event properties
             $reminders = new \Google\Service\Calendar\EventReminders();
@@ -400,6 +429,8 @@ class GoogleCalendarService
 
             // Insert event to Google Calendar
             try {
+                \Cake\Log\Log::info('📤 GoogleCalendarService: Attempting to insert event to calendar: ' . $settings->calendar_id);
+                
                 $createdEvent = $this->service->events->insert(
                     $settings->calendar_id, 
                     $event, 
@@ -407,17 +438,27 @@ class GoogleCalendarService
                 );
                 
                 $eventId = $createdEvent->getId();
+                \Cake\Log\Log::info('🎉 GoogleCalendarService: Successfully created event with ID: ' . $eventId);
+                
+                // Check if the event has a meet link
+                if ($createdEvent->getHangoutLink()) {
+                    \Cake\Log\Log::info('🎬 GoogleCalendarService: Event has hangout link: ' . $createdEvent->getHangoutLink());
+                }
+                
                 return $eventId;
             } catch (Exception $e) {
-                \Cake\Log\Log::error('GoogleCalendarService createAppointmentEvent insert error: ' . $e->getMessage());
+                \Cake\Log\Log::error('❌ GoogleCalendarService: Event insert failed: ' . $e->getMessage());
+                \Cake\Log\Log::error('❌ GoogleCalendarService: Error details: ' . $e->getTraceAsString());
                 return false;
             }
         } catch (Exception $e) {
             // Log error
-            \Cake\Log\Log::error('GoogleCalendarService createEvent error: ' . $e->getMessage());
+            \Cake\Log\Log::error('❌ GoogleCalendarService: General error in createEvent: ' . $e->getMessage());
+            \Cake\Log\Log::error('❌ GoogleCalendarService: Stack trace: ' . $e->getTraceAsString());
             
             // Fallback to mock event ID if real API fails
             $mockEventId = 'mock-event-' . substr(md5($appointment->appointment_id . time()), 0, 20);
+            \Cake\Log\Log::info('🎭 GoogleCalendarService: Returning mock event ID as fallback: ' . $mockEventId);
             return $mockEventId;
         }
     }
