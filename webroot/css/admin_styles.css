@@ -217,7 +217,6 @@ body {
 
 /* Responsive Sidebar */
 .sidebar-collapsed .sidebar {
-    width: 70px;
 }
 
 .sidebar-collapsed .sidebar .sidebar-header h3,
@@ -237,7 +236,6 @@ body {
 }
 
 .sidebar-collapsed .content {
-    margin-left: 70px;
     width: calc(100% - 70px);
 }
 
@@ -494,46 +492,28 @@ body {
         width: var(--sidebar-collapsed-width);
     }
 
-    .sidebar .brand-logo h2,
-    .sidebar .nav-item a span {
+    .sidebar .sidebar-header h3,
+    .sidebar .menu-item span,
+    .sidebar .menu-title {
         display: none;
     }
 
-    .sidebar .nav-item a {
+    .sidebar .menu-item {
         justify-content: center;
         padding: 0.75rem 0;
     }
 
-    .sidebar .nav-item a i {
+    .sidebar .menu-item i {
         margin-right: 0;
         font-size: 1.25rem;
     }
 
-    .main-content {
+    .content {
         margin-left: var(--sidebar-collapsed-width);
         width: calc(100% - var(--sidebar-collapsed-width));
     }
-
-    .sidebar.expanded {
-        width: var(--sidebar-width);
-        z-index: 1050;
-    }
-
-    .sidebar.expanded .brand-logo h2,
-    .sidebar.expanded .nav-item a span {
-        display: block;
-    }
-
-    .sidebar.expanded .nav-item a {
-        justify-content: flex-start;
-        padding: 0.75rem 1rem;
-    }
-
-    .sidebar.expanded .nav-item a i {
-        margin-right: 1rem;
-        font-size: 1rem;
-    }
 }
+
 
 @media (max-width: 767.98px) {
     .stats-cards .col-md-4 {
