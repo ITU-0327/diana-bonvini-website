@@ -11,15 +11,7 @@ $this->assign('title', __('Writing Service Request Details'));
 echo $this->Html->script('timezone-helper', ['block' => false]);
 ?>
 
-<!-- Timezone Indicator -->
-<div class="mb-4 flex justify-end">
-    <div class="inline-flex items-center px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-600" id="timezone-indicator">
-        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
-        <span id="timezone-text">Loading timezone...</span>
-    </div>
-</div>
+<!-- Timezone Indicator Removed for Admin View -->
 
 <div class="container-fluid">
     <div class="row mb-4">
@@ -2425,22 +2417,7 @@ function formatFileSize(int $bytes): string
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Update timezone indicator
-        if (window.TimezoneHelper) {
-            const timezoneInfo = window.TimezoneHelper.getUserTimezone();
-            const timezoneElement = document.getElementById('timezone-text');
-            
-            if (timezoneElement && timezoneInfo) {
-                let timezoneText = '';
-                if (timezoneInfo.isUsingDefault) {
-                    timezoneText = `Times shown in Melbourne time (${timezoneInfo.abbreviation})`;
-                } else {
-                    const zoneName = timezoneInfo.effectiveTimeZone.split('/').pop().replace('_', ' ');
-                    timezoneText = `Times shown in your local time: ${zoneName} (${timezoneInfo.abbreviation})`;
-                }
-                timezoneElement.textContent = timezoneText;
-            }
-        }
+        // Timezone indicator removed for admin view - times are automatically converted by TimezoneHelper
         
         // Initialize admin-specific functionality
         const chatContainer = document.getElementById('chat-messages');

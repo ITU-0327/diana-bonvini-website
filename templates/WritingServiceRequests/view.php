@@ -17,8 +17,8 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
 ?>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10" data-request-id="<?= h($writingServiceRequest->writing_service_request_id) ?>">
-    <!-- Timezone Indicator -->
-    <div class="mb-4 flex justify-end">
+    <!-- Timezone Indicator (Hidden) -->
+    <div class="hidden mb-4 flex justify-end">
         <div class="inline-flex items-center px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-600" id="timezone-indicator">
             <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>

@@ -212,12 +212,11 @@ class TimezoneHelper {
      */
     static showTimezoneInfo() {
         const info = this.getUserTimezone();
-        console.log('Timezone Information:', info);
-        
+        // Reduced logging to minimize console output
         if (info.isUsingDefault) {
-            console.log('Using default Melbourne timezone (Australia/Melbourne) because user timezone could not be determined');
+            console.debug('Using default Melbourne timezone');
         } else {
-            console.log(`Using user's timezone: ${info.effectiveTimeZone}`);
+            console.debug(`Using timezone: ${info.effectiveTimeZone}`);
         }
     }
     
