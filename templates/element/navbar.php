@@ -90,15 +90,7 @@ $userType = $user?->get('user_type');
                                       d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </a>
-                        <ul class="absolute left-0 top-full mt-0 w-64 bg-white border border-gray-200 rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-300 z-10">
-                            <?php if ($userType === 'admin') : ?>
-                                <li>
-                                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'CoachingServiceRequests', 'action' => 'index']) ?>"
-                                       class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                        Check All Requests
-                                    </a>
-                                </li>
-                            <?php else : ?>
+                        <ul class="absolute left-0 top-full mt-0 min-w-[12rem] bg-white border border-gray-200 rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-300 z-20">
                                 <li>
                                     <a href="<?= $this->Url->build(['controller' => 'CoachingServiceRequests', 'action' => 'add']) ?>"
                                        class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
@@ -111,7 +103,6 @@ $userType = $user?->get('user_type');
                                         View My Requests
                                     </a>
                                 </li>
-                            <?php endif; ?>
                         </ul>
                     </li>
 
