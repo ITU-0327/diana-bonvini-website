@@ -33,14 +33,15 @@
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     <?php foreach ($coachingServiceRequests as $request): ?>
                         <?php if (!$request->is_deleted): ?>
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <tr class="hover:bg-gray-50 cursor-pointer transition-colors duration-200" 
+                                data-href="<?= $this->Url->build(['action' => 'view', $request->coaching_service_request_id]) ?>"
+                                onclick="window.location.href = this.dataset.href">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
                                     <?= h($request->coaching_service_request_id) ?>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
@@ -66,10 +67,6 @@
                                     <span class="local-time" data-datetime="<?= $request->created_at->jsonSerialize() ?>">
                                         <?= $request->created_at->format('Y-m-d H:i') ?>
                                     </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <?= $this->Html->link(__('View'), ['action' => 'view', $request->coaching_service_request_id], ['class' => 'text-blue-600 hover:text-blue-900']) ?>
-                                    <?= $this->Html->link(__('Edit'), ['action' => 'edit', $request->coaching_service_request_id], ['class' => 'ml-3 text-indigo-600 hover:text-indigo-900']) ?>
                                 </td>
                             </tr>
                         <?php endif; ?>
@@ -109,8 +106,8 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Handle local time formatting
         const timeElements = document.querySelectorAll('.local-time');
-        
         timeElements.forEach(el => {
             const isoTime = el.dataset.datetime;
             const date = new Date(isoTime);
@@ -122,6 +119,50 @@
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: true,
+            });
+        });
+
+        // Handle clickable rows
+        const clickableRows = document.querySelectorAll('tr[data-href]');
+        clickableRows.forEach(row => {
+            // Add keyboard accessibility
+            row.setAttribute('tabindex', '0');
+            row.setAttribute('role', 'button');
+            row.setAttribute('aria-label', 'View coaching service request details');
+
+            // Handle keyboard navigation
+            row.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    window.location.href = this.dataset.href;
+                }
+            });
+
+            // Add visual feedback for focus
+            row.addEventListener('focus', function() {
+                this.style.outline = '2px solid #3b82f6';
+                this.style.outlineOffset = '-2px';
+            });
+
+            row.addEventListener('blur', function() {
+                this.style.outline = '';
+                this.style.outlineOffset = '';
+            });
+
+            // Handle mouse clicks (including middle-click for new tabs)
+            row.addEventListener('click', function(e) {
+                if (e.ctrlKey || e.metaKey || e.button === 1) {
+                    // Ctrl/Cmd+click or middle click - open in new tab
+                    window.open(this.dataset.href, '_blank');
+                } else {
+                    // Regular click - navigate in same tab
+                    window.location.href = this.dataset.href;
+                }
+            });
+
+            // Prevent text selection when clicking
+            row.addEventListener('selectstart', function(e) {
+                e.preventDefault();
             });
         });
     });
