@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Controller\Admin\AdminController as BaseAdminController;
+use App\Mailer\PaymentMailer;
 use App\Model\Entity\WritingServiceRequest;
 use App\Service\GoogleCalendarService;
 use Cake\Http\Response;
@@ -166,11 +167,11 @@ class WritingServiceRequestsController extends BaseAdminController
                             $adminName = 'Diana Bonvini';
 
                             // Send customer notification
-                            $mailer = new \App\Mailer\PaymentMailer('default');
+                            $mailer = new PaymentMailer('default');
                             $mailer->customerMessageNotification(
                                 $requestWithUser,
                                 $data['message_text'],
-                                $adminName
+                                $adminName,
                             );
                             $result = $mailer->deliverAsync();
 
@@ -180,7 +181,7 @@ class WritingServiceRequestsController extends BaseAdminController
                                 $this->log('Customer message notification failed to send to ' . $requestWithUser->user->email, 'warning');
                             }
                         }
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         $this->log('Error sending customer message notification: ' . $e->getMessage(), 'error');
                     }
 
@@ -390,6 +391,7 @@ class WritingServiceRequestsController extends BaseAdminController
         // Validate amount
         if (empty($amount) || !is_numeric($amount) || (float)$amount <= 0) {
             $this->Flash->error(__('Please provide a valid payment amount.'));
+
             return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
         }
 
@@ -413,6 +415,7 @@ class WritingServiceRequestsController extends BaseAdminController
                 $this->log('Failed to create payment record. Errors: ' . json_encode($errors), 'error');
                 $this->log('Payment entity data: ' . json_encode($paymentEntity->toArray()), 'error');
                 $this->Flash->error(__('Failed to create payment request. Please try again.'));
+
                 return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
             }
 
@@ -421,8 +424,8 @@ class WritingServiceRequestsController extends BaseAdminController
 
             // Create message with payment button
             $messageText = "**Payment Request**\n\n";
-            $messageText .= "**Service:** " . $description . "\n";
-            $messageText .= "**Amount:** " . $formattedAmount . "\n\n";
+            $messageText .= '**Service:** ' . $description . "\n";
+            $messageText .= '**Amount:** ' . $formattedAmount . "\n\n";
             $messageText .= "Please click the button below to complete your payment. Once payment is processed, you'll receive a confirmation and we'll continue with your request.\n\n";
             $messageText .= '[PAYMENT_BUTTON]' . $paymentId . '[/PAYMENT_BUTTON]';
 
@@ -453,7 +456,7 @@ class WritingServiceRequestsController extends BaseAdminController
                     $requestWithUser = $this->WritingServiceRequests->get($id, contain: ['Users']);
 
                     // Create and send payment request email
-                    $mailer = new \App\Mailer\PaymentMailer('default');
+                    $mailer = new PaymentMailer('default');
                     $mailer->paymentRequest($requestWithUser, $paymentEntity, $amount);
                     $result = $mailer->deliverAsync();
 
@@ -471,7 +474,6 @@ class WritingServiceRequestsController extends BaseAdminController
                 $this->log('Failed to save payment request message. Errors: ' . json_encode($messageErrors), 'error');
                 $this->Flash->error(__('Failed to send payment request message. Please try again.'));
             }
-
         } catch (Exception $e) {
             $this->log('Error creating payment request: ' . $e->getMessage(), 'error');
             $this->log('Stack trace: ' . $e->getTraceAsString(), 'error');
@@ -500,9 +502,7 @@ class WritingServiceRequestsController extends BaseAdminController
             return $this->redirect(['controller' => 'Admin', 'action' => 'dashboard']);
         }
 
-        $writingServiceRequest = $this->WritingServiceRequests->get($id, [
-            'contain' => ['Users'],
-        ]);
+        $writingServiceRequest = $this->WritingServiceRequests->get($id, contain: ['Users']);
 
         $data = $this->request->getData();
         $messageText = $data['message_text'] ?? '';
@@ -550,11 +550,11 @@ class WritingServiceRequestsController extends BaseAdminController
                     $adminName = 'Diana Bonvini';
 
                     // Send customer notification
-                    $mailer = new \App\Mailer\PaymentMailer('default');
+                    $mailer = new PaymentMailer('default');
                     $mailer->customerMessageNotification(
                         $requestWithUser,
                         $messageText,
-                        $adminName
+                        $adminName,
                     );
                     $result = $mailer->deliverAsync();
 
@@ -564,7 +564,7 @@ class WritingServiceRequestsController extends BaseAdminController
                         $this->log('Customer message notification failed to send to ' . $requestWithUser->user->email, 'warning');
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->log('Error sending customer message notification: ' . $e->getMessage(), 'error');
             }
         } else {
@@ -868,7 +868,7 @@ class WritingServiceRequestsController extends BaseAdminController
             // Skip some slots randomly to simulate busy times (reduce the skip rate for more availability)
             if (rand(0, 100) < 15) { // Only 15% chance of being unavailable
                     continue;
-                }
+            }
 
             $slotDate->setTime($hour, 0, 0); // Start at the top of each hour
 
@@ -928,12 +928,12 @@ class WritingServiceRequestsController extends BaseAdminController
         ];
 
         foreach ($availableHours as $slot) {
-        $slots[] = [
+            $slots[] = [
             'date' => $dateString,
                 'start' => $slot['start'],
                 'end' => $slot['end'],
                 'formatted' => $slot['formatted'],
-        ];
+            ];
         }
 
         return $slots;
@@ -990,15 +990,17 @@ class WritingServiceRequestsController extends BaseAdminController
         if (empty($id)) {
             $this->log('No ID found in route parameter or POST data', 'error');
             $this->Flash->error(__('Invalid writing service request. Please try again.'));
+
             return $this->redirect(['action' => 'index']);
         }
 
         $this->log('Using ID: ' . $id, 'debug');
 
         try {
-            $writingServiceRequest = $this->WritingServiceRequests->get($id, [
-                'contain' => ['Users'],
-            ]);
+            $writingServiceRequest = $this->WritingServiceRequests->get(
+                $id,
+                contain: ['Users'],
+            );
 
             // Get time slots and message from POST data
             $timeSlots = $this->request->getData('time_slots');
@@ -1107,15 +1109,15 @@ class WritingServiceRequestsController extends BaseAdminController
                         $timeSlotsText = implode("\n", $formattedSlots);
 
                         // Send notification
-                        $mailer = new \App\Mailer\PaymentMailer('default');
+                        $mailer = new PaymentMailer('default');
                         $mailer->customerWritingTimeSlotsNotification(
                             $requestWithUser,
                             $timeSlotsText,
-                            'Diana Bonvini'
+                            'Diana Bonvini',
                         );
                         $mailer->deliverAsync();
                     }
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->log('Failed to send time slots notification: ' . $e->getMessage(), 'error');
                 }
 
@@ -1157,6 +1159,7 @@ class WritingServiceRequestsController extends BaseAdminController
         ];
         if (!in_array($file->getClientMediaType(), $allowedMimeTypes)) {
             $this->Flash->error(__('Invalid file type. Please upload PDF or Word documents only.'));
+
             return $this->redirect(['action' => $redirectAction]);
         }
         $uploadPath = WWW_ROOT . 'uploads' . DS . 'documents';
@@ -1166,6 +1169,7 @@ class WritingServiceRequestsController extends BaseAdminController
         $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9_.]/', '_', $file->getClientFilename() ?? '');
         $filePath = $uploadPath . DS . $filename;
         $file->moveTo($filePath);
+
         return 'uploads/documents/' . $filename;
     }
 

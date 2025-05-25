@@ -971,9 +971,9 @@ class WritingServiceRequestsController extends AppController
                 ['controller' => 'WritingServiceRequests',
                     'action'     => 'paymentSuccess',
                     $id,
-                    $sessionPaymentId
+                    $sessionPaymentId,
                 ],
-                true
+                true,
             );
 
             $cancelUrl = Router::url(
@@ -1303,7 +1303,7 @@ class WritingServiceRequestsController extends AppController
             print_r($writingServiceRequest->writing_service_payments, true) .
             PHP_EOL .
             'Total paid calculated by entity: ' . $writingServiceRequest->getTotalPaidAmount(),
-            'debug'
+            'debug',
         );
 
         // Fetch request documents
@@ -1361,9 +1361,10 @@ class WritingServiceRequestsController extends AppController
         }
 
         if ($this->request->is(['patch', 'post', 'put'])) {
-            $writingServiceRequest = $this->WritingServiceRequests->get($id, [
-                'contain' => ['Users'],
-            ]);
+            $writingServiceRequest = $this->WritingServiceRequests->get(
+                $id,
+                contain: ['Users'],
+            );
             $data = $this->request->getData();
 
             if (isset($data['amount']) && is_numeric($data['amount']) && (float)$data['amount'] > 0) {
@@ -1630,9 +1631,7 @@ class WritingServiceRequestsController extends AppController
 
         try {
             // Get the writing service request
-            $writingServiceRequest = $this->WritingServiceRequests->get($id, [
-                'contain' => ['WritingServicePayments'],
-            ]);
+            $writingServiceRequest = $this->WritingServiceRequests->get($id, contain: ['WritingServicePayments']);
 
             // Generate a unique session payment ID
             $sessionPaymentId = 'pay_' . uniqid();
@@ -1757,17 +1756,18 @@ class WritingServiceRequestsController extends AppController
 
             // The payment ID should be just the database payment ID now
             $dbPaymentId = trim($paymentId);
-            
+
             // Try to get payment data from database first (new system)
             $writingServicePaymentsTable = $this->fetchTable('WritingServicePayments');
             $paymentData = null;
-            
+
             try {
                 $paymentEntity = $writingServicePaymentsTable->get($dbPaymentId);
 
                 // If payment is already paid, redirect to view with success message
                 if ($paymentEntity->status === 'paid') {
                     $this->Flash->success(__('This payment has already been completed.'));
+
                     return $this->redirect(['action' => 'view', $id]);
                 }
 
@@ -1784,15 +1784,14 @@ class WritingServiceRequestsController extends AppController
 
                 // Store in session for the pay method to use
                 $this->request->getSession()->write("WsrPayments.$sessionPaymentId", $paymentData);
-                
+
                 // Create combined payment ID for the pay method
                 $combinedPaymentId = $sessionPaymentId . '|' . $dbPaymentId;
-                
+
                 $this->log('Created payment data from database record: ' . json_encode($paymentData), 'debug');
-                
+
                 // Call the regular pay method with the extracted parameters
                 return $this->pay($id, $combinedPaymentId);
-                
             } catch (Exception $e) {
                 $this->log('Error retrieving payment from database: ' . $e->getMessage(), 'error');
             }
@@ -1814,8 +1813,8 @@ class WritingServiceRequestsController extends AppController
 
             // If we reach here, we couldn't find payment data anywhere
             $this->Flash->error('Invalid payment request. Payment information not found.');
-            return $this->redirect(['action' => 'view', $id]);
 
+            return $this->redirect(['action' => 'view', $id]);
         } catch (Exception $e) {
             $this->log('payDirect error: ' . $e->getMessage(), 'error');
             $this->Flash->error('Error processing payment: ' . $e->getMessage());
