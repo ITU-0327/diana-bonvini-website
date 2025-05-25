@@ -836,6 +836,19 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /**
+     * Format timestamp to match template style (fallback function)
+     * @param {Date} date - The date to format
+     * @returns {string} - Formatted time string
+     */
+    function formatTime(date) {
+        return date.toLocaleTimeString(undefined, {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        }).toLowerCase();
+    }
+
+    /**
      * Add a new message to the chat
      * @param {Object} message - The message data from the server
      * @returns {boolean} - Whether the message was added
@@ -858,16 +871,19 @@ document.addEventListener('DOMContentLoaded', function () {
         const timeColor = isAdmin ? 'text-gray-400' : 'text-blue-100';
         const alignmentClasses = isAdmin ? 'items-start' : 'items-end flex-row-reverse';
 
-        // Format timestamp to match template style
-        function formatTime(date) {
-            return date.toLocaleTimeString(undefined, {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            }).toLowerCase();
+        // Use TimezoneHelper for consistent time formatting, with fallback for older browsers
+        let displayTime = 'Loading...';
+        if (window.TimezoneHelper) {
+            try {
+                displayTime = window.TimezoneHelper.formatToLocal(message.created_at, 'time');
+            } catch (e) {
+                console.warn('TimezoneHelper failed, using fallback:', e);
+                displayTime = formatTime(new Date(message.created_at));
+            }
+        } else {
+            // Fallback for when TimezoneHelper is not available
+            displayTime = formatTime(new Date(message.created_at));
         }
-
-        const messageTime = formatTime(new Date(message.created_at));
 
         const newMessageHtml = `
             <div class="flex ${alignmentClasses} chat-message new-message" data-message-id="${message.id}">
@@ -877,7 +893,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             ${message.content}
                         </div>
                         <div class="text-[8px] ${timeColor} self-end opacity-70">
-                            <span class="local-time" data-datetime="${message.created_at}">${messageTime}</span>
+                            <span class="local-time" data-datetime="${message.created_at}">${displayTime}</span>
                         </div>
                     </div>
                 </div>
@@ -902,6 +918,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Process any payment buttons in the new message
         processPaymentElements();
+        
+        // Convert timestamps using TimezoneHelper if available
+        if (window.TimezoneHelper) {
+            setTimeout(() => {
+                window.TimezoneHelper.convertPageTimestamps();
+            }, 10);
+        }
 
         // Play notification sound for admin messages
         if (isAdmin) {

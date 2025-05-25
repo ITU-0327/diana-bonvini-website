@@ -272,16 +272,16 @@ class WritingServiceRequestsController extends AppController
                 if (!empty($writingServiceRequest->request_messages)) {
                     foreach ($writingServiceRequest->request_messages as $message) {
                         $isAdmin = isset($message->user) && $message->user->user_type === 'admin';
-                        $timeFormatted = $message->created_at->format('M j, Y g:i A');
 
                         $messages[] = [
                             'id' => $message->request_message_id,
                             'content' => $message->message,
                             'sender' => $isAdmin ? 'admin' : 'client',
                             'senderName' => $isAdmin ? 'Admin' : ($message->user->first_name . ' ' . $message->user->last_name),
-                            'timestamp' => $timeFormatted,
+                            'timestamp' => $message->created_at->format('c'), // ISO 8601 format for client-side conversion
+                            'timestamp_display' => '', // Will be filled by client-side JS
                             'is_read' => (bool)$message->is_read,
-                            'created_at' => $message->created_at->format('c'),
+                            'created_at' => $message->created_at->format('c'), // ISO 8601 format
                         ];
 
                         // Mark the message as read if it's not from the current user

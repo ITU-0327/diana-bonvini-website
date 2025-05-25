@@ -6,6 +6,9 @@
 use Cake\Utility\Inflector;
 
 $this->assign('title', __('Writing Service Request Details'));
+
+// Include timezone helper for proper local time display
+echo $this->Html->script('timezone-helper', ['block' => true]);
 ?>
 
 <div class="container-fluid">
@@ -157,8 +160,8 @@ $this->assign('title', __('Writing Service Request Details'));
                                                 <span class="message-sender font-weight-bold">
                                                     <?= $isAdmin ? 'You (Admin)' : h($message->user->first_name . ' ' . $message->user->last_name) ?>
                                                 </span>
-                                                <span class="message-time text-muted ml-2">
-                                                    <i class="far fa-clock"></i> <?= $message->created_at->format('M j, Y g:i A') ?>
+                                                <span class="message-time text-muted ml-2" data-datetime="<?= $message->created_at->jsonSerialize() ?>">
+                                                    <i class="far fa-clock"></i> <span class="local-time">Loading...</span>
                                                 </span>
                                                 <?php if (!$isAdmin && !$message->is_read) : ?>
                                                 <span class="badge badge-warning ml-2">New</span>
@@ -336,7 +339,9 @@ $this->assign('title', __('Writing Service Request Details'));
                                                     $<?= number_format($payment->amount, 2) ?>
                                                 </td>
                                                 <td class="text-muted small">
-                                                    <?= $payment->created_at ? $payment->created_at->format('M j, Y g:i A') : 'Unknown' ?>
+                                                    <span class="local-time" data-datetime="<?= $payment->created_at ? $payment->created_at->jsonSerialize() : '' ?>">
+                                                        <?= $payment->created_at ? 'Loading...' : 'Unknown' ?>
+                                                    </span>
                                                 </td>
                                                 <td>
                                                     <?php if ($payment->status === 'paid'): ?>
@@ -345,7 +350,9 @@ $this->assign('title', __('Writing Service Request Details'));
                                                         </span>
                                                         <?php if ($payment->payment_date): ?>
                                                             <small class="d-block text-muted mt-1">
-                                                                <?= $payment->payment_date->format('M j, Y g:i A') ?>
+                                                                <span class="local-time" data-datetime="<?= $payment->payment_date->jsonSerialize() ?>">
+                                                                    Loading...
+                                                                </span>
                                                             </small>
                                                         <?php endif; ?>
                                                     <?php else: ?>

@@ -631,16 +631,16 @@ class WritingServiceRequestsController extends BaseAdminController
                 if (!empty($writingServiceRequest->request_messages)) {
                     foreach ($writingServiceRequest->request_messages as $message) {
                         $isAdmin = isset($message->user) && $message->user->user_type === 'admin';
-                        $timeFormatted = $message->created_at->format('M j, Y g:i A');
 
                         $messages[] = [
                             'id' => $message->request_message_id,
                             'content' => $message->message,
                             'sender' => $isAdmin ? 'admin' : 'client',
                             'senderName' => $isAdmin ? 'Admin' : ($message->user->first_name . ' ' . $message->user->last_name),
-                            'timestamp' => $timeFormatted,
+                            'timestamp' => $message->created_at->format('c'), // ISO 8601 format for client-side conversion
+                            'timestamp_display' => '', // Will be filled by client-side JS
                             'is_read' => (bool)$message->is_read,
-                            'created_at' => $message->created_at->format('c'),
+                            'created_at' => $message->created_at->format('c'), // ISO 8601 format
                         ];
 
                         // Mark the message as read if it's not from the current user
@@ -1152,25 +1152,108 @@ class WritingServiceRequestsController extends BaseAdminController
         if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
             return null;
         }
+
         $allowedMimeTypes = [
-            'application/pdf',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/msword',
+            'application/pdf',  // PDF
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
+            'application/msword', // DOC
         ];
+
         if (!in_array($file->getClientMediaType(), $allowedMimeTypes)) {
             $this->Flash->error(__('Invalid file type. Please upload PDF or Word documents only.'));
-
             return $this->redirect(['action' => $redirectAction]);
         }
-        $uploadPath = WWW_ROOT . 'uploads' . DS . 'documents';
-        if (!is_dir($uploadPath)) {
-            mkdir($uploadPath, 0755, true);
-        }
-        $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9_.]/', '_', $file->getClientFilename() ?? '');
-        $filePath = $uploadPath . DS . $filename;
-        $file->moveTo($filePath);
 
-        return 'uploads/documents/' . $filename;
+        // Use existing directories to avoid mkdir() issues
+        $uploadPath = WWW_ROOT . 'uploads' . DS . 'documents';
+        
+        // If the target directory doesn't exist, try alternative locations
+        if (!is_dir($uploadPath)) {
+            // Try to use tmp directory first
+            $tempPath = sys_get_temp_dir();
+            if (is_writable($tempPath)) {
+                $this->log('Primary upload directory not available, using system temp directory', 'warning');
+                $uploadPath = $tempPath . DS . 'app_uploads';
+                
+                if (!is_dir($uploadPath)) {
+                    try {
+                        if (!mkdir($uploadPath, 0777, true)) {
+                            $this->log('Failed to create temp upload directory: ' . $uploadPath, 'error');
+                            $this->Flash->error(__('Upload system is temporarily unavailable. Please try again later.'));
+                            return $this->redirect(['action' => $redirectAction]);
+                        }
+                    } catch (\Exception $e) {
+                        $this->log('Exception creating temp upload directory: ' . $e->getMessage(), 'error');
+                        $this->Flash->error(__('Upload system error. Please contact administrator.'));
+                        return $this->redirect(['action' => $redirectAction]);
+                    }
+                }
+            } else {
+                // Fall back to application temp directory
+                $uploadPath = TMP . 'uploads';
+                if (!is_dir($uploadPath)) {
+                    try {
+                        if (!mkdir($uploadPath, 0777, true)) {
+                            $this->log('Failed to create app temp upload directory: ' . $uploadPath, 'error');
+                            $this->Flash->error(__('Upload system is not available. Please contact administrator.'));
+                            return $this->redirect(['action' => $redirectAction]);
+                        }
+                    } catch (\Exception $e) {
+                        $this->log('Exception creating app temp upload directory: ' . $e->getMessage(), 'error');
+                        $this->Flash->error(__('Upload system error. Please contact administrator.'));
+                        return $this->redirect(['action' => $redirectAction]);
+                    }
+                }
+            }
+        }
+        
+        // Verify directory is writable
+        if (!is_writable($uploadPath)) {
+            $this->log('Upload directory is not writable: ' . $uploadPath, 'error');
+            $this->Flash->error(__('Upload system is temporarily unavailable. Please contact administrator.'));
+            return $this->redirect(['action' => $redirectAction]);
+        }
+
+        // Generate safe filename
+        $originalFilename = $file->getClientFilename() ?? 'document';
+        $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9_.-]/', '_', $originalFilename);
+        $filePath = $uploadPath . DS . $filename;
+        
+        try {
+            // Move the uploaded file
+            $file->moveTo($filePath);
+            
+            // Verify file was moved successfully
+            if (!file_exists($filePath)) {
+                $this->log('File was not moved successfully to: ' . $filePath, 'error');
+                $this->Flash->error(__('File upload failed. Please try again.'));
+                return $this->redirect(['action' => $redirectAction]);
+            }
+            
+            // Set file permissions if possible
+            try {
+                chmod($filePath, 0644);
+            } catch (\Exception $e) {
+                // Don't fail if chmod fails, just log it
+                $this->log('Could not set file permissions: ' . $e->getMessage(), 'warning');
+            }
+            
+            $this->log('File uploaded successfully: ' . $filename . ' to: ' . $uploadPath, 'info');
+            
+            // Return relative path based on which directory was used
+            if (strpos($uploadPath, WWW_ROOT . 'uploads') === 0) {
+                // Standard web-accessible uploads directory
+                return 'uploads/documents/' . $filename;
+            } else {
+                // Alternative directory - return the full path since it may not be web-accessible
+                return $filePath;
+            }
+            
+        } catch (\Exception $e) {
+            $this->log('File upload exception: ' . $e->getMessage(), 'error');
+            $this->Flash->error(__('File upload failed. Please try again later.'));
+            return $this->redirect(['action' => $redirectAction]);
+        }
     }
 
     /**
@@ -1210,6 +1293,9 @@ class WritingServiceRequestsController extends BaseAdminController
                 $requestDocumentsTable = $this->fetchTable('RequestDocuments');
                 $requestDocument = $requestDocumentsTable->newEmptyEntity();
 
+                // Handle different types of document paths (web-accessible vs temp storage)
+                $isWebAccessible = strpos($documentPath, 'uploads/') === 0;
+
                 $data = [
                     'request_document_id' => Text::uuid(),
                     'writing_service_request_id' => $id,
@@ -1231,6 +1317,10 @@ class WritingServiceRequestsController extends BaseAdminController
                 if ($requestDocumentsTable->save($requestDocument)) {
                     // Add a message to the chat about the upload
                     $message = 'Uploaded document: **' . $file->getClientFilename() . '**';
+                    if (!$isWebAccessible) {
+                        $message .= ' *(stored in secure location)*';
+                    }
+                    
                     $requestMessagesTable = $this->fetchTable('RequestMessages');
                     $newMessage = $requestMessagesTable->newEntity([
                         'writing_service_request_id' => $id,
@@ -1245,7 +1335,7 @@ class WritingServiceRequestsController extends BaseAdminController
                 } else {
                     // Log the validation errors for debugging
                     $this->log('Document upload validation errors: ' . json_encode($requestDocument->getErrors()), 'error');
-                    $this->Flash->error(__('Document uploaded but could not be saved in the database. Please check file type and size.'));
+                    $this->Flash->error(__('Document uploaded but could not be saved in the database.'));
                 }
             } else {
                 $this->Flash->error(__('Failed to upload document. Please try again.'));

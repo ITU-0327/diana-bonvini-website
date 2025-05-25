@@ -6,6 +6,9 @@
 use Cake\Utility\Inflector;
 
 $this->assign('title', __('Writing Service Requests'));
+
+// Include timezone helper for proper local time display
+echo $this->Html->script('timezone-helper', ['block' => true]);
 ?>
 <div class="max-w-6xl mx-auto px-4 py-8">
     <?= $this->element('page_title', ['title' => 'My Writing Service Requests']) ?>
@@ -112,21 +115,27 @@ $this->assign('title', __('Writing Service Requests'));
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Handle local time formatting
-        const timeElements = document.querySelectorAll('.local-time');
-        timeElements.forEach(el => {
-            const isoTime = el.dataset.datetime;
-            const date = new Date(isoTime);
+        // Handle local time formatting using TimezoneHelper if available
+        if (window.TimezoneHelper) {
+            // TimezoneHelper will automatically handle all .local-time elements
+            window.TimezoneHelper.convertPageTimestamps();
+        } else {
+            // Fallback for when TimezoneHelper is not available
+            const timeElements = document.querySelectorAll('.local-time');
+            timeElements.forEach(el => {
+                const isoTime = el.dataset.datetime;
+                const date = new Date(isoTime);
 
-            el.textContent = date.toLocaleString(undefined, {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true,
+                el.textContent = date.toLocaleString(undefined, {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true,
+                });
             });
-        });
+        }
 
         // Handle clickable rows
         const clickableRows = document.querySelectorAll('tr[data-href]');
