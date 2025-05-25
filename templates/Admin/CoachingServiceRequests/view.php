@@ -291,53 +291,6 @@ use Cake\Utility\Inflector;
                     </div>
                 </div>
             </div>
-
-            <!-- Documents Card -->
-            <?php if (!empty($coachingRequestDocuments)): ?>
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Documents</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered" width="100%" cellspacing="0">
-                            <thead>
-                                <tr>
-                                    <th>Document Name</th>
-                                    <th>Uploaded By</th>
-                                    <th>Date</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($coachingRequestDocuments as $document): ?>
-                                <tr>
-                                    <td><?= h($document->document_name) ?></td>
-                                    <td>
-                                        <span class="badge badge-<?= $document->uploaded_by === 'admin' ? 'primary' : 'info' ?>">
-                                            <?= ucfirst(h($document->uploaded_by)) ?>
-                                        </span>
-                                    </td>
-                                    <td><?= $document->created_at->format('M d, Y h:i A') ?></td>
-                                    <td>
-                                        <a href="<?= $this->Url->build('/' . h($document->document_path), ['fullBase' => true]) ?>"
-                                           class="btn btn-sm btn-primary"
-                                           target="_blank">
-                                            <i class="fas fa-eye"></i> View
-                                        </a>
-                                        <a href="<?= $this->Url->build('/' . h($document->document_path), ['fullBase' => true, 'download' => true]) ?>"
-                                           class="btn btn-sm btn-info">
-                                            <i class="fas fa-download"></i> Download
-                                        </a>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <?php endif; ?>
         </div>
 
         <!-- Sidebar with Actions -->
@@ -389,16 +342,68 @@ use Cake\Utility\Inflector;
                                         'class' => 'form-control-file',
                                         'label' => false,
                                         'required' => true,
-                                        'accept' => '.pdf,.doc,.docx,.txt,.jpg,.jpeg',
+                                        'accept' => '.pdf,.doc,.docx',
                                     ]) ?>
-                                    <small class="form-text text-muted">Accepted: PDF, Word, TXT, or JPEG files</small>
+                                    <small class="form-text text-muted">Accepted: PDF and Word documents only (max 10MB)</small>
                                 </div>
-                                <button type="submit" class="btn btn-info btn-block">
+                                <button type="submit" class="btn btn-primary btn-block">
                                     <i class="fas fa-upload mr-1"></i> Upload Document
                                 </button>
                                 <?= $this->Form->end() ?>
                             </div>
                         </div>
+
+                        <!-- Document List -->
+                        <?php if (!empty($coachingRequestDocuments)): ?>
+                            <h6 class="font-weight-bold mb-2">Uploaded Documents</h6>
+                            <div class="document-list">
+                                <?php foreach($coachingRequestDocuments as $document): ?>
+                                    <div class="document-item border rounded mb-2 p-3 hover-shadow">
+                                        <div class="d-flex align-items-start">
+                                            <div class="document-icon mr-3 mt-1">
+                                                <i class="<?= getDocumentIcon($document->file_type) ?> fa-2x"></i>
+                                            </div>
+                                            <div class="flex-grow-1 overflow-hidden">
+                                                <div class="document-name font-weight-bold text-truncate mb-1" title="<?= h($document->document_name) ?>">
+                                                    <?= h($document->document_name) ?>
+                                                </div>
+                                                <div class="document-meta small text-muted">
+                                                    <div class="d-flex justify-content-between mb-1">
+                                                        <span class="file-type"><?= h(strtoupper(pathinfo($document->document_name, PATHINFO_EXTENSION))) ?></span>
+                                                        <span class="file-size"><?= formatFileSize($document->file_size) ?></span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="upload-date">
+                                                            <?php if (!empty($document->created_at)): ?>
+                                                                <?= $document->created_at->format('M j, Y') ?>
+                                                            <?php else: ?>
+                                                                Unknown date
+                                                            <?php endif; ?>
+                                                        </span>
+                                                        <span class="uploaded-by badge badge-<?= $document->uploaded_by === 'admin' ? 'primary' : 'info' ?> badge-sm">
+                                                            <?= $document->uploaded_by === 'admin' ? 'Admin' : 'Client' ?>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="document-actions mt-2">
+                                                    <a href="<?= $this->Url->build('/' . h($document->document_path), ['fullBase' => true]) ?>"
+                                                       target="_blank"
+                                                       class="btn btn-sm btn-outline-primary btn-block">
+                                                        <i class="fas fa-eye mr-1"></i> View Document
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="no-documents text-center py-3">
+                                <i class="fas fa-file-alt fa-2x text-muted mb-2"></i>
+                                <div class="small text-muted">No documents uploaded yet</div>
+                                <div class="small text-muted">Upload documents to share with the client</div>
+                            </div>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Payment Request Section -->
@@ -768,6 +773,202 @@ use Cake\Utility\Inflector;
 .modal-backdrop {
     z-index: 1040 !important;
 }
+
+/* Custom Confirmation Modal Styles */
+#confirmationModal .modal-content {
+    border-radius: 12px !important;
+    overflow: hidden;
+}
+
+#confirmationModal .modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+}
+
+#confirmationModal .modal-header .modal-title {
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+#confirmationModal .modal-header .close {
+    color: white;
+    opacity: 0.8;
+    text-shadow: none;
+    font-size: 1.5rem;
+}
+
+#confirmationModal .modal-header .close:hover {
+    opacity: 1;
+}
+
+#confirmationModal .modal-body {
+    padding: 2rem 1.5rem;
+    background: #f8f9fa;
+}
+
+#confirmationModal .main-message {
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: #333;
+    line-height: 1.5;
+}
+
+#confirmationModal .additional-info {
+    font-size: 0.9rem;
+    padding: 0.75rem;
+    background: white;
+    border-left: 4px solid #17a2b8;
+    border-radius: 0 6px 6px 0;
+    margin-top: 1rem;
+}
+
+#confirmationModal .additional-info:empty {
+    display: none;
+}
+
+#confirmationModal .modal-footer {
+    background: white;
+    padding: 1rem 1.5rem 1.5rem;
+    justify-content: space-between;
+}
+
+#confirmationModal .modal-footer .btn {
+    min-width: 100px;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+#confirmationModal .modal-footer .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* Status-specific styling for confirmation modal */
+#confirmationModal.status-completed .modal-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+#confirmationModal.status-completed .additional-info {
+    border-left-color: #28a745;
+    background: rgba(40, 167, 69, 0.05);
+}
+
+#confirmationModal.status-canceled .modal-header {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+}
+
+#confirmationModal.status-canceled .additional-info {
+    border-left-color: #dc3545;
+    background: rgba(220, 53, 69, 0.05);
+}
+
+#confirmationModal.status-in-progress .modal-header {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+}
+
+#confirmationModal.status-in-progress .additional-info {
+    border-left-color: #007bff;
+    background: rgba(0, 123, 255, 0.05);
+}
+
+#confirmationModal.status-warning .modal-header {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+}
+
+#confirmationModal.status-warning .additional-info {
+    border-left-color: #ffc107;
+    background: rgba(255, 193, 7, 0.05);
+}
+
+#confirmationModal.payment-success .modal-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+#confirmationModal.payment-success .additional-info {
+    border-left-color: #28a745;
+    background: rgba(40, 167, 69, 0.05);
+}
+
+/* Animation for modal appearance */
+#confirmationModal.fade .modal-dialog {
+    transform: scale(0.9);
+    transition: transform 0.3s ease-out;
+}
+
+#confirmationModal.show .modal-dialog {
+    transform: scale(1);
+}
+
+/* Document Section Styling */
+.document-item {
+    background: #fff;
+    transition: all 0.2s ease;
+    border: 1px solid #e3e6f0 !important;
+}
+
+.document-item:hover {
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1) !important;
+    border-color: #4e73df !important;
+}
+
+.document-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+}
+
+.document-name {
+    font-size: 0.875rem;
+    line-height: 1.2;
+}
+
+.document-meta {
+    font-size: 0.75rem;
+    line-height: 1.3;
+}
+
+.file-type {
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-sm {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.4rem;
+}
+
+.document-actions .btn {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+}
+
+.no-documents {
+    background: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 0.5rem;
+}
+
+.document-upload-form {
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+}
+
+.form-control-file {
+    border: 1px solid #d1d3e2;
+    border-radius: 0.35rem;
+    padding: 0.375rem;
+    background: white;
+    font-size: 0.875rem;
+}
+
+.form-control-file:focus {
+    border-color: #4e73df;
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}
 </style>
 
 <!-- Load jQuery UI for datepicker directly -->
@@ -775,414 +976,333 @@ use Cake\Utility\Inflector;
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 <?= $this->Html->script('coaching-service-payments.js', ['block' => true]) ?>
 
+<?php $this->append('script'); ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Ensure jQuery UI is loaded before proceeding
-    console.log('jQuery available:', typeof $ !== 'undefined');
-    console.log('jQuery UI available:', typeof $.ui !== 'undefined');
-
-    // Initialize datepicker immediately when modal is shown
-        $('#timeSlotsModal').on('shown.bs.modal', function() {
-        console.log('Modal opened, initializing datepicker...');
-        
-        // Wait a bit for modal to fully render
-        setTimeout(function() {
-            const $datepicker = $('#datepicker');
-            console.log('Datepicker element found:', $datepicker.length);
+    // Custom confirmation modal functionality
+    let confirmationCallback = null;
+    
+    function showCustomConfirmation(title, mainMessage, additionalInfo, confirmText = 'Confirm', confirmClass = 'btn-primary') {
+        return new Promise((resolve) => {
+            // Remove any existing theme classes
+            const modal = document.getElementById('confirmationModal');
+            modal.className = modal.className.replace(/status-\w+|payment-\w+/g, '');
             
-            if ($datepicker.length && typeof $.fn.datepicker !== 'undefined') {
-                // Destroy existing datepicker if present
-                if ($datepicker.hasClass('hasDatepicker')) {
-                    $datepicker.datepicker('destroy');
-                }
-
-        // Initialize datepicker
-                $datepicker.datepicker({
-                    minDate: 0,
-                    maxDate: '+60d',
-                    dateFormat: 'yy-mm-dd',
-                    firstDay: 1,
-                    showOtherMonths: true,
-                    selectOtherMonths: true,
-                    changeMonth: true,
-                    changeYear: true,
-                    inline: true, // Show inline immediately
-                    onSelect: function(dateText) {
-                        console.log('Date selected:', dateText);
-                        $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { 
-                            weekday: 'long', 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                        }));
-                        $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
-                        $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
-                    }
-                });
-                
-                // Force the datepicker to show inline and be visible
-                $datepicker.datepicker('widget').show();
-                console.log('Datepicker initialized successfully');
-            } else {
-                console.error('jQuery UI datepicker not available, using fallback HTML5 date input');
-                // Fallback: Create HTML5 date input
-                createFallbackDatePicker($datepicker);
+            // Add theme class based on confirm button class
+            if (confirmClass.includes('btn-success')) {
+                modal.classList.add(title.includes('Payment') ? 'payment-success' : 'status-completed');
+            } else if (confirmClass.includes('btn-danger')) {
+                modal.classList.add('status-canceled');
+            } else if (confirmClass.includes('btn-primary')) {
+                modal.classList.add('status-in-progress');
+            } else if (confirmClass.includes('btn-warning')) {
+                modal.classList.add('status-warning');
             }
-        }, 200);
+            
+            // Set modal content
+            document.getElementById('confirmationModalLabel').innerHTML = `<i class="fas fa-question-circle mr-2"></i>${title}`;
+            document.getElementById('confirmationMainMessage').innerHTML = mainMessage;
+            document.getElementById('confirmationAdditionalInfo').innerHTML = additionalInfo || '';
+            
+            // Set confirm button text and style
+            const confirmBtn = document.getElementById('confirmationConfirmBtn');
+            confirmBtn.innerHTML = `<i class="fas fa-check mr-1"></i> ${confirmText}`;
+            confirmBtn.className = `btn ${confirmClass} px-4`;
+            
+            // Set up the callback
+            confirmationCallback = resolve;
+            
+            // Show the modal
+            $('#confirmationModal').modal('show');
+        });
+    }
+    
+    // Handle confirmation button click
+    document.getElementById('confirmationConfirmBtn').addEventListener('click', function() {
+        $('#confirmationModal').modal('hide');
+        if (confirmationCallback) {
+            confirmationCallback(true);
+            confirmationCallback = null;
+        }
+    });
+    
+    // Handle modal dismissal
+    $('#confirmationModal').on('hidden.bs.modal', function() {
+        if (confirmationCallback) {
+            confirmationCallback(false);
+            confirmationCallback = null;
+        }
     });
 
-    // Fallback date picker function
-    function createFallbackDatePicker($container) {
-        console.log('Creating fallback date picker');
-
-        // Get today's date for min attribute
-        const today = new Date();
-        const minDate = today.toISOString().split('T')[0];
+    // Status update form enhancement
+    const statusForm = document.querySelector('.status-update-form');
+    const statusSelect = statusForm ? statusForm.querySelector('select[name="status"]') : null;
+    const statusSubmitBtn = statusForm ? statusForm.querySelector('button[type="submit"]') : null;
+    
+    if (statusForm && statusSelect && statusSubmitBtn) {
+        // Track original status
+        const originalStatus = statusSelect.value;
         
-        // Get 60 days from now for max attribute  
-        const maxDate = new Date(today.getTime() + (60 * 24 * 60 * 60 * 1000));
-        const maxDateStr = maxDate.toISOString().split('T')[0];
+        // Add change event listener to status select
+        statusSelect.addEventListener('change', function() {
+            const newStatus = this.value;
+            const statusText = this.options[this.selectedIndex].text;
+            
+            if (newStatus !== originalStatus) {
+                statusSubmitBtn.innerHTML = '<i class="fas fa-sync-alt mr-1"></i> Update to ' + statusText;
+                statusSubmitBtn.classList.remove('btn-primary');
+                statusSubmitBtn.classList.add('btn-warning');
+            } else {
+                statusSubmitBtn.innerHTML = '<i class="fas fa-sync-alt mr-1"></i> Update Status';
+                statusSubmitBtn.classList.remove('btn-warning');
+                statusSubmitBtn.classList.add('btn-primary');
+            }
+        });
         
-        // Create HTML5 date input
-        const dateInput = `
-            <div class="fallback-datepicker p-3">
-                <p class="text-muted mb-3">
-                    <i class="fas fa-info-circle mr-2"></i>
-                    Please select a date for your consultation
-                </p>
-                <input type="date" 
-                       id="fallback-date-input" 
-                       class="form-control" 
-                       min="${minDate}" 
-                       max="${maxDateStr}"
-                       style="font-size: 16px; padding: 10px;">
-                <small class="form-text text-muted mt-2">
-                    Select a date between today and ${maxDate.toLocaleDateString()}
-                </small>
-            </div>
-        `;
-        
-        // Replace the datepicker container with HTML5 input
-        $container.html(dateInput);
-        
-        // Add event listener for the fallback input
-        $('#fallback-date-input').on('change', function() {
-            const selectedDate = this.value;
-            if (selectedDate) {
-                console.log('Fallback date selected:', selectedDate);
-                $('#selected-date-display').text(new Date(selectedDate).toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                }));
-                $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + selectedDate + '</span>');
-                $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
+        // Add confirmation dialog for status updates
+        statusForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const newStatus = statusSelect.value;
+            const statusText = statusSelect.options[statusSelect.selectedIndex].text;
+            const originalStatusText = statusSelect.querySelector(`option[value="${originalStatus}"]`).text;
+            
+            if (newStatus === originalStatus) {
+                await showCustomConfirmation(
+                    'No Change Required',
+                    `Status is already set to "${statusText}"`,
+                    null,
+                    'OK',
+                    'btn-info'
+                );
+                return;
+            }
+            
+            // Custom confirmation messages based on status
+            let mainMessage = `Are you sure you want to change the status from "<strong>${originalStatusText}</strong>" to "<strong>${statusText}</strong>"?`;
+            let additionalInfo = '';
+            let confirmClass = 'btn-warning';
+            
+            if (newStatus === 'completed') {
+                additionalInfo = '<i class="fas fa-info-circle mr-1"></i> This will notify the client that their coaching service is complete.';
+                confirmClass = 'btn-success';
+            } else if (newStatus === 'canceled' || newStatus === 'cancelled') {
+                additionalInfo = '<i class="fas fa-exclamation-triangle mr-1"></i> This will notify the client that their coaching service has been canceled.';
+                confirmClass = 'btn-danger';
+            } else if (newStatus === 'in_progress') {
+                additionalInfo = '<i class="fas fa-play-circle mr-1"></i> This will notify the client that work has started on their coaching service.';
+                confirmClass = 'btn-primary';
+            }
+            
+            const confirmed = await showCustomConfirmation(
+                'Confirm Status Change',
+                mainMessage,
+                additionalInfo,
+                'Update Status',
+                confirmClass
+            );
+            
+            if (confirmed) {
+                // Disable the button and show loading state
+                statusSubmitBtn.disabled = true;
+                statusSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Updating...';
+                
+                // Submit the form
+                this.submit();
             }
         });
     }
-
-    // Also try to initialize datepicker on document ready
-    $(document).ready(function() {
-        console.log('Document ready, jQuery UI datepicker available:', typeof $.fn.datepicker !== 'undefined');
-
-        // Try to initialize datepicker on page load as well
-        if (typeof $.fn.datepicker !== 'undefined') {
-            console.log('Attempting early datepicker initialization');
-            try {
-                const $datepicker = $('#datepicker');
-                if ($datepicker.length && !$datepicker.hasClass('hasDatepicker')) {
-                    $datepicker.datepicker({
-                        minDate: 0,
-                        maxDate: '+60d',
-                        dateFormat: 'yy-mm-dd',
-                        firstDay: 1,
-                        showOtherMonths: true,
-                        selectOtherMonths: true,
-                        changeMonth: true,
-                        changeYear: true,
-                        inline: true,
-                        onSelect: function(dateText) {
-                            console.log('Date selected (early init):', dateText);
-                            $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { 
-                                weekday: 'long', 
-                                year: 'numeric', 
-                                month: 'long', 
-                                day: 'numeric' 
-                            }));
-                            $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
-                            $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
-                        }
-                    });
-                    console.log('Early datepicker initialization successful');
-                }
-            } catch (e) {
-                console.log('Early datepicker initialization failed, will try again on modal open:', e);
-            }
-        }
-    });
-
-    // Time slots selection functionality - MISSING FUNCTIONALITY ADDED
-        const loadTimeSlotsBtn = document.getElementById('loadTimeSlots');
-        const timeSlotsLoading = document.getElementById('timeSlots-loading');
-        const timeSlotsEmpty = document.getElementById('timeSlots-empty');
-        const timeSlotsNone = document.getElementById('timeSlots-none');
-        const timeSlotsContainer = document.getElementById('time-slots-container');
-        const timeSlotsListContainer = document.getElementById('timeSlots-list');
-        const selectedDateDisplay = document.getElementById('selected-date-display');
-        const selectedTimeSlotsJson = document.getElementById('selectedTimeSlotsJson');
-        const selectAllCheckbox = document.getElementById('selectAllTimeSlots');
-        const sendTimeSlotsBtn = document.getElementById('sendTimeSlots');
-
-    // Helper function for debugging
-    function debugLog(message, data) {
-        const debugging = true; // Set to false in production
-        if (debugging && console) {
-            if (data) {
-                console.log(`[CoachingTimeSlots] ${message}:`, data);
-            } else {
-                console.log(`[CoachingTimeSlots] ${message}`);
-            }
-        }
-    }
-
-        // Load time slots when the button is clicked
-        if (loadTimeSlotsBtn) {
-            loadTimeSlotsBtn.addEventListener('click', function() {
-            let selectedDate = null;
-            let formattedDate = null;
+    
+    // Enhanced form validation for payment modals
+    const paymentRequestForm = document.getElementById('paymentRequestForm');
+    if (paymentRequestForm) {
+        paymentRequestForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
             
-            // Try to get date from jQuery UI datepicker first
-            try {
-                selectedDate = $('#datepicker').datepicker('getDate');
-                if (selectedDate) {
-                // Format date as YYYY-MM-DD
-                const year = selectedDate.getFullYear();
-                const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-                const day = String(selectedDate.getDate()).padStart(2, '0');
-                    formattedDate = `${year}-${month}-${day}`;
-                }
-            } catch (e) {
-                console.log('jQuery datepicker not available, checking fallback');
-            }
+            const amount = this.querySelector('input[name="amount"]').value;
+            const description = this.querySelector('textarea[name="description"]').value;
             
-            // If jQuery UI datepicker didn't work, try the fallback HTML5 input
-            if (!formattedDate) {
-                const fallbackInput = document.getElementById('fallback-date-input');
-                if (fallbackInput && fallbackInput.value) {
-                    formattedDate = fallbackInput.value;
-                    console.log('Using fallback date input:', formattedDate);
-                }
-            }
-            
-            // Also check the stored date from the fallback
-            if (!formattedDate && window.selectedDateForTimeSlots) {
-                formattedDate = window.selectedDateForTimeSlots;
-                console.log('Using stored fallback date:', formattedDate);
-            }
-            
-            console.log('Load button clicked, formatted date:', formattedDate);
-
-            if (!formattedDate) {
-                alert('Please select a date first');
+            if (!amount || parseFloat(amount) <= 0) {
+                await showCustomConfirmation(
+                    'Invalid Amount',
+                    'Please enter a valid payment amount.',
+                    '<i class="fas fa-exclamation-circle mr-1"></i> The amount must be greater than $0.00',
+                    'OK',
+                    'btn-warning'
+                );
                 return;
             }
-
-                loadTimeSlots(formattedDate);
-            });
-        }
-
-        // Function to load time slots for a selected date
-        function loadTimeSlots(date) {
-            debugLog(`Loading time slots for date: ${date}`);
-
-            // Show loading, hide other elements
-        if (timeSlotsEmpty) timeSlotsEmpty.classList.add('d-none');
-        if (timeSlotsNone) timeSlotsNone.classList.add('d-none');
-        if (timeSlotsListContainer) timeSlotsListContainer.classList.add('d-none');
-        if (timeSlotsLoading) timeSlotsLoading.classList.remove('d-none');
-
-            // Format the date for display
-            const formattedDate = new Date(date);
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        if (selectedDateDisplay) {
-            selectedDateDisplay.textContent = formattedDate.toLocaleDateString('en-US', options);
-        }
-
-            // Get CSRF token from the document
-            let csrfToken;
-            try {
-                const csrfElement = document.querySelector('input[name="_csrfToken"]');
-                csrfToken = csrfElement ? csrfElement.value : '<?= $this->request->getAttribute('csrfToken') ?>';
-                debugLog('Using CSRF token', csrfToken.substring(0, 10) + '...');
-            } catch (e) {
-                console.error('Error getting CSRF token:', e);
-                csrfToken = '<?= $this->request->getAttribute('csrfToken') ?>';
+            
+            if (!description.trim()) {
+                await showCustomConfirmation(
+                    'Missing Description',
+                    'Please enter a payment description.',
+                    '<i class="fas fa-info-circle mr-1"></i> This helps the client understand what the payment is for.',
+                    'OK',
+                    'btn-warning'
+                );
+                return;
             }
-
-        // Build the URL for coaching service requests (not writing service requests)
-            const url = `<?= $this->Url->build(['controller' => 'CoachingServiceRequests', 'action' => 'getAvailableTimeSlots', 'prefix' => 'Admin']) ?>?date=${date}`;
-            debugLog('Fetching from URL', url);
-
-            // Fetch available time slots
-            fetch(url, {
-                method: 'GET',
-                headers: {
-                    'X-CSRF-Token': csrfToken,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }
-            })
-                .then(response => {
-                    console.log('Response status:', response.status);
-                    return response.json().catch(error => {
-                        console.error('Error parsing JSON response:', error);
-                        throw new Error('Invalid JSON response');
-                    });
-                })
-                .then(data => {
-                    console.log('Time slots data:', data);
-            if (timeSlotsLoading) timeSlotsLoading.classList.add('d-none');
-
-                    if (data.success && data.timeSlots && data.timeSlots.length > 0) {
-                // Hide other states first
-                if (timeSlotsEmpty) timeSlotsEmpty.classList.add('d-none');
-                if (timeSlotsNone) timeSlotsNone.classList.add('d-none');
-                
-                        // Show time slots container
-                if (timeSlotsListContainer) timeSlotsListContainer.classList.remove('d-none');
-
-                        // Populate time slots
-                if (timeSlotsContainer) {
-                        timeSlotsContainer.innerHTML = '';
-
-                        data.timeSlots.forEach(slot => {
-                            const slotDiv = document.createElement('div');
-                            slotDiv.className = 'custom-control custom-checkbox time-slot-item mb-2';
-
-                            const id = `slot-${slot.date}-${slot.start.replace(':', '-')}`;
-
-                            slotDiv.innerHTML = `
-                                <input type="checkbox" class="custom-control-input time-slot-checkbox" id="${id}" data-slot='${JSON.stringify(slot)}'>
-                                <label class="custom-control-label" for="${id}">
-                                    ${slot.formatted}
-                                </label>
-                            `;
-
-                            timeSlotsContainer.appendChild(slotDiv);
-                        });
-
-                        // Setup the checkboxes for selecting time slots
-                        setupTimeSlotCheckboxes();
-                }
-                    } else {
-                // Hide other states first
-                if (timeSlotsEmpty) timeSlotsEmpty.classList.add('d-none');
-                if (timeSlotsListContainer) timeSlotsListContainer.classList.add('d-none');
-                
-                        console.log('No time slots available or success is false');
-                        // Show no time slots message
-                if (timeSlotsNone) timeSlotsNone.classList.remove('d-none');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading time slots:', error);
-            if (timeSlotsLoading) timeSlotsLoading.classList.add('d-none');
-            if (timeSlotsNone) timeSlotsNone.classList.remove('d-none');
-                    alert('Error loading time slots: ' + error.message);
-                });
-        }
-
-        // Setup time slot checkboxes
-        function setupTimeSlotCheckboxes() {
-            const timeSlotCheckboxes = document.querySelectorAll('.time-slot-checkbox');
-
-            // Handle individual checkbox changes
-            timeSlotCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', updateSelectedTimeSlots);
-            });
-
-            // Handle select all checkbox
-            if (selectAllCheckbox) {
-                selectAllCheckbox.addEventListener('change', function() {
-                    timeSlotCheckboxes.forEach(checkbox => {
-                        checkbox.checked = this.checked;
-                    });
-
-                    updateSelectedTimeSlots();
-                });
+            
+            // Confirm payment request
+            const confirmed = await showCustomConfirmation(
+                'Send Payment Request',
+                `Send a payment request for <strong>$${parseFloat(amount).toFixed(2)}</strong>?`,
+                '<i class="fas fa-envelope mr-1"></i> The client will receive an email with a payment link.',
+                'Send Request',
+                'btn-success'
+            );
+            
+            if (confirmed) {
+                // Show loading state
+                const submitBtn = this.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Sending...';
+                this.submit();
             }
-
-            // Clear previous selection
-            if (selectAllCheckbox) {
-                selectAllCheckbox.checked = false;
+        });
+    }
+    
+    const markAsPaidForm = document.getElementById('markAsPaidForm');
+    if (markAsPaidForm) {
+        markAsPaidForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const amount = this.querySelector('input[name="amount"]').value;
+            
+            if (!amount || parseFloat(amount) <= 0) {
+                await showCustomConfirmation(
+                    'Invalid Amount',
+                    'Please enter a valid payment amount.',
+                    '<i class="fas fa-exclamation-circle mr-1"></i> The amount must be greater than $0.00',
+                    'OK',
+                    'btn-warning'
+                );
+                return;
             }
-            updateSelectedTimeSlots();
-        }
-
-        // Update selected time slots
-        function updateSelectedTimeSlots() {
-            const selectedTimeSlots = [];
-            const timeSlotCheckboxes = document.querySelectorAll('.time-slot-checkbox:checked');
-
-            timeSlotCheckboxes.forEach(checkbox => {
-                    const slotData = JSON.parse(checkbox.dataset.slot);
-                    selectedTimeSlots.push(slotData);
-            });
-
-            // Update hidden input with selected time slots
-            if (selectedTimeSlotsJson) {
-                selectedTimeSlotsJson.value = JSON.stringify(selectedTimeSlots);
+            
+            const confirmed = await showCustomConfirmation(
+                'Mark Payment as Paid',
+                `Mark payment of <strong>$${parseFloat(amount).toFixed(2)}</strong> as paid?`,
+                '<i class="fas fa-bell mr-1"></i> The client will be notified automatically.',
+                'Mark as Paid',
+                'btn-success'
+            );
+            
+            if (confirmed) {
+                // Show loading state
+                const submitBtn = this.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Processing...';
+                this.submit();
             }
-
-        // Enable/disable send button based on selection
-        if (sendTimeSlotsBtn) {
-            sendTimeSlotsBtn.disabled = selectedTimeSlots.length === 0;
-        }
-
-            // Update select all checkbox state
-            const allCheckboxes = document.querySelectorAll('.time-slot-checkbox');
-            if (selectAllCheckbox && allCheckboxes.length > 0) {
-                selectAllCheckbox.checked = timeSlotCheckboxes.length > 0 &&
-                                        timeSlotCheckboxes.length === allCheckboxes.length;
+        });
+    }
+    
+    // Enhanced document upload form handling
+    const documentUploadForm = document.querySelector('.document-upload-form');
+    if (documentUploadForm) {
+        const fileInput = documentUploadForm.querySelector('input[type="file"]');
+        const submitBtn = documentUploadForm.querySelector('button[type="submit"]');
+        
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            // Validate file type
+            const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            if (!allowedTypes.includes(file.type)) {
+                showCustomConfirmation(
+                    'Invalid File Type',
+                    'Please select a PDF or Word document.',
+                    '<i class="fas fa-exclamation-triangle mr-1"></i> Only PDF (.pdf) and Word (.doc, .docx) files are allowed.',
+                    'OK',
+                    'btn-warning'
+                );
+                this.value = '';
+                return;
             }
-        }
-
-        // Send time slots button
-        if (sendTimeSlotsBtn) {
-            sendTimeSlotsBtn.addEventListener('click', function() {
-            const messageText = document.getElementById('timeSlotMessageText');
-            const selectedTimeSlots = selectedTimeSlotsJson;
-
-            if (!messageText || !messageText.value.trim()) {
-                    alert('Please enter a message to accompany the time slots');
-                    return;
-                }
-
-            if (!selectedTimeSlots || selectedTimeSlots.value === '[]') {
-                    alert('Please select at least one time slot');
-                    return;
-                }
-
-                try {
-                    // Show loading state
-                    sendTimeSlotsBtn.disabled = true;
-                    sendTimeSlotsBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
-
-                    // Submit the form
-                document.getElementById('timeSlotsForm').submit();
-                } catch (error) {
-                    console.error('Error submitting form:', error);
-                    alert('An error occurred while sending time slots. Please try again.');
-
-                    // Reset button state
-                    sendTimeSlotsBtn.disabled = false;
-                    sendTimeSlotsBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Send Time Slots';
-                }
-            });
-        }
-    });
+            
+            // Validate file size (10MB max)
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                showCustomConfirmation(
+                    'File Too Large',
+                    'The selected file is too large.',
+                    '<i class="fas fa-exclamation-triangle mr-1"></i> Maximum file size is 10MB. Please select a smaller file.',
+                    'OK',
+                    'btn-warning'
+                );
+                this.value = '';
+                return;
+            }
+            
+            // Update button text with file name
+            const fileName = file.name.length > 20 ? file.name.substring(0, 20) + '...' : file.name;
+            submitBtn.innerHTML = `<i class="fas fa-upload mr-1"></i> Upload ${fileName}`;
+            submitBtn.classList.remove('btn-primary');
+            submitBtn.classList.add('btn-success');
+        });
+        
+        documentUploadForm.addEventListener('submit', async function(e) {
+            const file = fileInput.files[0];
+            if (!file) {
+                e.preventDefault();
+                await showCustomConfirmation(
+                    'No File Selected',
+                    'Please select a document to upload.',
+                    '<i class="fas fa-info-circle mr-1"></i> Choose a PDF or Word document from your computer.',
+                    'OK',
+                    'btn-info'
+                );
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Uploading...';
+        });
+    }
+    
+    console.log('Coaching service request view JavaScript loaded successfully');
+});
 </script>
+<?php $this->end(); ?>
+
+<!-- Custom Confirmation Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" role="dialog" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title font-weight-bold" id="confirmationModalLabel">
+                    <i class="fas fa-question-circle text-warning mr-2"></i>
+                    Confirm Action
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body py-4">
+                <div class="confirmation-content">
+                    <div class="main-message mb-3" id="confirmationMainMessage">
+                        <!-- Main confirmation message will be inserted here -->
+                    </div>
+                    <div class="additional-info text-muted" id="confirmationAdditionalInfo">
+                        <!-- Additional information will be inserted here -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-primary px-4" id="confirmationConfirmBtn">
+                    <i class="fas fa-check mr-1"></i> Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Select Available Time Slots Modal -->
 <div class="modal fade" id="timeSlotsModal" tabindex="-1" role="dialog" aria-labelledby="timeSlotsModalLabel" aria-hidden="true">
@@ -1487,9 +1607,21 @@ function getDocumentIcon(string $mimeType): string
 {
     return match (true) {
         str_contains($mimeType, 'pdf') => 'fas fa-file-pdf text-danger',
-        str_contains($mimeType, 'word') => 'fas fa-file-word text-primary',
-        str_contains($mimeType, 'image') => 'fas fa-file-image text-success',
+        str_contains($mimeType, 'word') || str_contains($mimeType, 'msword') => 'fas fa-file-word text-primary',
+        str_contains($mimeType, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') => 'fas fa-file-word text-primary',
         default => 'fas fa-file-alt text-secondary'
+    };
+}
+
+/**
+ * Get document icon class
+ */
+function getDocumentIconClass(string $mimeType): string
+{
+    return match (true) {
+        str_contains($mimeType, 'pdf') => 'text-red-500',
+        str_contains($mimeType, 'word') || str_contains($mimeType, 'doc') => 'text-blue-700',
+        default => 'text-gray-500'
     };
 }
 

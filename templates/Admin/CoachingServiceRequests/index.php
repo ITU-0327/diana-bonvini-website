@@ -119,25 +119,17 @@ foreach ($coachingServiceRequests as $request) {
                     <?= $this->Form->create(null, ['type' => 'get']) ?>
                     <div class="row">
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Search Keywords</label>
+                            <label for="q" class="form-label">Search Keywords</label>
                             <input type="text" name="q" id="q" class="form-control"
                                 value="<?= h($this->request->getQuery('q')) ?>"
-                                placeholder="Search by title, content, etc.">
+                                placeholder="Search by title, client name, etc.">
                         </div>
 
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Service Type</label>
-                            <?= $this->Form->select('service_type', [
-                                'career_coaching' => 'Career Coaching',
-                                'academic_coaching' => 'Academic Coaching',
-                                'life_coaching' => 'Life Coaching',
-                                'health_coaching' => 'Health Coaching',
-                                'other' => 'Other',
-                            ], [
-                                'empty' => 'All Service Types',
-                                'default' => $this->request->getQuery('service_type'),
-                                'class' => 'form-control',
-                            ]) ?>
+                            <label class="form-label">Created Date</label>
+                            <input type="date" name="created_date" class="form-control"
+                                value="<?= h($this->request->getQuery('created_date')) ?>"
+                                placeholder="Select date">
                         </div>
 
                         <div class="col-md-3 mb-3">
@@ -146,8 +138,6 @@ foreach ($coachingServiceRequests as $request) {
                                 'pending' => 'Pending',
                                 'in_progress' => 'In Progress',
                                 'completed' => 'Completed',
-                                'canceled' => 'Canceled',
-                                'cancelled' => 'Cancelled',
                             ], [
                                 'empty' => 'All Statuses',
                                 'default' => $this->request->getQuery('status'),
@@ -158,9 +148,6 @@ foreach ($coachingServiceRequests as $request) {
                         <div class="col-md-3 mb-3">
                             <label class="form-label">&nbsp;</label>
                             <div class="d-flex">
-                                <button type="submit" class="btn btn-primary mr-2">
-                                    <i class="fas fa-search mr-1"></i> Search
-                                </button>
                                 <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-secondary">
                                     <i class="fas fa-redo-alt mr-1"></i> Reset
                                 </a>
@@ -179,6 +166,12 @@ foreach ($coachingServiceRequests as $request) {
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary">All Coaching Service Requests</h6>
+                    <small class="text-muted">
+                        Showing <?= count($coachingServiceRequests) ?> results
+                        <?php if (!empty($this->request->getQuery())): ?>
+                            (filtered)
+                        <?php endif; ?>
+                    </small>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -199,6 +192,7 @@ foreach ($coachingServiceRequests as $request) {
                                     <?php foreach ($coachingServiceRequests as $request) : ?>
                                         <tr class="request-row hover-clickable cursor-pointer transition-colors" 
                                             data-status="<?= h($request->request_status ?? '') ?>"
+                                            data-created-date="<?= isset($request->created_at) ? $request->created_at->format('Y-m-d') : '' ?>"
                                             data-href="<?= $this->Url->build(['action' => 'view', $request->coaching_service_request_id]) ?>"
                                             onclick="window.location.href = this.dataset.href">
                                             <td class="align-middle">
@@ -365,6 +359,8 @@ foreach ($coachingServiceRequests as $request) {
 
     .hover-clickable:hover {
         background-color: #f8f9fa !important;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .hover-clickable:focus {
@@ -378,91 +374,78 @@ foreach ($coachingServiceRequests as $request) {
     .transition-colors {
         transition: background-color 0.2s ease, color 0.2s ease;
     }
+
+    /* Improved form controls */
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        outline: 0;
+    }
 </style>
 
 <?php $this->append('script'); ?>
 <script>
-    $(document).ready(function() {
-        // Initialize DataTable but disable the built-in pagination
-        // since we're using CakePHP's pagination
-        $('#requestsTable').DataTable({
-            "paging": false,
-            "searching": false,
-            "info": false,
-            "ordering": true,
-            "order": [[6, 'desc']] // Sort by created date (column 6) by default
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
         });
-        
-        // Initialize tooltips if Bootstrap 5 is available
-        if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
-        }
-        
-        // Initialize daterangepicker if available
-        if ($.fn.daterangepicker) {
-            $('.daterange').daterangepicker({
-                autoUpdateInput: false,
-                locale: {
-                    cancelLabel: 'Clear',
-                    format: 'MM/DD/YYYY'
-                }
-            });
-            
-            $('.daterange').on('apply.daterangepicker', function(ev, picker) {
-                $(this).val(picker.startDate.format('MM/DD/YYYY') + ' - ' + picker.endDate.format('MM/DD/YYYY'));
-            });
-            
-            $('.daterange').on('cancel.daterangepicker', function() {
-                $(this).val('');
+
+        // Sort the table by created date (column 6) by default
+        const table = document.getElementById('requestsTable');
+        if (table && typeof $.fn.DataTable !== 'undefined') {
+            $(table).DataTable({
+                paging: false,
+                searching: false,
+                info: false,
+                ordering: true,
+                order: [[6, 'desc']]
             });
         }
 
         // Filter by status
-        $('select[name="status"]').change(function() {
+        document.querySelector('select[name="status"]').addEventListener('change', function() {
             filterRequests();
         });
 
-        // Filter by service type
-        $('select[name="service_type"]').change(function() {
+        // Filter by created date
+        document.querySelector('input[name="created_date"]').addEventListener('change', function() {
             filterRequests();
         });
 
         // Search functionality
-        $('#q').keyup(function() {
+        document.getElementById('q').addEventListener('keyup', function() {
             filterRequests();
         });
 
         // Function to filter requests
         function filterRequests() {
-            const statusFilter = $('select[name="status"]').val();
-            const serviceTypeFilter = $('select[name="service_type"]').val();
-            const searchTerm = $('#q').val().toLowerCase();
+            const statusFilter = document.querySelector('select[name="status"]').value;
+            const createdDateFilter = document.querySelector('input[name="created_date"]').value;
+            const searchTerm = document.getElementById('q').value.toLowerCase();
 
-            $('.request-row').each(function() {
+            document.querySelectorAll('.request-row').forEach(function(row) {
                 let display = true;
-                const row = $(this);
 
                 // Status filtering
-                if (statusFilter !== '' && row.data('status') !== statusFilter) {
+                if (statusFilter !== '' && row.getAttribute('data-status') !== statusFilter) {
                     display = false;
                 }
 
-                // Service type filtering
-                if (serviceTypeFilter !== '') {
-                    const serviceType = row.find('td:eq(3)').text().toLowerCase();
-                    if (!serviceType.includes(serviceTypeFilter.toLowerCase())) {
+                // Created date filtering
+                if (createdDateFilter !== '') {
+                    const rowCreatedDate = row.getAttribute('data-created-date');
+                    if (rowCreatedDate !== createdDateFilter) {
                         display = false;
                     }
                 }
 
                 // Search filtering
                 if (searchTerm !== '') {
-                    const title = row.find('td:eq(1)').text().toLowerCase();
-                    const client = row.find('td:eq(2)').text().toLowerCase();
-                    const serviceType = row.find('td:eq(3)').text().toLowerCase();
+                    const title = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    const client = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                    const serviceType = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
 
                     if (!title.includes(searchTerm) && !client.includes(searchTerm) && !serviceType.includes(searchTerm)) {
                         display = false;
@@ -470,7 +453,7 @@ foreach ($coachingServiceRequests as $request) {
                 }
 
                 // Show/hide row
-                row.css('display', display ? '' : 'none');
+                row.style.display = display ? '' : 'none';
             });
         }
 

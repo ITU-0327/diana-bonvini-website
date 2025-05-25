@@ -45,12 +45,13 @@ class CoachingServiceRequestsController extends AppController
                     '_csrfToken',
                     'amount',
                     'description',
-                    'payment_id'
+                    'payment_id',
+                    'status'
                 ],
                 'unlockedActions' => [
                     'getAvailableTimeSlots',
                     'sendTimeSlots',
-                    'update_status',
+                    'updateStatus',
                     'markAsPaid'
                 ]
             ]);
@@ -76,57 +77,9 @@ class CoachingServiceRequestsController extends AppController
             ->contain(['Users', 'CoachingServicePayments'])
             ->where(['CoachingServiceRequests.is_deleted' => false]);
 
-        // Process filter parameters
-        $keyword = $this->request->getQuery('q');
-        $status = $this->request->getQuery('status');
-        $serviceType = $this->request->getQuery('service_type');
-        $dateRange = $this->request->getQuery('date_range');
-
-        // Apply keyword search filter
-        if (!empty($keyword)) {
-            $query->where([
-                'OR' => [
-                    'CoachingServiceRequests.service_title LIKE' => '%' . $keyword . '%',
-                    'CoachingServiceRequests.service_type LIKE' => '%' . $keyword . '%',
-                    'Users.first_name LIKE' => '%' . $keyword . '%',
-                    'Users.last_name LIKE' => '%' . $keyword . '%',
-                ],
-            ]);
-        }
-
-        // Apply service type filter
-        if (!empty($serviceType)) {
-            $query->where(['CoachingServiceRequests.service_type' => $serviceType]);
-        }
-
-        // Apply status filter
-        if (!empty($status)) {
-            $query->where(['CoachingServiceRequests.request_status' => $status]);
-        }
-
-        // Apply date range filter
-        if (!empty($dateRange)) {
-            $dates = explode(' - ', $dateRange);
-            if (count($dates) === 2) {
-                try {
-                    $startDate = new \DateTime($dates[0]);
-                    $endDate = new \DateTime($dates[1]);
-                    // Set end date to end of day
-                    $endDate->setTime(23, 59, 59);
-                    
-                    $query->where([
-                        'CoachingServiceRequests.created_at >=' => $startDate,
-                        'CoachingServiceRequests.created_at <=' => $endDate,
-                    ]);
-                } catch (\Exception $e) {
-                    // Invalid date format, ignore this filter
-                    $this->log('Invalid date range format: ' . $dateRange, 'warning');
-                }
-            }
-        }
-
         $this->paginate = [
             'order' => ['CoachingServiceRequests.created_at' => 'DESC'],
+            'limit' => 25,
         ];
         
         $coachingServiceRequests = $this->paginate($query);
@@ -139,7 +92,14 @@ class CoachingServiceRequestsController extends AppController
             ])
             ->count();
 
-        $this->set(compact('coachingServiceRequests', 'totalUnreadCount'));
+        // Pass filter values to the view
+        $filters = [
+            'q' => '',
+            'status' => '',
+            'created_date' => ''
+        ];
+
+        $this->set(compact('coachingServiceRequests', 'totalUnreadCount', 'filters'));
     }
 
     /**
@@ -438,15 +398,26 @@ class CoachingServiceRequestsController extends AppController
             return $this->redirect(['action' => 'view', $id]);
         }
         
-        // Validate file type
+        // Validate file type - Only PDF and Word documents allowed
         $mimeType = $file->getClientMediaType();
         $originalFilename = $file->getClientFilename();
         $fileSize = $file->getSize();
         
-        $allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+        $allowedTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ];
         
         if (!in_array($mimeType, $allowedTypes)) {
-            $this->Flash->error(__('Invalid file type. Please upload a PDF, JPG, DOC, DOCX, or TXT file.'));
+            $this->Flash->error(__('Invalid file type. Please upload a PDF or Word document only.'));
+            return $this->redirect(['action' => 'view', $id]);
+        }
+        
+        // Validate file size (max 10MB)
+        $maxFileSize = 10 * 1024 * 1024; // 10MB in bytes
+        if ($fileSize > $maxFileSize) {
+            $this->Flash->error(__('File size too large. Maximum file size is 10MB.'));
             return $this->redirect(['action' => 'view', $id]);
         }
         
@@ -537,7 +508,7 @@ class CoachingServiceRequestsController extends AppController
      */
     public function updateStatus(?string $id = null)
     {
-        $this->request->allowMethod(['post']);
+        $this->request->allowMethod(['post', 'put']);
         
         /** @var \App\Model\Entity\User $admin */
         $admin = $this->Authentication->getIdentity();
@@ -547,23 +518,48 @@ class CoachingServiceRequestsController extends AppController
             return $this->redirect(['controller' => 'Admin', 'action' => 'dashboard']);
         }
         
-        $coachingServiceRequest = $this->CoachingServiceRequests->get($id, contain: ['Users']);
+        try {
+            $coachingServiceRequest = $this->CoachingServiceRequests->get($id, contain: ['Users']);
+        } catch (\Exception $e) {
+            $this->Flash->error(__('Coaching service request not found.'));
+            return $this->redirect(['action' => 'index']);
+        }
         
         $data = $this->request->getData();
         $newStatus = $data['status'] ?? null;
         
+        // Log the received data for debugging
+        $this->log('UpdateStatus called with ID: ' . $id, 'debug');
+        $this->log('POST data: ' . json_encode($data), 'debug');
+        $this->log('New status: ' . ($newStatus ?? 'null'), 'debug');
+        
         $validStatuses = ['pending', 'in_progress', 'completed', 'canceled', 'cancelled'];
         
-        if (empty($newStatus) || !in_array($newStatus, $validStatuses)) {
-            $this->Flash->error(__('Invalid status. Please select a valid status.'));
+        if (empty($newStatus)) {
+            $this->Flash->error(__('No status provided. Please select a status.'));
+            return $this->redirect(['action' => 'view', $id]);
+        }
+        
+        if (!in_array($newStatus, $validStatuses)) {
+            $this->Flash->error(__('Invalid status "{0}". Please select a valid status.', $newStatus));
             return $this->redirect(['action' => 'view', $id]);
         }
         
         $oldStatus = $coachingServiceRequest->request_status;
+        
+        // Check if status is actually changing
+        if ($oldStatus === $newStatus) {
+            $this->Flash->info(__('Status is already set to "{0}".', ucfirst(str_replace('_', ' ', $newStatus))));
+            return $this->redirect(['action' => 'view', $id]);
+        }
+        
         $coachingServiceRequest->request_status = $newStatus;
         
         if ($this->CoachingServiceRequests->save($coachingServiceRequest)) {
-            $this->Flash->success(__('The request status has been updated.'));
+            $this->Flash->success(__('The request status has been updated from "{0}" to "{1}".', 
+                ucfirst(str_replace('_', ' ', $oldStatus)), 
+                ucfirst(str_replace('_', ' ', $newStatus))
+            ));
             
             // Add a message to the conversation thread about the status change
             $statusMessage = "**Status Update**\n\n";
@@ -573,6 +569,8 @@ class CoachingServiceRequestsController extends AppController
                 $statusMessage .= "\n\nThank you for using our coaching services! If you have any feedback or questions, please let us know.";
             } elseif ($newStatus === 'canceled' || $newStatus === 'cancelled') {
                 $statusMessage .= "\n\nIf you have any questions about this cancellation, please contact us.";
+            } elseif ($newStatus === 'in_progress') {
+                $statusMessage .= "\n\nWe have started working on your coaching request. You can expect updates as we progress.";
             }
             
             $messageData = [
@@ -581,6 +579,7 @@ class CoachingServiceRequestsController extends AppController
                         'user_id' => $admin->user_id,
                         'message' => $statusMessage,
                         'is_read' => false,
+                        'is_deleted' => false,
                         'coaching_service_request_id' => $id,
                     ],
                 ],
@@ -591,7 +590,12 @@ class CoachingServiceRequestsController extends AppController
                 $messageData
             );
             
-            $this->CoachingServiceRequests->save($coachingServiceRequest);
+            if ($this->CoachingServiceRequests->save($coachingServiceRequest)) {
+                // Log successful status update
+                $this->log("Admin {$admin->user_id} updated coaching request {$id} status from {$oldStatus} to {$newStatus}", 'info');
+            } else {
+                $this->log('Failed to save status update message for coaching request ' . $id, 'warning');
+            }
             
             // Notify the client via email about the status change
             try {
@@ -605,13 +609,22 @@ class CoachingServiceRequestsController extends AppController
                         $oldStatus,
                         $newStatus
                     );
-                    $mailer->deliverAsync();
+                    $result = $mailer->deliverAsync();
+                    
+                    if ($result) {
+                        $this->log('Status update email sent successfully to ' . $requestWithUser->user->email, 'info');
+                    } else {
+                        $this->log('Status update email failed to send to ' . $requestWithUser->user->email, 'warning');
+                    }
                 }
             } catch (\Exception $e) {
                 $this->log('Failed to send status update notification: ' . $e->getMessage(), 'error');
+                // Don't fail the entire request for email issues
             }
             
         } else {
+            $errors = $coachingServiceRequest->getErrors();
+            $this->log('Failed to update coaching request status. Errors: ' . json_encode($errors), 'error');
             $this->Flash->error(__('The request status could not be updated. Please try again.'));
         }
         
