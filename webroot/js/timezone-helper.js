@@ -1,11 +1,33 @@
 /**
  * Timezone Helper Utility
  * Handles conversion of UTC timestamps to user's local timezone
+ * Defaults to Melbourne timezone (Australia/Melbourne) when user timezone is unavailable
  */
 
 class TimezoneHelper {
     /**
-     * Format a UTC timestamp to user's local timezone
+     * Get the user's timezone or default to Melbourne
+     * @returns {string} Timezone identifier
+     */
+    static getEffectiveTimezone() {
+        try {
+            // Try to get user's timezone
+            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            
+            // Validate the timezone
+            if (userTimezone && userTimezone !== 'UTC') {
+                return userTimezone;
+            }
+        } catch (error) {
+            console.warn('Could not determine user timezone:', error);
+        }
+        
+        // Default to Melbourne timezone
+        return 'Australia/Melbourne';
+    }
+
+    /**
+     * Format a UTC timestamp to user's local timezone (or Melbourne default)
      * @param {string} isoString - ISO 8601 timestamp string (UTC)
      * @param {string} format - Format type: 'datetime', 'date', 'time'
      * @returns {string} Formatted timestamp in user's local timezone
@@ -23,7 +45,7 @@ class TimezoneHelper {
             }
             
             const options = this.getFormatOptions(format);
-            return date.toLocaleString('en-US', options);
+            return date.toLocaleString('en-AU', options); // Use Australian locale for better Melbourne formatting
         } catch (error) {
             console.error('Error formatting timestamp:', error, isoString);
             return 'Error';
@@ -36,8 +58,10 @@ class TimezoneHelper {
      * @returns {object} Intl.DateTimeFormat options
      */
     static getFormatOptions(format) {
+        const timezone = this.getEffectiveTimezone();
+        
         const baseOptions = {
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+            timeZone: timezone
         };
         
         switch (format) {
@@ -89,6 +113,10 @@ class TimezoneHelper {
         // Convert elements with data-datetime attribute
         document.querySelectorAll('[data-datetime]').forEach(element => {
             const isoString = element.getAttribute('data-datetime');
+            if (!isoString || isoString === 'Loading...' || isoString === 'Unknown') {
+                return; // Skip empty or placeholder values
+            }
+            
             const format = element.getAttribute('data-format') || 'datetime';
             const localTime = this.formatToLocal(isoString, format);
             
@@ -96,30 +124,45 @@ class TimezoneHelper {
             if (element.tagName === 'TIME') {
                 element.textContent = localTime;
                 element.setAttribute('datetime', isoString);
-                element.setAttribute('title', `Local time: ${localTime}`);
+                element.setAttribute('title', `UTC: ${isoString} | Local: ${localTime}`);
             } else {
                 element.textContent = localTime;
-                element.setAttribute('title', `Local time: ${localTime}`);
+                element.setAttribute('title', `UTC: ${isoString} | Local: ${localTime}`);
             }
+            
+            // Add a data attribute to mark as converted
+            element.setAttribute('data-timezone-converted', 'true');
         });
         
         // Convert elements with .local-time class
-        document.querySelectorAll('.local-time').forEach(element => {
+        document.querySelectorAll('.local-time:not([data-timezone-converted])').forEach(element => {
             const isoString = element.getAttribute('data-datetime');
-            if (isoString) {
+            if (isoString && isoString !== 'Loading...' && isoString !== 'Unknown') {
                 const format = element.getAttribute('data-format') || 'datetime';
                 const localTime = this.formatToLocal(isoString, format);
                 element.textContent = localTime;
-                element.setAttribute('title', `Local time: ${localTime}`);
+                element.setAttribute('title', `UTC: ${isoString} | Local: ${localTime}`);
+                element.setAttribute('data-timezone-converted', 'true');
             }
         });
         
         // Convert message timestamps in chat
-        document.querySelectorAll('.message-time[data-datetime]').forEach(element => {
+        document.querySelectorAll('.message-time[data-datetime]:not([data-timezone-converted])').forEach(element => {
             const isoString = element.getAttribute('data-datetime');
-            const localTime = this.formatToLocal(isoString, 'datetime');
-            element.textContent = localTime;
-            element.setAttribute('title', `Local time: ${localTime}`);
+            if (isoString && isoString !== 'Loading...' && isoString !== 'Unknown') {
+                const localTime = this.formatToLocal(isoString, 'datetime');
+                
+                // For message times, look for the .local-time span inside
+                const localTimeSpan = element.querySelector('.local-time');
+                if (localTimeSpan) {
+                    localTimeSpan.textContent = localTime;
+                } else {
+                    element.textContent = localTime;
+                }
+                
+                element.setAttribute('title', `UTC: ${isoString} | Local: ${localTime}`);
+                element.setAttribute('data-timezone-converted', 'true');
+            }
         });
     }
     
@@ -129,27 +172,52 @@ class TimezoneHelper {
      */
     static getUserTimezone() {
         try {
-            const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const effectiveTimeZone = this.getEffectiveTimezone();
+            const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
             const now = new Date();
             const offset = now.getTimezoneOffset();
             const offsetHours = Math.abs(Math.floor(offset / 60));
             const offsetMinutes = Math.abs(offset % 60);
             const offsetString = `${offset <= 0 ? '+' : '-'}${offsetHours.toString().padStart(2, '0')}:${offsetMinutes.toString().padStart(2, '0')}`;
             
+            // Get timezone abbreviation using the effective timezone
+            const abbreviation = new Date().toLocaleTimeString('en-AU', { 
+                timeZone: effectiveTimeZone, 
+                timeZoneName: 'short' 
+            }).split(' ').pop() || 'Unknown';
+            
             return {
-                timeZone,
+                effectiveTimeZone,
+                userTimeZone,
+                isUsingDefault: effectiveTimeZone === 'Australia/Melbourne' && userTimeZone !== effectiveTimeZone,
                 offset,
                 offsetString,
-                abbreviation: now.toLocaleTimeString('en', { timeZoneName: 'short' }).split(' ')[2]
+                abbreviation
             };
         } catch (error) {
             console.error('Error getting timezone info:', error);
             return {
-                timeZone: 'Unknown',
+                effectiveTimeZone: 'Australia/Melbourne',
+                userTimeZone: 'Unknown',
+                isUsingDefault: true,
                 offset: 0,
                 offsetString: '+00:00',
-                abbreviation: 'UTC'
+                abbreviation: 'AEDT/AEST'
             };
+        }
+    }
+    
+    /**
+     * Show timezone info to user (for debugging or user information)
+     */
+    static showTimezoneInfo() {
+        const info = this.getUserTimezone();
+        console.log('Timezone Information:', info);
+        
+        if (info.isUsingDefault) {
+            console.log('Using default Melbourne timezone (Australia/Melbourne) because user timezone could not be determined');
+        } else {
+            console.log(`Using user's timezone: ${info.effectiveTimeZone}`);
         }
     }
     
@@ -157,6 +225,9 @@ class TimezoneHelper {
      * Initialize timezone conversion when DOM is ready
      */
     static init() {
+        // Show timezone info for debugging
+        this.showTimezoneInfo();
+        
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this.convertPageTimestamps());
         } else {
@@ -182,7 +253,7 @@ class TimezoneHelper {
                 });
                 
                 if (shouldUpdate) {
-                    this.convertPageTimestamps();
+                    setTimeout(() => this.convertPageTimestamps(), 100); // Small delay to ensure DOM is ready
                 }
             });
             

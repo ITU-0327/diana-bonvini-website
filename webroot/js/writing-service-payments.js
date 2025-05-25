@@ -836,16 +836,44 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /**
+     * Escape HTML to prevent XSS
+     * @param {string} text - Text to escape
+     * @returns {string} - Escaped text
+     */
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    /**
      * Format timestamp to match template style (fallback function)
      * @param {Date} date - The date to format
      * @returns {string} - Formatted time string
      */
     function formatTime(date) {
-        return date.toLocaleTimeString(undefined, {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-        }).toLowerCase();
+        try {
+            // Use TimezoneHelper if available, otherwise fall back to local formatting
+            if (window.TimezoneHelper) {
+                return window.TimezoneHelper.formatToLocal(date.toISOString(), 'time');
+            } else {
+                // Fallback - try to use Melbourne timezone or user's local time
+                const timezone = 'Australia/Melbourne';
+                return date.toLocaleTimeString('en-AU', {
+                    timeZone: timezone,
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+            }
+        } catch (error) {
+            // Ultimate fallback
+            return date.toLocaleTimeString(undefined, {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            }).toLowerCase();
+        }
     }
 
     /**
@@ -863,75 +891,70 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!chatMessages) return false;
         
         const isAdmin = message.sender === 'admin';
-        // Match the extremely tight styling from the template
+        // Match the template styling more closely
         const msgClasses = isAdmin
-            ? 'bg-gray-200 border-0 ml-0 lg:ml-1'
+            ? 'bg-gray-200 border-0 ml-0 lg:ml-1 text-gray-800'
             : 'bg-blue-600 text-white border-0 mr-0 lg:mr-1';
-        const textColor = isAdmin ? 'text-gray-800' : 'text-white';
-        const timeColor = isAdmin ? 'text-gray-400' : 'text-blue-100';
+        
         const alignmentClasses = isAdmin ? 'items-start' : 'items-end flex-row-reverse';
-
-        // Use TimezoneHelper for consistent time formatting, with fallback for older browsers
-        let displayTime = 'Loading...';
-        if (window.TimezoneHelper) {
-            try {
-                displayTime = window.TimezoneHelper.formatToLocal(message.created_at, 'time');
-            } catch (e) {
-                console.warn('TimezoneHelper failed, using fallback:', e);
-                displayTime = formatTime(new Date(message.created_at));
-            }
-        } else {
-            // Fallback for when TimezoneHelper is not available
-            displayTime = formatTime(new Date(message.created_at));
-        }
-
-        const newMessageHtml = `
-            <div class="flex ${alignmentClasses} chat-message new-message" data-message-id="${message.id}">
-                <div class="max-w-[90%] ${msgClasses} px-2 py-0.5 rounded-xl shadow-sm">
-                    <div class="flex flex-col">
-                        <div class="${textColor} text-sm break-words whitespace-pre-wrap message-content leading-tight text-center">
-                            ${message.content}
-                        </div>
-                        <div class="text-[8px] ${timeColor} self-end opacity-70">
-                            <span class="local-time" data-datetime="${message.created_at}">${displayTime}</span>
-                        </div>
+        
+        // Create message element with proper timezone handling
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex ${alignmentClasses} chat-message new-message`;
+        messageDiv.setAttribute('data-message-id', message.id);
+        
+        // Use ISO timestamp for proper timezone conversion
+        const isoTimestamp = message.timestamp || message.created_at;
+        
+        messageDiv.innerHTML = `
+            <div class="max-w-[90%] ${msgClasses} px-2 py-0.5 rounded-xl shadow-sm">
+                <div class="flex flex-col">
+                    <div class="text-sm break-words whitespace-pre-wrap message-content leading-tight text-center">
+                        ${escapeHtml(message.content)}
+                    </div>
+                    <div class="text-[8px] ${isAdmin ? 'text-gray-400' : 'text-blue-100'} self-end opacity-70">
+                        <span class="local-time" data-datetime="${isoTimestamp}">Loading...</span>
                     </div>
                 </div>
             </div>
         `;
-
-        // Check for any existing messages
-        const existingMessages = chatMessages.querySelectorAll('[data-message-id]');
         
         // Clear placeholder if needed
         const emptyChat = chatMessages.querySelector('.empty-chat');
-        if (emptyChat || existingMessages.length === 0) {
-            // Only clear the empty chat placeholder, not all messages
-            const emptyChatEl = chatMessages.querySelector('.empty-chat');
-            if (emptyChatEl) {
-                emptyChatEl.remove();
-            }
+        if (emptyChat) {
+            emptyChat.remove();
         }
-
-        // Add the new message to the chat
-        chatMessages.insertAdjacentHTML('beforeend', newMessageHtml);
-
+        
+        // Append to chat
+        chatMessages.appendChild(messageDiv);
+        
         // Process any payment buttons in the new message
         processPaymentElements();
         
-        // Convert timestamps using TimezoneHelper if available
+        // Convert timestamp using TimezoneHelper if available
         if (window.TimezoneHelper) {
             setTimeout(() => {
                 window.TimezoneHelper.convertPageTimestamps();
             }, 10);
+        } else {
+            // Fallback timestamp formatting
+            try {
+                const date = new Date(isoTimestamp);
+                const timeElement = messageDiv.querySelector('.local-time');
+                if (timeElement && !isNaN(date.getTime())) {
+                    timeElement.textContent = formatTime(date);
+                }
+            } catch (error) {
+                console.warn('Error formatting message timestamp:', error);
+            }
         }
-
+        
         // Play notification sound for admin messages
         if (isAdmin) {
             playNotificationSound();
         }
         
-        return true; // Message was added
+        return true;
     }
 
     /**

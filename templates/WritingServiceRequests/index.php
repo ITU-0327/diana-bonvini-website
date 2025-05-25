@@ -7,8 +7,8 @@ use Cake\Utility\Inflector;
 
 $this->assign('title', __('Writing Service Requests'));
 
-// Include timezone helper for proper local time display
-echo $this->Html->script('timezone-helper', ['block' => true]);
+// Include timezone helper for proper local time display (load early)
+echo $this->Html->script('timezone-helper', ['block' => false]);
 ?>
 <div class="max-w-6xl mx-auto px-4 py-8">
     <?= $this->element('page_title', ['title' => 'My Writing Service Requests']) ?>
@@ -120,20 +120,27 @@ echo $this->Html->script('timezone-helper', ['block' => true]);
             // TimezoneHelper will automatically handle all .local-time elements
             window.TimezoneHelper.convertPageTimestamps();
         } else {
-            // Fallback for when TimezoneHelper is not available
+            // Fallback for when TimezoneHelper is not available - use Melbourne timezone
             const timeElements = document.querySelectorAll('.local-time');
             timeElements.forEach(el => {
                 const isoTime = el.dataset.datetime;
-                const date = new Date(isoTime);
-
-                el.textContent = date.toLocaleString(undefined, {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true,
-                });
+                try {
+                    const date = new Date(isoTime);
+                    
+                    // Use Melbourne timezone as fallback
+                    el.textContent = date.toLocaleString('en-AU', {
+                        timeZone: 'Australia/Melbourne',
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                    });
+                } catch (error) {
+                    console.warn('Error formatting date:', error);
+                    el.textContent = 'Invalid date';
+                }
             });
         }
 

@@ -2,17 +2,31 @@
 /**
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\WritingServiceRequest $writingServiceRequest
+ * @var \App\Model\Entity\Appointment[] $appointments
+ * @var \App\Model\Entity\RequestDocument[] $requestDocuments
  */
 
 use Cake\Utility\Inflector;
 
+$this->assign('title', __('Writing Service Request Details'));
+
+// Include timezone helper for proper local time display (load early)
+echo $this->Html->script('timezone-helper', ['block' => false]);
 // Include payment handling JavaScript
 echo $this->Html->script('writing-service-payments', ['block' => true]);
-// Include timezone helper for proper local time display
-echo $this->Html->script('timezone-helper', ['block' => true]);
 ?>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10" data-request-id="<?= h($writingServiceRequest->writing_service_request_id) ?>">
+    <!-- Timezone Indicator -->
+    <div class="mb-4 flex justify-end">
+        <div class="inline-flex items-center px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-600" id="timezone-indicator">
+            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span id="timezone-text">Loading timezone...</span>
+        </div>
+    </div>
+    
     <div class="flex flex-wrap -mx-4">
         <!-- Main Content - 2/3 width on large screens -->
         <div class="w-full lg:w-2/3 px-4 mb-8">
@@ -683,6 +697,29 @@ echo $this->Html->script('timezone-helper', ['block' => true]);
                     submitButton.disabled = false;
                 });
             });
+        }
+
+        // Update timezone indicator
+        if (window.TimezoneHelper) {
+            const timezoneInfo = window.TimezoneHelper.getUserTimezone();
+            const timezoneElement = document.getElementById('timezone-text');
+            
+            if (timezoneElement && timezoneInfo) {
+                let timezoneText = '';
+                if (timezoneInfo.isUsingDefault) {
+                    timezoneText = `Times shown in Melbourne time (${timezoneInfo.abbreviation})`;
+                } else {
+                    const zoneName = timezoneInfo.effectiveTimeZone.split('/').pop().replace('_', ' ');
+                    timezoneText = `Times shown in your local time: ${zoneName} (${timezoneInfo.abbreviation})`;
+                }
+                timezoneElement.textContent = timezoneText;
+            }
+        }
+        
+        // Initialize chat scrolling
+        const chatContainer = document.getElementById('chat-messages');
+        if (chatContainer) {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
         }
     });
 
