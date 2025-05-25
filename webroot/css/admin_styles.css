@@ -217,6 +217,7 @@ body {
 
 /* Responsive Sidebar */
 .sidebar-collapsed .sidebar {
+    width: var(--sidebar-collapsed-width);
 }
 
 .sidebar-collapsed .sidebar .sidebar-header h3,
@@ -236,7 +237,8 @@ body {
 }
 
 .sidebar-collapsed .content {
-    width: calc(100% - 70px);
+    margin-left: var(--sidebar-collapsed-width);
+    width: calc(100% - var(--sidebar-collapsed-width));
 }
 
 /* Custom Styles for Components */
