@@ -6,7 +6,6 @@
  * @var int $pendingRequests
  * @var int $inProgressRequests
  * @var float $totalRevenue
- * @var int $totalUnreadCount
  */
 
 use Cake\Utility\Inflector;
@@ -21,9 +20,6 @@ $this->assign('title', __('Writing Service Management'));
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                     <h6 class="m-0 font-weight-bold text-primary">
                         <i class="fas fa-pen mr-2"></i><?= __('Writing Service Management') ?>
-                        <?php if (isset($totalUnreadCount) && $totalUnreadCount > 0) : ?>
-                            <span class="badge badge-danger ml-2"><?= $totalUnreadCount ?> unread</span>
-                        <?php endif; ?>
                     </h6>
                     <ol class="breadcrumb m-0 bg-transparent p-0">
                         <li class="breadcrumb-item"><?= $this->Html->link(__('Dashboard'), ['controller' => 'Admin', 'action' => 'dashboard']) ?></li>
@@ -105,18 +101,10 @@ $this->assign('title', __('Writing Service Management'));
                         </div>
 
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Service Type</label>
-                            <?= $this->Form->select('service_type', [
-                                'creative_writing' => 'Creative Writing',
-                                'editing' => 'Editing',
-                                'proofreading' => 'Proofreading',
-                                'gamsat_preparation' => 'GAMSAT Preparation',
-                                'other' => 'Other',
-                            ], [
-                                'empty' => 'All Service Types',
-                                'default' => $this->request->getQuery('service_type'),
-                                'class' => 'form-control',
-                            ]) ?>
+                            <label class="form-label">Created Date</label>
+                            <input type="date" name="created_date" class="form-control"
+                                value="<?= h($this->request->getQuery('created_date')) ?>"
+                                placeholder="Select date">
                         </div>
 
                         <div class="col-md-3 mb-3">
@@ -125,7 +113,6 @@ $this->assign('title', __('Writing Service Management'));
                                 'pending' => 'Pending',
                                 'in_progress' => 'In Progress',
                                 'completed' => 'Completed',
-                                'canceled' => 'Canceled',
                             ], [
                                 'empty' => 'All Statuses',
                                 'default' => $this->request->getQuery('status'),
@@ -136,9 +123,6 @@ $this->assign('title', __('Writing Service Management'));
                         <div class="col-md-3 mb-3">
                             <label class="form-label">&nbsp;</label>
                             <div class="d-flex">
-                                <button type="submit" class="btn btn-primary mr-2">
-                                    <i class="fas fa-search mr-1"></i> Search
-                                </button>
                                 <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-secondary">
                                     <i class="fas fa-redo-alt mr-1"></i> Reset
                                 </a>
@@ -175,7 +159,7 @@ $this->assign('title', __('Writing Service Management'));
                             <tbody>
                                 <?php if (count($writingServiceRequests) > 0) : ?>
                                     <?php foreach ($writingServiceRequests as $request) : ?>
-                                        <tr class="request-row" data-status="<?= h($request->request_status ?? '') ?>">
+                                        <tr class="request-row" data-status="<?= h($request->request_status ?? '') ?>" data-created-date="<?= isset($request->created_at) ? $request->created_at->format('Y-m-d') : '' ?>">
                                             <td class="align-middle">
                                                 <?= $this->Html->link(
                                                     h($request->writing_service_request_id),
@@ -205,7 +189,6 @@ $this->assign('title', __('Writing Service Management'));
                                                     'pending' => 'warning',
                                                     'in_progress' => 'primary',
                                                     'completed' => 'success',
-                                                    'canceled' => 'danger',
                                                     default => 'secondary'
                                                 };
     ?>
@@ -285,7 +268,6 @@ $this->assign('title', __('Writing Service Management'));
                         'pending' => 'Pending',
                         'in_progress' => 'In Progress',
                         'completed' => 'Completed',
-                        'canceled' => 'Canceled',
                     ], [
                         'class' => 'form-select form-control',
                         'id' => 'modal-status',
@@ -426,8 +408,8 @@ $this->assign('title', __('Writing Service Management'));
             filterRequests();
         });
 
-        // Filter by service type
-        document.querySelector('select[name="service_type"]').addEventListener('change', function() {
+        // Filter by created date
+        document.querySelector('input[name="created_date"]').addEventListener('change', function() {
             filterRequests();
         });
 
@@ -439,7 +421,7 @@ $this->assign('title', __('Writing Service Management'));
         // Function to filter requests
         function filterRequests() {
             const statusFilter = document.querySelector('select[name="status"]').value;
-            const serviceTypeFilter = document.querySelector('select[name="service_type"]').value;
+            const createdDateFilter = document.querySelector('input[name="created_date"]').value;
             const searchTerm = document.getElementById('q').value.toLowerCase();
 
             document.querySelectorAll('.request-row').forEach(function(row) {
@@ -448,6 +430,14 @@ $this->assign('title', __('Writing Service Management'));
                 // Status filtering
                 if (statusFilter !== '' && row.getAttribute('data-status') !== statusFilter) {
                     display = false;
+                }
+
+                // Created date filtering
+                if (createdDateFilter !== '') {
+                    const rowCreatedDate = row.getAttribute('data-created-date');
+                    if (rowCreatedDate !== createdDateFilter) {
+                        display = false;
+                    }
                 }
 
                 // Search filtering

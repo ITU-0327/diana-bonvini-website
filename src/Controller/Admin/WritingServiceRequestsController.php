@@ -241,7 +241,6 @@ class WritingServiceRequestsController extends BaseAdminController
         $statusMessage = match ($status) {
             'in_progress' => 'Your request is now in progress. We are actively working on it.',
             'completed' => 'Great news! Your request has been marked as completed.',
-            'cancelled' => 'Your request has been cancelled. Please contact us if you have any questions.',
             default => 'The status of your request has been updated to: ' . Inflector::humanize($status)
         };
 

@@ -63,23 +63,8 @@ $isActive = function ($controller, $action = null) {
             ) ?>
 
             <?php
-            // Access RequestMessages table directly in the view
-            $requestMessagesTable = TableRegistry::getTableLocator()->get('RequestMessages');
-            $usersTable = TableRegistry::getTableLocator()->get('Users');
-
-            // Count all unread messages from non-admin users
-            $unreadCount = $requestMessagesTable->find()
-                ->where([
-                    'RequestMessages.is_read' => false,
-                    'RequestMessages.user_id NOT IN' => $usersTable->find()
-                        ->select(['user_id'])
-                        ->where(['user_type' => 'admin']),
-                ])
-                ->count();
-
             echo $this->Html->link(
-                '<i class="fas fa-pen"></i> <span>Writing Services</span>' .
-                ($unreadCount > 0 ? '<span class="badge badge-danger ml-1">' . $unreadCount . '</span>' : ''),
+                '<i class="fas fa-pen"></i> <span>Writing Services</span>',
                 ['controller' => 'WritingServiceRequests', 'action' => 'index', 'prefix' => 'Admin'],
                 ['class' => 'menu-item ' . $isActive('WritingServiceRequests'), 'escape' => false],
             );

@@ -432,11 +432,10 @@ $this->assign('title', __('Writing Service Request Details'));
 
                         <div class="form-group mb-3">
                             <?= $this->Form->hidden('writing_service_request_id', ['value' => $writingServiceRequest->writing_service_request_id]) ?>
-                            <?= $this->Form->select('request_status', [
+                            <?= $this->Form->select('status', [
                                 'pending' => 'Pending',
                                 'in_progress' => 'In Progress',
                                 'completed' => 'Completed',
-                                'cancelled' => 'Cancelled',
                             ], [
                                 'default' => $writingServiceRequest->request_status,
                                 'class' => 'form-control',
@@ -2336,7 +2335,6 @@ function getStatusClass(string $status): string
         'pending' => 'warning',
         'in_progress' => 'info',
         'completed' => 'success',
-        'cancelled' => 'danger',
         default => 'secondary',
     };
 }
