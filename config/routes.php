@@ -61,6 +61,7 @@ return function (RouteBuilder $routes): void {
         $builder->connect('/about', ['controller' => 'Pages', 'action' => 'display', 'about']);
         $builder->connect('/contact', ['controller' => 'Pages', 'action' => 'display', 'contact']);
         $builder->connect('/writing-service-requests/info', ['controller' => 'Pages', 'action' => 'display', 'info']);
+        $builder->connect('/coaching-service-requests/info', ['controller' => 'Pages', 'action' => 'display', 'coaching_info']);
 
         // Connect any additional page requests to the Pages controller.
         $builder->connect('/pages/*', ['controller' => 'Pages', 'action' => 'display']);

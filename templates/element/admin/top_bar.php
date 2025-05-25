@@ -42,11 +42,6 @@
                         ['prefix' => 'Admin', 'controller' => 'Users', 'action' => 'profile'],
                         ['class' => 'dropdown-item', 'escape' => false]
                     ) ?>
-                    <?= $this->Html->link(
-                        '<i class="fas fa-cog"></i> Settings',
-                        ['prefix' => 'Admin', 'controller' => 'Settings', 'action' => 'index'],
-                        ['class' => 'dropdown-item', 'escape' => false]
-                    ) ?>
                     <div class="dropdown-divider m-0"></div>
                     <?= $this->Html->link(
                         '<i class="fas fa-sign-out-alt"></i> Logout',

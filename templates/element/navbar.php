@@ -82,7 +82,7 @@ $userType = $user?->get('user_type');
 
                     <!-- Coaching Services Dropdown -->
                     <li class="relative group">
-                        <a href="<?= $this->Url->build(['controller' => 'CoachingServiceRequests', 'action' => 'index']) ?>">
+                        <a href="<?= $this->Url->build(['controller' => 'CoachingServiceRequests', 'action' => 'info']) ?>">
                             Coaching
                             <svg class="inline ml-1 h-4 w-4" fill="none" stroke="currentColor"
                                  viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -254,7 +254,7 @@ $userType = $user?->get('user_type');
                 </a>
             </li>
             <li>
-                <a href="<?= $this->Url->build(['controller' => 'CoachingServiceRequests', 'action' => 'index']) ?>"
+                <a href="<?= $this->Url->build(['controller' => 'CoachingServiceRequests', 'action' => 'info']) ?>"
                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:text-teal-500">
                     Coaching
                 </a>
