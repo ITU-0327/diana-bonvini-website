@@ -12,11 +12,11 @@ use Cake\ORM\TableRegistry;
 // Build maps for JS
 $allValues = TableRegistry::getTableLocator()
     ->get('ContentBlocks')
-    ->find('list', ['keyField' => 'slug','valueField' => 'value'])
+    ->find('list', keyField: 'slug', valueField: 'value')
     ->toArray();
 $allTypes = TableRegistry::getTableLocator()
     ->get('ContentBlocks')
-    ->find('list', ['keyField' => 'slug','valueField' => 'type'])
+    ->find('list', keyField: 'slug', valueField: 'type')
     ->toArray();
 ?>
 
