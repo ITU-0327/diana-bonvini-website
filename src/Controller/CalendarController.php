@@ -892,12 +892,13 @@ class CalendarController extends AppController
         ];
         
         // Get user's writing service requests for dropdown
-        $writingServiceRequests = $this->WritingServiceRequests->find('list', [
-            'keyField' => 'writing_service_request_id',
-            'valueField' => function ($request) {
+        $writingServiceRequests = $this->WritingServiceRequests->find(
+            'list',
+            keyField: 'writing_service_request_id',
+            valueField: function ($request) {
                 return $request->writing_service_request_id . ' - ' . $request->service_title;
-            },
-        ])
+            }
+        )
             ->where([
                 'user_id' => $user->user_id,
                 'request_status IN' => ['pending', 'in_progress'],

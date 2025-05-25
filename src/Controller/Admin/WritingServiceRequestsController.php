@@ -41,7 +41,7 @@ class WritingServiceRequestsController extends BaseAdminController
                 },
             ])
             ->where(['WritingServiceRequests.is_deleted' => false])
-            ->order(['WritingServiceRequests.created_at' => 'DESC']);
+            ->orderBy(['WritingServiceRequests.created_at' => 'DESC']);
 
         $writingServiceRequests = $this->paginate($query);
 
@@ -161,10 +161,10 @@ class WritingServiceRequestsController extends BaseAdminController
                     try {
                         // Get a fresh copy of the request with user data
                         $requestWithUser = $this->WritingServiceRequests->get($id, contain: ['Users']);
-                        
+
                         if (!empty($requestWithUser->user) && !empty($requestWithUser->user->email)) {
                             $adminName = 'Diana Bonvini';
-                            
+
                             // Send customer notification
                             $mailer = new \App\Mailer\PaymentMailer('default');
                             $mailer->customerMessageNotification(
@@ -173,7 +173,7 @@ class WritingServiceRequestsController extends BaseAdminController
                                 $adminName
                             );
                             $result = $mailer->deliverAsync();
-                            
+
                             if ($result) {
                                 $this->log('Customer message notification sent successfully to ' . $requestWithUser->user->email, 'info');
                             } else {
@@ -446,17 +446,17 @@ class WritingServiceRequestsController extends BaseAdminController
 
             if ($this->WritingServiceRequests->save($writingServiceRequest)) {
                 $this->Flash->success(__('Payment request has been sent to the client.'));
-                
+
                 // Send email notification to customer
                 try {
                     // Get the writing service request with user information for email
                     $requestWithUser = $this->WritingServiceRequests->get($id, contain: ['Users']);
-                    
+
                     // Create and send payment request email
                     $mailer = new \App\Mailer\PaymentMailer('default');
                     $mailer->paymentRequest($requestWithUser, $paymentEntity, $amount);
                     $result = $mailer->deliverAsync();
-                    
+
                     if ($result) {
                         $this->log('Payment request email sent successfully to ' . $requestWithUser->user->email, 'info');
                     } else {
@@ -545,10 +545,10 @@ class WritingServiceRequestsController extends BaseAdminController
             try {
                 // Get a fresh copy of the request with user data
                 $requestWithUser = $this->WritingServiceRequests->get($id, contain: ['Users']);
-                
+
                 if (!empty($requestWithUser->user) && !empty($requestWithUser->user->email)) {
                     $adminName = 'Diana Bonvini';
-                    
+
                     // Send customer notification
                     $mailer = new \App\Mailer\PaymentMailer('default');
                     $mailer->customerMessageNotification(
@@ -557,7 +557,7 @@ class WritingServiceRequestsController extends BaseAdminController
                         $adminName
                     );
                     $result = $mailer->deliverAsync();
-                    
+
                     if ($result) {
                         $this->log('Customer message notification sent successfully to ' . $requestWithUser->user->email, 'info');
                     } else {
@@ -1097,15 +1097,15 @@ class WritingServiceRequestsController extends BaseAdminController
                 );
 
                 $this->Flash->success(__('Time slots sent successfully.'));
-                
+
                 // Notify the client via email
                 try {
                     $requestWithUser = $this->WritingServiceRequests->get($id, contain: ['Users']);
-                    
+
                     if (!empty($requestWithUser->user) && !empty($requestWithUser->user->email)) {
                         // Use the already formatted time slots for email
                         $timeSlotsText = implode("\n", $formattedSlots);
-                        
+
                         // Send notification
                         $mailer = new \App\Mailer\PaymentMailer('default');
                         $mailer->customerWritingTimeSlotsNotification(

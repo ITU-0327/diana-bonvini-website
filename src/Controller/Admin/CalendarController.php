@@ -37,9 +37,9 @@ class CalendarController extends AppController
     {
         parent::initialize();
         
-        $this->loadModel('Appointments');
-        $this->loadModel('WritingServiceRequests');
-        $this->loadModel('GoogleCalendarSettings');
+        $this->Appointments = $this->fetchTable('Appointments');
+        $this->WritingServiceRequests = $this->fetchTable('WritingServiceRequests');
+        $this->GoogleCalendarSettings = $this->fetchTable('GoogleCalendarSettings');
         $this->googleCalendarService = new GoogleCalendarService();
         
         // Use admin layout
@@ -208,12 +208,13 @@ class CalendarController extends AppController
         }
         
         // Get writing service requests for appointment creation
-        $writingServiceRequests = $this->WritingServiceRequests->find('list', [
-            'keyField' => 'writing_service_request_id',
-            'valueField' => function ($request) {
+        $writingServiceRequests = $this->WritingServiceRequests->find(
+            'list',
+            keyField: 'writing_service_request_id',
+            valueField: function ($request) {
                 return $request->writing_service_request_id . ' - ' . $request->service_title;
-            },
-        ])
+            }
+        )
             ->where([
                 'request_status IN' => ['pending', 'in_progress'],
                 'is_deleted' => false,
@@ -372,12 +373,13 @@ class CalendarController extends AppController
         }
         
         // Get writing service requests for dropdown
-        $writingServiceRequests = $this->WritingServiceRequests->find('list', [
-            'keyField' => 'writing_service_request_id',
-            'valueField' => function ($request) {
+        $writingServiceRequests = $this->WritingServiceRequests->find(
+            'list',
+            keyField: 'writing_service_request_id',
+            valueField: function ($request) {
                 return $request->writing_service_request_id . ' - ' . $request->service_title;
-            },
-        ])
+            }
+        )
             ->where([
                 'request_status IN' => ['pending', 'in_progress'],
                 'is_deleted' => false,
@@ -385,12 +387,13 @@ class CalendarController extends AppController
             ->toArray();
         
         // Get users for dropdown
-        $users = $this->Appointments->Users->find('list', [
-            'keyField' => 'user_id',
-            'valueField' => function ($user) {
+        $users = $this->Appointments->Users->find(
+            'list',
+            keyField: 'user_id',
+            valueField: function ($user) {
                 return $user->first_name . ' ' . $user->last_name;
-            },
-        ])
+            }
+        )
             ->where(['user_type' => 'customer'])
             ->toArray();
         
@@ -476,12 +479,13 @@ class CalendarController extends AppController
         }
         
         // Get writing service requests for dropdown
-        $writingServiceRequests = $this->WritingServiceRequests->find('list', [
-            'keyField' => 'writing_service_request_id',
-            'valueField' => function ($request) {
+        $writingServiceRequests = $this->WritingServiceRequests->find(
+            'list',
+            keyField: 'writing_service_request_id',
+            valueField: function ($request) {
                 return $request->writing_service_request_id . ' - ' . $request->service_title;
-            },
-        ])
+            }
+        )
             ->where([
                 'request_status IN' => ['pending', 'in_progress', 'completed'],
                 'is_deleted' => false,
@@ -489,12 +493,13 @@ class CalendarController extends AppController
             ->toArray();
         
         // Get users for dropdown
-        $users = $this->Appointments->Users->find('list', [
-            'keyField' => 'user_id',
-            'valueField' => function ($user) {
+        $users = $this->Appointments->Users->find(
+            'list',
+            keyField: 'user_id',
+            valueField: function ($user) {
                 return $user->first_name . ' ' . $user->last_name;
-            },
-        ])
+            }
+        )
             ->where(['user_type' => 'customer'])
             ->toArray();
         
