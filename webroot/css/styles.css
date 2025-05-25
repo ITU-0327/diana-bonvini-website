@@ -270,17 +270,33 @@ footer {
     position: relative;
 }
 
-.nav-menu a {
+.nav-menu a,
+.nav-menu-link,
+.main-nav-link {
     font-weight: 600;
     color: var(--color-diana-gray);
     padding: 0.5rem 0.75rem;
     transition: color 0.3s ease, transform 0.3s ease;
     position: relative;
     overflow: hidden;
+    text-decoration: none;
+}
+
+/* Logo Image Animation */
+.logo-image {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.nav-logo:hover .logo-image {
+    transform: scale(1.05) rotate(-2deg);
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
 }
 
 /* Shared pseudo-element for animated underline on links and logo */
 .nav-menu a::before,
+.nav-menu-link::before,
+.main-nav-link::before,
 .nav-logo::before {
     content: "";
     position: absolute;
@@ -295,12 +311,17 @@ footer {
 }
 
 .nav-menu a:hover::before,
-.nav-menu a:focus::before {
+.nav-menu-link:hover::before,
+.main-nav-link:hover::before {
     transform: translateX(-50%) scaleX(1);
 }
 
 .nav-menu a:hover,
-.nav-menu a:focus {
+.nav-menu a:focus,
+.nav-menu-link:hover,
+.nav-menu-link:focus,
+.main-nav-link:hover,
+.main-nav-link:focus {
     color: var(--color-diana-primary);
     transform: translateY(-2px);
 }

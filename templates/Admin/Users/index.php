@@ -196,18 +196,32 @@ $this->assign('title', __('User Management'));
                         </tbody>
                     </table>
                 </div>
-                <div class="mt-3">
-                    <nav aria-label="Page navigation">
-                        <ul class="pagination justify-content-center">
-                            <?= $this->Paginator->prev('« Previous') ?>
-                            <?= $this->Paginator->numbers() ?>
-                            <?= $this->Paginator->next('Next »') ?>
-                        </ul>
-                    </nav>
-                    <p class="text-center">
-                        <?= $this->Paginator->counter('Page {{page}} of {{pages}}, showing {{current}} record(s) out of {{count}} total') ?>
-                    </p>
-                </div>
+                        <?php
+                        $this->Paginator->setTemplates([
+                            'prevActive'   => '<a rel="prev" href="{{url}}" class="btn btn-primary btn-sm"><i class="fas fa-arrow-left mr-2"></i>Previous</a>',
+                            'prevDisabled' => '<span class="btn btn-secondary btn-sm disabled"><i class="fas fa-arrow-left mr-2"></i>Previous</span>',
+                            'nextActive'   => '<a rel="next" href="{{url}}" class="btn btn-primary btn-sm">Next<i class="fas fa-arrow-right ml-2"></i></a>',
+                            'nextDisabled' => '<span class="btn btn-secondary btn-sm disabled">Next<i class="fas fa-arrow-right ml-2"></i></span>',
+
+                            'number'  => '<li class="page-item"><a href="{{url}}" class="btn btn-outline-primary btn-sm mx-1">{{text}}</a></li>',
+                            'current' => '<li class="page-item"><span class="btn btn-primary btn-sm mx-1">{{text}}</span></li>',
+                        ]);
+                        ?>
+
+                        <div class="mt-3 position-relative" style="min-height:42px;">
+                            <div style="position:absolute; left:0; top:0;">
+                                <?= $this->Paginator->prev('') ?>
+                            </div>
+                            <ul class="pagination justify-content-center mt-2 mb-0">
+                                <?= $this->Paginator->numbers() ?>
+                            </ul>
+                            <div style="position:absolute; right:0; top:0;">
+                                <?= $this->Paginator->next('') ?>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <?= $this->Paginator->counter('Page {{page}} of {{pages}}, showing {{current}} record(s) out of {{count}} total') ?>
+                        </div>
                     </div>
                 </div>
             </div>
