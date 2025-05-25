@@ -149,7 +149,7 @@ class RequestDocumentsTable extends Table
      * @param \ArrayObject $options Options
      * @return void
      */
-    public function beforeSave($event, $entity, $options)
+    public function beforeSave(\Cake\Event\Event $event, $entity, \ArrayObject $options): void
     {
         // Generate UUID for request_document_id if not set
         if (empty($entity->request_document_id)) {
@@ -160,8 +160,5 @@ class RequestDocumentsTable extends Table
         if (empty($entity->created_at)) {
             $entity->created_at = new \Cake\I18n\DateTime();
         }
-        
-        // Use setResult instead of returning a value to avoid deprecation warning
-        $event->setResult(true);
     }
 }

@@ -170,7 +170,7 @@ class CoachingServiceRequestsTable extends Table
      * @param \ArrayObject $options The options passed to the save method
      * @return void
      */
-    public function beforeSave($event, $entity, $options)
+    public function beforeSave(\Cake\Event\Event $event, $entity, \ArrayObject $options): void
     {
         // Ensure entity has a coaching_service_request_id
         if (empty($entity->coaching_service_request_id)) {
@@ -185,7 +185,5 @@ class CoachingServiceRequestsTable extends Table
         if (!isset($entity->is_deleted)) {
             $entity->is_deleted = false;
         }
-        
-        $event->setResult(true);
     }
 } 

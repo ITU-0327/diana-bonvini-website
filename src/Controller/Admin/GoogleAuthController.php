@@ -106,9 +106,9 @@ class GoogleAuthController extends AppController
      * BeforeFilter callback.
      *
      * @param \Cake\Event\EventInterface $event The event instance.
-     * @return \Cake\Http\Response|null|void
+     * @return void
      */
-    public function beforeFilter(EventInterface $event)
+    public function beforeFilter(EventInterface $event): void
     {
         parent::beforeFilter($event);
 
@@ -119,7 +119,7 @@ class GoogleAuthController extends AppController
         if (!$user || $user->user_type !== 'admin') {
             $this->Flash->error(__('You must be logged in as an administrator to access this area.'));
 
-            return $this->redirect(['controller' => 'Users', 'action' => 'login', 'prefix' => false]);
+            $event->setResult($this->redirect(['controller' => 'Users', 'action' => 'login', 'prefix' => false]));
         }
     }
 
