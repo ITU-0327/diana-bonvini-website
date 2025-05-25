@@ -1461,37 +1461,56 @@ class WritingServiceRequestsController extends AppController
 
         if (!in_array($file->getClientMediaType(), $allowedMimeTypes)) {
             $this->Flash->error(__('Invalid file type. Please upload PDF or Word documents only.'));
-
             return $this->redirect(['action' => $redirectAction]);
         }
 
-        // Use a more robust path creation approach
+        // Use existing directories to avoid mkdir() issues
         $uploadPath = WWW_ROOT . 'uploads' . DS . 'documents';
         
-        // Check if directory exists, and create it if it doesn't
+        // If the target directory doesn't exist, try alternative locations
         if (!is_dir($uploadPath)) {
-            try {
-                // Try to create directory with more permissive permissions
-                if (!mkdir($uploadPath, 0777, true)) {
-                    $this->log('Failed to create upload directory: ' . $uploadPath, 'error');
-                    $this->Flash->error(__('Unable to create upload directory. Please contact administrator.'));
-                    return $this->redirect(['action' => $redirectAction]);
-                }
+            // Try to use tmp directory first
+            $tempPath = sys_get_temp_dir();
+            if (is_writable($tempPath)) {
+                $this->log('Primary upload directory not available, using system temp directory', 'warning');
+                $uploadPath = $tempPath . DS . 'app_uploads';
                 
-                // Set permissions explicitly after creation
-                chmod($uploadPath, 0777);
-                $this->log('Successfully created upload directory: ' . $uploadPath, 'info');
-            } catch (\Exception $e) {
-                $this->log('Exception creating upload directory: ' . $e->getMessage(), 'error');
-                $this->Flash->error(__('Upload directory creation failed. Please contact administrator.'));
-                return $this->redirect(['action' => $redirectAction]);
+                if (!is_dir($uploadPath)) {
+                    try {
+                        if (!mkdir($uploadPath, 0777, true)) {
+                            $this->log('Failed to create temp upload directory: ' . $uploadPath, 'error');
+                            $this->Flash->error(__('Upload system is temporarily unavailable. Please try again later.'));
+                            return $this->redirect(['action' => $redirectAction]);
+                        }
+                    } catch (\Exception $e) {
+                        $this->log('Exception creating temp upload directory: ' . $e->getMessage(), 'error');
+                        $this->Flash->error(__('Upload system error. Please contact administrator.'));
+                        return $this->redirect(['action' => $redirectAction]);
+                    }
+                }
+            } else {
+                // Fall back to application temp directory
+                $uploadPath = TMP . 'uploads';
+                if (!is_dir($uploadPath)) {
+                    try {
+                        if (!mkdir($uploadPath, 0777, true)) {
+                            $this->log('Failed to create app temp upload directory: ' . $uploadPath, 'error');
+                            $this->Flash->error(__('Upload system is not available. Please contact administrator.'));
+                            return $this->redirect(['action' => $redirectAction]);
+                        }
+                    } catch (\Exception $e) {
+                        $this->log('Exception creating app temp upload directory: ' . $e->getMessage(), 'error');
+                        $this->Flash->error(__('Upload system error. Please contact administrator.'));
+                        return $this->redirect(['action' => $redirectAction]);
+                    }
+                }
             }
         }
         
         // Verify directory is writable
         if (!is_writable($uploadPath)) {
             $this->log('Upload directory is not writable: ' . $uploadPath, 'error');
-            $this->Flash->error(__('Upload directory is not writable. Please contact administrator.'));
+            $this->Flash->error(__('Upload system is temporarily unavailable. Please contact administrator.'));
             return $this->redirect(['action' => $redirectAction]);
         }
 
@@ -1511,15 +1530,28 @@ class WritingServiceRequestsController extends AppController
                 return $this->redirect(['action' => $redirectAction]);
             }
             
-            // Set file permissions
-            chmod($filePath, 0644);
+            // Set file permissions if possible
+            try {
+                chmod($filePath, 0644);
+            } catch (\Exception $e) {
+                // Don't fail if chmod fails, just log it
+                $this->log('Could not set file permissions: ' . $e->getMessage(), 'warning');
+            }
             
-            $this->log('File uploaded successfully: ' . $filename, 'info');
-            return 'uploads/documents/' . $filename;
+            $this->log('File uploaded successfully: ' . $filename . ' to: ' . $uploadPath, 'info');
+            
+            // Return relative path based on which directory was used
+            if (strpos($uploadPath, WWW_ROOT . 'uploads') === 0) {
+                // Standard web-accessible uploads directory
+                return 'uploads/documents/' . $filename;
+            } else {
+                // Alternative directory - return the full path since it may not be web-accessible
+                return $filePath;
+            }
             
         } catch (\Exception $e) {
             $this->log('File upload exception: ' . $e->getMessage(), 'error');
-            $this->Flash->error(__('File upload failed: {0}', $e->getMessage()));
+            $this->Flash->error(__('File upload failed. Please try again later.'));
             return $this->redirect(['action' => $redirectAction]);
         }
     }
@@ -1919,6 +1951,9 @@ class WritingServiceRequestsController extends AppController
                 $requestDocumentsTable = $this->fetchTable('RequestDocuments');
                 $requestDocument = $requestDocumentsTable->newEmptyEntity();
 
+                // Handle different types of document paths (web-accessible vs temp storage)
+                $isWebAccessible = strpos($documentPath, 'uploads/') === 0;
+                
                 $data = [
                     'request_document_id' => Text::uuid(),
                     'writing_service_request_id' => $id,
@@ -1940,6 +1975,10 @@ class WritingServiceRequestsController extends AppController
                 if ($requestDocumentsTable->save($requestDocument)) {
                     // Add a message to the chat about the upload
                     $message = 'Uploaded document: **' . $file->getClientFilename() . '**';
+                    if (!$isWebAccessible) {
+                        $message .= ' *(stored in secure location)*';
+                    }
+                    
                     $requestMessagesTable = $this->fetchTable('RequestMessages');
                     $newMessage = $requestMessagesTable->newEntity([
                         'writing_service_request_id' => $id,

@@ -147,7 +147,7 @@ class RequestDocumentsTable extends Table
      * @param \Cake\Event\Event $event The event
      * @param \App\Model\Entity\RequestDocument $entity The entity
      * @param \ArrayObject $options Options
-     * @return bool
+     * @return void
      */
     public function beforeSave($event, $entity, $options)
     {
@@ -161,6 +161,7 @@ class RequestDocumentsTable extends Table
             $entity->created_at = new \Cake\I18n\DateTime();
         }
         
-        return true;
+        // Use setResult instead of returning a value to avoid deprecation warning
+        $event->setResult(true);
     }
 }
