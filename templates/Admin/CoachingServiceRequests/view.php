@@ -274,7 +274,6 @@ use Cake\Utility\Inflector;
                                 'required' => true,
                                 'id' => 'messageText',
                             ]) ?>
-                            <small class="form-text text-muted">You can use **text** for bold formatting.</small>
                         </div>
 
                         <div class="form-group mb-0 d-flex justify-content-between align-items-center">
@@ -436,7 +435,7 @@ use Cake\Utility\Inflector;
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php 
+                                        <?php
                                         $paymentNumber = 1;
                                         foreach ($coachingServiceRequest->coaching_service_payments as $payment): ?>
                                             <tr class="<?= $payment->status === 'paid' ? 'table-success' : 'table-warning' ?>">
@@ -467,7 +466,7 @@ use Cake\Utility\Inflector;
                                                     <?php endif; ?>
                                                 </td>
                                             </tr>
-                                        <?php 
+                                        <?php
                                         $paymentNumber++;
                                         endforeach; ?>
                                     </tbody>
@@ -479,13 +478,13 @@ use Cake\Utility\Inflector;
                                     </tfoot>
                                 </table>
                             </div>
-                            
+
                             <!-- Payment Statistics -->
                             <div class="row mt-2">
                                 <div class="col-6">
                                     <small class="text-muted">
                                         <i class="fas fa-check-circle text-success mr-1"></i>
-                                        Paid: <?php 
+                                        Paid: <?php
                                             $paidCount = 0;
                                             foreach ($coachingServiceRequest->coaching_service_payments as $payment) {
                                                 if ($payment->status === 'paid') $paidCount++;
@@ -497,7 +496,7 @@ use Cake\Utility\Inflector;
                                 <div class="col-6">
                                     <small class="text-muted">
                                         <i class="fas fa-clock text-warning mr-1"></i>
-                                        Pending: <?php 
+                                        Pending: <?php
                                             $pendingCount = 0;
                                             foreach ($coachingServiceRequest->coaching_service_payments as $payment) {
                                                 if ($payment->status === 'pending') $pendingCount++;
@@ -981,13 +980,13 @@ use Cake\Utility\Inflector;
 document.addEventListener('DOMContentLoaded', function() {
     // Custom confirmation modal functionality
     let confirmationCallback = null;
-    
+
     function showCustomConfirmation(title, mainMessage, additionalInfo, confirmText = 'Confirm', confirmClass = 'btn-primary') {
         return new Promise((resolve) => {
             // Remove any existing theme classes
             const modal = document.getElementById('confirmationModal');
             modal.className = modal.className.replace(/status-\w+|payment-\w+/g, '');
-            
+
             // Add theme class based on confirm button class
             if (confirmClass.includes('btn-success')) {
                 modal.classList.add(title.includes('Payment') ? 'payment-success' : 'status-completed');
@@ -998,25 +997,25 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (confirmClass.includes('btn-warning')) {
                 modal.classList.add('status-warning');
             }
-            
+
             // Set modal content
             document.getElementById('confirmationModalLabel').innerHTML = `<i class="fas fa-question-circle mr-2"></i>${title}`;
             document.getElementById('confirmationMainMessage').innerHTML = mainMessage;
             document.getElementById('confirmationAdditionalInfo').innerHTML = additionalInfo || '';
-            
+
             // Set confirm button text and style
             const confirmBtn = document.getElementById('confirmationConfirmBtn');
             confirmBtn.innerHTML = `<i class="fas fa-check mr-1"></i> ${confirmText}`;
             confirmBtn.className = `btn ${confirmClass} px-4`;
-            
+
             // Set up the callback
             confirmationCallback = resolve;
-            
+
             // Show the modal
             $('#confirmationModal').modal('show');
         });
     }
-    
+
     // Handle confirmation button click
     document.getElementById('confirmationConfirmBtn').addEventListener('click', function() {
         $('#confirmationModal').modal('hide');
@@ -1025,7 +1024,7 @@ document.addEventListener('DOMContentLoaded', function() {
             confirmationCallback = null;
         }
     });
-    
+
     // Handle modal dismissal
     $('#confirmationModal').on('hidden.bs.modal', function() {
         if (confirmationCallback) {
@@ -1038,16 +1037,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusForm = document.querySelector('.status-update-form');
     const statusSelect = statusForm ? statusForm.querySelector('select[name="status"]') : null;
     const statusSubmitBtn = statusForm ? statusForm.querySelector('button[type="submit"]') : null;
-    
+
     if (statusForm && statusSelect && statusSubmitBtn) {
         // Track original status
         const originalStatus = statusSelect.value;
-        
+
         // Add change event listener to status select
         statusSelect.addEventListener('change', function() {
             const newStatus = this.value;
             const statusText = this.options[this.selectedIndex].text;
-            
+
             if (newStatus !== originalStatus) {
                 statusSubmitBtn.innerHTML = '<i class="fas fa-sync-alt mr-1"></i> Update to ' + statusText;
                 statusSubmitBtn.classList.remove('btn-primary');
@@ -1058,15 +1057,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 statusSubmitBtn.classList.add('btn-primary');
             }
         });
-        
+
         // Add confirmation dialog for status updates
         statusForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             const newStatus = statusSelect.value;
             const statusText = statusSelect.options[statusSelect.selectedIndex].text;
             const originalStatusText = statusSelect.querySelector(`option[value="${originalStatus}"]`).text;
-            
+
             if (newStatus === originalStatus) {
                 await showCustomConfirmation(
                     'No Change Required',
@@ -1077,12 +1076,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 );
                 return;
             }
-            
+
             // Custom confirmation messages based on status
             let mainMessage = `Are you sure you want to change the status from "<strong>${originalStatusText}</strong>" to "<strong>${statusText}</strong>"?`;
             let additionalInfo = '';
             let confirmClass = 'btn-warning';
-            
+
             if (newStatus === 'completed') {
                 additionalInfo = '<i class="fas fa-info-circle mr-1"></i> This will notify the client that their coaching service is complete.';
                 confirmClass = 'btn-success';
@@ -1093,7 +1092,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 additionalInfo = '<i class="fas fa-play-circle mr-1"></i> This will notify the client that work has started on their coaching service.';
                 confirmClass = 'btn-primary';
             }
-            
+
             const confirmed = await showCustomConfirmation(
                 'Confirm Status Change',
                 mainMessage,
@@ -1101,27 +1100,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Update Status',
                 confirmClass
             );
-            
+
             if (confirmed) {
                 // Disable the button and show loading state
                 statusSubmitBtn.disabled = true;
                 statusSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Updating...';
-                
+
                 // Submit the form
                 this.submit();
             }
         });
     }
-    
+
     // Enhanced form validation for payment modals
     const paymentRequestForm = document.getElementById('paymentRequestForm');
     if (paymentRequestForm) {
         paymentRequestForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             const amount = this.querySelector('input[name="amount"]').value;
             const description = this.querySelector('textarea[name="description"]').value;
-            
+
             if (!amount || parseFloat(amount) <= 0) {
                 await showCustomConfirmation(
                     'Invalid Amount',
@@ -1132,7 +1131,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 );
                 return;
             }
-            
+
             if (!description.trim()) {
                 await showCustomConfirmation(
                     'Missing Description',
@@ -1143,7 +1142,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 );
                 return;
             }
-            
+
             // Confirm payment request
             const confirmed = await showCustomConfirmation(
                 'Send Payment Request',
@@ -1152,7 +1151,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Send Request',
                 'btn-success'
             );
-            
+
             if (confirmed) {
                 // Show loading state
                 const submitBtn = this.querySelector('button[type="submit"]');
@@ -1162,14 +1161,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+
     const markAsPaidForm = document.getElementById('markAsPaidForm');
     if (markAsPaidForm) {
         markAsPaidForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             const amount = this.querySelector('input[name="amount"]').value;
-            
+
             if (!amount || parseFloat(amount) <= 0) {
                 await showCustomConfirmation(
                     'Invalid Amount',
@@ -1180,7 +1179,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 );
                 return;
             }
-            
+
             const confirmed = await showCustomConfirmation(
                 'Mark Payment as Paid',
                 `Mark payment of <strong>$${parseFloat(amount).toFixed(2)}</strong> as paid?`,
@@ -1188,7 +1187,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Mark as Paid',
                 'btn-success'
             );
-            
+
             if (confirmed) {
                 // Show loading state
                 const submitBtn = this.querySelector('button[type="submit"]');
@@ -1198,17 +1197,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+
     // Enhanced document upload form handling
     const documentUploadForm = document.querySelector('.document-upload-form');
     if (documentUploadForm) {
         const fileInput = documentUploadForm.querySelector('input[type="file"]');
         const submitBtn = documentUploadForm.querySelector('button[type="submit"]');
-        
+
         fileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-            
+
             // Validate file type
             const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
             if (!allowedTypes.includes(file.type)) {
@@ -1222,7 +1221,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.value = '';
                 return;
             }
-            
+
             // Validate file size (10MB max)
             const maxSize = 10 * 1024 * 1024; // 10MB
             if (file.size > maxSize) {
@@ -1236,14 +1235,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.value = '';
                 return;
             }
-            
+
             // Update button text with file name
             const fileName = file.name.length > 20 ? file.name.substring(0, 20) + '...' : file.name;
             submitBtn.innerHTML = `<i class="fas fa-upload mr-1"></i> Upload ${fileName}`;
             submitBtn.classList.remove('btn-primary');
             submitBtn.classList.add('btn-success');
         });
-        
+
         documentUploadForm.addEventListener('submit', async function(e) {
             const file = fileInput.files[0];
             if (!file) {
@@ -1257,13 +1256,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 );
                 return;
             }
-            
+
             // Show loading state
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Uploading...';
         });
     }
-    
+
     console.log('Coaching service request view JavaScript loaded successfully');
 });
 </script>
@@ -1321,8 +1320,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <?= $this->Form->create(null, [
                     'url' => $this->Url->build([
                         'prefix' => 'Admin',
-                        'controller' => 'CoachingServiceRequests', 
-                        'action' => 'sendTimeSlots', 
+                        'controller' => 'CoachingServiceRequests',
+                        'action' => 'sendTimeSlots',
                         $coachingServiceRequest->coaching_service_request_id
                     ]),
                     'id' => 'timeSlotsForm',
