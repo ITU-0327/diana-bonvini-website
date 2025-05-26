@@ -7,6 +7,7 @@ use App\Model\Entity\CoachingServiceRequest;
 use Cake\Core\Configure;
 use Cake\Http\Response;
 use Cake\Routing\Router;
+use Cake\Filesystem\Folder;
 use DateTimeInterface;
 use Psr\Http\Message\UploadedFileInterface;
 use RuntimeException;
@@ -437,10 +438,14 @@ class CoachingServiceRequestsController extends AppController
         $originalFilename = $file->getClientFilename();
         $mimeType = $file->getClientMediaType();
         
-        // Validate file type
-        $allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        // Validate file type - Only PDF and Word documents allowed
+        $allowedTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ];
         if (!in_array($mimeType, $allowedTypes)) {
-            $this->Flash->error(__('Invalid file type. Please upload a PDF, JPG, or DOCX file.'));
+            $this->Flash->error(__('Invalid file type. Please upload a PDF or Word document only.'));
             return $this->redirect(['action' => $redirectAction]);
         }
         
@@ -450,9 +455,17 @@ class CoachingServiceRequestsController extends AppController
         // Define the upload directory
         $uploadDir = WWW_ROOT . 'uploads' . DS . 'coaching_docs';
         
-        // Create directory if it doesn't exist
-        if (!file_exists($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
+        // Create directory if it doesn't exist using CakePHP's Folder utility
+        if (!is_dir($uploadDir)) {
+            $folder = new Folder();
+            if (!$folder->create($uploadDir, 0755)) {
+                throw new \Exception('Unable to create upload directory. Please check file permissions.');
+            }
+        }
+        
+        // Additional check to ensure directory is writable
+        if (!is_writable($uploadDir)) {
+            throw new \Exception('Upload directory is not writable. Please check file permissions.');
         }
         
         // Move the file

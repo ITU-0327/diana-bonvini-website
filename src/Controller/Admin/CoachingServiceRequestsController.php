@@ -8,6 +8,7 @@ use Cake\Http\Response;
 use Cake\Event\EventInterface;
 use Cake\Core\Configure;
 use Cake\Utility\Text;
+use Cake\Filesystem\Folder;
 use Psr\Http\Message\UploadedFileInterface;
 use Exception;
 
@@ -436,9 +437,19 @@ class CoachingServiceRequestsController extends AppController
         // Define upload directory
         $uploadDir = WWW_ROOT . 'uploads' . DS . 'coaching_docs';
         
-        // Create directory if it doesn't exist
-        if (!file_exists($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
+        // Create directory if it doesn't exist using CakePHP's Folder utility
+        if (!is_dir($uploadDir)) {
+            $folder = new Folder();
+            if (!$folder->create($uploadDir, 0755)) {
+                $this->Flash->error(__('Unable to create upload directory. Please check file permissions.'));
+                return $this->redirect(['action' => 'view', $id]);
+            }
+        }
+        
+        // Additional check to ensure directory is writable
+        if (!is_writable($uploadDir)) {
+            $this->Flash->error(__('Upload directory is not writable. Please check file permissions.'));
+            return $this->redirect(['action' => 'view', $id]);
         }
         
         try {
