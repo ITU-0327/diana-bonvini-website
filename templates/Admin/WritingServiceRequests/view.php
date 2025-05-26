@@ -114,9 +114,11 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                     <div class="flex-grow-1">
                                         <p class="mb-0 font-weight-bold"><?= h(basename($writingServiceRequest->document)) ?></p>
                                     </div>
-                                    <a href="<?= '/' . $writingServiceRequest->document ?>" target="_blank" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-download mr-1"></i> Download
-                                    </a>
+                                    <?= $this->Html->link(
+                                        '<i class="fas fa-download mr-1"></i> Download',
+                                        '/' . $writingServiceRequest->document,
+                                        ['escape' => false, 'target' => '_blank', 'class' => 'btn btn-sm btn-primary']
+                                    ) ?>
                                 </div>
                             </div>
                         </div>
@@ -267,10 +269,10 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                         </div>
 
                         <!-- Document List -->
-                        <?php if (isset($requestDocuments) && !empty($requestDocuments)): ?>
+                        <?php if (isset($requestDocuments) && !empty($requestDocuments)) : ?>
                             <h6 class="font-weight-bold mb-2">Uploaded Documents</h6>
                             <div class="list-group">
-                                <?php foreach($requestDocuments as $document): ?>
+                                <?php foreach ($requestDocuments as $document) : ?>
                                     <div class="list-group-item list-group-item-action p-2 d-flex align-items-center">
                                         <div class="document-icon mr-2">
                                             <i class="<?= getDocumentIcon($document->file_type) ?> fa-lg text-primary"></i>
@@ -291,11 +293,11 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                                 </span>
                                             </div>
                                         </div>
-                                        <a href="<?= '/' . h($document->document_path) ?>"
-                                           class="btn btn-sm btn-outline-primary ml-2"
-                                           target="_blank">
-                                            <i class="fas fa-download"></i>
-                                        </a>
+                                        <?= $this->Html->link(
+                                            '<i class="fas fa-download"></i>',
+                                            '/' . $document->document_path,
+                                            ['escape' => false, 'target' => '_blank', 'class' => 'btn btn-sm btn-outline-primary ml-2']
+                                        ) ?>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
@@ -315,12 +317,12 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                     <div class="mb-4 pt-2 border-top">
                         <h6 class="font-weight-bold mb-2 d-flex justify-content-between">
                             <span>Payment History</span>
-                            <?php if (!empty($writingServiceRequest->writing_service_payments)): ?>
+                            <?php if (!empty($writingServiceRequest->writing_service_payments)) : ?>
                                 <span class="badge badge-info"><?= count($writingServiceRequest->writing_service_payments) ?></span>
                             <?php endif; ?>
                         </h6>
 
-                        <?php if (!empty($writingServiceRequest->writing_service_payments)): ?>
+                        <?php if (!empty($writingServiceRequest->writing_service_payments)) : ?>
                             <div class="table-responsive">
                                 <table id="payment-history-table" class="table table-sm table-hover border">
                                     <thead class="bg-light">
@@ -332,7 +334,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php foreach ($writingServiceRequest->writing_service_payments as $payment): ?>
+                                        <?php foreach ($writingServiceRequest->writing_service_payments as $payment) : ?>
                                             <tr class="<?= $payment->status === 'paid' ? 'table-success' : 'table-warning' ?>">
                                                 <td class="small font-weight-bold">
                                                     #<?= h($payment->writing_service_payment_id) ?>
@@ -346,18 +348,18 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <?php if ($payment->status === 'paid'): ?>
+                                                    <?php if ($payment->status === 'paid') : ?>
                                                         <span class="badge badge-success">
                                                             <i class="fas fa-check-circle mr-1"></i>Paid
                                                         </span>
-                                                        <?php if ($payment->payment_date): ?>
+                                                        <?php if ($payment->payment_date) : ?>
                                                             <small class="d-block text-muted mt-1">
                                                                 <span class="local-time" data-datetime="<?= $payment->payment_date->jsonSerialize() ?>">
                                                                     Loading...
                                                                 </span>
                                                             </small>
                                                         <?php endif; ?>
-                                                    <?php else: ?>
+                                                    <?php else : ?>
                                                         <span class="badge badge-warning">
                                                             <i class="fas fa-clock mr-1"></i>Pending
                                                         </span>
@@ -381,11 +383,13 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                 <div class="col-6">
                                     <small class="text-muted">
                                         <i class="fas fa-check-circle text-success mr-1"></i>
-                                        Paid: <?php 
+                                        Paid: <?php
                                             $paidCount = 0;
-                                            foreach ($writingServiceRequest->writing_service_payments as $payment) {
-                                                if ($payment->status === 'paid') $paidCount++;
+                                        foreach ($writingServiceRequest->writing_service_payments as $payment) {
+                                            if ($payment->status === 'paid') {
+                                                $paidCount++;
                                             }
+                                        }
                                             echo $paidCount;
                                         ?>
                                     </small>
@@ -393,17 +397,19 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                 <div class="col-6">
                                     <small class="text-muted">
                                         <i class="fas fa-clock text-warning mr-1"></i>
-                                        Pending: <?php 
+                                        Pending: <?php
                                             $pendingCount = 0;
-                                            foreach ($writingServiceRequest->writing_service_payments as $payment) {
-                                                if ($payment->status === 'pending') $pendingCount++;
+                                        foreach ($writingServiceRequest->writing_service_payments as $payment) {
+                                            if ($payment->status === 'pending') {
+                                                $pendingCount++;
                                             }
+                                        }
                                             echo $pendingCount;
                                         ?>
                                     </small>
                                 </div>
                             </div>
-                        <?php else: ?>
+                        <?php else : ?>
                             <div class="text-center p-3 bg-light rounded border text-muted">
                                 <i class="fas fa-info-circle mr-1"></i> No payment requests yet
                                 <small class="d-block mt-1">Use the "Send Payment Request" button above to create payment requests for this service.</small>
@@ -417,7 +423,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                         <?= $this->Html->link(
                             '<i class="fab fa-google mr-1"></i> View My Calendar',
                             ['controller' => 'GoogleAuth', 'action' => 'viewCalendar'],
-                            ['class' => 'btn btn-info btn-block', 'escape' => false]
+                            ['class' => 'btn btn-info btn-block', 'escape' => false],
                         ) ?>
                         <p class="text-sm text-muted mt-1">View and manage your Google Calendar appointments</p>
 
@@ -436,7 +442,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                         <?= $this->Form->create(null, [
                             'url' => ['action' => 'updateStatus', $writingServiceRequest->writing_service_request_id],
                             'id' => 'statusForm',
-                            'type' => 'post'
+                            'type' => 'post',
                         ]) ?>
 
                         <div class="form-group mb-3">
@@ -1493,7 +1499,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                             'placeholder' => 'Enter amount',
                             'required' => true,
                             'value' => '',
-                            'label' => false
+                            'label' => false,
                         ]) ?>
                     </div>
                     <small class="form-text text-muted">Enter the amount to charge the client for this specific service.</small>
@@ -1541,22 +1547,22 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                 <?= $this->Form->create(null, [
                     'url' => $this->Url->build([
                         'prefix' => 'Admin',
-                        'controller' => 'WritingServiceRequests', 
-                        'action' => 'sendTimeSlots', 
-                        $writingServiceRequest->writing_service_request_id
+                        'controller' => 'WritingServiceRequests',
+                        'action' => 'sendTimeSlots',
+                        $writingServiceRequest->writing_service_request_id,
                     ]),
-                    'id' => 'timeSlotsForm',
-                    'type' => 'post'
+                                                                                                        'id' => 'timeSlotsForm',
+                                                                                                        'type' => 'post',
                 ]) ?>
                 
                 <!-- Explicit CSRF token -->
                 <?= $this->Form->hidden('_csrfToken', [
-                    'value' => $this->request->getAttribute('csrfToken')
+                    'value' => $this->request->getAttribute('csrfToken'),
                 ]) ?>
 
                 <!-- Include hidden writing_service_request_id field to ensure it's passed -->
                 <?= $this->Form->hidden('writing_service_request_id', [
-                    'value' => $writingServiceRequest->writing_service_request_id
+                    'value' => $writingServiceRequest->writing_service_request_id,
                 ]) ?>
 
                 <div class="row">
@@ -1638,12 +1644,12 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                         'rows' => 3,
                         'id' => 'timeSlotMessageText',
                         'placeholder' => 'Enter a message to accompany the time slots...',
-                        'value' => 'I\'d like to schedule a consultation to discuss your writing service request. Here are some available time slots. Please click the link below to book one of these times or select another time that works for you.'
+                        'value' => 'I\'d like to schedule a consultation to discuss your writing service request. Here are some available time slots. Please click the link below to book one of these times or select another time that works for you.',
                     ]) ?>
 
                     <?= $this->Form->hidden('time_slots', [
                         'id' => 'selectedTimeSlotsJson',
-                        'value' => '[]'
+                        'value' => '[]',
                     ]) ?>
                 </div>
 
@@ -2389,7 +2395,7 @@ function formatFileSize(int $bytes): string
             <?= $this->Form->create(null, [
                 'url' => ['prefix' => 'Admin', 'controller' => 'WritingServiceRequests', 'action' => 'uploadDocument', $writingServiceRequest->writing_service_request_id],
                 'type' => 'file',
-                'id' => 'quickUploadForm'
+                'id' => 'quickUploadForm',
             ]) ?>
             <div class="modal-body">
                 <p class="text-muted">Quickly upload a document to share with the customer. The upload will automatically add a message to the chat.</p>
@@ -2399,7 +2405,7 @@ function formatFileSize(int $bytes): string
                         'class' => 'form-control-file',
                         'id' => 'quickDocument',
                         'required' => true,
-                        'accept' => '.pdf,.doc,.docx'
+                        'accept' => '.pdf,.doc,.docx',
                     ]) ?>
                     <small class="form-text text-muted">Accepted file types: PDF and Word documents only</small>
                 </div>
