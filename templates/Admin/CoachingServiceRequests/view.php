@@ -108,9 +108,11 @@ use Cake\Utility\Inflector;
                                     <div class="flex-grow-1">
                                         <p class="mb-0 font-weight-bold"><?= h(basename($coachingServiceRequest->document)) ?></p>
                                     </div>
-                                    <a href="<?= '/' . $coachingServiceRequest->document ?>" target="_blank" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-download mr-1"></i> Download
-                                    </a>
+                                    <?= $this->Html->link(
+                                        '<i class="fas fa-download mr-1"></i> Download',
+                                        '/' . $coachingServiceRequest->document,
+                                        ['escape' => false, 'target' => '_blank', 'class' => 'btn btn-sm btn-primary']
+                                    ) ?>
                                 </div>
                             </div>
                         </div>
@@ -385,11 +387,11 @@ use Cake\Utility\Inflector;
                                                     </div>
                                                 </div>
                                                 <div class="document-actions mt-2">
-                                                    <a href="<?= $this->Url->build('/' . h($document->document_path), ['fullBase' => true]) ?>"
-                                                       target="_blank"
-                                                       class="btn btn-sm btn-outline-primary btn-block">
-                                                        <i class="fas fa-eye mr-1"></i> View Document
-                                                    </a>
+                                                    <?= $this->Html->link(
+                                                        '<i class="fas fa-eye mr-1"></i> View Document',
+                                                        '/' . $document->document_path,
+                                                        ['escape' => false, 'target' => '_blank', 'class' => 'btn btn-sm btn-outline-primary btn-block']
+                                                    ) ?>
                                                 </div>
                                             </div>
                                         </div>
