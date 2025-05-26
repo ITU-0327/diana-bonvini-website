@@ -1150,67 +1150,133 @@ class WritingServiceRequestsController extends BaseAdminController
     protected function _handleDocumentUpload(?UploadedFileInterface $file, string $redirectAction): ?string
     {
         if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
+            $errorMessages = [
+                UPLOAD_ERR_INI_SIZE => 'File too large (exceeds php.ini limit)',
+                UPLOAD_ERR_FORM_SIZE => 'File too large (exceeds form limit)',
+                UPLOAD_ERR_PARTIAL => 'File upload was interrupted',
+                UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
+                UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+                UPLOAD_ERR_EXTENSION => 'File upload stopped by extension',
+            ];
+            
+            $errorMessage = $errorMessages[$file->getError()] ?? 'Unknown upload error';
+            $this->log('File upload error: ' . $errorMessage . ' (Code: ' . $file->getError() . ')', 'error');
+            $this->Flash->error(__('Upload failed: {0}', $errorMessage));
             return null;
         }
 
+        // Validate file type
         $allowedMimeTypes = [
             'application/pdf',  // PDF
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
             'application/msword', // DOC
         ];
 
-        if (!in_array($file->getClientMediaType(), $allowedMimeTypes)) {
+        $clientMediaType = $file->getClientMediaType();
+        if (!in_array($clientMediaType, $allowedMimeTypes)) {
+            $this->log('Invalid file type uploaded: ' . $clientMediaType, 'warning');
             $this->Flash->error(__('Invalid file type. Please upload PDF or Word documents only.'));
             return null;
         }
 
-        // Always use the webroot/uploads/documents directory
-        $uploadPath = WWW_ROOT . 'uploads' . DS . 'documents';
+        // Try multiple upload paths in order of preference
+        $uploadPaths = [
+            WWW_ROOT . 'uploads' . DS . 'documents',  // Primary: webroot/uploads/documents
+            WWW_ROOT . 'files' . DS . 'documents',    // Alternative: webroot/files/documents  
+            TMP . 'uploads' . DS . 'documents',       // Fallback: tmp/uploads/documents
+        ];
 
-        // Ensure the upload directory exists and is writable
-        if (!is_dir($uploadPath)) {
-            // Try to create the directory
-            if (!@mkdir($uploadPath, 0755, true)) {
-                $this->log('Failed to create upload directory: ' . $uploadPath, 'error');
-                $this->Flash->error(__('Upload directory not accessible. Please contact administrator.'));
-                return null;
+        $selectedPath = null;
+        $selectedRelativePath = null;
+
+        foreach ($uploadPaths as $index => $uploadPath) {
+            $this->log('Trying upload path: ' . $uploadPath, 'debug');
+
+            // Check if directory exists or can be created
+            if (!is_dir($uploadPath)) {
+                $this->log('Directory does not exist, attempting to create: ' . $uploadPath, 'debug');
+                if (@mkdir($uploadPath, 0755, true)) {
+                    $this->log('Successfully created directory: ' . $uploadPath, 'info');
+                } else {
+                    $this->log('Failed to create directory: ' . $uploadPath, 'warning');
+                    continue; // Try next path
+                }
+            }
+
+            // Check if directory is writable
+            if (is_writable($uploadPath)) {
+                $selectedPath = $uploadPath;
+                
+                // Set relative path based on which directory we're using
+                switch ($index) {
+                    case 0: // webroot/uploads/documents
+                        $selectedRelativePath = 'uploads/documents/';
+                        break;
+                    case 1: // webroot/files/documents
+                        $selectedRelativePath = 'files/documents/';
+                        break;
+                    case 2: // tmp/uploads/documents
+                        $selectedRelativePath = $uploadPath . DS; // Full path for non-web-accessible
+                        break;
+                }
+                
+                $this->log('Selected upload path: ' . $selectedPath . ' (relative: ' . $selectedRelativePath . ')', 'info');
+                break;
+            } else {
+                $this->log('Directory not writable: ' . $uploadPath, 'warning');
             }
         }
 
-        // Check if directory is writable
-        if (!is_writable($uploadPath)) {
-            $this->log('Upload directory not writable: ' . $uploadPath, 'error');
-            $this->Flash->error(__('Upload directory not writable. Please contact administrator.'));
+        if (!$selectedPath) {
+            $this->log('No writable upload directory found. Tried: ' . implode(', ', $uploadPaths), 'error');
+            $this->Flash->error(__('Server configuration error: No writable upload directory available. Please contact administrator.'));
             return null;
         }
 
         // Generate safe filename
         $originalFilename = $file->getClientFilename() ?? 'document';
-        $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9_.-]/', '_', $originalFilename);
-        $filePath = $uploadPath . DS . $filename;
+        $safeFilename = preg_replace('/[^a-zA-Z0-9_.-]/', '_', $originalFilename);
+        $filename = time() . '_' . $safeFilename;
+        $filePath = $selectedPath . DS . $filename;
 
         try {
             // Move the uploaded file
+            $this->log('Attempting to move file to: ' . $filePath, 'debug');
             $file->moveTo($filePath);
 
             // Verify file was moved successfully
             if (!file_exists($filePath)) {
                 $this->log('File was not moved successfully to: ' . $filePath, 'error');
-                $this->Flash->error(__('File upload failed. Please try again.'));
+                $this->Flash->error(__('File upload failed - file not found after move operation.'));
                 return null;
+            }
+
+            // Check file size to ensure it was completely written
+            $expectedSize = $file->getSize();
+            $actualSize = filesize($filePath);
+            if ($expectedSize > 0 && $actualSize !== $expectedSize) {
+                $this->log("File size mismatch. Expected: $expectedSize, Actual: $actualSize", 'warning');
             }
 
             // Set file permissions if possible
             @chmod($filePath, 0644);
 
-            $this->log('File uploaded successfully: ' . $filename . ' to: ' . $uploadPath, 'info');
+            $this->log('File uploaded successfully: ' . $filename . ' to: ' . $selectedPath . ' (Size: ' . $actualSize . ' bytes)', 'info');
 
-            // Return relative path for web access
-            return 'uploads/documents/' . $filename;
+            // Return the appropriate path
+            if (strpos($selectedRelativePath, DS) !== false && strpos($selectedRelativePath, 'tmp') !== false) {
+                // For tmp directory, return full path
+                return $filePath;
+            } else {
+                // For web-accessible directories, return relative path
+                return $selectedRelativePath . $filename;
+            }
 
         } catch (Exception $e) {
             $this->log('File upload exception: ' . $e->getMessage(), 'error');
-            $this->Flash->error(__('File upload failed: ' . $e->getMessage()));
+            $this->log('Exception trace: ' . $e->getTraceAsString(), 'debug');
+            $this->Flash->error(__('File upload failed: {0}', $e->getMessage()));
             return null;
         }
     }
