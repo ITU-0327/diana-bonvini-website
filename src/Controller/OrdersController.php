@@ -307,12 +307,29 @@ class OrdersController extends AppController
      *
      * @return void Renders view.
      */
-    public function index(): void
+    public function index()
     {
+        /** @var \App\Model\Entity\User|null $user */
+        $user = $this->Authentication->getIdentity();
+        $userId = $user?->get('user_id');
+
+        if (!$userId) {
+            $this->Flash->error(__('You need to be logged in to view your orders.'));
+            return $this->redirect(['controller' => 'Users', 'action' => 'login']);
+        }
+
         $query = $this->Orders->find()
-            ->contain(['Users', 'Payments']);
+            ->contain(['Users', 'Payments'])
+            ->where(['Orders.user_id' => $userId]);
+
+        $this->paginate = [
+            'order' => ['Orders.created_at' => 'DESC'],
+        ];
+
         $orders = $this->paginate($query);
         $this->set(compact('orders'));
+
+        return null;
     }
 
     /**
