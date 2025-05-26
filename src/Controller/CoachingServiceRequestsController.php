@@ -3,18 +3,19 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Mailer\PaymentMailer;
 use App\Model\Entity\CoachingServiceRequest;
 use Cake\Core\Configure;
+use Cake\Event\EventInterface;
+use Cake\Filesystem\Folder;
 use Cake\Http\Response;
 use Cake\Routing\Router;
-use Cake\Filesystem\Folder;
-use DateTimeInterface;
+use Cake\Utility\Text;
+use DateTime;
+use Exception;
 use Psr\Http\Message\UploadedFileInterface;
-use RuntimeException;
 use Stripe\Checkout\Session;
 use Stripe\Stripe;
-use Cake\Utility\Text;
-use Cake\Event\EventInterface;
 
 /**
  * CoachingServiceRequests Controller
@@ -38,10 +39,10 @@ class CoachingServiceRequestsController extends AppController
         $this->Authentication->addUnauthenticatedActions([
             'paymentSuccess',
         ]);
-        
+
         // Ensure FormProtection allows paymentSuccess action
         $this->FormProtection->setConfig('unlockedActions', [
-            'add', 'edit', 'uploadDocument', 'paymentSuccess'
+            'add', 'edit', 'uploadDocument', 'paymentSuccess',
         ]);
     }
 
@@ -116,7 +117,7 @@ class CoachingServiceRequestsController extends AppController
                 'is_deleted' => false,
             ])
             ->toArray();
-            
+
         // Fetch request documents
         $coachingRequestDocumentsTable = $this->fetchTable('CoachingRequestDocuments');
         $coachingRequestDocuments = $coachingRequestDocumentsTable->find()
@@ -153,31 +154,31 @@ class CoachingServiceRequestsController extends AppController
                         $coachingServiceRequest->request_status = 'in_progress';
                         $this->CoachingServiceRequests->save($coachingServiceRequest);
                     }
-                    
+
                     // Send notification email to admin
                     try {
                         // Get the latest message that was just added
                         $latestMessage = end($coachingServiceRequest->coaching_request_messages);
-                        
+
                         if ($latestMessage) {
                             // Get a fresh copy of the request with user data
                             $requestWithUser = $this->CoachingServiceRequests->get($id, contain: ['Users']);
-                            
+
                             // Fixed admin email
                             $adminEmail = 'diana@dianabonvini.com';
                             $adminName = 'Diana Bonvini';
-                            
+
                             // Send admin notification
-                            $mailer = new \App\Mailer\PaymentMailer('default');
+                            $mailer = new PaymentMailer('default');
                             $mailer->newCoachingMessageNotification(
-                                $requestWithUser, 
-                                $data['reply_message'], 
-                                $adminEmail, 
-                                $adminName
+                                $requestWithUser,
+                                $data['reply_message'],
+                                $adminEmail,
+                                $adminName,
                             );
                             $mailer->deliverAsync();
                         }
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         // Log critical errors only
                         $this->log('Error sending message notification: ' . $e->getMessage(), 'error');
                     }
@@ -235,49 +236,50 @@ class CoachingServiceRequestsController extends AppController
 
         if (!$user) {
             $this->Flash->error(__('You need to be logged in to create a coaching service request.'));
+
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
 
         $coachingServiceRequest = $this->CoachingServiceRequests->newEmptyEntity();
-        
+
         if ($this->request->is('post')) {
             // Log the raw request data for debugging
             $this->log('Coaching service request POST received. Request data: ' . json_encode($this->request->getData()), 'debug');
             $this->log('Request method: ' . $this->request->getMethod(), 'debug');
             $this->log('Request URL: ' . $this->request->getRequestTarget(), 'debug');
-            
+
             // Extract file before patchEntity to avoid validation issues
             $file = $this->request->getUploadedFile('document');
-            
+
             // Prepare the data for saving - remove the document field to prevent validation issues
             $data = $this->request->getData();
-            
+
             // Handle document separately to avoid validation issues
             if (isset($data['document'])) {
                 unset($data['document']);
             }
-            
+
             $data['user_id'] = $user->get('user_id');
             $data['request_status'] = $data['request_status'] ?? 'pending';
             $data['is_deleted'] = $data['is_deleted'] ?? false;
-            
+
             // Apply the data to the entity first without the document
             $coachingServiceRequest = $this->CoachingServiceRequests->patchEntity($coachingServiceRequest, $data);
-            
+
             // Handle document upload if present
             if ($file && $file->getError() === UPLOAD_ERR_OK) {
                 try {
                     $this->log('Processing file upload', 'debug');
                     $uploadResult = $this->_handleDocumentUpload($file, 'add');
-                    
-                    if ($uploadResult instanceof \Cake\Http\Response) {
-                        return $uploadResult; 
+
+                    if ($uploadResult instanceof Response) {
+                        return $uploadResult;
                     }
-                    
+
                     // Set document path directly on the entity
                     $coachingServiceRequest->document = $uploadResult;
                     $this->log('Document uploaded successfully: ' . $uploadResult, 'debug');
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->log('File upload error: ' . $e->getMessage(), 'error');
                     $this->Flash->error('Error uploading file: ' . $e->getMessage());
                     // Don't redirect, allow the form to be displayed again with errors
@@ -286,7 +288,7 @@ class CoachingServiceRequestsController extends AppController
                 $this->log('File upload error code: ' . $file->getError(), 'error');
                 $this->Flash->error('There was an error uploading your file. Please try again.');
             }
-            
+
             // Log validation errors if any
             if ($coachingServiceRequest->hasErrors()) {
                 $this->log('Validation errors: ' . json_encode($coachingServiceRequest->getErrors()), 'debug');
@@ -297,45 +299,45 @@ class CoachingServiceRequestsController extends AppController
                     if (method_exists($coachingServiceRequest, 'initializeCoachingServiceRequestId')) {
                         $coachingServiceRequest->initializeCoachingServiceRequestId();
                     }
-                    
+
                     if ($this->CoachingServiceRequests->save($coachingServiceRequest)) {
                         $this->log('Coaching service request saved successfully. ID: ' . $coachingServiceRequest->coaching_service_request_id, 'debug');
                         $this->Flash->success(__('Your coaching service request has been saved.'));
-                        
+
                         // Send notification email to admin about new coaching request
                         try {
                             // Get a fresh copy of the request with user data
                             $requestWithUser = $this->CoachingServiceRequests->get($coachingServiceRequest->coaching_service_request_id, contain: ['Users']);
-                            
+
                             if (!empty($requestWithUser->user) && !empty($requestWithUser->user->email)) {
                                 $adminEmail = 'diana@dianabonvini.com';
                                 $adminName = 'Diana Bonvini';
-                                
+
                                 // Send admin notification
-                                $mailer = new \App\Mailer\PaymentMailer('default');
+                                $mailer = new PaymentMailer('default');
                                 $mailer->newCoachingRequestNotification(
                                     $requestWithUser,
                                     $adminEmail,
-                                    $adminName
+                                    $adminName,
                                 );
                                 $result = $mailer->deliverAsync();
-                                
+
                                 if ($result) {
                                     $this->log('New coaching request notification sent successfully to ' . $adminEmail, 'info');
                                 } else {
                                     $this->log('New coaching request notification failed to send to ' . $adminEmail, 'warning');
                                 }
                             }
-                        } catch (\Exception $e) {
+                        } catch (Exception $e) {
                             $this->log('Error sending new coaching request notification: ' . $e->getMessage(), 'error');
                         }
-                        
+
                         return $this->redirect(['action' => 'view', $coachingServiceRequest->coaching_service_request_id]);
                     } else {
                         $this->log('Failed to save coaching service request. General error.', 'error');
                         $this->Flash->error(__('The coaching service request could not be saved. Please try again.'));
                     }
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->log('Exception during save: ' . $e->getMessage(), 'error');
                     $this->Flash->error(__('An error occurred while saving your request. Please try again.'));
                 }
@@ -367,26 +369,27 @@ class CoachingServiceRequestsController extends AppController
 
         if ($this->request->is(['patch', 'post', 'put'])) {
             $data = $this->request->getData();
-            
+
             // Handle document upload if a new file is submitted
             $file = $this->request->getUploadedFile('document');
             if ($file && $file->getError() === UPLOAD_ERR_OK) {
                 try {
                     $uploadResult = $this->_handleDocumentUpload($file, 'edit');
-                    
+
                     if ($uploadResult instanceof Response) {
-                        return $uploadResult; 
+                        return $uploadResult;
                     }
-                    
+
                     $data['document'] = $uploadResult;
-                } catch (\Exception $e) {
+                } catch (Exception $e) {
                     $this->Flash->error('Error uploading file: ' . $e->getMessage());
+
                     return $this->redirect(['action' => 'edit', $id]);
                 }
             }
-            
+
             $coachingServiceRequest = $this->CoachingServiceRequests->patchEntity($coachingServiceRequest, $data);
-            
+
             if ($this->CoachingServiceRequests->save($coachingServiceRequest)) {
                 $this->Flash->success(__('The coaching service request has been updated.'));
 
@@ -394,7 +397,7 @@ class CoachingServiceRequestsController extends AppController
             }
             $this->Flash->error(__('The coaching service request could not be updated. Please, try again.'));
         }
-        
+
         $this->set(compact('coachingServiceRequest'));
     }
 
@@ -409,10 +412,10 @@ class CoachingServiceRequestsController extends AppController
     {
         $this->request->allowMethod(['post', 'delete']);
         $coachingServiceRequest = $this->CoachingServiceRequests->get($id);
-        
+
         // Soft delete - just set the is_deleted flag to true
         $coachingServiceRequest->is_deleted = true;
-        
+
         if ($this->CoachingServiceRequests->save($coachingServiceRequest)) {
             $this->Flash->success(__('The coaching service request has been deleted.'));
         } else {
@@ -427,50 +430,51 @@ class CoachingServiceRequestsController extends AppController
      *
      * @param \Psr\Http\Message\UploadedFileInterface|null $file The uploaded file
      * @param string $redirectAction The action to redirect to on error
-     * @return string|Response|null The path to the saved file or a redirect Response on error
+     * @return \Cake\Http\Response|string|null The path to the saved file or a redirect Response on error
      */
     protected function _handleDocumentUpload(?UploadedFileInterface $file, string $redirectAction): string|Response|null
     {
         if (!$file) {
             return null;
         }
-        
+
         $originalFilename = $file->getClientFilename();
         $mimeType = $file->getClientMediaType();
-        
+
         // Validate file type - Only PDF and Word documents allowed
         $allowedTypes = [
             'application/pdf',
             'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         ];
         if (!in_array($mimeType, $allowedTypes)) {
             $this->Flash->error(__('Invalid file type. Please upload a PDF or Word document only.'));
+
             return $this->redirect(['action' => $redirectAction]);
         }
-        
+
         // Generate a unique filename
         $uniqueFilename = Text::uuid() . '_' . preg_replace('/[^a-zA-Z0-9\._-]/', '', $originalFilename);
-        
+
         // Define the upload directory
         $uploadDir = WWW_ROOT . 'uploads' . DS . 'coaching_docs';
-        
+
         // Create directory if it doesn't exist using CakePHP's Folder utility
         if (!is_dir($uploadDir)) {
             $folder = new Folder();
             if (!$folder->create($uploadDir, 0755)) {
-                throw new \Exception('Unable to create upload directory. Please check file permissions.');
+                throw new Exception('Unable to create upload directory. Please check file permissions.');
             }
         }
-        
+
         // Additional check to ensure directory is writable
         if (!is_writable($uploadDir)) {
-            throw new \Exception('Upload directory is not writable. Please check file permissions.');
+            throw new Exception('Upload directory is not writable. Please check file permissions.');
         }
-        
+
         // Move the file
         $file->moveTo($uploadDir . DS . $uniqueFilename);
-        
+
         // Return the relative path for storage in the database
         return 'uploads/coaching_docs/' . $uniqueFilename;
     }
@@ -485,38 +489,40 @@ class CoachingServiceRequestsController extends AppController
     public function uploadDocument(?string $id = null): ?Response
     {
         $this->request->allowMethod(['post']);
-        
+
         /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
         if (!$user) {
             $this->Flash->error(__('You need to be logged in to upload documents.'));
+
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
-        
+
         $coachingServiceRequest = $this->CoachingServiceRequests->get($id);
-        
+
         // Check if document was uploaded
         $file = $this->request->getUploadedFile('document');
         if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
             $this->Flash->error(__('No file was uploaded or there was an error with the upload.'));
+
             return $this->redirect(['action' => 'view', $id]);
         }
-        
+
         try {
             // Handle file upload
             $uploadResult = $this->_handleDocumentUpload($file, 'view');
-            
+
             if ($uploadResult instanceof Response) {
                 return $uploadResult;
             }
-            
+
             // Create record in the CoachingRequestDocuments table
             $coachingRequestDocumentsTable = $this->fetchTable('CoachingRequestDocuments');
-            
+
             $originalFilename = $file->getClientFilename();
             $mimeType = $file->getClientMediaType();
             $fileSize = $file->getSize();
-            
+
             $documentEntity = $coachingRequestDocumentsTable->newEntity([
                 'coaching_service_request_id' => $id,
                 'user_id' => $user->get('user_id'),
@@ -527,23 +533,22 @@ class CoachingServiceRequestsController extends AppController
                 'uploaded_by' => 'customer',
                 'is_deleted' => false,
             ]);
-            
+
             if ($coachingRequestDocumentsTable->save($documentEntity)) {
                 $this->Flash->success(__('Document has been uploaded successfully.'));
             } else {
                 $this->Flash->error(__('Could not save document information. Please try again.'));
             }
-            
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->Flash->error(__('Error uploading document: {0}', $e->getMessage()));
         }
-        
+
         return $this->redirect(['action' => 'view', $id]);
     }
-    
+
     /**
      * Check payment status for multiple payment IDs
-     * 
+     *
      * @param string|null $id Coaching Service Request id.
      * @return \Cake\Http\Response|null Returns JSON response.
      */
@@ -551,27 +556,29 @@ class CoachingServiceRequestsController extends AppController
     {
         $this->request->allowMethod(['post']);
         $this->viewBuilder()->setOption('serialize', ['success', 'payments']);
-        
+
         // Default response
         $response = [
             'success' => false,
             'payments' => [],
         ];
-        
+
         /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
         if (!$user) {
             $this->set($response);
+
             return null;
         }
-        
+
         // Check if we have a JSON body with payment IDs
         $body = $this->request->getData();
         if (empty($body) || empty($body['paymentIds']) || !is_array($body['paymentIds'])) {
             $this->set($response);
+
             return null;
         }
-        
+
         // Get the coaching service request with payments
         try {
             $coachingServiceRequest = $this->CoachingServiceRequests->get(
@@ -582,18 +589,19 @@ class CoachingServiceRequestsController extends AppController
                     },
                 ],
             );
-            
+
             if ($coachingServiceRequest->user_id !== $user->user_id) {
                 $this->set($response);
+
                 return null;
             }
-            
+
             // Prepare payment status data
             $payments = [];
             foreach ($body['paymentIds'] as $paymentId) {
                 $isPaid = false;
                 $paidDate = null;
-                
+
                 // Look for this payment in the loaded payments
                 if (!empty($coachingServiceRequest->coaching_service_payments)) {
                     foreach ($coachingServiceRequest->coaching_service_payments as $payment) {
@@ -604,26 +612,27 @@ class CoachingServiceRequestsController extends AppController
                         }
                     }
                 }
-                
+
                 $payments[] = [
                     'id' => $paymentId,
                     'isPaid' => $isPaid,
                     'paidDate' => $paidDate,
                 ];
             }
-            
+
             $response = [
                 'success' => true,
                 'payments' => $payments,
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log('Error checking payment status: ' . $e->getMessage(), 'error');
         }
-        
+
         $this->set($response);
+
         return null;
     }
-    
+
     /**
      * Process payment for a coaching service request
      *
@@ -635,23 +644,25 @@ class CoachingServiceRequestsController extends AppController
     {
         if (!$id || !$paymentId) {
             $this->Flash->error(__('Invalid request parameters.'));
+
             return $this->redirect(['action' => 'index']);
         }
-        
+
         /** @var \App\Model\Entity\User|null $user */
         $user = $this->Authentication->getIdentity();
         if (!$user) {
             $this->Flash->error(__('You need to be logged in to make payments.'));
+
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
-        
+
         try {
             // Get the coaching service request
             $coachingServiceRequest = $this->CoachingServiceRequests->get($id, contain: ['CoachingServicePayments', 'Users']);
-            
+
             // Set payment amount
             $amount = 100.00; // Default amount if none found
-            
+
             // Find the specific payment record using the primary key
             $paymentTable = $this->fetchTable('CoachingServicePayments');
             $payment = $paymentTable->find()
@@ -659,7 +670,7 @@ class CoachingServiceRequestsController extends AppController
                     'coaching_service_payment_id' => $paymentId,
                 ])
                 ->first();
-                
+
             if ($payment) {
                 $amount = $payment->amount;
             } else {
@@ -673,38 +684,39 @@ class CoachingServiceRequestsController extends AppController
                             'coaching_service_payment_id' => $sessionData['db_payment_id'],
                         ])
                         ->first();
-                    
+
                     if ($payment) {
                         $amount = $payment->amount;
                         $paymentId = $payment->coaching_service_payment_id; // Use the actual payment ID
                     }
                 }
-                
+
                 if (!$payment) {
                     $this->Flash->error(__('Payment record not found. Please try again.'));
+
                     return $this->redirect(['action' => 'view', $id]);
                 }
             }
-            
+
             // Initialize Stripe for payment processing
             Stripe::setApiKey(Configure::read('Stripe.secret'));
-            
+
             $this->log('Using Stripe secret key: ' . substr(Configure::read('Stripe.secret'), 0, 10) . '...', 'debug');
-            
+
             // Create checkout session for payment with correct URLs using Router::url for proper HTTPS detection
             $successUrl = Router::url([
                 'controller' => 'CoachingServiceRequests',
                 'action' => 'paymentSuccess',
                 $id,
-                $paymentId
+                $paymentId,
             ], true);
-            
+
             $cancelUrl = Router::url([
                 'controller' => 'CoachingServiceRequests',
                 'action' => 'view',
-                $id
+                $id,
             ], true);
-            
+
             $this->log('Creating Stripe session with params: ' . json_encode([
                 'line_items' => [
                     'price_data' => [
@@ -719,7 +731,7 @@ class CoachingServiceRequestsController extends AppController
                 'success_url' => $successUrl,
                 'cancel_url' => $cancelUrl,
             ]), 'debug');
-            
+
             $session = Session::create([
                 'payment_method_types' => ['card'],
                 'line_items' => [[
@@ -741,22 +753,22 @@ class CoachingServiceRequestsController extends AppController
                     'user_id' => $user->user_id,
                 ],
             ]);
-            
+
             $this->log('Stripe session created successfully. Redirecting to: ' . $session->url, 'debug');
-            
+
             // Redirect to Stripe checkout
             return $this->redirect($session->url);
-            
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log('Payment error: ' . $e->getMessage(), 'error');
             $this->Flash->error(__('There was an error processing your payment. Please try again later.'));
+
             return $this->redirect(['action' => 'view', $id]);
         }
     }
-    
+
     /**
      * Handle successful payment
-     * 
+     *
      * @param string|null $id Coaching Service Request id.
      * @param string|null $paymentId The payment ID.
      * @return \Cake\Http\Response|null Redirects after processing successful payment.
@@ -765,12 +777,13 @@ class CoachingServiceRequestsController extends AppController
     {
         $this->request->allowMethod(['get', 'post']);
         $this->log('paymentSuccess called with id: ' . $id . ', paymentId: ' . $paymentId, 'debug');
-        
+
         if (!$id || !$paymentId) {
             $this->Flash->error(__('Invalid request parameters.'));
+
             return $this->redirect(['action' => 'index']);
         }
-        
+
         try {
             // Update payment status in database
             $paymentTable = $this->fetchTable('CoachingServicePayments');
@@ -779,20 +792,20 @@ class CoachingServiceRequestsController extends AppController
                     'coaching_service_payment_id' => $paymentId,
                 ])
                 ->first();
-                
+
             $this->log('Payment found: ' . ($payment ? 'yes' : 'no'), 'debug');
-                
+
             if ($payment) {
                 $payment->status = 'paid';
-                $payment->payment_date = new \DateTime();
+                $payment->payment_date = new DateTime();
                 $payment->transaction_id = 'stripe_' . date('YmdHis') . '_' . substr($paymentId, 0, 8);
-                
+
                 $this->log('Attempting to save payment with status: paid', 'debug');
-                
+
                 if ($paymentTable->save($payment)) {
                     $this->log('Payment saved successfully', 'debug');
                     $this->Flash->success(__('Payment was successful! Thank you for your payment.'));
-                    
+
                     // Update request status if needed
                     try {
                         $this->log('Getting coaching service request for status update', 'debug');
@@ -802,43 +815,41 @@ class CoachingServiceRequestsController extends AppController
                             $this->CoachingServiceRequests->save($coachingServiceRequest);
                             $this->log('Request status updated to in_progress', 'debug');
                         }
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         $this->log('Error updating request status: ' . $e->getMessage(), 'error');
                     }
-                    
+
                     // Send payment confirmation email
                     try {
                         $this->log('Getting request with user for email', 'debug');
                         $requestWithUser = $this->CoachingServiceRequests->get($id, contain: ['Users']);
-                        
+
                         // Send customer confirmation
                         $this->log('Creating mailer for customer', 'debug');
-                        $customerMailer = new \App\Mailer\PaymentMailer('default');
+                        $customerMailer = new PaymentMailer('default');
                         $customerMailer->sendCoachingPaymentConfirmation($requestWithUser, $payment);
                         $customerMailer->deliverAsync();
                         $this->log('Customer confirmation email sent successfully', 'debug');
-                        
+
                         // Send admin notification
                         try {
                             $adminEmail = 'diana@dianabonvini.com';
                             $adminName = 'Diana Bonvini';
-                            
+
                             $this->log('Creating mailer for admin notification', 'debug');
-                            $adminMailer = new \App\Mailer\PaymentMailer('default');
+                            $adminMailer = new PaymentMailer('default');
                             $adminMailer->adminCoachingPaymentNotification(
-                                $requestWithUser, 
-                                $payment, 
-                                $adminEmail, 
-                                $adminName
+                                $requestWithUser,
+                                $payment,
+                                $adminEmail,
+                                $adminName,
                             );
                             $adminMailer->deliverAsync();
                             $this->log('Admin notification email sent successfully', 'debug');
-                            
-                        } catch (\Exception $adminEmailError) {
+                        } catch (Exception $adminEmailError) {
                             $this->log('Error sending admin notification email: ' . $adminEmailError->getMessage(), 'error');
                         }
-                        
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         $this->log('Error sending payment confirmation email: ' . $e->getMessage(), 'error');
                     }
                 } else {
@@ -849,24 +860,25 @@ class CoachingServiceRequestsController extends AppController
                 $this->log('Payment record not found', 'debug');
                 $this->Flash->warning(__('Payment record not found, but your payment may have been processed.'));
             }
-            
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log('Payment success handling error: ' . $e->getMessage(), 'error');
             $this->Flash->error(__('There was an error updating your payment record.'));
         }
-        
+
         // Since the user might not be authenticated (coming from Stripe), we need to redirect to login with a message
         // Check if user is authenticated
         $user = $this->Authentication->getIdentity();
-        
+
         if ($user) {
             // User is authenticated, redirect to view page
             $this->log('User is authenticated, redirecting to view page', 'debug');
+
             return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
         } else {
             // User is not authenticated (normal for Stripe callback), redirect to login with success message
             $this->log('User not authenticated, redirecting to login', 'debug');
             $this->Flash->success(__('Payment completed successfully! Please log in to view your request.'));
+
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
     }
@@ -894,6 +906,7 @@ class CoachingServiceRequestsController extends AppController
         if (empty($id) || empty($paymentId)) {
             $this->Flash->error('Missing required payment information.');
             $this->log('payDirect error: Missing required parameters', 'error');
+
             return $this->redirect(['action' => 'index']);
         }
 
@@ -904,16 +917,17 @@ class CoachingServiceRequestsController extends AppController
             // First try to get payment data from database (new approach)
             $coachingServicePaymentsTable = $this->fetchTable('CoachingServicePayments');
             $paymentData = null;
-            
+
             try {
                 $paymentEntity = $coachingServicePaymentsTable->get($paymentId);
-                
+
                 // Check if payment is still pending
                 if ($paymentEntity->status !== 'pending') {
                     $this->Flash->error('This payment has already been processed.');
+
                     return $this->redirect(['action' => 'view', $id]);
                 }
-                
+
                 // Create session data from database record for compatibility with existing pay method
                 $sessionPaymentId = 'db_' . $paymentId;
                 $paymentData = [
@@ -924,16 +938,15 @@ class CoachingServiceRequestsController extends AppController
                     'status' => $paymentEntity->status,
                     'db_payment_id' => $paymentId,
                 ];
-                
+
                 $this->request->getSession()->write("CsrPayments.$sessionPaymentId", $paymentData);
                 $this->log('Created payment data from database record: ' . json_encode($paymentData), 'debug');
-                
+
                 // Call the pay method with the new session-based payment ID
                 return $this->pay($id, $sessionPaymentId);
-                
-            } catch (\Exception $dbException) {
+            } catch (Exception $dbException) {
                 $this->log('Could not find payment in database: ' . $dbException->getMessage(), 'debug');
-                
+
                 // Fallback to legacy session-based system
                 $parts = explode('|', urldecode($paymentId));
                 $sessionPaymentId = $parts[0];
@@ -947,23 +960,24 @@ class CoachingServiceRequestsController extends AppController
                 // If still no payment data found, fail
                 if (!$paymentData) {
                     $this->Flash->error('Invalid payment request. Payment information not found.');
+
                     return $this->redirect(['action' => 'view', $id]);
                 }
-                
+
                 // Call the regular pay method with the legacy parameters
                 return $this->pay($id, $paymentId);
             }
-
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->log('payDirect error: ' . $e->getMessage(), 'error');
             $this->Flash->error('Error processing payment: ' . $e->getMessage());
+
             return $this->redirect(['action' => 'view', $id]);
         }
     }
 
     /**
      * Fetch messages for AJAX requests
-     * 
+     *
      * @param string|null $id Coaching Service Request id.
      * @param string|null $lastMessageId The ID of the last message received.
      * @return void
@@ -980,7 +994,7 @@ class CoachingServiceRequestsController extends AppController
         $response = [
             'success' => false,
             'messages' => [],
-            'lastMessageId' => $lastMessageId
+            'lastMessageId' => $lastMessageId,
         ];
 
         // Get parameters from query if not provided in route
@@ -994,6 +1008,7 @@ class CoachingServiceRequestsController extends AppController
         // Check if the request includes the necessary parameters
         if (empty($id)) {
             $response['error'] = 'Missing request ID';
+
             return $this->response->withStringBody(json_encode($response));
         }
 
@@ -1004,6 +1019,7 @@ class CoachingServiceRequestsController extends AppController
 
             if (!$user) {
                 $response['error'] = 'Authentication required';
+
                 return $this->response->withStringBody(json_encode($response));
             }
 
@@ -1013,6 +1029,7 @@ class CoachingServiceRequestsController extends AppController
             // Ensure the user has access to this request
             if ($user->user_type !== 'admin' && $coachingServiceRequest->user_id !== $user->get('user_id')) {
                 $response['error'] = 'You do not have permission to access this request';
+
                 return $this->response->withStringBody(json_encode($response));
             }
 
@@ -1030,7 +1047,7 @@ class CoachingServiceRequestsController extends AppController
                     'CoachingRequestMessages.coaching_request_message_id !=' => $lastMessageId,
                     'CoachingRequestMessages.created_at >' => function ($exp) use ($lastMessageId) {
                         return $exp->add('(SELECT created_at FROM coaching_request_messages WHERE coaching_request_message_id = \'' . $lastMessageId . '\')');
-                    }
+                    },
                 ]);
             }
 
@@ -1050,7 +1067,7 @@ class CoachingServiceRequestsController extends AppController
                     'sender' => [
                         'id' => $message->user->user_id,
                         'name' => $message->user->full_name,
-                        'type' => $message->user->user_type
+                        'type' => $message->user->user_type,
                     ],
                     'timestamp' => $message->created_at->jsonSerialize(),
                     'formattedTime' => $message->created_at->format('M j, Y g:i A'),
@@ -1069,18 +1086,18 @@ class CoachingServiceRequestsController extends AppController
                     [
                         'coaching_service_request_id' => $id,
                         'user_id !=' => $user->get('user_id'),
-                        'is_read' => false
-                    ]
+                        'is_read' => false,
+                    ],
                 );
             }
 
             $response['success'] = true;
             $response['messages'] = $formattedMessages;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $response['error'] = 'An error occurred: ' . $e->getMessage();
             $this->log('Error in fetchMessages: ' . $e->getMessage(), 'error');
         }
 
         return $this->response->withStringBody(json_encode($response));
     }
-} 
+}
