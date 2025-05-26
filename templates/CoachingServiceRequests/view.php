@@ -534,9 +534,9 @@
                             <?= $this->Form->file('document', [
                                 'class' => 'block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100',
                                 'required' => true,
-                                'accept' => '.pdf,.jpg,.jpeg,.docx',
+                                'accept' => '.pdf,.docx',
                             ]) ?>
-                            <p class="mt-1 text-xs text-gray-500">Upload PDF, JPG or DOCX files</p>
+                            <p class="mt-1 text-xs text-gray-500">Upload PDF or DOCX files</p>
                         </div>
                         <div>
                             <?= $this->Form->button('Upload Document', [
