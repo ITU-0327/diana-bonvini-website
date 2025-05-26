@@ -1145,9 +1145,9 @@ class WritingServiceRequestsController extends BaseAdminController
      *
      * @param \Psr\Http\Message\UploadedFileInterface|null $file The uploaded file
      * @param string $redirectAction The action to redirect to on error
-     * @return \Cake\Http\Response|string|null The file path or a redirect Response on error
+     * @return string|null The file path or null on error
      */
-    protected function _handleDocumentUpload(?UploadedFileInterface $file, string $redirectAction): string|Response|null
+    protected function _handleDocumentUpload(?UploadedFileInterface $file, string $redirectAction): ?string
     {
         if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
             return null;
@@ -1161,22 +1161,27 @@ class WritingServiceRequestsController extends BaseAdminController
 
         if (!in_array($file->getClientMediaType(), $allowedMimeTypes)) {
             $this->Flash->error(__('Invalid file type. Please upload PDF or Word documents only.'));
-
-            return $this->redirect(['action' => $redirectAction]);
+            return null;
         }
 
-        // Use existing directories to avoid mkdir() issues
+        // Always use the webroot/uploads/documents directory
         $uploadPath = WWW_ROOT . 'uploads' . DS . 'documents';
 
         // Ensure the upload directory exists and is writable
         if (!is_dir($uploadPath)) {
-            try {
-                mkdir($uploadPath, 0777, true);
-            } catch (\Exception $e) {
-                $this->log('Failed to create upload directory: ' . $uploadPath . ' Error: ' . $e->getMessage(), 'error');
-                $this->Flash->error(__('Upload system error. Please contact administrator.'));
-                return $this->redirect(['action' => $redirectAction]);
+            // Try to create the directory
+            if (!@mkdir($uploadPath, 0755, true)) {
+                $this->log('Failed to create upload directory: ' . $uploadPath, 'error');
+                $this->Flash->error(__('Upload directory not accessible. Please contact administrator.'));
+                return null;
             }
+        }
+
+        // Check if directory is writable
+        if (!is_writable($uploadPath)) {
+            $this->log('Upload directory not writable: ' . $uploadPath, 'error');
+            $this->Flash->error(__('Upload directory not writable. Please contact administrator.'));
+            return null;
         }
 
         // Generate safe filename
@@ -1192,33 +1197,21 @@ class WritingServiceRequestsController extends BaseAdminController
             if (!file_exists($filePath)) {
                 $this->log('File was not moved successfully to: ' . $filePath, 'error');
                 $this->Flash->error(__('File upload failed. Please try again.'));
-
-                return $this->redirect(['action' => $redirectAction]);
+                return null;
             }
 
             // Set file permissions if possible
-            try {
-                chmod($filePath, 0644);
-            } catch (Exception $e) {
-                // Don't fail if chmod fails, just log it
-                $this->log('Could not set file permissions: ' . $e->getMessage(), 'warning');
-            }
+            @chmod($filePath, 0644);
 
             $this->log('File uploaded successfully: ' . $filename . ' to: ' . $uploadPath, 'info');
 
-            // Return relative path based on which directory was used
-            if (strpos($uploadPath, WWW_ROOT . 'uploads') === 0) {
-                // Standard web-accessible uploads directory
-                return 'uploads/documents/' . $filename;
-            } else {
-                // Alternative directory - return the full path since it may not be web-accessible
-                return $filePath;
-            }
+            // Return relative path for web access
+            return 'uploads/documents/' . $filename;
+
         } catch (Exception $e) {
             $this->log('File upload exception: ' . $e->getMessage(), 'error');
-            $this->Flash->error(__('File upload failed. Please try again later.'));
-
-            return $this->redirect(['action' => $redirectAction]);
+            $this->Flash->error(__('File upload failed: ' . $e->getMessage()));
+            return null;
         }
     }
 
@@ -1247,7 +1240,6 @@ class WritingServiceRequestsController extends BaseAdminController
 
             if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
                 $this->Flash->error(__('No document uploaded or upload failed.'));
-
                 return $this->redirect(['action' => 'view', $id]);
             }
 
