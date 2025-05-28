@@ -45,8 +45,6 @@ $this->assign('title', __('Artworks'));
                                 <option value="all">All Status</option>
                                 <option value="available">Available</option>
                                 <option value="sold">Sold</option>
-                                <option value="pending">Pending</option>
-                                <option value="reserved">Reserved</option>
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
@@ -92,12 +90,20 @@ $this->assign('title', __('Artworks'));
                                     <th>Price</th>
                                     <th>Status</th>
                                     <th>Created</th>
-                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($artworks as $artwork) : ?>
-                                <tr class="artwork-row" data-status="<?= h($artwork->availability_status) ?>">
+                                <tr class="artwork-row hover-clickable cursor-pointer transition-colors" 
+                                    data-status="<?= h($artwork->availability_status) ?>"
+                                    data-price="<?php 
+                                        $variants = $artwork->artwork_variants ?? [];
+                                        $cheapest = (new Collection($variants))->sortBy('price')->first();
+                                        echo $cheapest ? $cheapest->price : 0;
+                                    ?>"
+                                    data-created="<?= $artwork->created_at ? $artwork->created_at->format('Y-m-d H:i:s') : '1970-01-01 00:00:00' ?>"
+                                    data-title="<?= h(strtolower($artwork->title)) ?>"
+                                    data-href="<?= $this->Url->build(['action' => 'edit', $artwork->artwork_id]) ?>">
                                     <td class="align-middle text-center">
                                         <?php
                                             // Add a random query parameter to prevent caching
@@ -133,24 +139,6 @@ $this->assign('title', __('Artworks'));
                                         <span class="badge badge-<?= $statusClass ?>"><?= ucfirst(h($artwork->availability_status)) ?></span>
                                     </td>
                                     <td class="align-middle"><?= $artwork->created_at ? $artwork->created_at->format('M d, Y') : 'N/A' ?></td>
-                                    <td class="align-middle">
-                                        <div class="btn-group">
-                                            <?= $this->Html->link(
-                                                '<i class="fas fa-edit"></i>',
-                                                ['action' => 'edit', $artwork->artwork_id],
-                                                ['class' => 'btn btn-sm btn-primary', 'escape' => false]
-                                            ) ?>
-                                            <?= $this->Form->postLink(
-                                                '<i class="fas fa-trash"></i>',
-                                                ['action' => 'delete', $artwork->artwork_id],
-                                                [
-                                                    'confirm' => 'Are you sure you want to delete this artwork?',
-                                                    'class' => 'btn btn-sm btn-danger',
-                                                    'escape' => false,
-                                                ],
-                                            ) ?>
-                                        </div>
-                                    </td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -195,10 +183,46 @@ $this->assign('title', __('Artworks'));
             filterArtworks();
         });
 
+        // Sort functionality
+        document.getElementById('sort-order').addEventListener('change', function() {
+            sortArtworks();
+        });
+
         // Search functionality
         document.getElementById('search-input').addEventListener('keyup', function() {
             filterArtworks();
         });
+
+        // Function to sort artworks
+        function sortArtworks() {
+            const sortOrder = document.getElementById('sort-order').value;
+            const tableBody = document.querySelector('#artworksTable tbody');
+            const rows = Array.from(tableBody.querySelectorAll('.artwork-row'));
+
+            rows.sort(function(a, b) {
+                switch(sortOrder) {
+                    case 'newest':
+                        return new Date(b.getAttribute('data-created')) - new Date(a.getAttribute('data-created'));
+                    case 'oldest':
+                        return new Date(a.getAttribute('data-created')) - new Date(b.getAttribute('data-created'));
+                    case 'price_high':
+                        return parseFloat(b.getAttribute('data-price')) - parseFloat(a.getAttribute('data-price'));
+                    case 'price_low':
+                        return parseFloat(a.getAttribute('data-price')) - parseFloat(b.getAttribute('data-price'));
+                    default:
+                        return 0;
+                }
+            });
+
+            // Clear the table body and append sorted rows
+            tableBody.innerHTML = '';
+            rows.forEach(function(row) {
+                tableBody.appendChild(row);
+            });
+
+            // Reapply filters after sorting
+            filterArtworks();
+        }
 
         // Function to filter artworks
         function filterArtworks() {
@@ -215,7 +239,7 @@ $this->assign('title', __('Artworks'));
 
                 // Search filtering
                 if (searchTerm !== '') {
-                    const title = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    const title = row.getAttribute('data-title');
                     if (!title.includes(searchTerm)) {
                         display = false;
                     }
@@ -225,5 +249,73 @@ $this->assign('title', __('Artworks'));
                 row.style.display = display ? '' : 'none';
             });
         }
+
+        // Handle clickable rows
+        const clickableRows = document.querySelectorAll('tr[data-href]');
+        clickableRows.forEach(row => {
+            // Add keyboard accessibility
+            row.setAttribute('tabindex', '0');
+            row.setAttribute('role', 'button');
+            row.setAttribute('aria-label', 'Edit artwork details');
+
+            // Handle keyboard navigation
+            row.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    window.location.href = this.dataset.href;
+                }
+            });
+
+            // Add visual feedback for focus
+            row.addEventListener('focus', function() {
+                this.style.outline = '2px solid #007bff';
+                this.style.outlineOffset = '-2px';
+            });
+
+            row.addEventListener('blur', function() {
+                this.style.outline = '';
+                this.style.outlineOffset = '';
+            });
+
+            // Handle mouse clicks (including middle-click for new tabs)
+            row.addEventListener('click', function(e) {
+                if (e.ctrlKey || e.metaKey || e.button === 1) {
+                    // Ctrl/Cmd+click or middle click - open in new tab
+                    window.open(this.dataset.href, '_blank');
+                } else {
+                    // Regular click - navigate in same tab
+                    window.location.href = this.dataset.href;
+                }
+            });
+
+            // Prevent text selection when clicking
+            row.addEventListener('selectstart', function(e) {
+                e.preventDefault();
+            });
+        });
     });
 </script>
+
+<style>
+    /* Clickable row styles */
+    .hover-clickable {
+        transition: background-color 0.2s ease;
+        cursor: pointer;
+    }
+
+    .hover-clickable:hover {
+        background-color: #f8f9fa !important;
+    }
+
+    .hover-clickable:focus {
+        background-color: #e3f2fd !important;
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .transition-colors {
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+</style>
