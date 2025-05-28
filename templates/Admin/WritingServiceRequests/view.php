@@ -310,9 +310,29 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                         </div>
 
                         <!-- Document List -->
-                        <?php if (isset($requestDocuments) && !empty($requestDocuments)) : ?>
+                        <?php if (!empty($writingServiceRequest->document) || (isset($requestDocuments) && !empty($requestDocuments))) : ?>
                             <h6 class="font-weight-bold mb-2">Uploaded Documents</h6>
                             <div class="list-group">
+                                <?php if (!empty($writingServiceRequest->document)) : ?>
+                                    <div class="list-group-item list-group-item-action p-2 d-flex align-items-center">
+                                        <div class="document-icon mr-2">
+                                            <i class="fas fa-file-alt fa-lg text-primary"></i>
+                                        </div>
+                                        <div class="flex-grow-1 overflow-hidden">
+                                            <div class="text-truncate font-weight-bold small">
+                                                <?= h(basename($writingServiceRequest->document)) ?>
+                                            </div>
+                                            <div class="small text-muted">
+                                                <span><?= h(strtoupper(pathinfo($writingServiceRequest->document, PATHINFO_EXTENSION))) ?></span>
+                                            </div>
+                                        </div>
+                                        <?= $this->Html->link(
+                                            '<i class="fas fa-download"></i>',
+                                            '/' . $writingServiceRequest->document,
+                                            ['escape' => false, 'target' => '_blank', 'class' => 'btn btn-sm btn-outline-primary ml-2']
+                                        ) ?>
+                                    </div>
+                                <?php endif; ?>
                                 <?php foreach ($requestDocuments as $document) : ?>
                                     <div class="list-group-item list-group-item-action p-2 d-flex align-items-center">
                                         <div class="document-icon mr-2">
@@ -326,11 +346,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                                 <span><?= h(strtoupper($document->file_extension)) ?></span> •
                                                 <span><?= h($document->formatted_size) ?></span> •
                                                 <span>
-                                                    <?php
-                                                    if (!empty($document->created_at)) {
-                                                        echo h($document->created_at->format('M j, Y'));
-                                                    }
-                                                    ?>
+                                                    <?php if (!empty($document->created_at)) echo h($document->created_at->format('M j, Y')); ?>
                                                 </span>
                                             </div>
                                         </div>

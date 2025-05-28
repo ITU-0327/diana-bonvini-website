@@ -487,9 +487,9 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                 <div class="bg-gradient-to-r from-purple-700 to-purple-500 px-4 py-3">
                     <h2 class="text-lg font-bold text-white flex justify-between items-center">
                         <span>Documents</span>
-                        <?php if (!empty($requestDocuments)): ?>
+                        <?php if (!empty($writingServiceRequest->document) || !empty($requestDocuments)): ?>
                             <span class="bg-white bg-opacity-20 rounded-full px-2 py-1 text-xs">
-                                <?= count($requestDocuments) ?>
+                                <?= (count($requestDocuments) + (!empty($writingServiceRequest->document) ? 1 : 0)) ?>
                             </span>
                         <?php endif; ?>
                     </h2>
@@ -521,9 +521,35 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                     </div>
 
                     <!-- Documents List -->
-                    <?php if (!empty($requestDocuments)): ?>
+                    <?php if (!empty($writingServiceRequest->document) || !empty($requestDocuments)): ?>
                         <div class="space-y-2">
                             <h3 class="text-sm font-semibold text-gray-900">Uploaded Documents</h3>
+                            <?php if (!empty($writingServiceRequest->document)): ?>
+                                <div class="border border-gray-200 rounded-lg p-2 hover:bg-gray-50">
+                                    <div class="flex items-start space-x-2">
+                                        <div class="flex-shrink-0 mt-0.5">
+                                            <svg class="w-6 h-6 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-xs font-medium text-gray-900 truncate mb-1" title="<?= h(basename($writingServiceRequest->document)) ?>">
+                                                <?= h(basename($writingServiceRequest->document)) ?>
+                                            </p>
+                                            <div class="text-xs text-gray-500">
+                                                <span><?= h(strtoupper(pathinfo($writingServiceRequest->document, PATHINFO_EXTENSION))) ?></span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <?= $this->Html->link(
+                                                '<svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> View Document',
+                                                '/' . $writingServiceRequest->document,
+                                                ['escape' => false, 'target' => '_blank', 'class' => 'w-full inline-flex justify-center items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50']
+                                            ) ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                             <?php foreach ($requestDocuments as $document): ?>
                                 <div class="border border-gray-200 rounded-lg p-2 hover:bg-gray-50">
                                     <div class="flex items-start space-x-2">
@@ -676,23 +702,6 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                             .finally(() => { submitBtn.disabled = false; });
                     });
                 }
-
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        textarea.value = '';
-                        loadMessages();
-                    } else {
-                        alert('Failed to send message. Please try again.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while sending your message. Please try again.');
-                })
-                .finally(() => {
-                    submitButton.disabled = false;
-                });
             });
         }
 
@@ -740,15 +749,6 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
             .then(r => r.json())
             .then(data => { if (data.success && data.payments) updatePaymentUI(data.payments); })
             .catch(err => console.error('Error checking payment status:', err));
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && data.payments) {
-                updatePaymentUI(data.payments);
-            }
-        })
-        .catch(error => {
-            console.error('Error checking payment status:', error);
-        });
     }
 
     // Function to update payment UI based on status
