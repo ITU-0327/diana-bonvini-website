@@ -39,7 +39,9 @@ $siteTitle = 'Diana Bonvini Admin';
 
         <!-- Main Content with proper scrolling -->
         <div class="content-wrapper">
-            <?= $this->Flash->render() ?>
+            <div class="flash-messages-container">
+                <?= $this->Flash->render() ?>
+            </div>
             <?= $this->fetch('content') ?>
         </div>
     </div>
@@ -80,12 +82,35 @@ $siteTitle = 'Diana Bonvini Admin';
             $(this).next('.custom-file-label').html(fileName);
         });
 
-        // Flash message auto-close
-        window.setTimeout(function() {
-            $(".alert-dismissible").fadeTo(500, 0).slideUp(500, function() {
-                $(this).remove();
-            });
-        }, 5000);
+        // Flash Message Functionality - Enhanced version
+        window.dismissFlashMessage = function(element) {
+            if (element) {
+                element.classList.add('hidden');
+                setTimeout(() => {
+                    element.remove();
+                }, 300);
+            }
+        };
+        
+        // Auto-dismiss flash messages after 5 seconds
+        const autoMessages = document.querySelectorAll('.message.auto-dismiss');
+        autoMessages.forEach(function(message) {
+            setTimeout(() => {
+                if (message && !message.classList.contains('hidden')) {
+                    dismissFlashMessage(message);
+                }
+            }, 5000);
+        });
+        
+        // Keyboard accessibility - dismiss with Escape key
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const visibleMessages = document.querySelectorAll('.message:not(.hidden)');
+                visibleMessages.forEach(function(message) {
+                    dismissFlashMessage(message);
+                });
+            }
+        });
     });
 </script>
 </body>

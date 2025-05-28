@@ -71,10 +71,24 @@
                 </div>
             <?php endforeach; ?>
 
+            <?php
+                // Calculate order subtotal and total
+                $emailSubtotal = 0;
+                if (!empty($order->artwork_variant_orders)) {
+                    foreach ($order->artwork_variant_orders as $item) {
+                        $line = $item->subtotal ?? ($item->price * (float)$item->quantity);
+                        $emailSubtotal += $line;
+                    }
+                }
+                $emailShipping = $order->shipping_cost ?? 0;
+                $emailTax = !empty($order->tax) ? $order->tax : 0;
+                $emailTotal = $emailSubtotal + $emailShipping + $emailTax;
+            ?>
+
             <table style="width:100%; margin-top:15px;">
                 <tr>
                     <td style="text-align:right;">Subtotal:</td>
-                    <td style="text-align:right; width:100px;">$<?= number_format($order->total_amount, 2) ?></td>
+                    <td style="text-align:right; width:100px;">$<?= number_format($emailSubtotal, 2) ?></td>
                 </tr>
                 <?php if (!empty($order->shipping_cost)) : ?>
                     <tr>
@@ -90,7 +104,7 @@
                 <?php endif ?>
                 <tr>
                     <td style="text-align:right; font-weight:bold; border-top:2px solid #eee; padding-top:10px;">Total:</td>
-                    <td style="text-align:right; font-weight:bold; border-top:2px solid #eee; padding-top:10px;">$<?= number_format($order->total_amount, 2) ?></td>
+                    <td style="text-align:right; font-weight:bold; border-top:2px solid #eee; padding-top:10px;">$<?= number_format($emailTotal, 2) ?></td>
                 </tr>
             </table>
         <?php else : ?>

@@ -6,7 +6,6 @@
  * @var int $pendingRequests
  * @var int $inProgressRequests
  * @var float $totalRevenue
- * @var int $totalUnreadCount
  */
 
 use Cake\Utility\Inflector;
@@ -21,9 +20,6 @@ $this->assign('title', __('Writing Service Management'));
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
                     <h6 class="m-0 font-weight-bold text-primary">
                         <i class="fas fa-pen mr-2"></i><?= __('Writing Service Management') ?>
-                        <?php if (isset($totalUnreadCount) && $totalUnreadCount > 0) : ?>
-                            <span class="badge badge-danger ml-2"><?= $totalUnreadCount ?> unread</span>
-                        <?php endif; ?>
                     </h6>
                     <ol class="breadcrumb m-0 bg-transparent p-0">
                         <li class="breadcrumb-item"><?= $this->Html->link(__('Dashboard'), ['controller' => 'Admin', 'action' => 'dashboard']) ?></li>
@@ -105,18 +101,10 @@ $this->assign('title', __('Writing Service Management'));
                         </div>
 
                         <div class="col-md-3 mb-3">
-                            <label class="form-label">Service Type</label>
-                            <?= $this->Form->select('service_type', [
-                                'creative_writing' => 'Creative Writing',
-                                'editing' => 'Editing',
-                                'proofreading' => 'Proofreading',
-                                'gamsat_preparation' => 'GAMSAT Preparation',
-                                'other' => 'Other',
-                            ], [
-                                'empty' => 'All Service Types',
-                                'default' => $this->request->getQuery('service_type'),
-                                'class' => 'form-control',
-                            ]) ?>
+                            <label class="form-label">Created Date</label>
+                            <input type="date" name="created_date" class="form-control"
+                                value="<?= h($this->request->getQuery('created_date')) ?>"
+                                placeholder="Select date">
                         </div>
 
                         <div class="col-md-3 mb-3">
@@ -125,7 +113,6 @@ $this->assign('title', __('Writing Service Management'));
                                 'pending' => 'Pending',
                                 'in_progress' => 'In Progress',
                                 'completed' => 'Completed',
-                                'canceled' => 'Canceled',
                             ], [
                                 'empty' => 'All Statuses',
                                 'default' => $this->request->getQuery('status'),
@@ -136,9 +123,6 @@ $this->assign('title', __('Writing Service Management'));
                         <div class="col-md-3 mb-3">
                             <label class="form-label">&nbsp;</label>
                             <div class="d-flex">
-                                <button type="submit" class="btn btn-primary mr-2">
-                                    <i class="fas fa-search mr-1"></i> Search
-                                </button>
                                 <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-secondary">
                                     <i class="fas fa-redo-alt mr-1"></i> Reset
                                 </a>
@@ -167,7 +151,7 @@ $this->assign('title', __('Writing Service Management'));
                                     <th>Title</th>
                                     <th>Client</th>
                                     <th>Service Type</th>
-                                    <th>Price</th>
+                                    <th>Amount Paid</th>
                                     <th>Status</th>
                                     <th>Created</th>
                                 </tr>
@@ -175,28 +159,34 @@ $this->assign('title', __('Writing Service Management'));
                             <tbody>
                                 <?php if (count($writingServiceRequests) > 0) : ?>
                                     <?php foreach ($writingServiceRequests as $request) : ?>
-                                        <tr class="request-row" data-status="<?= h($request->request_status ?? '') ?>">
+                                        <tr class="request-row hover-clickable cursor-pointer transition-colors" 
+                                            data-status="<?= h($request->request_status ?? '') ?>" 
+                                            data-created-date="<?= isset($request->created_at) ? $request->created_at->format('Y-m-d') : '' ?>"
+                                            data-href="<?= $this->Url->build(['action' => 'view', $request->writing_service_request_id]) ?>"
+                                            onclick="window.location.href = this.dataset.href">
                                             <td class="align-middle">
-                                                <?= $this->Html->link(
-                                                    h($request->writing_service_request_id),
-                                                    ['action' => 'view', $request->writing_service_request_id],
-                                                    ['class' => 'text-decoration-none', 'data-bs-toggle' => 'tooltip', 'title' => 'View Request Details'],
-                                                ) ?>
+                                                <span class="text-primary font-weight-bold"><?= h($request->writing_service_request_id) ?></span>
                                             </td>
                                             <td class="align-middle font-weight-bold"><?= h($request->service_title) ?></td>
                                             <td class="align-middle">
-                                                <?= $this->Html->link(
-                                                    h($request->user->first_name . ' ' . $request->user->last_name),
-                                                    ['controller' => 'Users', 'action' => 'view', $request->user->user_id],
-                                                    ['class' => 'text-decoration-none', 'target' => '_blank', 'data-bs-toggle' => 'tooltip', 'title' => 'View Client Profile'],
-                                                ) ?>
+                                                <span class="text-dark"><?= h($request->user->first_name . ' ' . $request->user->last_name) ?></span>
                                             </td>
                                             <td class="align-middle"><?= h(Inflector::humanize($request->service_type ?? 'Other')) ?></td>
                                             <td class="align-middle">
-                                                <?php if (isset($request->final_price)) : ?>
-                                                    <span class="font-weight-bold">$<?= number_format((float)$request->final_price, 2) ?></span>
+                                                <?php 
+                                                $totalPaid = 0;
+                                                if (isset($request->writing_service_payments) && !empty($request->writing_service_payments)) {
+                                                    foreach ($request->writing_service_payments as $payment) {
+                                                        if ($payment->status === 'paid') {
+                                                            $totalPaid += (float)$payment->amount;
+                                                        }
+                                                    }
+                                                }
+                                                ?>
+                                                <?php if ($totalPaid > 0) : ?>
+                                                    <span class="font-weight-bold text-success">$<?= number_format($totalPaid, 2) ?></span>
                                                 <?php else : ?>
-                                                    <span class="badge bg-warning">Pending Quote</span>
+                                                    <span class="text-muted">$0.00</span>
                                                 <?php endif; ?>
                                             </td>
                                             <td class="align-middle">
@@ -205,7 +195,6 @@ $this->assign('title', __('Writing Service Management'));
                                                     'pending' => 'warning',
                                                     'in_progress' => 'primary',
                                                     'completed' => 'success',
-                                                    'canceled' => 'danger',
                                                     default => 'secondary'
                                                 };
     ?>
@@ -224,7 +213,7 @@ $this->assign('title', __('Writing Service Management'));
                                     <?php endforeach; ?>
                                 <?php else : ?>
                                     <tr>
-                                        <td colspan="8" class="text-center py-5">
+                                        <td colspan="7" class="text-center py-5">
                                             <div class="mb-3">
                                                 <i class="fas fa-inbox fa-3x text-gray-300"></i>
                                             </div>
@@ -285,7 +274,6 @@ $this->assign('title', __('Writing Service Management'));
                         'pending' => 'Pending',
                         'in_progress' => 'In Progress',
                         'completed' => 'Completed',
-                        'canceled' => 'Canceled',
                     ], [
                         'class' => 'form-select form-control',
                         'id' => 'modal-status',
@@ -383,6 +371,28 @@ $this->assign('title', __('Writing Service Management'));
     .table-striped tbody tr:nth-of-type(odd) {
         background-color: rgba(0,0,0,.05);
     }
+
+    /* Clickable row styles */
+    .hover-clickable {
+        transition: background-color 0.2s ease;
+        cursor: pointer;
+    }
+
+    .hover-clickable:hover {
+        background-color: #f8f9fa !important;
+    }
+
+    .hover-clickable:focus {
+        background-color: #e3f2fd !important;
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .transition-colors {
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
 </style>
 
 <script>
@@ -426,8 +436,8 @@ $this->assign('title', __('Writing Service Management'));
             filterRequests();
         });
 
-        // Filter by service type
-        document.querySelector('select[name="service_type"]').addEventListener('change', function() {
+        // Filter by created date
+        document.querySelector('input[name="created_date"]').addEventListener('change', function() {
             filterRequests();
         });
 
@@ -439,7 +449,7 @@ $this->assign('title', __('Writing Service Management'));
         // Function to filter requests
         function filterRequests() {
             const statusFilter = document.querySelector('select[name="status"]').value;
-            const serviceTypeFilter = document.querySelector('select[name="service_type"]').value;
+            const createdDateFilter = document.querySelector('input[name="created_date"]').value;
             const searchTerm = document.getElementById('q').value.toLowerCase();
 
             document.querySelectorAll('.request-row').forEach(function(row) {
@@ -448,6 +458,14 @@ $this->assign('title', __('Writing Service Management'));
                 // Status filtering
                 if (statusFilter !== '' && row.getAttribute('data-status') !== statusFilter) {
                     display = false;
+                }
+
+                // Created date filtering
+                if (createdDateFilter !== '') {
+                    const rowCreatedDate = row.getAttribute('data-created-date');
+                    if (rowCreatedDate !== createdDateFilter) {
+                        display = false;
+                    }
                 }
 
                 // Search filtering
@@ -465,5 +483,49 @@ $this->assign('title', __('Writing Service Management'));
                 row.style.display = display ? '' : 'none';
             });
         }
+
+        // Handle clickable rows
+        const clickableRows = document.querySelectorAll('tr[data-href]');
+        clickableRows.forEach(row => {
+            // Add keyboard accessibility
+            row.setAttribute('tabindex', '0');
+            row.setAttribute('role', 'button');
+            row.setAttribute('aria-label', 'View request details');
+
+            // Handle keyboard navigation
+            row.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    window.location.href = this.dataset.href;
+                }
+            });
+
+            // Add visual feedback for focus
+            row.addEventListener('focus', function() {
+                this.style.outline = '2px solid #007bff';
+                this.style.outlineOffset = '-2px';
+            });
+
+            row.addEventListener('blur', function() {
+                this.style.outline = '';
+                this.style.outlineOffset = '';
+            });
+
+            // Handle mouse clicks (including middle-click for new tabs)
+            row.addEventListener('click', function(e) {
+                if (e.ctrlKey || e.metaKey || e.button === 1) {
+                    // Ctrl/Cmd+click or middle click - open in new tab
+                    window.open(this.dataset.href, '_blank');
+                } else {
+                    // Regular click - navigate in same tab
+                    window.location.href = this.dataset.href;
+                }
+            });
+
+            // Prevent text selection when clicking
+            row.addEventListener('selectstart', function(e) {
+                e.preventDefault();
+            });
+        });
     });
 </script>

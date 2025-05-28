@@ -148,17 +148,17 @@ $this->assign('title', __('User Management'));
                         <tbody>
                             <?php if (count($users) > 0) : ?>
                                 <?php foreach ($users as $user) : ?>
-                                <tr class="user-row" data-role="<?= h($user->user_type) ?>" data-status="<?= ($user->is_verified && !$user->is_deleted) ? 'active' : 'inactive' ?>">
+                                <tr class="user-row hover-clickable cursor-pointer transition-colors" 
+                                    data-role="<?= h($user->user_type) ?>" 
+                                    data-status="<?= ($user->is_verified && !$user->is_deleted) ? 'active' : 'inactive' ?>"
+                                    data-href="<?= $this->Url->build(['action' => 'view', $user->user_id]) ?>"
+                                    onclick="window.location.href = this.dataset.href">
                                     <td class="align-middle">
                                         <div class="d-flex align-items-center">
                                             <div class="avatar-circle me-2" style="width: 32px; height: 32px; background-color: #e0e0e0; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #666; font-weight: 600;">
                                                 <?= substr($user->first_name ?? '', 0, 1) ?><?= substr($user->last_name ?? '', 0, 1) ?>
                                             </div>
-                                            <?= $this->Html->link(
-                                                h($user->first_name . ' ' . $user->last_name),
-                                                ['action' => 'view', $user->user_id],
-                                                ['escape' => false, 'class' => 'text-decoration-none btn btn-link'],
-                                            ) ?>
+                                            <span class="font-weight-bold text-primary"><?= h($user->first_name . ' ' . $user->last_name) ?></span>
                                         </div>
                                     </td>
                                     <td class="align-middle"><?= h($user->email) ?></td>
@@ -190,7 +190,7 @@ $this->assign('title', __('User Management'));
                                 <?php endforeach; ?>
                             <?php else : ?>
                                 <tr>
-                                    <td colspan="7" class="text-center">No users found</td>
+                                    <td colspan="6" class="text-center">No users found</td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
@@ -278,6 +278,50 @@ $this->assign('title', __('User Management'));
                 row.style.display = display ? '' : 'none';
             });
         }
+
+        // Handle clickable rows
+        const clickableRows = document.querySelectorAll('tr[data-href]');
+        clickableRows.forEach(row => {
+            // Add keyboard accessibility
+            row.setAttribute('tabindex', '0');
+            row.setAttribute('role', 'button');
+            row.setAttribute('aria-label', 'View user details');
+
+            // Handle keyboard navigation
+            row.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    window.location.href = this.dataset.href;
+                }
+            });
+
+            // Add visual feedback for focus
+            row.addEventListener('focus', function() {
+                this.style.outline = '2px solid #007bff';
+                this.style.outlineOffset = '-2px';
+            });
+
+            row.addEventListener('blur', function() {
+                this.style.outline = '';
+                this.style.outlineOffset = '';
+            });
+
+            // Handle mouse clicks (including middle-click for new tabs)
+            row.addEventListener('click', function(e) {
+                if (e.ctrlKey || e.metaKey || e.button === 1) {
+                    // Ctrl/Cmd+click or middle click - open in new tab
+                    window.open(this.dataset.href, '_blank');
+                } else {
+                    // Regular click - navigate in same tab
+                    window.location.href = this.dataset.href;
+                }
+            });
+
+            // Prevent text selection when clicking
+            row.addEventListener('selectstart', function(e) {
+                e.preventDefault();
+            });
+        });
     });
 </script>
 
@@ -353,5 +397,27 @@ $this->assign('title', __('User Management'));
 
     .float-sm-end {
         float: right !important;
+    }
+
+    /* Clickable row styles */
+    .hover-clickable {
+        transition: background-color 0.2s ease;
+        cursor: pointer;
+    }
+
+    .hover-clickable:hover {
+        background-color: #f8f9fa !important;
+    }
+
+    .hover-clickable:focus {
+        background-color: #e3f2fd !important;
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .transition-colors {
+        transition: background-color 0.2s ease, color 0.2s ease;
     }
 </style>

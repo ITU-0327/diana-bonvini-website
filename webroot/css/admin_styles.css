@@ -494,3 +494,210 @@ body {
         margin-bottom: 1rem;
     }
 }
+
+/* ========================================================================
+   Flash Messages - Modern & Clean Design (Admin)
+   ======================================================================== */
+.flash-messages-container {
+    position: fixed;
+    top: 90px; /* Accounting for admin top bar height */
+    right: 20px;
+    z-index: 10000;
+    max-width: 420px;
+    width: 100%;
+}
+
+.message {
+    position: relative;
+    padding: 16px 24px 16px 56px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(100%);
+    animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.message::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-size: 12px 12px;
+    background-repeat: no-repeat;
+    background-position: center;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+.message:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16), 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.message.hidden {
+    transform: translateX(100%) scale(0.95);
+    opacity: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    max-height: 0;
+}
+
+/* Success Messages */
+.message.success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.message.success::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M5 13l4 4L19 7'/%3E%3C/svg%3E");
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Error Messages */
+.message.error {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.message.error::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M6 18L18 6M6 6l12 12'/%3E%3C/svg%3E");
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Warning Messages */
+.message.warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.message.warning::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z'/%3E%3C/svg%3E");
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Info Messages */
+.message:not(.success):not(.error):not(.warning) {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.message:not(.success):not(.error):not(.warning)::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'/%3E%3C/svg%3E");
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Close button */
+.message::after {
+    content: '×';
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+}
+
+.message:hover::after {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Animations */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Mobile Responsiveness for Admin */
+@media screen and (max-width: 991.98px) {
+    .flash-messages-container {
+        top: 20px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+    
+    .message {
+        padding: 14px 20px 14px 48px;
+        font-size: 13px;
+    }
+    
+    .message::before {
+        left: 16px;
+        width: 18px;
+        height: 18px;
+        background-size: 11px 11px;
+    }
+}
+
+/* Sidebar collapsed state adjustments */
+.sidebar-collapsed .flash-messages-container {
+    right: 20px;
+}
+
+/* Auto-dismiss animation */
+.message.auto-dismiss {
+    animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards, 
+               slideOutRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) 4.5s forwards;
+}
+
+/* Progress bar for auto-dismiss */
+.message.auto-dismiss::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 0 0 12px 12px;
+    animation: progressBar 5s linear forwards;
+}
+
+@keyframes progressBar {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0%;
+    }
+}

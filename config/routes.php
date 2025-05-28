@@ -61,6 +61,7 @@ return function (RouteBuilder $routes): void {
         $builder->connect('/about', ['controller' => 'Pages', 'action' => 'display', 'about']);
         $builder->connect('/contact', ['controller' => 'Pages', 'action' => 'display', 'contact']);
         $builder->connect('/writing-service-requests/info', ['controller' => 'Pages', 'action' => 'display', 'info']);
+        $builder->connect('/coaching-service-requests/info', ['controller' => 'Pages', 'action' => 'display', 'coaching_info']);
 
         // Connect any additional page requests to the Pages controller.
         $builder->connect('/pages/*', ['controller' => 'Pages', 'action' => 'display']);
@@ -73,6 +74,39 @@ return function (RouteBuilder $routes): void {
         $builder->connect('/writing-service-requests/fetch-messages/:id/:lastMessageId', ['controller' => 'WritingServiceRequests', 'action' => 'fetchMessages'])
             ->setPatterns(['id' => '[a-zA-Z0-9-]+', 'lastMessageId' => '[a-zA-Z0-9-]+'])
             ->setPass(['id', 'lastMessageId']);
+
+        // Coaching service requests API routes
+        $builder->connect('/coaching-service-requests/fetch-messages/*', ['controller' => 'CoachingServiceRequests', 'action' => 'fetchMessages']);
+        $builder->connect('/coaching-service-requests/fetch-messages/:id', ['controller' => 'CoachingServiceRequests', 'action' => 'fetchMessages'])
+            ->setPatterns(['id' => '[a-zA-Z0-9-]+'])
+            ->setPass(['id']);
+        $builder->connect('/coaching-service-requests/fetch-messages/:id/:lastMessageId', ['controller' => 'CoachingServiceRequests', 'action' => 'fetchMessages'])
+            ->setPatterns(['id' => '[a-zA-Z0-9-]+', 'lastMessageId' => '[a-zA-Z0-9-]+'])
+            ->setPass(['id', 'lastMessageId']);
+
+        // Payment routes for writing service requests
+        $builder->connect('/writing-service-requests/payDirect', ['controller' => 'WritingServiceRequests', 'action' => 'payDirect']);
+        $builder->connect('/writing-service-requests/pay/:id/:paymentId', ['controller' => 'WritingServiceRequests', 'action' => 'pay'])
+            ->setPatterns(['id' => '[a-zA-Z0-9-]+', 'paymentId' => '[a-zA-Z0-9-]+'])
+            ->setPass(['id', 'paymentId']);
+        $builder->connect('/writing-service-requests/payment-success/:id/:paymentId', ['controller' => 'WritingServiceRequests', 'action' => 'paymentSuccess'])
+            ->setPatterns(['id' => '[a-zA-Z0-9-]+', 'paymentId' => '[a-zA-Z0-9-]+'])
+            ->setPass(['id', 'paymentId']);
+        $builder->connect('/writing-service-requests/checkPaymentStatus/:id', ['controller' => 'WritingServiceRequests', 'action' => 'checkPaymentStatus'])
+            ->setPatterns(['id' => '[a-zA-Z0-9-]+'])
+            ->setPass(['id']);
+
+        // Payment routes for coaching service requests
+        $builder->connect('/coaching-service-requests/payDirect', ['controller' => 'CoachingServiceRequests', 'action' => 'payDirect']);
+        $builder->connect('/coaching-service-requests/pay/:id/:paymentId', ['controller' => 'CoachingServiceRequests', 'action' => 'pay'])
+            ->setPatterns(['id' => '[a-zA-Z0-9-]+', 'paymentId' => '[a-zA-Z0-9-]+'])
+            ->setPass(['id', 'paymentId']);
+        $builder->connect('/coaching-service-requests/payment-success/:id/:paymentId', ['controller' => 'CoachingServiceRequests', 'action' => 'paymentSuccess'])
+            ->setPatterns(['id' => '[a-zA-Z0-9-]+', 'paymentId' => '[a-zA-Z0-9-]+'])
+            ->setPass(['id', 'paymentId']);
+        $builder->connect('/coaching-service-requests/checkPaymentStatus/:id', ['controller' => 'CoachingServiceRequests', 'action' => 'checkPaymentStatus'])
+            ->setPatterns(['id' => '[a-zA-Z0-9-]+'])
+            ->setPass(['id']);
 
         /*
          * Connect catchall routes for all controllers.
@@ -113,6 +147,10 @@ return function (RouteBuilder $routes): void {
         // For handling and managing client writing and proofreading service requests
         $builder->connect('/writing-service-requests', ['controller' => 'WritingServiceRequests', 'action' => 'index']);
 
+        // Coaching service request management  
+        // For handling and managing client coaching service requests
+        $builder->connect('/coaching-service-requests', ['controller' => 'CoachingServiceRequests', 'action' => 'index']);
+
         // AJAX endpoint for fetching new messages in chat
         $builder->connect('/writing-service-requests/fetch-messages/:id', ['controller' => 'WritingServiceRequests', 'action' => 'fetchMessages'])
             ->setPatterns(['id' => '[a-zA-Z0-9-]+'])
@@ -120,6 +158,40 @@ return function (RouteBuilder $routes): void {
         $builder->connect('/writing-service-requests/fetch-messages/:id/:lastMessageId', ['controller' => 'WritingServiceRequests', 'action' => 'fetchMessages'])
             ->setPatterns(['id' => '[a-zA-Z0-9-]+', 'lastMessageId' => '[a-zA-Z0-9-]+'])
             ->setPass(['id', 'lastMessageId']);
+
+        // AJAX endpoint for fetching new messages in coaching chat
+        $builder->connect('/coaching-service-requests/fetch-messages/:id', ['controller' => 'CoachingServiceRequests', 'action' => 'fetchMessages'])
+            ->setPatterns(['id' => '[a-zA-Z0-9-]+'])
+            ->setPass(['id']);
+        $builder->connect('/coaching-service-requests/fetch-messages/:id/:lastMessageId', ['controller' => 'CoachingServiceRequests', 'action' => 'fetchMessages'])
+            ->setPatterns(['id' => '[a-zA-Z0-9-]+', 'lastMessageId' => '[a-zA-Z0-9-]+'])
+            ->setPass(['id', 'lastMessageId']);
+
+        // AJAX endpoint for getting available time slots
+        $builder->connect('/writing-service-requests/get-available-time-slots', ['controller' => 'WritingServiceRequests', 'action' => 'getAvailableTimeSlots']);
+
+        // AJAX endpoint for getting available coaching time slots
+        $builder->connect('/coaching-service-requests/get-available-time-slots', ['controller' => 'CoachingServiceRequests', 'action' => 'getAvailableTimeSlots']);
+
+        // Endpoint for sending time slots to clients
+        $builder->connect('/writing-service-requests/send-time-slots/:id', ['controller' => 'WritingServiceRequests', 'action' => 'sendTimeSlots'])
+            ->setPatterns(['id' => '[a-zA-Z0-9\-_]+'])
+            ->setPass(['id']);
+
+        // Test route for debugging
+        $builder->connect('/writing-service-requests/test-routing/:id', ['controller' => 'WritingServiceRequests', 'action' => 'testRouting'])
+            ->setPatterns(['id' => '[a-zA-Z0-9\-_]+'])
+            ->setPass(['id']);
+
+        // Endpoint for sending coaching time slots to clients
+        $builder->connect('/coaching-service-requests/send-time-slots/:id', ['controller' => 'CoachingServiceRequests', 'action' => 'sendTimeSlots'])
+            ->setPatterns(['id' => '[a-zA-Z0-9\-_]+'])
+            ->setPass(['id']);
+
+        // Google Calendar Auth routes
+        $builder->connect('/google-auth', ['controller' => 'GoogleAuth', 'action' => 'index']);
+        $builder->connect('/google-auth/callback', ['controller' => 'GoogleAuth', 'action' => 'callback']);
+        $builder->connect('/google-auth/view-calendar', ['controller' => 'GoogleAuth', 'action' => 'viewCalendar']);
 
         // Artworks management for the art e-commerce section
         // Allows adding, editing, and removing artwork products

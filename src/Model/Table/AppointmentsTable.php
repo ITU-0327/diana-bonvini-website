@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
-use Cake\Datasource\EntityInterface;
+use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
@@ -12,6 +12,7 @@ use Cake\Validation\Validator;
  * Appointments Model
  *
  * @property \App\Model\Table\UsersTable&\Cake\ORM\Association\BelongsTo $Users
+ *
  * @method \App\Model\Entity\Appointment newEmptyEntity()
  * @method \App\Model\Entity\Appointment newEntity(array $data, array $options = [])
  * @method array<\App\Model\Entity\Appointment> newEntities(array $data, array $options = [])
@@ -45,6 +46,16 @@ class AppointmentsTable extends Table
         $this->belongsTo('Users', [
             'foreignKey' => 'user_id',
             'joinType' => 'INNER',
+        ]);
+        
+        $this->belongsTo('WritingServiceRequests', [
+            'foreignKey' => 'writing_service_request_id',
+            'joinType' => 'LEFT',
+        ]);
+        
+        $this->belongsTo('CoachingServiceRequests', [
+            'foreignKey' => 'coaching_service_request_id',
+            'joinType' => 'LEFT',
         ]);
     }
 
@@ -86,6 +97,18 @@ class AppointmentsTable extends Table
             ->notEmptyString('status');
 
         $validator
+            ->scalar('location')
+            ->allowEmptyString('location');
+
+        $validator
+            ->scalar('description')
+            ->allowEmptyString('description');
+
+        $validator
+            ->scalar('meeting_link')
+            ->allowEmptyString('meeting_link');
+
+        $validator
             ->scalar('google_calendar_event_id')
             ->maxLength('google_calendar_event_id', 255)
             ->allowEmptyString('google_calendar_event_id');
@@ -93,6 +116,18 @@ class AppointmentsTable extends Table
         $validator
             ->boolean('is_deleted')
             ->notEmptyString('is_deleted');
+
+        $validator
+            ->boolean('is_google_synced')
+            ->allowEmptyString('is_google_synced');
+
+        $validator
+            ->uuid('writing_service_request_id')
+            ->allowEmptyString('writing_service_request_id');
+
+        $validator
+            ->uuid('coaching_service_request_id')
+            ->allowEmptyString('coaching_service_request_id');
 
         $validator
             ->dateTime('created_at')
@@ -117,20 +152,5 @@ class AppointmentsTable extends Table
         $rules->add($rules->existsIn(['user_id'], 'Users'), ['errorField' => 'user_id']);
 
         return $rules;
-    }
-
-    /**
-     * Override delete() to perform a soft-delete on appointments.
-     *
-     * @param \Cake\Datasource\EntityInterface $entity The appointment entity.
-     * @param array<string,mixed> $options Options passed from controller.
-     * @return bool True if the record was soft-deleted, false otherwise.
-     */
-    public function delete(EntityInterface $entity, array $options = []): bool
-    {
-        $appointmentId = $entity->get('appointment_id');
-        $rows = $this->updateAll(['is_deleted' => true], ['appointment_id' => $appointmentId]);
-
-        return $rows > 0;
     }
 }

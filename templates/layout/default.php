@@ -37,7 +37,9 @@ $siteTitle = 'Diana Bonvini Art & Writing';
 
 <!-- Main Content -->
 <main class="<?= $this->fetch('mainClass', 'flex-grow container mx-auto py-10') ?>">
-    <?= $this->Flash->render() ?>
+    <div class="flash-messages-container">
+        <?= $this->Flash->render() ?>
+    </div>
     <?= $this->fetch('content') ?>
 </main>
 
@@ -80,6 +82,38 @@ $siteTitle = 'Diana Bonvini Art & Writing';
 <?= $this->Html->script('https://unpkg.com/lucide@latest') ?>
 <script>
     lucide.createIcons();
+    
+    // Flash Message Functionality
+    function dismissFlashMessage(element) {
+        if (element) {
+            element.classList.add('hidden');
+            setTimeout(() => {
+                element.remove();
+            }, 300);
+        }
+    }
+    
+    // Auto-dismiss flash messages after 5 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+        const autoMessages = document.querySelectorAll('.message.auto-dismiss');
+        autoMessages.forEach(function(message) {
+            setTimeout(() => {
+                if (message && !message.classList.contains('hidden')) {
+                    dismissFlashMessage(message);
+                }
+            }, 5000);
+        });
+    });
+    
+    // Keyboard accessibility - dismiss with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const visibleMessages = document.querySelectorAll('.message:not(.hidden)');
+            visibleMessages.forEach(function(message) {
+                dismissFlashMessage(message);
+            });
+        }
+    });
 </script>
 </body>
 </html>

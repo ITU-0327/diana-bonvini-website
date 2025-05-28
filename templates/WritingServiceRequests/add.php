@@ -27,18 +27,18 @@ $this->assign('title', 'Enquire Writing Service');
 
         <!-- Service Type -->
         <div>
-            <?= $this->Form->label('service_type', 'Service Type', [
+            <?= $this->Form->label('service_type', 'Service Type (describe the service you need)', [
                 'class' => 'block font-medium text-gray-700 mb-2',
             ]) ?>
-            <?= $this->Form->select('service_type', [
-                '' => 'Please select a service',
-                'creative_writing' => 'Creative Writing - This service delivers high-quality, original content tailored to your needs.',
-                'editing' => 'Editing - This service refines your text for clarity, tone, and structure.',
-                'proofreading' => 'Proofreading - This service reviews your text for grammar, punctuation, and style consistency.',
-            ], [
+            <?= $this->Form->text('service_type', [
                 'id' => 'service-type',
                 'class' => 'block w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm',
+                'maxlength' => 200,
+                'placeholder' => 'Describe the type of writing service you need (max 200 characters)',
             ]) ?>
+            <p class="mt-1 text-sm text-gray-500">
+                Examples: Creative Writing, Editing, Proofreading, Essay Writing, Technical Writing, etc.
+            </p>
         </div>
 
         <!-- Notes -->

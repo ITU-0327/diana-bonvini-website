@@ -14,7 +14,9 @@ $this->assign('title', 'Login');
                 <span class="text-4xl font-bold text-gray-800"><?= $this->ContentBlock->text('logo') ?></span>
             </div>
         </div>
-        <?= $this->Flash->render() ?>
+        <div class="flash-messages-container">
+            <?= $this->Flash->render() ?>
+        </div>
         <?= $this->Form->create() ?>
         <!-- Email Field -->
         <div class="mb-4">

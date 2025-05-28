@@ -15,13 +15,6 @@
         </div>
 
         <div class="user-menu">
-            <div class="user-menu-item">
-                <i class="fas fa-search"></i>
-            </div>
-            <div class="user-menu-item position-relative">
-                <i class="fas fa-bell"></i>
-                <span class="badge badge-danger position-absolute" style="top: 0; right: 0; font-size: 0.6rem;">3</span>
-            </div>
             <div class="user-dropdown dropdown">
                 <?php
                 $identity = $this->request->getAttribute('identity');
@@ -47,11 +40,6 @@
                     <?= $this->Html->link(
                         '<i class="fas fa-user-circle"></i> My Profile',
                         ['prefix' => 'Admin', 'controller' => 'Users', 'action' => 'profile'],
-                        ['class' => 'dropdown-item', 'escape' => false]
-                    ) ?>
-                    <?= $this->Html->link(
-                        '<i class="fas fa-cog"></i> Settings',
-                        ['prefix' => 'Admin', 'controller' => 'Settings', 'action' => 'index'],
                         ['class' => 'dropdown-item', 'escape' => false]
                     ) ?>
                     <div class="dropdown-divider m-0"></div>

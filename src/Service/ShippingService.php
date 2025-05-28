@@ -11,14 +11,14 @@ class ShippingService
     private array $shippingRates = [
         'AU' => [
             'NSW' => [
-                'metro' => 20.00,
-                'regional' => 25.00,
+                'metro' => 20.00,        // Sydney Metro
+                'regional' => 25.00,     // Regional NSW
             ],
-            'NT' => 30.00,
-            'WA' => 30.00,
-            'default' => 25.00,
+            'NT' => 30.00,              // Northern Territory
+            'WA' => 30.00,              // Western Australia
+            'default' => 25.00,         // All other Australian states (Interstate)
         ],
-        'default' => 45.00,
+        'international' => 45.00,       // Overseas shipping ($40-$50 range, using $45 as middle point)
     ];
 
     /**
@@ -83,26 +83,22 @@ class ShippingService
      */
     private function getStandardShippingFee(string $state, string $country): float
     {
-        // Get country rates or use default
-        $countryRates = $this->shippingRates[$country] ?? $this->shippingRates['default'];
-
-        // If country is not Australia, return overseas rate
+        // If country is not Australia, return international rate
         if ($country !== 'AU') {
-            return $countryRates;
+            return $this->shippingRates['international'];
         }
+
+        // Get Australia rates
+        $australiaRates = $this->shippingRates['AU'];
 
         // Handle NSW special case (metro vs regional)
         if ($state === 'NSW') {
-            // Check if it's Sydney Metro (postcodes 1000-2999)
-            if (preg_match('/^[1-2]\d{3}$/', $state)) {
-                return $countryRates['NSW']['metro'];
-            }
-
-            return $countryRates['NSW']['regional'];
+            // For now, default to regional NSW rate
+            return $australiaRates['NSW']['regional'];
         }
 
         // Return state-specific rate or default interstate rate
-        return $countryRates[$state] ?? $countryRates['default'];
+        return $australiaRates[$state] ?? $australiaRates['default'];
     }
 
     /**
@@ -115,8 +111,13 @@ class ShippingService
      */
     private function calculateLargeItemShippingFee(float $weight, float $length, float $width): float
     {
-        // Calculate cubic weight (length * width * height / 4000)
-        $cubicWeight = ($length * $width * $this->largeItemConfig['height']) / 4000;
+        // Convert dimensions from mm to cm
+        $lengthCm = $length / 10;
+        $widthCm = $width / 10;
+        $heightCm = $this->largeItemConfig['height'] / 10; // Convert height to cm as well
+
+        // Calculate cubic weight (length * width * height / 4000) - using cm
+        $cubicWeight = ($lengthCm * $widthCm * $heightCm) / 4000;
 
         // Use the greater of actual weight and cubic weight
         $chargeableWeight = max($weight, $cubicWeight);

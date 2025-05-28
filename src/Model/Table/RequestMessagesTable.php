@@ -80,15 +80,15 @@ class RequestMessagesTable extends Table
 
         $validator
             ->boolean('is_deleted')
-            ->notEmptyString('is_deleted');
+            ->allowEmptyString('is_deleted');
 
         $validator
             ->dateTime('created_at')
-            ->notEmptyDateTime('created_at');
+            ->allowEmptyDateTime('created_at');
 
         $validator
             ->dateTime('updated_at')
-            ->notEmptyDateTime('updated_at');
+            ->allowEmptyDateTime('updated_at');
 
         return $validator;
     }

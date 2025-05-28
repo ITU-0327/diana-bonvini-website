@@ -12,6 +12,7 @@
         "cakephp/cakephp": "5.2.3",
         "cakephp/migrations": "^4.0.0",
         "cakephp/plugin-installer": "^2.0",
+        "google/apiclient": "^2.15",
         "mobiledetect/mobiledetectlib": "^4.8.03",
         "phpmailer/phpmailer": "^6.9",
         "stripe/stripe-php": "^17.1"

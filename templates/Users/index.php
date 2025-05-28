@@ -32,7 +32,7 @@ $this->assign('title', 'Users');
             <tbody class="text-gray-700 text-sm">
             <?php foreach ($users as $user): ?>
                 <tr class="border-b border-gray-200 hover:bg-gray-50">
-                    <td class="py-3 px-6"><?= h($user->user_id) ?></td>
+                    <td class="py-3 px-6"><?= $this->Format->userId($user->user_id) ?></td>
                     <td class="py-3 px-6"><?= h($user->first_name) ?> <?= h($user->last_name) ?></td>
                     <td class="py-3 px-6"><?= h($user->email) ?></td>
                     <td class="py-3 px-6"><?= h($user->user_type) ?></td>

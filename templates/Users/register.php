@@ -16,7 +16,9 @@ $this->assign('title', 'Register');
             </div>
         </div>
         <h3 class="text-xl font-semibold mb-4 text-center">Register</h3>
-        <?= $this->Flash->render() ?>
+        <div class="flash-messages-container">
+            <?= $this->Flash->render() ?>
+        </div>
         <?= $this->Form->create($user) ?>
         <!-- First Name Field -->
         <div class="mb-4">

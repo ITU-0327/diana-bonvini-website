@@ -123,6 +123,9 @@ class StripeService
             return false;
         }
 
+        // Get the Payment Intent ID from the session - this is what shows in the Stripe dashboard
+        $paymentIntentId = $stripeSession->payment_intent;
+
         $paymentsTable = TableRegistry::getTableLocator()->get('Payments');
         $ordersTable = TableRegistry::getTableLocator()->get('Orders');
 
@@ -138,10 +141,10 @@ class StripeService
         $conn->begin();
 
         try {
-            // patch payment
+            // patch payment with the actual Payment Intent ID from Stripe
             $payment = $paymentsTable->patchEntity($payment, [
                 'status' => 'confirmed',
-                'transaction_id' => $sessionId,
+                'transaction_id' => $paymentIntentId, // This is the actual Payment Intent ID
             ]);
             if (!$paymentsTable->save($payment)) {
                 throw new RuntimeException('Could not save payment');
@@ -163,6 +166,23 @@ class StripeService
             $conn->rollback();
 
             return false;
+        }
+    }
+
+    /**
+     * Fetch payment details from Stripe using Payment Intent ID
+     *
+     * @param string $paymentIntentId
+     * @return \Stripe\PaymentIntent|null
+     * @throws \Stripe\Exception\ApiErrorException
+     */
+    public function getPaymentIntentDetails(string $paymentIntentId): ?\Stripe\PaymentIntent
+    {
+        try {
+            return \Stripe\PaymentIntent::retrieve($paymentIntentId);
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            // Log error or handle as needed
+            return null;
         }
     }
 }

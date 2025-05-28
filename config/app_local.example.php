@@ -123,4 +123,17 @@ return [
         'secretAccessKey' => env('CF_R2_SECRET_ACCESS_KEY', null),
         'bucket' => env('CF_R2_BUCKET', null),
     ],
+
+    /*
+     * Google Calendar API configuration for appointment scheduling
+     *
+     * This configuration is used for integrating with Google Calendar API
+     */
+    'GoogleCalendar' => [
+        'clientId' => env('GOOGLE_CLIENT_ID', null),
+        'clientSecret' => env('GOOGLE_CLIENT_SECRET', null),
+        'projectId' => env('GOOGLE_PROJECT_ID', null),
+        'redirectUri' => env('GOOGLE_REDIRECT_URL', 'http://localhost:8080/admin/google-auth/callback'),
+        // IMPORTANT: This redirect URI must exactly match what's configured in the Google Cloud Console
+    ],
 ];

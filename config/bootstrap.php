@@ -158,10 +158,13 @@ if (!$fullBaseUrl) {
      *
      * See also https://book.cakephp.org/5/en/controllers/request-response.html#trusting-proxy-headers
      */
-    $trustProxy = false;
+    $trustProxy = filter_var(env('TRUST_PROXY', false), FILTER_VALIDATE_BOOLEAN);
+    
+    // Force HTTPS in production or when explicitly configured
+    $forceHttps = filter_var(env('FORCE_HTTPS', false), FILTER_VALIDATE_BOOLEAN);
 
     $s = null;
-    if (env('HTTPS') || ($trustProxy && env('HTTP_X_FORWARDED_PROTO') === 'https')) {
+    if (env('HTTPS') || ($trustProxy && env('HTTP_X_FORWARDED_PROTO') === 'https') || $forceHttps) {
         $s = 's';
     }
 

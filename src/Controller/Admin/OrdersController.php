@@ -75,7 +75,7 @@ class OrdersController extends BaseAdminController
     /**
      * Update order status method
      *
-     * @return \Cake\Http\Response|null Redirects to index
+     * @return \Cake\Http\Response|null Redirects to view
      */
     public function updateStatus(): ?Response
     {
@@ -87,7 +87,6 @@ class OrdersController extends BaseAdminController
 
         if (!$orderId || !$newStatus) {
             $this->Flash->error('Missing required data to update order status.');
-
             return $this->redirect(['action' => 'index']);
         }
 
@@ -100,14 +99,15 @@ class OrdersController extends BaseAdminController
             }
 
             if ($this->Orders->save($order)) {
-                $this->Flash->success('Order status has been updated.');
+                $this->Flash->success('Order status has been updated to ' . ucfirst($newStatus) . '.');
             } else {
                 $this->Flash->error('Unable to update order status.');
             }
         } catch (Exception) {
             $this->Flash->error('Order not found or could not be updated.');
+            return $this->redirect(['action' => 'index']);
         }
 
-        return $this->redirect(['action' => 'index']);
+        return $this->redirect(['action' => 'view', $orderId]);
     }
 }

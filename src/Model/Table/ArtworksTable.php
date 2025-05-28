@@ -119,10 +119,10 @@ class ArtworksTable extends Table
     {
         $artworkId = $entity->get('artwork_id');
         // Fetch all variant IDs for this artwork
-        $variantIds = $this->ArtworkVariants->find('list', [
-            'keyField' => 'artwork_variant_id',
-            'valueField' => 'artwork_variant_id',
-        ])
+        $variantIds = $this->ArtworkVariants->find('list',
+            keyField: 'artwork_variant_id',
+            valueField: 'artwork_variant_id'
+        )
         ->where(['artwork_id' => $artworkId])
         ->toArray();
 
@@ -190,10 +190,10 @@ class ArtworksTable extends Table
     public function afterSave(EventInterface $event, Artwork $entity, ArrayObject $options): void
     {
         if ($entity->availability_status === 'sold') {
-            $variantIds = $this->ArtworkVariants->find('list', [
-                'keyField' => 'artwork_variant_id',
-                'valueField' => 'artwork_variant_id',
-            ])
+            $variantIds = $this->ArtworkVariants->find('list',
+                keyField: 'artwork_variant_id',
+                valueField: 'artwork_variant_id'
+            )
             ->where(['artwork_id' => $entity->artwork_id])
             ->toArray();
 

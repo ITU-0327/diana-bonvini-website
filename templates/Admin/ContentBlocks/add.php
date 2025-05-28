@@ -5,6 +5,7 @@
  */
 
 $this->assign('title', __('Add Content Block'));
+$this->Html->script('https://cdn.tailwindcss.com', ['block' => 'script']);
 ?>
 <div class="container mx-auto px-6 py-12">
     <?= $this->element('page_title', ['title' => 'Add Content Block']) ?>

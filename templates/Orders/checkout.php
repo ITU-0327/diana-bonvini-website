@@ -85,6 +85,39 @@ $totalCost = $subtotal + $shippingFee;
                     'options' => [
                         '' => 'Select Country',
                         'AU' => 'Australia',
+                        'US' => 'United States',
+                        'CA' => 'Canada',
+                        'GB' => 'United Kingdom',
+                        'NZ' => 'New Zealand',
+                        'JP' => 'Japan',
+                        'KR' => 'South Korea',
+                        'SG' => 'Singapore',
+                        'HK' => 'Hong Kong',
+                        'CN' => 'China',
+                        'IN' => 'India',
+                        'DE' => 'Germany',
+                        'FR' => 'France',
+                        'IT' => 'Italy',
+                        'ES' => 'Spain',
+                        'NL' => 'Netherlands',
+                        'SE' => 'Sweden',
+                        'NO' => 'Norway',
+                        'DK' => 'Denmark',
+                        'FI' => 'Finland',
+                        'BR' => 'Brazil',
+                        'MX' => 'Mexico',
+                        'AR' => 'Argentina',
+                        'CL' => 'Chile',
+                        'ZA' => 'South Africa',
+                        'AE' => 'United Arab Emirates',
+                        'IL' => 'Israel',
+                        'TR' => 'Turkey',
+                        'RU' => 'Russia',
+                        'TH' => 'Thailand',
+                        'VN' => 'Vietnam',
+                        'MY' => 'Malaysia',
+                        'ID' => 'Indonesia',
+                        'PH' => 'Philippines',
                     ],
                     'value' => $order->shipping_country ?? 'AU',
                 ]) ?>
@@ -125,33 +158,47 @@ $totalCost = $subtotal + $shippingFee;
                     'value' => $order->shipping_suburb ?? '',
                 ]) ?>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-4">
-                    <?= $this->Form->control('shipping_state', [
-                        'label' => 'State *',
-                        'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
-                        'required' => true,
-                        'type' => 'select',
-                        'id' => 'shipping_state',
-                        'options' => [
-                            '' => 'Select State',
-                            'ACT' => 'Australian Capital Territory',
-                            'NSW' => 'New South Wales',
-                            'NT' => 'Northern Territory',
-                            'QLD' => 'Queensland',
-                            'SA' => 'South Australia',
-                            'TAS' => 'Tasmania',
-                            'VIC' => 'Victoria',
-                            'WA' => 'Western Australia',
-                        ],
-                        'empty' => false,
-                        'value' => $order->shipping_state ?? '',
-                    ]) ?>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">State/Province *</label>
+                        <?= $this->Form->control('shipping_state', [
+                            'label' => false,
+                            'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
+                            'required' => true,
+                            'type' => 'select',
+                            'id' => 'shipping_state_dropdown',
+                            'options' => [
+                                '' => 'Select State/Province',
+                                'ACT' => 'Australian Capital Territory',
+                                'NSW' => 'New South Wales',
+                                'NT' => 'Northern Territory',
+                                'QLD' => 'Queensland',
+                                'SA' => 'South Australia',
+                                'TAS' => 'Tasmania',
+                                'VIC' => 'Victoria',
+                                'WA' => 'Western Australia',
+                            ],
+                            'empty' => false,
+                            'value' => $order->shipping_state ?? '',
+                        ]) ?>
+                        <?= $this->Form->control('shipping_state_text', [
+                            'label' => false,
+                            'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
+                            'required' => false,
+                            'type' => 'text',
+                            'id' => 'shipping_state_text',
+                            'placeholder' => 'Enter state/province',
+                            'style' => 'display: none;',
+                            'value' => '',
+                        ]) ?>
+                        <?= $this->Form->hidden('shipping_state', [
+                            'id' => 'shipping_state_hidden'
+                        ]) ?>
+                    </div>
                     <?= $this->Form->control('shipping_postcode', [
-                        'label' => 'Postcode *',
+                        'label' => 'Postal Code *',
                         'class' => 'border border-gray-300 rounded-md w-full px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400',
                         'required' => true,
                         'id' => 'shipping_postcode',
-                        'pattern' => '^[0-9]{4}$',
-                        'title' => 'Please enter a valid 4-digit postal code.',
                         'value' => $order->shipping_postcode ?? '',
                     ]) ?>
                 </div>
@@ -270,9 +317,8 @@ $totalCost = $subtotal + $shippingFee;
                 }
             });
 
-            // Create autocomplete with Australia restriction
+            // Create autocomplete without country restriction to allow international addresses
             const options = {
-                componentRestrictions: {country: 'au'},
                 fields: ['address_components', 'formatted_address'],
                 types: ['address']
             };
@@ -294,6 +340,7 @@ $totalCost = $subtotal + $shippingFee;
                     let suburb = '';
                     let state = '';
                     let postcode = '';
+                    let country = '';
 
                     // Extract address components
                     for (let i = 0; i < place.address_components.length; i++) {
@@ -310,6 +357,8 @@ $totalCost = $subtotal + $shippingFee;
                             state = component.short_name;
                         } else if (types.indexOf('postal_code') !== -1) {
                             postcode = component.long_name;
+                        } else if (types.indexOf('country') !== -1) {
+                            country = component.short_name;
                         }
                     }
 
@@ -318,16 +367,35 @@ $totalCost = $subtotal + $shippingFee;
                     document.getElementById('shipping_suburb').value = suburb;
                     document.getElementById('shipping_postcode').value = postcode;
 
-                    // Update state dropdown
-                    const stateSelect = document.getElementById('shipping_state');
-                    for (let j = 0; j < stateSelect.options.length; j++) {
-                        if (stateSelect.options[j].value === state) {
-                            stateSelect.selectedIndex = j;
+                    // Update country dropdown
+                    const countrySelect = document.getElementById('shipping-country');
+                    for (let j = 0; j < countrySelect.options.length; j++) {
+                        if (countrySelect.options[j].value === country) {
+                            countrySelect.selectedIndex = j;
                             break;
                         }
                     }
-                    // Trigger change event to recalculate shipping fee
-                    stateSelect.dispatchEvent(new Event('change'));
+
+                    // Trigger country change to update state field visibility
+                    countrySelect.dispatchEvent(new Event('change'));
+
+                    // Update state field based on country
+                    if (country === 'AU') {
+                        // For Australian addresses, try to match the state dropdown
+                        const stateSelect = document.getElementById('shipping_state_dropdown');
+                        for (let j = 0; j < stateSelect.options.length; j++) {
+                            if (stateSelect.options[j].value === state) {
+                                stateSelect.selectedIndex = j;
+                                break;
+                            }
+                        }
+                        stateSelect.dispatchEvent(new Event('change'));
+                    } else {
+                        // For international addresses, use the text input
+                        const stateText = document.getElementById('shipping_state_text');
+                        stateText.value = state;
+                        stateText.dispatchEvent(new Event('input'));
+                    }
                 });
             } catch (err) {
                 console.error('Google Places Autocomplete error:', err);
@@ -339,14 +407,37 @@ $totalCost = $subtotal + $shippingFee;
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const countryEl = document.getElementById('shipping-country');
-    const stateEl = document.getElementById('shipping_state');
+    const stateDropdownEl = document.getElementById('shipping_state_dropdown');
+    const stateTextEl = document.getElementById('shipping_state_text');
+    const stateHiddenEl = document.getElementById('shipping_state_hidden');
     const shippingEl = document.getElementById('shipping-fee');
     const totalEl = document.getElementById('total');
     const ORDER_SUBTOTAL = <?= json_encode($subtotal) ?>;
 
+    function toggleStateField() {
+        const country = countryEl.value;
+        if (country === 'AU') {
+            // Show dropdown for Australia
+            stateDropdownEl.style.display = 'block';
+            stateTextEl.style.display = 'none';
+            stateDropdownEl.required = true;
+            stateTextEl.required = false;
+            // Copy dropdown value to hidden field
+            stateHiddenEl.value = stateDropdownEl.value;
+        } else {
+            // Show text input for international
+            stateDropdownEl.style.display = 'none';
+            stateTextEl.style.display = 'block';
+            stateDropdownEl.required = false;
+            stateTextEl.required = true;
+            // Copy text input value to hidden field
+            stateHiddenEl.value = stateTextEl.value;
+        }
+    }
+
     function updateShippingFee() {
         const country = countryEl.value;
-        const state = stateEl.value;
+        const state = country === 'AU' ? stateDropdownEl.value : stateTextEl.value;
         if (!country || !state) {
             return;
         }
@@ -363,7 +454,37 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => console.error('Error fetching shipping fee:', error));
     }
 
-    countryEl.addEventListener('change', updateShippingFee);
-    stateEl.addEventListener('change', updateShippingFee);
+    function syncStateToHidden() {
+        const country = countryEl.value;
+        if (country === 'AU') {
+            stateHiddenEl.value = stateDropdownEl.value;
+        } else {
+            stateHiddenEl.value = stateTextEl.value;
+        }
+    }
+
+    // Initialize state field based on current country
+    toggleStateField();
+
+    // Event listeners
+    countryEl.addEventListener('change', function() {
+        toggleStateField();
+        updateShippingFee();
+    });
+
+    stateDropdownEl.addEventListener('change', function() {
+        syncStateToHidden();
+        updateShippingFee();
+    });
+
+    stateTextEl.addEventListener('input', function() {
+        syncStateToHidden();
+        updateShippingFee();
+    });
+
+    // Ensure the form submits with the correct state value
+    document.getElementById('checkout-form').addEventListener('submit', function() {
+        syncStateToHidden();
+    });
 });
 </script>

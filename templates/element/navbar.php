@@ -36,19 +36,19 @@ $userType = $user?->get('user_type');
                             <li>
                                 <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index']) ?>"
                                    class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                    All Art
+                                    All Artwork
                                 </a>
                             </li>
                             <li>
-                                <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index']) ?>"
+                                <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index', '?' => ['status' => 'available']]) ?>"
                                    class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                    New Arrivals
+                                    Art For Sale
                                 </a>
                             </li>
                             <li>
-                                <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index']) ?>"
+                                <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index', '?' => ['status' => 'sold']]) ?>"
                                    class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                    Collections
+                                    Art Sold
                                 </a>
                             </li>
                         </ul>
@@ -80,6 +80,31 @@ $userType = $user?->get('user_type');
                         </ul>
                     </li>
 
+                    <!-- Coaching Services Dropdown -->
+                    <li class="relative group">
+                        <a href="<?= $this->Url->build(['controller' => 'CoachingServiceRequests', 'action' => 'info']) ?>">
+                            Coaching
+                            <svg class="inline ml-1 h-4 w-4" fill="none" stroke="currentColor"
+                                 viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </a>
+                        <ul class="absolute left-0 top-full mt-0 min-w-[12rem] bg-white border border-gray-200 rounded shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-300 z-20">
+                                <li>
+                                    <a href="<?= $this->Url->build(['controller' => 'CoachingServiceRequests', 'action' => 'add']) ?>"
+                                       class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                        Make a Request
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="<?= $this->Url->build(['controller' => 'CoachingServiceRequests', 'action' => 'index']) ?>"
+                                       class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                        View My Requests
+                                    </a>
+                                </li>
+                        </ul>
+                    </li>
 
                     <!-- About -->
                     <li>
@@ -90,6 +115,14 @@ $userType = $user?->get('user_type');
                     <li>
                         <a href="<?= $this->Url->build('/contact') ?>">Contact</a>
                     </li>
+
+                    <?php if ($userType === 'admin') : ?>
+                        <li>
+                            <a href="<?= $this->Url->build(['controller' => 'Admin', 'action' => 'index']) ?>" class="text-indigo-600 hover:text-indigo-500 font-semibold">
+                                Admin Dashboard
+                            </a>
+                        </li>
+                    <?php endif; ?>
                 </ul>
             </div>
 
@@ -142,6 +175,16 @@ $userType = $user?->get('user_type');
                                         <div>
                                             <p class="text-gray-700 font-medium text-base">My Services</p>
                                             <p class="text-xs text-gray-500">Writing &amp; Proofreading</p>
+                                        </div>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a href="<?= $this->Url->build(['controller' => 'CoachingServiceRequests', 'action' => 'index']) ?>"
+                                       class="flex items-center space-x-3 p-2 pl-3 hover:bg-gray-100 rounded transition duration-200">
+                                        <i class="fa-solid fa-chalkboard-teacher h-6 w-6 text-indigo-500"></i>
+                                        <div>
+                                            <p class="text-gray-700 font-medium text-base">My Coaching</p>
+                                            <p class="text-xs text-gray-500">Coaching Services</p>
                                         </div>
                                     </a>
                                 </li>
@@ -202,6 +245,12 @@ $userType = $user?->get('user_type');
                 </a>
             </li>
             <li>
+                <a href="<?= $this->Url->build(['controller' => 'CoachingServiceRequests', 'action' => 'info']) ?>"
+                   class="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:text-teal-500">
+                    Coaching
+                </a>
+            </li>
+            <li>
                 <a href="<?= $this->Url->build('/about') ?>"
                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:text-teal-500">
                     About
@@ -213,6 +262,13 @@ $userType = $user?->get('user_type');
                     Contact
                 </a>
             </li>
+            <?php if ($userType === 'admin') : ?>
+                <li>
+                    <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'WritingServiceRequests', 'action' => 'index']) ?>" class="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:text-teal-500">
+                        Admin Dashboard
+                    </a>
+                </li>
+            <?php endif; ?>
             <?php if ($user) : ?>
                 <li class="mt-2 border-t border-gray-200 pt-3">
                     <a href="<?= $this->Url->build(['controller' => 'Carts', 'action' => 'index']) ?>"
@@ -231,6 +287,12 @@ $userType = $user?->get('user_type');
                     <a href="<?= $this->Url->build(['controller' => 'WritingServiceRequests', 'action' => 'index']) ?>"
                        class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-teal-500">
                         My Services
+                    </a>
+                </li>
+                <li>
+                    <a href="<?= $this->Url->build(['controller' => 'CoachingServiceRequests', 'action' => 'index']) ?>"
+                       class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-teal-500">
+                        My Coaching
                     </a>
                 </li>
                 <li>
