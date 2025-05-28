@@ -145,7 +145,9 @@ class OrdersTable extends Table
             ->maxLength('shipping_country', 2)
             ->requirePresence('shipping_country', 'create')
             ->notEmptyString('shipping_country')
-            ->inList('shipping_country', ['AU'], 'Please select a valid country.');
+            ->inList('shipping_country', [
+                'AU', 'US', 'CA', 'GB', 'NZ', 'JP', 'KR', 'SG', 'HK', 'CN', 'IN', 'DE', 'FR', 'IT', 'ES', 'NL', 'SE', 'NO', 'DK', 'FI', 'BR', 'MX', 'AR', 'CL', 'ZA', 'AE', 'IL', 'TR', 'RU', 'TH', 'VN', 'MY', 'ID', 'PH'
+            ], 'Please select a valid country.');
 
         $validator
             ->scalar('shipping_address1')
@@ -176,8 +178,31 @@ class OrdersTable extends Table
             ->requirePresence('shipping_postcode', 'create')
             ->notEmptyString('shipping_postcode')
             ->add('shipping_postcode', 'validFormat', [
-                'rule' => ['custom', '/^[0-9]{4}$/'],
-                'message' => 'Please enter a valid 4-digit postal code.',
+                'rule' => function ($value, $context) {
+                    // For international compatibility, allow various postal code formats
+                    // Australian: 4 digits
+                    // US/Canada: 5 digits or 5+4 format
+                    // UK: Complex alphanumeric
+                    // Other countries: alphanumeric up to 20 characters
+                    $patterns = [
+                        '/^[0-9]{4}$/',           // Australia (4 digits)
+                        '/^[0-9]{5}(-[0-9]{4})?$/', // US (5 digits or 5+4)
+                        '/^[A-Z][0-9][A-Z] [0-9][A-Z][0-9]$/', // Canada (A1A 1A1)
+                        '/^[A-Z]{1,2}[0-9][A-Z0-9]? [0-9][A-Z]{2}$/i', // UK (SW1A 1AA)
+                        '/^[0-9]{3}-[0-9]{4}$/',  // Japan (123-4567)
+                        '/^[0-9]{5}$/',           // Many countries (5 digits)
+                        '/^[0-9]{6}$/',           // Some countries (6 digits)
+                        '/^[A-Z0-9]{2,20}$/i',    // General alphanumeric for other countries
+                    ];
+                    
+                    foreach ($patterns as $pattern) {
+                        if (preg_match($pattern, $value)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                },
+                'message' => 'Please enter a valid postal code.',
             ]);
 
         $validator

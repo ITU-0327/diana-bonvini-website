@@ -93,10 +93,11 @@ class OrdersController extends AppController
         $data['user_id'] = $user->user_id;
 
         // Calculate shipping fee
-        $data['shipping_cost'] = $shippingService->calculateShippingFee(
+        $shippingFee = $shippingService->calculateShippingFee(
             $data['shipping_state'],
             $data['shipping_country'],
         );
+        $data['shipping_cost'] = $shippingFee;
 
         // See if we're updating an in-flight order
         $pendingId = !empty($data['order_id']) ? (string)$data['order_id'] : null;
@@ -174,7 +175,7 @@ class OrdersController extends AppController
             if (!$paymentsTable->save($payment)) {
                 $connection->rollback();
                 $this->Flash->error(__('There was an error processing your payment. Please try again.'));
-                $this->set(compact('order', 'cart', 'user'));
+                $this->set(compact('order', 'cart', 'user', 'shippingFee'));
 
                 return $this->render('checkout');
             }
@@ -187,7 +188,7 @@ class OrdersController extends AppController
                 return $this->redirect($stripeService->createCheckoutUrl($order->order_id));
             } catch (Exception $e) {
                 $this->Flash->error(__('Payment processor error: ') . $e->getMessage());
-                $this->set(compact('order', 'cart', 'user'));
+                $this->set(compact('order', 'cart', 'user', 'shippingFee'));
 
                 return $this->render('checkout');
             }
@@ -195,7 +196,7 @@ class OrdersController extends AppController
 
         $connection->rollback();
         $this->Flash->error(__('There were errors in your order submission. Please correct them and try again.'));
-        $this->set(compact('order', 'cart', 'user'));
+        $this->set(compact('order', 'cart', 'user', 'shippingFee'));
 
         return $this->render('checkout');
     }
