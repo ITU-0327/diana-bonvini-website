@@ -19,6 +19,20 @@ $this->assign('title', __('User Details'));
         </div>
     </div>
 
+    <!-- Back Button -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <?= $this->Html->link(
+                '<i class="fas fa-arrow-left mr-2"></i>' . __('Back to Users'),
+                ['action' => 'index'],
+                [
+                    'class' => 'btn btn-outline-primary',
+                    'escape' => false
+                ]
+            ) ?>
+        </div>
+    </div>
+
     <div class="row">
         <!-- Profile Information -->
         <div class="col-lg-4">

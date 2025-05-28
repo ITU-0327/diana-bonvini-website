@@ -29,6 +29,20 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
         </div>
     </div>
 
+    <!-- Back Button -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <?= $this->Html->link(
+                '<i class="fas fa-arrow-left mr-2"></i>' . __('Back to Writing Requests'),
+                ['action' => 'index'],
+                [
+                    'class' => 'btn btn-outline-primary',
+                    'escape' => false
+                ]
+            ) ?>
+        </div>
+    </div>
+
     <div class="row">
         <!-- Main Details and Chat Section -->
         <div class="col-lg-8">
@@ -215,10 +229,6 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
 
                         <div class="form-group mb-0 d-flex justify-content-between align-items-center">
                             <div class="action-buttons">
-                                <!-- Quick file upload -->
-                                <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal" data-target="#quickUploadModal" title="Quick File Upload">
-                                    <i class="fas fa-paperclip"></i>
-                                </button>
                             </div>
                             <button type="submit" class="btn btn-primary px-4" id="sendButton">
                                 <i class="fas fa-paper-plane mr-1"></i>
@@ -240,8 +250,39 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                     <h6 class="m-0 font-weight-bold text-primary">Request Actions</h6>
                 </div>
                 <div class="card-body">
-                    <!-- Document Upload Section -->
+                    <!-- Update Status -->
                     <div class="mb-4">
+                        <h6 class="font-weight-bold mb-2">Update Status</h6>
+                        <?= $this->Form->create(null, [
+                            'url' => ['action' => 'updateStatus', $writingServiceRequest->writing_service_request_id],
+                            'id' => 'statusFormTop',
+                            'type' => 'post',
+                        ]) ?>
+
+                        <div class="form-group mb-3">
+                            <?= $this->Form->hidden('writing_service_request_id', ['value' => $writingServiceRequest->writing_service_request_id]) ?>
+                            <?= $this->Form->select('status', [
+                                'pending' => 'Pending',
+                                'in_progress' => 'In Progress',
+                                'completed' => 'Completed',
+                            ], [
+                                'default' => $writingServiceRequest->request_status,
+                                'class' => 'form-control',
+                                'empty' => false,
+                            ]) ?>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary btn-block" id="updateStatusBtnTop">
+                                <i class="fas fa-sync-alt mr-1"></i> Update Status
+                            </button>
+                        </div>
+
+                        <?= $this->Form->end() ?>
+                    </div>
+
+                    <!-- Document Upload Section -->
+                    <div class="mb-4 pt-3 border-top">
                         <h6 class="font-weight-bold mb-2">Document Management</h6>
                         <div class="card bg-light border mb-3">
                             <div class="card-body p-3">
@@ -377,7 +418,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                     </tfoot>
                                 </table>
                             </div>
-                            
+
                             <!-- Payment Statistics -->
                             <div class="row mt-2">
                                 <div class="col-6">
@@ -435,46 +476,6 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                             <p class="text-sm text-muted mt-1">Select and send available time slots to the client</p>
                         </div>
                     </div>
-
-                    <!-- Update Status -->
-                    <div class="mb-4 pt-2 border-top">
-                        <h6 class="font-weight-bold mb-2">Update Status</h6>
-                        <?= $this->Form->create(null, [
-                            'url' => ['action' => 'updateStatus', $writingServiceRequest->writing_service_request_id],
-                            'id' => 'statusForm',
-                            'type' => 'post',
-                        ]) ?>
-
-                        <div class="form-group mb-3">
-                            <?= $this->Form->hidden('writing_service_request_id', ['value' => $writingServiceRequest->writing_service_request_id]) ?>
-                            <?= $this->Form->select('status', [
-                                'pending' => 'Pending',
-                                'in_progress' => 'In Progress',
-                                'completed' => 'Completed',
-                            ], [
-                                'default' => $writingServiceRequest->request_status,
-                                'class' => 'form-control',
-                                'empty' => false,
-                            ]) ?>
-                        </div>
-
-                        <div class="form-group">
-                            <button type="submit" class="btn btn-primary btn-block" id="updateStatusBtn">
-                                <i class="fas fa-sync-alt mr-1"></i> Update Status
-                            </button>
-                        </div>
-
-                        <?= $this->Form->end() ?>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Back Button Card -->
-            <div class="card shadow mb-4">
-                <div class="card-body p-3">
-                    <a href="<?= $this->Url->build(['action' => 'index']) ?>" class="btn btn-secondary btn-block">
-                        <i class="fas fa-arrow-left mr-1"></i> Back to Writing Requests
-                    </a>
                 </div>
             </div>
         </div>
@@ -893,16 +894,16 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
         // Ensure jQuery UI is loaded before proceeding
         console.log('jQuery available:', typeof $ !== 'undefined');
         console.log('jQuery UI available:', typeof $.ui !== 'undefined');
-        
+
         // Initialize datepicker immediately when modal is shown
         $('#timeSlotsModal').on('shown.bs.modal', function() {
             console.log('Modal opened, initializing datepicker...');
-            
+
             // Wait a bit for modal to fully render
             setTimeout(function() {
                 const $datepicker = $('#datepicker');
                 console.log('Datepicker element found:', $datepicker.length);
-                
+
                 if ($datepicker.length && typeof $.fn.datepicker !== 'undefined') {
                     // Destroy existing datepicker if present
                     if ($datepicker.hasClass('hasDatepicker')) {
@@ -922,17 +923,17 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                         inline: true, // Show inline immediately
                     onSelect: function(dateText) {
                         console.log('Date selected:', dateText);
-                            $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { 
-                                weekday: 'long', 
-                                year: 'numeric', 
-                                month: 'long', 
-                                day: 'numeric' 
+                            $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
                             }));
                         $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
                         $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
                     }
                 });
-                    
+
                     // Force the datepicker to show inline and be visible
                     $datepicker.datepicker('widget').show();
                     console.log('Datepicker initialized successfully');
@@ -947,15 +948,15 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
         // Fallback date picker function
         function createFallbackDatePicker($container) {
             console.log('Creating fallback date picker');
-            
+
             // Get today's date for min attribute
             const today = new Date();
             const minDate = today.toISOString().split('T')[0];
-            
-            // Get 60 days from now for max attribute  
+
+            // Get 60 days from now for max attribute
             const maxDate = new Date(today.getTime() + (60 * 24 * 60 * 60 * 1000));
             const maxDateStr = maxDate.toISOString().split('T')[0];
-            
+
             // Create HTML5 date input
             const dateInput = `
                 <div class="fallback-datepicker p-3">
@@ -963,10 +964,10 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                         <i class="fas fa-info-circle mr-2"></i>
                         Please select a date for your consultation
                     </p>
-                    <input type="date" 
-                           id="fallback-date-input" 
-                           class="form-control form-control-lg" 
-                           min="${minDate}" 
+                    <input type="date"
+                           id="fallback-date-input"
+                           class="form-control form-control-lg"
+                           min="${minDate}"
                            max="${maxDateStr}"
                            style="font-size: 1.1rem; padding: 12px;">
                     <small class="form-text text-muted mt-2">
@@ -974,27 +975,27 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                     </small>
                 </div>
             `;
-            
+
             $container.html(dateInput);
-            
+
             // Add change event listener
             $('#fallback-date-input').on('change', function() {
                 const selectedDate = $(this).val();
                 const dateObj = new Date(selectedDate);
-                
+
                 console.log('Fallback date selected:', selectedDate);
-                
+
                 // Update the display
-                $('#selected-date-display').text(dateObj.toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
+                $('#selected-date-display').text(dateObj.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
                 }));
-                
+
                 $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + selectedDate + '</span>');
                 $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
-                
+
                 // Store the selected date for the load time slots function
                 window.selectedDateForTimeSlots = selectedDate;
             });
@@ -1003,7 +1004,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
         // Also try to initialize on page load as backup
         $(document).ready(function() {
             console.log('Document ready, jQuery UI datepicker available:', typeof $.fn.datepicker !== 'undefined');
-            
+
             // Try to initialize datepicker on page load as well
             if (typeof $.fn.datepicker !== 'undefined') {
                 console.log('Attempting early datepicker initialization');
@@ -1022,11 +1023,11 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                             inline: true,
                             onSelect: function(dateText) {
                                 console.log('Date selected (early init):', dateText);
-                                $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { 
-                                    weekday: 'long', 
-                                    year: 'numeric', 
-                                    month: 'long', 
-                                    day: 'numeric' 
+                                $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
                                 }));
                                 $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
                                 $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
@@ -1123,7 +1124,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                 // Reset form values
                 document.getElementById('amount').value = '';
                 document.getElementById('description').value = 'Writing Service: <?= addslashes($writingServiceRequest->service_title) ?>';
-                
+
                 // Reset button state
                 sendPaymentRequestBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Send Payment Request';
                 sendPaymentRequestBtn.disabled = false;
@@ -1162,7 +1163,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
             loadTimeSlotsBtn.addEventListener('click', function() {
                 let selectedDate = null;
                 let formattedDate = null;
-                
+
                 // Try to get date from jQuery UI datepicker first
                 try {
                     selectedDate = datepicker.datepicker('getDate');
@@ -1176,7 +1177,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                 } catch (e) {
                     console.log('jQuery datepicker not available, checking fallback');
                 }
-                
+
                 // If jQuery UI datepicker didn't work, try the fallback HTML5 input
                 if (!formattedDate) {
                     const fallbackInput = document.getElementById('fallback-date-input');
@@ -1185,13 +1186,13 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                         console.log('Using fallback date input:', formattedDate);
                     }
                 }
-                
+
                 // Also check the stored date from the fallback
                 if (!formattedDate && window.selectedDateForTimeSlots) {
                     formattedDate = window.selectedDateForTimeSlots;
                     console.log('Using stored fallback date:', formattedDate);
                 }
-                
+
                 console.log('Load button clicked, formatted date:', formattedDate);
 
                 if (!formattedDate) {
@@ -1257,7 +1258,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                         // Hide other states first
                         timeSlotsEmpty.classList.add('d-none');
                         timeSlotsNone.classList.add('d-none');
-                        
+
                         // Show time slots container
                         timeSlotsListContainer.classList.remove('d-none');
 
@@ -1286,7 +1287,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                         // Hide other states first
                         timeSlotsEmpty.classList.add('d-none');
                         timeSlotsListContainer.classList.add('d-none');
-                        
+
                         console.log('No time slots available or success is false');
                         // Show no time slots message
                         timeSlotsNone.classList.remove('d-none');
@@ -1445,7 +1446,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('lightbox-trigger')) {
                 e.preventDefault();
-                
+
                 // Create lightbox
                 const lightbox = document.createElement('div');
                 lightbox.className = 'lightbox-overlay';
@@ -1456,9 +1457,9 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                         <div class="lightbox-caption">${e.target.getAttribute('data-filename')}</div>
                     </div>
                 `;
-                
+
                 document.body.appendChild(lightbox);
-                
+
                 // Close lightbox on click
                 lightbox.addEventListener('click', function(e) {
                     if (e.target === lightbox || e.target.classList.contains('lightbox-close')) {
@@ -1554,7 +1555,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                                                                                         'id' => 'timeSlotsForm',
                                                                                                         'type' => 'post',
                 ]) ?>
-                
+
                 <!-- Explicit CSRF token -->
                 <?= $this->Form->hidden('_csrfToken', [
                     'value' => $this->request->getAttribute('csrfToken'),
@@ -1692,12 +1693,12 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
             function initDatepicker() {
                 try {
                     const $datepicker = $('#datepicker');
-                    
+
                     // Destroy existing datepicker if it exists
                     if ($datepicker.hasClass('hasDatepicker')) {
                         $datepicker.datepicker('destroy');
                     }
-                    
+
                     // Initialize with proper configuration
                     $datepicker.datepicker({
                         minDate: 0, // Today
@@ -1711,17 +1712,17 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                         inline: true, // Show inline immediately
                         onSelect: function(dateText) {
                             console.log('Date selected:', dateText);
-                            $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { 
-                                weekday: 'long', 
-                                year: 'numeric', 
-                                month: 'long', 
-                                day: 'numeric' 
+                            $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
                             }));
                             $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
                             $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
                         }
                     });
-                    
+
                     // Force the datepicker to show inline and be visible
                     $datepicker.datepicker('widget').show();
                     console.log('Datepicker initialized successfully');
@@ -1757,11 +1758,11 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                 inline: true, // Show inline immediately
                 onSelect: function(dateText) {
                     console.log('Date selected:', dateText);
-                    $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
+                    $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
                     }));
                     $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
                     $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
@@ -1777,7 +1778,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
             loadTimeSlotsBtn.addEventListener('click', function() {
                 let selectedDate = null;
                 let formattedDate = null;
-                
+
                 // Try to get date from jQuery UI datepicker first
                 try {
                     selectedDate = datepicker.datepicker('getDate');
@@ -1791,7 +1792,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                 } catch (e) {
                     console.log('jQuery datepicker not available, checking fallback');
                 }
-                
+
                 // If jQuery UI datepicker didn't work, try the fallback HTML5 input
                 if (!formattedDate) {
                     const fallbackInput = document.getElementById('fallback-date-input');
@@ -1800,13 +1801,13 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                         console.log('Using fallback date input:', formattedDate);
                     }
                 }
-                
+
                 // Also check the stored date from the fallback
                 if (!formattedDate && window.selectedDateForTimeSlots) {
                     formattedDate = window.selectedDateForTimeSlots;
                     console.log('Using stored fallback date:', formattedDate);
                 }
-                
+
                 console.log('Load button clicked, formatted date:', formattedDate);
 
                 if (!formattedDate) {
@@ -1872,7 +1873,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                         // Hide other states first
                         timeSlotsEmpty.classList.add('d-none');
                         timeSlotsNone.classList.add('d-none');
-                        
+
                         // Show time slots container
                         timeSlotsListContainer.classList.remove('d-none');
 
@@ -1901,7 +1902,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                         // Hide other states first
                         timeSlotsEmpty.classList.add('d-none');
                         timeSlotsListContainer.classList.add('d-none');
-                        
+
                         console.log('No time slots available or success is false');
                         // Show no time slots message
                         timeSlotsNone.classList.remove('d-none');
@@ -2004,7 +2005,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                         time_slots: selectedTimeSlots.value,
                         request_id: '<?= $writingServiceRequest->writing_service_request_id ?>'
                     });
-                    
+
                     // Log form action URL for debugging
                     console.log('Form action URL:', form.action);
                     console.log('Form method:', form.method);
@@ -2265,10 +2266,10 @@ Thank you for your payment. We'll now begin work on your writing service request
         }
 
         // Status update form handling
-        const statusForm = document.getElementById('statusForm');
+        const statusForm = document.getElementById('statusFormTop');
         if (statusForm) {
             statusForm.addEventListener('submit', function(e) {
-                const button = document.getElementById('updateStatusBtn');
+                const button = document.getElementById('updateStatusBtnTop');
                 button.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Updating...';
                 button.disabled = true;
             });
@@ -2284,11 +2285,11 @@ Thank you for your payment. We'll now begin work on your writing service request
         console.log('jQuery version:', $.fn.jquery);
         console.log('jQuery UI available:', typeof $.ui !== 'undefined');
         console.log('Datepicker available:', typeof $.fn.datepicker !== 'undefined');
-        
+
         if (typeof $.ui === 'undefined') {
             console.error('jQuery UI is not loaded!');
         }
-        
+
         if (typeof $.fn.datepicker === 'undefined') {
             console.error('jQuery UI Datepicker is not loaded!');
         }
@@ -2304,7 +2305,7 @@ Thank you for your payment. We'll now begin work on your writing service request
             setTimeout(function() {
                 const $datepicker = $('#datepicker');
                 console.log('Datepicker element found:', $datepicker.length > 0);
-                
+
                 if ($datepicker.length > 0 && typeof $.fn.datepicker !== 'undefined') {
                     // Initialize datepicker
                     if (!$datepicker.hasClass('hasDatepicker')) {
@@ -2319,11 +2320,11 @@ Thank you for your payment. We'll now begin work on your writing service request
                             beforeShowDay: $.datepicker.noWeekends,
                             onSelect: function(dateText) {
                                 console.log('Date selected:', dateText);
-                                $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', { 
-                                    weekday: 'long', 
-                                    year: 'numeric', 
-                                    month: 'long', 
-                                    day: 'numeric' 
+                                $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
                                 }));
                                 $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
                                 $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
@@ -2380,51 +2381,12 @@ function formatFileSize(int $bytes): string
 
 <?php $this->end(); ?>
 
-<!-- Quick Upload Modal -->
-<div class="modal fade" id="quickUploadModal" tabindex="-1" role="dialog" aria-labelledby="quickUploadModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="quickUploadModalLabel">
-                    <i class="fas fa-paperclip mr-2"></i>Quick File Upload
-                </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <?= $this->Form->create(null, [
-                'url' => ['prefix' => 'Admin', 'controller' => 'WritingServiceRequests', 'action' => 'uploadDocument', $writingServiceRequest->writing_service_request_id],
-                'type' => 'file',
-                'id' => 'quickUploadForm',
-            ]) ?>
-            <div class="modal-body">
-                <p class="text-muted">Quickly upload a document to share with the customer. The upload will automatically add a message to the chat.</p>
-                <div class="form-group">
-                    <label for="quickDocument" class="font-weight-bold">Select Document</label>
-                    <?= $this->Form->file('document', [
-                        'class' => 'form-control-file',
-                        'id' => 'quickDocument',
-                        'required' => true,
-                        'accept' => '.pdf,.doc,.docx',
-                    ]) ?>
-                    <small class="form-text text-muted">Accepted file types: PDF and Word documents only</small>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-upload mr-1"></i>Upload & Send
-                </button>
-            </div>
-            <?= $this->Form->end() ?>
-        </div>
-    </div>
-</div>
+
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Timezone indicator removed for admin view - times are automatically converted by TimezoneHelper
-        
+
         // Initialize admin-specific functionality
         const chatContainer = document.getElementById('chat-messages');
         if (chatContainer) {

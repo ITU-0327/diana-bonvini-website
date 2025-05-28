@@ -23,6 +23,20 @@ use Cake\Utility\Inflector;
         </div>
     </div>
 
+    <!-- Back Button -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <?= $this->Html->link(
+                '<i class="fas fa-arrow-left mr-2"></i>' . __('Back to Coaching Requests'),
+                ['action' => 'index'],
+                [
+                    'class' => 'btn btn-outline-primary',
+                    'escape' => false
+                ]
+            ) ?>
+        </div>
+    </div>
+
     <div class="row">
         <!-- Main Details and Chat Section -->
         <div class="col-lg-8">
@@ -314,7 +328,6 @@ use Cake\Utility\Inflector;
                                 'pending' => 'Pending',
                                 'in_progress' => 'In Progress',
                                 'completed' => 'Completed',
-                                'canceled' => 'Canceled'
                             ], [
                                 'class' => 'form-control',
                                 'value' => $coachingServiceRequest->request_status
@@ -1120,7 +1133,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Payment request form found:', paymentRequestForm);
         console.log('Form action:', paymentRequestForm.action);
         console.log('Form method:', paymentRequestForm.method);
-        
+
         paymentRequestForm.addEventListener('submit', function(e) {
             console.log('=== PAYMENT REQUEST FORM SUBMISSION ===');
             console.log('Event:', e);
@@ -1128,7 +1141,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const amount = this.querySelector('input[name="amount"]').value;
             const description = this.querySelector('textarea[name="description"]').value;
-            
+
             console.log('Form data:');
             console.log('- Amount:', amount);
             console.log('- Description:', description);
@@ -1152,11 +1165,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // If validation passes, allow form to submit naturally
             console.log('VALIDATION PASSED: Allowing form submission');
             console.log('Form will submit to:', this.action);
-            
+
             const submitBtn = this.querySelector('button[type="submit"]');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Sending...';
-            
+
             // Form will submit naturally
             console.log('Form submission proceeding...');
             return true;
@@ -1506,7 +1519,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </button>
             </div>
             <div class="modal-body">
-                <?php 
+                <?php
                 $formUrl = $this->Url->build(['action' => 'sendPaymentRequest', $coachingServiceRequest->coaching_service_request_id]);
                 echo "<!-- DEBUG: Form URL will be: " . $formUrl . " -->";
                 ?>
