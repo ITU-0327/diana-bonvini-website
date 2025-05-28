@@ -67,7 +67,7 @@ $this->assign('title', __('View Order'));
                     <hr>
 
                     <div class="d-grid gap-2 mt-3">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#updateStatusModal">
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#updateStatusModal">
                             <i class="fas fa-edit mr-2"></i>Update Status
                         </button>
                     </div>
@@ -206,7 +206,14 @@ $this->assign('title', __('View Order'));
                                     <?php endif; ?>
                                 </p>
                                 <p><strong>Transaction ID:</strong>
-                                    <?= !empty($order->payment->transaction_id) ? h($order->payment->transaction_id) : '<span class="text-muted">N/A</span>' ?>
+                                    <?php if (!empty($order->payment->transaction_id)) : ?>
+                                        <?= h($order->payment->transaction_id) ?>
+                                        <?php if (strpos($order->payment->transaction_id, 'pi_') === 0) : ?>
+                                            <br><small class="text-muted">Stripe Payment Intent ID</small>
+                                        <?php endif; ?>
+                                    <?php else : ?>
+                                        <span class="text-muted">N/A</span>
+                                    <?php endif; ?>
                                 </p>
                             </div>
                         </div>
@@ -249,8 +256,6 @@ $this->assign('title', __('View Order'));
                     <?= $this->Form->select('status', [
                         'pending' => 'Pending',
                         'confirmed' => 'Confirmed',
-                        'completed' => 'Completed',
-                        'cancelled' => 'Cancelled',
                     ], [
                         'class' => 'form-control',
                         'value' => $order->order_status,
