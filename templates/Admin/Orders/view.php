@@ -22,6 +22,20 @@ $this->assign('title', __('View Order'));
         </div>
     </div>
 
+    <!-- Back Button -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <?= $this->Html->link(
+                '<i class="fas fa-arrow-left mr-2"></i>' . __('Back to Orders'),
+                ['action' => 'index'],
+                [
+                    'class' => 'btn btn-outline-primary',
+                    'escape' => false
+                ]
+            ) ?>
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-12 col-md-4 mb-4">
             <!-- Order Status Card -->
