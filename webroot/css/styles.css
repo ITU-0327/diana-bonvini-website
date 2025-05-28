@@ -547,3 +547,14 @@ img {
     user-drag: none;
     pointer-events: none;
 }
+
+/* ========================================================================
+   Content Blocks
+   ======================================================================== */
+.content-block h2 {
+    font-size: 1.5rem;    /* text-2xl */
+    line-height: 2rem;
+    font-weight: 600;     /* font-semibold */
+    color: #111827;       /* text-gray-900 */
+    margin-bottom: 0.5rem;/* mb-2 */
+}

@@ -8,7 +8,7 @@ $this->assign('title', 'Contact Me');
     <?= $this->element('page_title', ['title' => 'Contact Me']) ?>
 
     <div class="bg-white shadow rounded-lg p-6 cms-content">
-        <?= $this->ContentBlock->html('contact‑page') ?>
+        <?= $this->ContentBlock->html('contact-page') ?>
         <div class="flex gap-4 items-center text-gray-600">
             <?= $this->ContentBlock->url(
                 'instagram-link',
