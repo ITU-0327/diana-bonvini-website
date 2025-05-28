@@ -265,6 +265,7 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                 'pending' => 'Pending',
                                 'in_progress' => 'In Progress',
                                 'completed' => 'Completed',
+                                'canceled' => 'Cancelled',
                             ], [
                                 'default' => $writingServiceRequest->request_status,
                                 'class' => 'form-control',
@@ -2367,6 +2368,7 @@ function getStatusClass(string $status): string
         'pending' => 'warning',
         'in_progress' => 'info',
         'completed' => 'success',
+        'canceled' => 'danger',
         default => 'secondary',
     };
 }

@@ -328,6 +328,7 @@ use Cake\Utility\Inflector;
                                 'pending' => 'Pending',
                                 'in_progress' => 'In Progress',
                                 'completed' => 'Completed',
+                                'canceled' => 'Cancelled',
                             ], [
                                 'class' => 'form-control',
                                 'value' => $coachingServiceRequest->request_status
