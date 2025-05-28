@@ -6,6 +6,8 @@
 
 use Cake\Utility\Inflector;
 
+$this->assign('title', __('Coaching Service Management'));
+
 // Calculate statistics for the dashboard
 $totalRequests = count($coachingServiceRequests);
 $pendingRequests = 0;
