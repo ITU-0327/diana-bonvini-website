@@ -44,7 +44,8 @@ $this->Html->script('https://cdn.tailwindcss.com', ['block' => 'script']);
                             endif;
                                 // Output buttons for the other parents.
                             foreach ($otherParents as $parent) :
-                                $displayName = ucfirst($parent);
+                                // Humanize slug: replace hyphens with spaces and uppercase words
+                                $displayName = ucwords(str_replace('-', ' ', $parent));
                                 ?>
                                 <button type="button" class="filter-btn btn btn-outline-secondary" data-filter="<?= h($parent) ?>">
                                     <?= h($displayName) ?>
