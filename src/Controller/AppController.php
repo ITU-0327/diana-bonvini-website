@@ -36,6 +36,7 @@ class AppController extends Controller
      * e.g. `$this->loadComponent('FormProtection');`
      *
      * @return void
+     * @throws \Exception
      */
     public function initialize(): void
     {
@@ -43,10 +44,41 @@ class AppController extends Controller
 
         $this->loadComponent('Flash');
 
+        $this->loadComponent('Authentication.Authentication');
+
         /*
          * Enable the following component for recommended CakePHP form protection settings.
          * see https://book.cakephp.org/5/en/controllers/components/form-protection.html
          */
-        //$this->loadComponent('FormProtection');
+        $this->loadComponent('FormProtection', [
+            'unlockedActions' => [
+                'add', 
+                'edit', 
+                'uploadDocument', 
+                'paymentSuccess',
+                'sendTimeSlots',
+                'sendMessage', 
+                'sendPaymentRequest',
+                'updateStatus',
+                'setPrice',
+                'markAsPaid',
+                'fetchMessages',
+                'getAvailableTimeSlots'
+            ],
+            'unlockedFields' => [
+                'document', 
+                'message_text', 
+                'time_slots', 
+                'amount', 
+                'description',
+                'status',
+                'final_price',
+                'payment_id',
+                '_csrfToken',
+                'writing_service_request_id',
+                'coaching_service_request_id'
+            ],
+            'validatePost' => false, // Temporarily disable for debugging
+        ]);
     }
 }

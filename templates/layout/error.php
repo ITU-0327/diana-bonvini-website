@@ -30,10 +30,48 @@
     <?= $this->fetch('script') ?>
 </head>
 <body>
-    <div class="error-container">
-        <?= $this->Flash->render() ?>
-        <?= $this->fetch('content') ?>
-        <?= $this->Html->link(__('Back'), 'javascript:history.back()') ?>
-    </div>
+    <main class="error-container">
+        <div class="flash-messages-container">
+            <?= $this->Flash->render() ?>
+        </div>
+        <div class="error-content">
+            <?= $this->fetch('content') ?>
+        </div>
+    </main>
+    <?= $this->Html->link(__('Back'), 'javascript:history.back()') ?>
+    
+    <script>
+        // Flash Message Functionality
+        function dismissFlashMessage(element) {
+            if (element) {
+                element.classList.add('hidden');
+                setTimeout(() => {
+                    element.remove();
+                }, 300);
+            }
+        }
+        
+        // Auto-dismiss flash messages after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const autoMessages = document.querySelectorAll('.message.auto-dismiss');
+            autoMessages.forEach(function(message) {
+                setTimeout(() => {
+                    if (message && !message.classList.contains('hidden')) {
+                        dismissFlashMessage(message);
+                    }
+                }, 5000);
+            });
+        });
+        
+        // Keyboard accessibility - dismiss with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const visibleMessages = document.querySelectorAll('.message:not(.hidden)');
+                visibleMessages.forEach(function(message) {
+                    dismissFlashMessage(message);
+                });
+            }
+        });
+    </script>
 </body>
 </html>

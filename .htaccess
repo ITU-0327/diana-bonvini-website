@@ -1,8 +1,11 @@
 # Uncomment the following to prevent the httpoxy vulnerability
 # See: https://httpoxy.org/
-#<IfModule mod_headers.c>
-#    RequestHeader unset Proxy
-#</IfModule>
+<IfModule mod_headers.c>
+    RequestHeader unset Proxy
+    # Help with cookies
+    Header always set Set-Cookie "SameSite=None; Secure" "expr=%{HTTPS} == 'on'"
+    Header set P3P "policyref=\"/w3c/p3p.xml\", CP=\"IDC DSP COR ADM DEVi TAIi PSA PSD IVAi IVDi CONi HIS OUR IND CNT\""
+</IfModule>
 
 <IfModule mod_rewrite.c>
     RewriteEngine on

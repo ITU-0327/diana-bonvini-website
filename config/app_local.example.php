@@ -83,12 +83,57 @@ return [
      */
     'EmailTransport' => [
         'default' => [
-            'host' => 'localhost',
-            'port' => 25,
-            'username' => null,
-            'password' => null,
-            'client' => null,
-            'url' => env('EMAIL_TRANSPORT_DEFAULT_URL', null),
+            'className' => 'Smtp',
+            'host' => 'smtp-relay.gmail.com',
+            'port' => 587,
+            'tls' => true,
+            'timeout' => 30,
+            'client' => 'dianabonvini.com',
         ],
+    ],
+
+    /*
+     * Stripe configuration.
+     *
+     * To use the Stripe API, you need to enable the payment.
+     */
+    'Stripe' => [
+        'secret' => env('STRIP_SECRET_API_KEY', null),
+        'publishable' => env('STRIPE_PUBLISHABLE_API_KEY', null),
+    ],
+
+    /*
+     * Google Maps configuration.
+     *
+     * To use the Google Maps API, you need to enable the API in the Google Cloud Platform Console.
+     */
+    'GoogleMaps' => [
+        'key' => env('GOOGLE_MAPS_API_KEY', null),
+    ],
+
+    /*
+     * Cloudflare R2 configuration
+     *
+     * This configuration is used for storing and retrieving files such as images, documents,
+     * and other media assets in your application.
+     */
+    'R2' => [
+        'accountId' => env('CF_R2_ACCOUNT_ID', null),
+        'accessKeyId' => env('CF_R2_ACCESS_KEY_ID', null),
+        'secretAccessKey' => env('CF_R2_SECRET_ACCESS_KEY', null),
+        'bucket' => env('CF_R2_BUCKET', null),
+    ],
+
+    /*
+     * Google Calendar API configuration for appointment scheduling
+     *
+     * This configuration is used for integrating with Google Calendar API
+     */
+    'GoogleCalendar' => [
+        'clientId' => env('GOOGLE_CLIENT_ID', null),
+        'clientSecret' => env('GOOGLE_CLIENT_SECRET', null),
+        'projectId' => env('GOOGLE_PROJECT_ID', null),
+        'redirectUri' => env('GOOGLE_REDIRECT_URL', 'http://localhost:8080/admin/google-auth/callback'),
+        // IMPORTANT: This redirect URI must exactly match what's configured in the Google Cloud Console
     ],
 ];

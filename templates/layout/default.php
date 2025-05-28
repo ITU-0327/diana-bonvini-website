@@ -1,55 +1,119 @@
 <?php
 /**
- * CakePHP(tm) : Rapid Development Framework (https://cakephp.org)
- * Copyright (c) Cake Software Foundation, Inc. (https://cakefoundation.org)
+ * Default Layout for Diana Bonvini Website using Tailwind CSS
+ * with view blocks for page-specific customizations.
  *
- * Licensed under The MIT License
- * For full copyright and license information, please see the LICENSE.txt
- * Redistributions of files must retain the above copyright notice.
- *
- * @copyright     Copyright (c) Cake Software Foundation, Inc. (https://cakefoundation.org)
- * @link          https://cakephp.org CakePHP(tm) Project
- * @since         0.10.0
- * @license       https://opensource.org/licenses/mit-license.php MIT License
  * @var \App\View\AppView $this
  */
-
-$cakeDescription = 'CakePHP: the rapid development php framework';
+$siteTitle = 'Diana Bonvini Art & Writing';
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <?= $this->Html->charset() ?>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>
-        <?= $cakeDescription ?>:
-        <?= $this->fetch('title') ?>
+        <?= $siteTitle ?>: <?= $this->fetch('title') ?>
     </title>
-    <?= $this->Html->meta('icon') ?>
+    <?= $this->Html->meta('icon', '/favicon-16x16.ico', ['sizes' => '16x16']) ?>
+    <?= $this->Html->meta('icon', '/favicon-32x32.ico', ['sizes' => '32x32']) ?>
 
-    <?= $this->Html->css(['normalize.min', 'milligram.min', 'fonts', 'cake']) ?>
+    <!-- Tailwind CSS CDN -->
+    <?= $this->Html->css('normalize.min') ?>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <?= $this->Html->css('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css'); ?>
+    <?= $this->Html->css('styles') ?>
 
     <?= $this->fetch('meta') ?>
     <?= $this->fetch('css') ?>
     <?= $this->fetch('script') ?>
 </head>
-<body>
-    <nav class="top-nav">
-        <div class="top-nav-title">
-            <a href="<?= $this->Url->build('/') ?>"><span>Cake</span>PHP</a>
+<body class="<?= $this->fetch('bodyClass', 'bg-gray-50 min-h-screen flex flex-col') ?>">
+<!-- Block for custom background content -->
+<?= $this->fetch('background') ?>
+
+<!-- Navigation -->
+<?= $this->element('navbar') ?>
+
+<!-- Main Content -->
+<main class="<?= $this->fetch('mainClass', 'flex-grow container mx-auto py-10') ?>">
+    <div class="flash-messages-container">
+        <?= $this->Flash->render() ?>
+    </div>
+    <?= $this->fetch('content') ?>
+</main>
+
+<footer class="bg-gradient-to-r from-teal-600 to-teal-800 text-white py-8">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+            <div class="mb-4 md:mb-0">
+                <h3 class="text-2xl font-bold"><?= $this->ContentBlock->text('logo') ?></h3>
+            </div>
+            <div class="flex space-x-4">
+                <?= $this->ContentBlock->url(
+                    'instagram-link',
+                    [
+                        'text' => '<i class="fab fa-instagram"></i>',
+                        'target' => '_blank',
+                        'rel' => 'noopener noreferrer',
+                        'class' => 'hover:text-gray-300 transition',
+                        'escape' => false,
+                    ],
+                ) ?>
+                <?= $this->ContentBlock->url(
+                    'linkedin-link',
+                    [
+                        'text' => '<i class="fab fa-linkedin-in"></i>',
+                        'target' => '_blank',
+                        'rel' => 'noopener noreferrer',
+                        'class' => 'hover:text-gray-300 transition',
+                        'escape' => false,
+                    ],
+                ) ?>
+            </div>
         </div>
-        <div class="top-nav-links">
-            <a target="_blank" rel="noopener" href="https://book.cakephp.org/5/">Documentation</a>
-            <a target="_blank" rel="noopener" href="https://api.cakephp.org/">API</a>
+        <div class="mt-4 border-t border-teal-400 pt-4 text-center text-sm">
+            <?= $this->ContentBlock->text('copyright-notice'); ?>
         </div>
-    </nav>
-    <main class="main">
-        <div class="container">
-            <?= $this->Flash->render() ?>
-            <?= $this->fetch('content') ?>
-        </div>
-    </main>
-    <footer>
-    </footer>
+    </div>
+</footer>
+
+<?= $this->fetch('scriptBottom') ?>
+<?= $this->Html->script('https://unpkg.com/lucide@latest') ?>
+<script>
+    lucide.createIcons();
+    
+    // Flash Message Functionality
+    function dismissFlashMessage(element) {
+        if (element) {
+            element.classList.add('hidden');
+            setTimeout(() => {
+                element.remove();
+            }, 300);
+        }
+    }
+    
+    // Auto-dismiss flash messages after 5 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+        const autoMessages = document.querySelectorAll('.message.auto-dismiss');
+        autoMessages.forEach(function(message) {
+            setTimeout(() => {
+                if (message && !message.classList.contains('hidden')) {
+                    dismissFlashMessage(message);
+                }
+            }, 5000);
+        });
+    });
+    
+    // Keyboard accessibility - dismiss with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const visibleMessages = document.querySelectorAll('.message:not(.hidden)');
+            visibleMessages.forEach(function(message) {
+                dismissFlashMessage(message);
+            });
+        }
+    });
+</script>
 </body>
 </html>

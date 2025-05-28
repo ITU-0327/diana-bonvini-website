@@ -16,6 +16,15 @@ declare(strict_types=1);
  */
 namespace App;
 
+use App\Authentication\MultiFactorAuthenticator;
+use App\Service\R2StorageService;
+use App\Service\ShippingService;
+use App\Service\StripeService;
+use App\Service\TwoFactorService;
+use Authentication\AuthenticationService;
+use Authentication\AuthenticationServiceInterface;
+use Authentication\AuthenticationServiceProviderInterface;
+use Authentication\Middleware\AuthenticationMiddleware;
 use Cake\Core\Configure;
 use Cake\Core\ContainerInterface;
 use Cake\Datasource\FactoryLocator;
@@ -25,8 +34,14 @@ use Cake\Http\Middleware\BodyParserMiddleware;
 use Cake\Http\Middleware\CsrfProtectionMiddleware;
 use Cake\Http\MiddlewareQueue;
 use Cake\ORM\Locator\TableLocator;
+use Cake\ORM\TableRegistry;
 use Cake\Routing\Middleware\AssetMiddleware;
 use Cake\Routing\Middleware\RoutingMiddleware;
+use Cake\Routing\Router;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use RuntimeException;
 
 /**
  * Application setup class.
@@ -36,7 +51,7 @@ use Cake\Routing\Middleware\RoutingMiddleware;
  *
  * @extends \Cake\Http\BaseApplication<\App\Application>
  */
-class Application extends BaseApplication
+class Application extends BaseApplication implements AuthenticationServiceProviderInterface
 {
     /**
      * Load all the application configuration and bootstrap logic.
@@ -51,7 +66,7 @@ class Application extends BaseApplication
         if (PHP_SAPI !== 'cli') {
             FactoryLocator::add(
                 'Table',
-                (new TableLocator())->allowFallbackClass(false)
+                (new TableLocator())->allowFallbackClass(false),
             );
         }
     }
@@ -85,10 +100,17 @@ class Application extends BaseApplication
             // https://book.cakephp.org/5/en/controllers/middleware.html#body-parser-middleware
             ->add(new BodyParserMiddleware())
 
+            // Authentication Middleware
+            ->add(new AuthenticationMiddleware($this))
+
             // Cross Site Request Forgery (CSRF) Protection Middleware
             // https://book.cakephp.org/5/en/security/csrf.html#cross-site-request-forgery-csrf-middleware
             ->add(new CsrfProtectionMiddleware([
                 'httponly' => true,
+//                'secure' => true,
+//                'cookieName' => 'csrfToken',
+//                'expiry' => '+1 hour',
+//                'samesite' => 'Lax',
             ]));
 
         return $middlewareQueue;
@@ -103,5 +125,75 @@ class Application extends BaseApplication
      */
     public function services(ContainerInterface $container): void
     {
+        // Tables
+        $container->addShared('Table.TwoFactorCodes', function () {
+            return TableRegistry::getTableLocator()->get('TwoFactorCodes');
+        });
+        $container->addShared('Table.TrustedDevices', function () {
+            return TableRegistry::getTableLocator()->get('TrustedDevices');
+        });
+
+        // Two-Factor
+        $container->addShared(TwoFactorService::class)
+            ->addArgument('Table.TwoFactorCodes')
+            ->addArgument('Table.TrustedDevices');
+
+        // Stripe
+        $container->addShared(StripeService::class)
+            ->addArgument(Configure::read('Stripe.secret'));
+
+        // Cloudflare R2
+        $container->addShared(R2StorageService::class);
+
+        // Shipping Service
+        $container->addShared(ShippingService::class);
+    }
+
+    /**
+     * Get the authentication service.
+     *
+     * @param \Psr\Http\Message\ServerRequestInterface $request The request.
+     * @return \Authentication\AuthenticationServiceInterface
+     */
+    public function getAuthenticationService(ServerRequestInterface $request): AuthenticationServiceInterface
+    {
+        $authenticationService = new AuthenticationService([
+            'unauthenticatedRedirect' => Router::url('/users/login'),
+            'queryParam' => 'redirect',
+        ]);
+
+        // Load identifiers, ensure we check email and password fields
+        $authenticationService->loadIdentifier('Authentication.Password', [
+            'fields' => [
+                'username' => 'email',
+                'password' => 'password',
+            ],
+        ]);
+
+        // Load the authenticators, you want session first
+        $authenticationService->loadAuthenticator('Authentication.Session');
+
+        try {
+            $twoFactorService = $this->getContainer()->get(TwoFactorService::class);
+        } catch (NotFoundExceptionInterface | ContainerExceptionInterface $e) {
+            throw new RuntimeException(
+                'Unable to retrieve TwoFactorService from container',
+                0,
+                $e,
+            );
+        }
+        // Configure form data check to pick email and password
+        $authenticationService->loadAuthenticator(MultiFactorAuthenticator::class, [
+            'fields' => [
+                'username' => 'email',
+                'password' => 'password',
+            ],
+            'loginUrl' => Router::url('/users/login'),
+            'verifyUrl' => Router::url('/two-factor-auth/verify'),
+            'sessionKey' => 'TwoFactorUser',
+            'twoFactorService' => $twoFactorService,
+        ]);
+
+        return $authenticationService;
     }
 }

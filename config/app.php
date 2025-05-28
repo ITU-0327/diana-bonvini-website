@@ -214,7 +214,7 @@ return [
      */
     'EmailTransport' => [
         'default' => [
-            'className' => MailTransport::class,
+            'className' => env('EMAIL_TRANSPORT_CLASS', MailTransport::class),
             /*
              * The keys host, port, timeout, username, password, client and tls
              * are used in SMTP transports
@@ -245,12 +245,12 @@ return [
     'Email' => [
         'default' => [
             'transport' => 'default',
-            'from' => 'you@localhost',
+            'from' => ['no-reply@dianabonvini.com' => 'DianaBonvini.com'],
             /*
              * Will by default be set to config value of App.encoding, if that exists otherwise to UTF-8.
              */
-            //'charset' => 'utf-8',
-            //'headerCharset' => 'utf-8',
+            'charset' => 'utf-8',
+            'headerCharset' => 'utf-8',
         ],
     ],
 

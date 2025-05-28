@@ -29,6 +29,15 @@ class PagesControllerTest extends TestCase
     use IntegrationTestTrait;
 
     /**
+     * Fixtures
+     *
+     * @var list<string>
+     */
+    protected array $fixtures = [
+        'app.ContentBlocks',
+    ];
+
+    /**
      * testDisplay method
      *
      * @return void
@@ -36,10 +45,10 @@ class PagesControllerTest extends TestCase
     public function testDisplay()
     {
         Configure::write('debug', true);
-        $this->get('/pages/home');
+        $this->get('/');
         $this->assertResponseOk();
-        $this->assertResponseContains('CakePHP');
-        $this->assertResponseContains('<html>');
+        $this->assertResponseContains('diana bonvini');
+        $this->assertResponseContains('<html lang="en">');
     }
 
     /**
@@ -91,7 +100,7 @@ class PagesControllerTest extends TestCase
      */
     public function testCsrfAppliedError()
     {
-        $this->post('/pages/home', ['hello' => 'world']);
+        $this->post('/pages/landing', ['hello' => 'world']);
 
         $this->assertResponseCode(403);
         $this->assertResponseContains('CSRF');
@@ -105,7 +114,8 @@ class PagesControllerTest extends TestCase
     public function testCsrfAppliedOk()
     {
         $this->enableCsrfToken();
-        $this->post('/pages/home', ['hello' => 'world']);
+        $this->enableSecurityToken();
+        $this->post('/pages/landing', ['hello' => 'world']);
 
         $this->assertThat(403, $this->logicalNot(new StatusCode($this->_response)));
         $this->assertResponseNotContains('CSRF');

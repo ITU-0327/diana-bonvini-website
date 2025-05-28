@@ -18,7 +18,9 @@ declare(strict_types=1);
 use Cake\Chronos\Chronos;
 use Cake\Core\Configure;
 use Cake\Datasource\ConnectionManager;
+use Cake\Mailer\TransportFactory;
 use Cake\TestSuite\ConnectionHelper;
+use Cake\TestSuite\Fixture\SchemaLoader;
 use Migrations\TestSuite\Migrator;
 
 /**
@@ -35,6 +37,16 @@ if (empty($_SERVER['HTTP_HOST']) && !Configure::read('App.fullBaseUrl')) {
     Configure::write('App.fullBaseUrl', 'http://localhost');
 }
 
+if (env('DATABASE_TEST_URL')) {
+    // Drop the existing 'test' connection if it exists
+    if (ConnectionManager::getConfig('test')) {
+        ConnectionManager::drop('test');
+    }
+
+    // Now set the 'test' connection using the DSN from the environment variable
+    ConnectionManager::setConfig('test', ['url' => getenv('DATABASE_TEST_URL')]);
+}
+
 // DebugKit skips settings these connection config if PHP SAPI is CLI / PHPDBG.
 // But since PagesControllerTest is run with debug enabled and DebugKit is loaded
 // in application, without setting up these config DebugKit errors out.
@@ -47,7 +59,16 @@ ConnectionManager::setConfig('test_debug_kit', [
     'quoteIdentifiers' => false,
 ]);
 
+if (TransportFactory::getConfig('default')) {
+    TransportFactory::drop('default');
+    TransportFactory::setConfig('default', ['className' => 'Debug']);
+}
+
 ConnectionManager::alias('test_debug_kit', 'debug_kit');
+
+/** @var \Cake\Database\Connection $connection */
+$connection = ConnectionManager::get('test');
+$connection->execute('SET FOREIGN_KEY_CHECKS = 0;');
 
 // Fixate now to avoid one-second-leap-issues
 Chronos::setTestNow(Chronos::now());
@@ -69,7 +90,6 @@ ConnectionHelper::addTestAliases();
 // If you are not using CakePHP's migrations you can
 // hook into your migration tool of choice here or
 // load schema from a SQL dump file with
-// use Cake\TestSuite\Fixture\SchemaLoader;
-// (new SchemaLoader())->loadSqlFiles('./tests/schema.sql', 'test');
+(new SchemaLoader())->loadSqlFiles('./tests/schema.sql', 'test');
 
 (new Migrator())->run();
