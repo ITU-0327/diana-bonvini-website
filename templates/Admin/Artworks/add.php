@@ -31,8 +31,8 @@ $this->assign('title', __('Add New Artwork'));
                 ['action' => 'index'],
                 [
                     'class' => 'btn btn-outline-primary',
-                    'escape' => false
-                ]
+                    'escape' => false,
+                ],
             ) ?>
         </div>
     </div>
@@ -68,13 +68,12 @@ $this->assign('title', __('Add New Artwork'));
                                     'label' => false,
                                     'type' => 'number',
                                     'min' => '1',
-                                    'max' => '5',
                                     'value' => 5,
                                     'class' => 'form-control',
-                                    'placeholder' => 'Enter maximum copies (1-5)',
+                                    'placeholder' => 'Enter maximum copies',
                                     'required' => true,
                                 ]) ?>
-                                <small class="text-muted">How many copies of this artwork can be sold (Maximum: 5)</small>
+                                <small class="text-muted">How many copies of this artwork can be sold</small>
                             </div>
                         </div>
 
@@ -85,7 +84,6 @@ $this->assign('title', __('Add New Artwork'));
                                     'class' => 'form-control',
                                     'rows' => '5',
                                     'placeholder' => 'Describe the artwork in detail...',
-                                    'required' => true,
                                 ]) ?>
                             </div>
                         </div>
@@ -105,7 +103,7 @@ $this->assign('title', __('Add New Artwork'));
                         <i class="fas fa-info-circle mr-2"></i>
                         <strong>Note:</strong> Enter prices for the sizes and print types you want to offer. Leave blank or enter 0 to skip a variant.
                     </div>
-                    
+
                     <div class="row">
                         <?php
                         $sizes = ['A3', 'A2', 'A1'];
@@ -115,26 +113,26 @@ $this->assign('title', __('Add New Artwork'));
                             $variantsBySize[$variant->dimension][$variant->print_type] = $i;
                         }
                         ?>
-                        
+
                         <?php foreach ($sizes as $size) : ?>
                             <div class="col-md-4 mb-4">
                                 <div class="border rounded p-3 bg-light">
                                     <h6 class="text-center font-weight-bold mb-3 text-primary"><?= h($size) ?></h6>
-                                    
+
                                     <?php foreach ($printTypes as $pt) : ?>
                                         <?php if (isset($variantsBySize[$size][$pt])) :
                                             $i = $variantsBySize[$size][$pt];
                                             $variant = $artwork->artwork_variants[$i];
-                                        ?>
+                                            ?>
                                             <?= $this->Form->control(
                                                 "artwork_variants.$i.dimension",
-                                                ['type' => 'hidden', 'value' => $variant->dimension]
+                                                ['type' => 'hidden', 'value' => $variant->dimension],
                                             ) ?>
                                             <?= $this->Form->control(
                                                 "artwork_variants.$i.print_type",
-                                                ['type' => 'hidden', 'value' => $variant->print_type]
+                                                ['type' => 'hidden', 'value' => $variant->print_type],
                                             ) ?>
-                                            
+
                                             <div class="form-group mb-3">
                                                 <label class="form-label"><?= ucfirst($pt) ?> Price ($)</label>
                                                 <?= $this->Form->control(
@@ -146,7 +144,8 @@ $this->assign('title', __('Add New Artwork'));
                                                         'label' => false,
                                                         'class' => 'form-control',
                                                         'placeholder' => 'Enter price (0 to skip)',
-                                                    ]
+                                                        'required' => false,
+                                                    ],
                                                 ) ?>
                                             </div>
                                         <?php endif; ?>
@@ -175,9 +174,9 @@ $this->assign('title', __('Add New Artwork'));
 
                         <div class="form-group">
                             <?= $this->Form->label('image_path', 'Upload Artwork Image', ['class' => 'form-label font-weight-bold mb-3']) ?>
-                            
+
                             <!-- Drag and Drop Zone -->
-                            <div class="image-upload-zone border border-dashed rounded p-4 mb-3" id="imageUploadZone" 
+                            <div class="image-upload-zone border border-dashed rounded p-4 mb-3" id="imageUploadZone"
                                  style="border-color: #ddd; background-color: #f9f9f9; cursor: pointer; transition: all 0.3s ease;">
                                 <div id="uploadPrompt">
                                     <i class="fas fa-cloud-upload-alt text-muted mb-2" style="font-size: 2rem;"></i>
@@ -193,14 +192,14 @@ $this->assign('title', __('Add New Artwork'));
                                     </p>
                                 </div>
                             </div>
-                            
+
                             <?= $this->Form->file('image_path', [
                                 'class' => 'd-none',
                                 'accept' => 'image/jpeg',
                                 'id' => 'imageUpload',
                                 'required' => true,
                             ]) ?>
-                            
+
                             <small class="text-muted d-block">
                                 <strong>Required:</strong> Please upload an image for this artwork
                             </small>
@@ -221,9 +220,9 @@ $this->assign('title', __('Add New Artwork'));
                         <?= $this->Form->button(__('Save Artwork'), [
                             'class' => 'btn btn-success btn-block btn-lg mb-3',
                             'type' => 'submit',
-                            'id' => 'saveBtn'
+                            'id' => 'saveBtn',
                         ]) ?>
-                        
+
                         <?= $this->Html->link(__('Cancel'), ['action' => 'index'], [
                             'class' => 'btn btn-outline-secondary btn-block',
                         ]) ?>
@@ -281,7 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
         e.stopPropagation();
         this.style.borderColor = '#ddd';
         this.style.backgroundColor = '#f9f9f9';
-        
+
         const files = e.dataTransfer.files;
         if (files.length > 0) {
             // Update the file input with the dropped file
@@ -298,9 +297,9 @@ document.addEventListener('DOMContentLoaded', function() {
             showUploadPrompt();
             return;
         }
-        
+
         const file = files[0];
-        
+
         // Validate file size (8MB max)
         if (file.size > 8 * 1024 * 1024) {
             alert('File size must be less than 8MB');
@@ -310,7 +309,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showUploadPrompt();
             return;
         }
-        
+
         // Validate file type
         if (!file.type.match('image/jpeg')) {
             alert('Please select a JPEG image file');
@@ -320,10 +319,10 @@ document.addEventListener('DOMContentLoaded', function() {
             showUploadPrompt();
             return;
         }
-        
+
         // Show success state
         showUploadSuccess();
-        
+
         // Update preview
         const reader = new FileReader();
         reader.addEventListener('load', function() {
@@ -363,22 +362,10 @@ document.addEventListener('DOMContentLoaded', function() {
             showFieldError(title, 'Please enter an artwork title');
         }
 
-        if (!description.value.trim()) {
-            isValid = false;
-            description.classList.add('is-invalid');
-            showFieldError(description, 'Please enter an artwork description');
-        }
-
         if (!maxCopies.value || parseInt(maxCopies.value) < 1) {
             isValid = false;
             maxCopies.classList.add('is-invalid');
             showFieldError(maxCopies, 'Please enter a valid number of max copies (minimum 1)');
-        }
-
-        if (parseInt(maxCopies.value) > 5) {
-            isValid = false;
-            maxCopies.classList.add('is-invalid');
-            showFieldError(maxCopies, 'Maximum copies cannot exceed 5');
         }
 
         // Image upload validation
@@ -431,7 +418,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const priceInputs = document.querySelectorAll('input[name*="[price]"]');
     priceInputs.forEach(input => {
         const name = input.getAttribute('name');
-        
+
         // Add helpful placeholder text based on size and type
         if (name.includes('A3')) {
             if (name.includes('canvas')) {
