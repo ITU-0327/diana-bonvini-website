@@ -118,7 +118,7 @@ $userType = $user?->get('user_type');
 
                     <?php if ($userType === 'admin') : ?>
                         <li>
-                            <a href="<?= $this->Url->build(['prefix' => 'Admin', 'controller' => 'WritingServiceRequests', 'action' => 'index']) ?>" class="text-indigo-600 hover:text-indigo-500 font-semibold">
+                            <a href="<?= $this->Url->build(['controller' => 'Admin', 'action' => 'index']) ?>" class="text-indigo-600 hover:text-indigo-500 font-semibold">
                                 Admin Dashboard
                             </a>
                         </li>
