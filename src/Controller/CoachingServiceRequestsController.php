@@ -7,7 +7,6 @@ use App\Mailer\PaymentMailer;
 use App\Model\Entity\CoachingServiceRequest;
 use Cake\Core\Configure;
 use Cake\Event\EventInterface;
-use Cake\Filesystem\Folder;
 use Cake\Http\Response;
 use Cake\Routing\Router;
 use Cake\Utility\Text;
@@ -461,8 +460,8 @@ class CoachingServiceRequestsController extends AppController
 
         // Create directory if it doesn't exist using CakePHP's Folder utility
         if (!is_dir($uploadDir)) {
-            $folder = new Folder();
-            if (!$folder->create($uploadDir, 0755)) {
+            // Attempt to create directory, including parent dirs
+            if (!mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
                 throw new Exception('Unable to create upload directory. Please check file permissions.');
             }
         }
