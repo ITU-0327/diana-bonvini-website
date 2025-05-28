@@ -270,6 +270,8 @@ $this->assign('title', __('View Order'));
                     <?= $this->Form->select('status', [
                         'pending' => 'Pending',
                         'confirmed' => 'Confirmed',
+                        'completed' => 'Completed',
+                        'cancelled' => 'Cancelled',
                     ], [
                         'class' => 'form-control',
                         'value' => $order->order_status,
