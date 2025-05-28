@@ -43,9 +43,16 @@ class ArtworksController extends AppController
                     ]);
                 },
             ]);
+
+        // Add status filtering if provided
+        $status = $this->request->getQuery('status');
+        if ($status && in_array($status, ['available', 'sold'])) {
+            $query->where(['Artworks.availability_status' => $status]);
+        }
+
         $artworks = $this->paginate($query);
 
-        $this->set(compact('artworks'));
+        $this->set(compact('artworks', 'status'));
     }
 
     /**

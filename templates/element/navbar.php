@@ -36,19 +36,19 @@ $userType = $user?->get('user_type');
                             <li>
                                 <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index']) ?>"
                                    class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                    All Art
+                                    All Artwork
                                 </a>
                             </li>
                             <li>
-                                <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index']) ?>"
+                                <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index', '?' => ['status' => 'available']]) ?>"
                                    class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                    New Arrivals
+                                    Art For Sale
                                 </a>
                             </li>
                             <li>
-                                <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index']) ?>"
+                                <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index', '?' => ['status' => 'sold']]) ?>"
                                    class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                    Collections
+                                    Art Sold
                                 </a>
                             </li>
                         </ul>
