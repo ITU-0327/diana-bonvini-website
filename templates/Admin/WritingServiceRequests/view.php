@@ -225,6 +225,10 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                 'required' => true,
                                 'id' => 'messageText',
                             ]) ?>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-keyboard mr-1"></i>
+                                Tip: Press Ctrl+Enter to send quickly
+                            </small>
                         </div>
 
                         <div class="form-group mb-0 d-flex justify-content-between align-items-center">
@@ -1431,18 +1435,128 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
         // Handle message form submission
         const messageForm = document.getElementById('replyForm');
         if (messageForm) {
+            const messageText = document.getElementById('messageText');
+            
+            // Add Ctrl+Enter shortcut for sending messages
+            if (messageText) {
+                messageText.addEventListener('keydown', function(e) {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                        e.preventDefault();
+                        messageForm.dispatchEvent(new Event('submit'));
+                    }
+                });
+            }
+
             messageForm.addEventListener('submit', function(e) {
-                // Change the button to show loading state
+                e.preventDefault(); // Prevent default form submission
+
                 const sendButton = document.getElementById('sendButton');
-                if (sendButton) {
-                    sendButton.disabled = true;
-                    sendButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+                const messageValue = messageText.value.trim();
+
+                if (!messageValue) {
+                    return false;
                 }
 
-                // We'll let the form submit normally, but we want to scroll to bottom when we return
-                // Set a flag in sessionStorage to indicate we should scroll to bottom after page loads
-                sessionStorage.setItem('scrollToBottom', 'true');
+                // Show loading state
+                if (sendButton) {
+                    sendButton.disabled = true;
+                    sendButton.innerHTML = '<span class="spinner-border spinner-border-sm mr-1" role="status" aria-hidden="true"></span> Sending...';
+                }
+
+                // Get form data
+                const formData = new FormData(messageForm);
+
+                // Send via AJAX
+                fetch(messageForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (response.ok || response.status === 302) {
+                        // Clear the message input
+                        messageText.value = '';
+                        
+                        // Add message to chat immediately
+                        addMessageToChat({
+                            content: messageValue,
+                            sender: 'admin',
+                            senderName: 'You (Admin)',
+                            timestamp: new Date().toISOString(),
+                            is_read: false
+                        });
+
+                        // Scroll to bottom
+                        if (chatContainer) {
+                            chatContainer.scrollTop = chatContainer.scrollHeight;
+                        }
+
+                        return response.text();
+                    }
+                    throw new Error('Server error');
+                })
+                .catch(error => {
+                    console.error('Error sending message:', error);
+                    alert('Failed to send message. Please try again.');
+                })
+                .finally(() => {
+                    // Reset button state
+                    if (sendButton) {
+                        sendButton.disabled = false;
+                        sendButton.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Send Message';
+                    }
+                });
             });
+        }
+
+        // Function to add a message to the chat immediately
+        function addMessageToChat(message) {
+            const chatMessages = document.querySelector('.chat-messages');
+            if (!chatMessages) return;
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${message.sender === 'admin' ? 'admin-message' : 'client-message'}`;
+            messageDiv.setAttribute('data-message-id', 'pending-' + Date.now());
+
+            // Format the timestamp
+            const messageTime = new Date(message.timestamp);
+            const timeString = messageTime.toLocaleString();
+
+            // Process message content
+            let messageContent = message.content.replace(/\n/g, '<br>');
+            messageContent = messageContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+            messageDiv.innerHTML = `
+                <div class="message-header d-flex align-items-center mb-1">
+                    <div class="message-avatar mr-2">
+                        <div class="avatar bg-primary text-white">A</div>
+                    </div>
+                    <div class="message-info">
+                        <span class="message-sender font-weight-bold">${message.senderName}</span>
+                        <span class="message-time text-muted ml-2">
+                            <i class="far fa-clock"></i> <span class="local-time">${timeString}</span>
+                        </span>
+                        <span class="badge badge-info ml-2">Sending...</span>
+                    </div>
+                </div>
+                <div class="message-content">
+                    <div class="message-bubble p-3 rounded">
+                        <div class="message-text">${messageContent}</div>
+                    </div>
+                </div>
+            `;
+
+            chatMessages.appendChild(messageDiv);
+
+            // Remove the "sending" badge after a short delay
+            setTimeout(() => {
+                const sendingBadge = messageDiv.querySelector('.badge-info');
+                if (sendingBadge) {
+                    sendingBadge.remove();
+                }
+            }, 2000);
         }
 
         // Check if we need to scroll to bottom due to form submission

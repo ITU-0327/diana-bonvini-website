@@ -5,6 +5,11 @@
  * @var \App\Model\Entity\CoachingRequestDocument[] $coachingRequestDocuments
  */
 use Cake\Utility\Inflector;
+
+$this->assign('title', __('Coaching Service Request Details'));
+
+// Include timezone helper for proper local time display (load early)
+echo $this->Html->script('timezone-helper', ['block' => false]);
 ?>
 
 <div class="container-fluid">
@@ -167,8 +172,8 @@ use Cake\Utility\Inflector;
                                                 <span class="message-sender font-weight-bold">
                                                     <?= $isAdmin ? 'You (Admin)' : h($message->user->first_name . ' ' . $message->user->last_name) ?>
                                                 </span>
-                                                <span class="message-time text-muted ml-2">
-                                                    <i class="far fa-clock"></i> <?= $message->created_at->format('M j, Y g:i A') ?>
+                                                <span class="message-time text-muted ml-2" data-datetime="<?= $message->created_at->jsonSerialize() ?>">
+                                                    <i class="far fa-clock"></i> <span class="local-time">Loading...</span>
                                                 </span>
                                                 <?php if (!$isAdmin && !$message->is_read) : ?>
                                                 <span class="badge badge-warning ml-2">New</span>
@@ -1650,3 +1655,43 @@ function formatFileSize(int $bytes): string
     return round($bytes, 2) . ' ' . $units[$i];
 }
 ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('🚀 Coaching admin messaging system initialized');
+
+    // Simple form submission handler (exactly like writing service requests admin template)
+    const replyForm = document.getElementById('replyForm');
+    if (replyForm) {
+        replyForm.addEventListener('submit', function() {
+            const button = document.getElementById('sendButton');
+            if (button) {
+                button.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
+                button.disabled = true;
+                console.log('📤 Submitting coaching message via form');
+            }
+        });
+    }
+
+    // Initialize timezone helper if available
+    if (window.TimezoneHelper) {
+        // Convert all existing timestamps
+        window.TimezoneHelper.convertAllTimestamps();
+        console.log('✅ Timezone helper initialized for coaching messages');
+    } else {
+        console.log('⚠️ Timezone helper not available');
+    }
+
+    // Scroll to messages section if hash is present
+    if (window.location.hash === '#messages') {
+        const messagesElement = document.getElementById('messages');
+        if (messagesElement) {
+            setTimeout(() => {
+                messagesElement.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+        }
+    }
+
+    console.log('✅ Coaching admin system ready');
+});
+</script>

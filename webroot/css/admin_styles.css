@@ -694,10 +694,194 @@ body {
 }
 
 @keyframes progressBar {
+    from { width: 0; }
+    to { width: 100%; }
+}
+
+/* Enhanced Chat Styles */
+.chat-container {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chat-messages {
+    padding: 1rem;
+    background: #f8f9fc;
+}
+
+.chat-message {
+    margin-bottom: 1.5rem;
+    animation: messageSlideIn 0.3s ease-out;
+}
+
+.chat-message.admin-message .message-bubble {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 18px 18px 18px 4px;
+}
+
+.chat-message.client-message .message-bubble {
+    background: #e9ecef;
+    color: #495057;
+    border-radius: 18px 18px 4px 18px;
+}
+
+.message-avatar .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.message-sender {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.message-time {
+    font-size: 0.75rem;
+}
+
+.message-text {
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+/* Send Button Loading States */
+#sendButton {
+    position: relative;
+    transition: all 0.2s ease;
+    min-width: 140px;
+}
+
+#sendButton:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+#sendButton .spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    animation: spin 1s linear infinite;
+}
+
+/* Message Form Enhancements */
+.new-message-form {
+    background: #fff;
+    border-radius: 0 0 8px 8px;
+    padding: 1rem;
+}
+
+#messageText {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    transition: border-color 0.2s ease;
+    resize: vertical;
+    min-height: 80px;
+}
+
+#messageText:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Sending Badge Animation */
+.badge-info {
+    animation: pulse 1.5s ease-in-out infinite alternate;
+}
+
+/* Loading Animation for Chat */
+.chat-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.chat-loading .spinner-border {
+    margin-right: 0.5rem;
+}
+
+/* Message Animations */
+@keyframes messageSlideIn {
     from {
-        width: 100%;
+        opacity: 0;
+        transform: translateY(20px);
     }
     to {
-        width: 0%;
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0.7;
+        transform: scale(1.05);
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Smooth scrolling for chat container */
+.chat-container {
+    scroll-behavior: smooth;
+}
+
+/* Message status indicators */
+.message-status {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    margin-top: 0.25rem;
+}
+
+.message-status.sending {
+    color: #ffc107;
+}
+
+.message-status.sent {
+    color: #28a745;
+}
+
+.message-status.failed {
+    color: #dc3545;
+}
+
+/* Responsive chat improvements */
+@media (max-width: 768px) {
+    .chat-message {
+        margin-bottom: 1rem;
+    }
+    
+    .message-avatar .avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+    
+    #sendButton {
+        min-width: 120px;
+        font-size: 0.875rem;
+    }
+    
+    .new-message-form {
+        padding: 0.75rem;
     }
 }
