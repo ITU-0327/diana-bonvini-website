@@ -17,6 +17,7 @@ use Psr\Http\Message\UploadedFileInterface;
 use RuntimeException;
 use Stripe\Checkout\Session;
 use Stripe\Stripe;
+use Cake\Http\Exception\BadRequestException;
 
 /**
  * WritingServiceRequests Controller
@@ -114,12 +115,32 @@ class WritingServiceRequestsController extends AppController
 
         if ($this->request->is(['post', 'put', 'patch'])) {
             $data = $this->request->getData();
+            
+            // Log request data for debugging
+            $this->log('Client message submission for request ' . $id . ': ' . json_encode([
+                'data' => $data,
+                'is_ajax' => $this->request->is('ajax'),
+                'headers' => $this->request->getHeaders(),
+            ]), 'debug');
 
             if (!empty($data['reply_message'])) {
+                $this->log('Processing client reply message for user: ' . $user->user_id, 'debug');
+                
+                // For AJAX requests, handle differently for faster response
+                if ($this->request->is('ajax') || $this->request->getHeaderLine('X-Requested-With') === 'XMLHttpRequest') {
+                    $this->log('Handling AJAX message submission', 'debug');
+                    return $this->_handleAjaxMessageSubmission($id, $data['reply_message'], $user);
+                }
+
+                $this->log('Handling regular form submission (fallback)', 'debug');
+                
+                // Regular form submission handling (fallback)
                 $data['request_messages'][] = [
                     'user_id' => $user->user_id,
                     'message' => $data['reply_message'],
                     'is_read' => false, // Initially not read by the admin
+                    'is_deleted' => false, // Ensure is_deleted is set
+                    'writing_service_request_id' => $writingServiceRequest->writing_service_request_id,
                 ];
 
                 $writingServiceRequest = $this->WritingServiceRequests->patchEntity(
@@ -127,7 +148,10 @@ class WritingServiceRequestsController extends AppController
                     $data,
                 );
 
+                $this->log('About to save writing service request with message', 'debug');
+                
                 if ($this->WritingServiceRequests->save($writingServiceRequest)) {
+                    $this->log('Client message saved successfully', 'info');
                     $this->Flash->success(__('Message sent successfully.'));
 
                     // If the request status is pending, update it to in_progress
@@ -137,37 +161,15 @@ class WritingServiceRequestsController extends AppController
                     }
 
                     // Send notification email to admin
-                    try {
-                        // Get the latest message that was just added
-                        $latestMessage = end($writingServiceRequest->request_messages);
-
-                        if ($latestMessage) {
-                            // Get a fresh copy of the request with user data
-                            $requestWithUser = $this->WritingServiceRequests->get($id, contain: ['Users']);
-
-                            // Fixed admin email
-                            $adminEmail = 'diana@dianabonvini.com';
-                            $adminName = 'Diana Bonvini';
-
-                            // Send admin notification
-                            $mailer = new PaymentMailer('default');
-                            $mailer->newMessageNotification(
-                                $requestWithUser,
-                                $data['reply_message'],
-                                $adminEmail,
-                                $adminName,
-                            );
-                            $mailer->deliverAsync();
-                        }
-                    } catch (Exception $e) {
-                        // Log critical errors only
-                        $this->log('Error sending message notification: ' . $e->getMessage(), 'error');
-                    }
+                    $this->_scheduleAdminEmailNotification($id, $data['reply_message']);
 
                     return $this->redirect(['action' => 'view', $id]);
                 } else {
+                    $this->log('Failed to save client message. Errors: ' . json_encode($writingServiceRequest->getErrors()), 'error');
                     $this->Flash->error(__('Failed to send message. Please try again.'));
                 }
+            } else {
+                $this->log('No reply_message in POST data for request ' . $id, 'warning');
             }
         }
 
@@ -202,6 +204,145 @@ class WritingServiceRequestsController extends AppController
         // Log how many messages were marked as read for debugging
         if ($updatedCount > 0) {
             $this->log("Marked $updatedCount messages as read for user $userId", 'info');
+        }
+    }
+
+    /**
+     * Handle AJAX message submission for faster response
+     *
+     * @param string $id Writing Service Request id
+     * @param string $messageText The message text
+     * @param \App\Model\Entity\User $user The current user
+     * @return \Cake\Http\Response
+     */
+    private function _handleAjaxMessageSubmission(string $id, string $messageText, $user): Response
+    {
+        // Ensure this method always returns JSON
+        $this->disableAutoRender();
+        $this->response = $this->response->withType('application/json');
+
+        try {
+            if (empty(trim($messageText))) {
+                $this->log('Empty message text provided in AJAX submission', 'warning');
+                return $this->response->withStringBody(json_encode([
+                    'success' => false,
+                    'message' => 'Please enter a message'
+                ]));
+            }
+
+            $this->log('Starting AJAX message submission for request: ' . $id, 'debug');
+
+            // Get the writing service request first to verify it exists
+            $writingServiceRequest = $this->WritingServiceRequests->get($id);
+            $this->log('Retrieved writing service request successfully', 'debug');
+
+            // Use RequestMessages table directly for more reliable saving
+            $requestMessagesTable = $this->fetchTable('RequestMessages');
+            
+            // Create new message entity directly with proper UUID
+            $newMessage = $requestMessagesTable->newEntity([
+                'request_message_id' => \Cake\Utility\Text::uuid(), // Generate UUID for primary key
+                'writing_service_request_id' => $id,
+                'user_id' => $user->user_id,
+                'message' => $messageText,
+                'is_read' => false, // Initially not read by the admin
+                'is_deleted' => false,
+                'created_at' => new \DateTime('now'),
+                'updated_at' => new \DateTime('now'),
+            ]);
+
+            // Save the message directly to RequestMessages table
+            if ($requestMessagesTable->save($newMessage)) {
+                $this->log('Client message saved successfully via AJAX. Message ID: ' . $newMessage->request_message_id, 'info');
+                
+                // If the request status is pending, update it to in_progress
+                if ($writingServiceRequest->request_status === 'pending') {
+                    $writingServiceRequest->request_status = 'in_progress';
+                    $this->WritingServiceRequests->save($writingServiceRequest);
+                }
+
+                // Schedule email notification to run in background
+                $this->_scheduleAdminEmailNotification($id, $messageText);
+
+                return $this->response->withStringBody(json_encode([
+                    'success' => true,
+                    'message' => 'Message sent successfully',
+                    'messageId' => $newMessage->request_message_id
+                ]));
+            } else {
+                $this->log('Failed to save client message via AJAX. Errors: ' . json_encode($newMessage->getErrors()), 'error');
+                return $this->response->withStringBody(json_encode([
+                    'success' => false,
+                    'message' => 'Failed to send message. Please try again.',
+                    'errors' => $newMessage->getErrors()
+                ]));
+            }
+        } catch (Exception $e) {
+            $this->log('Error in AJAX message submission: ' . $e->getMessage(), 'error');
+            return $this->response->withStringBody(json_encode([
+                'success' => false,
+                'message' => 'An error occurred while sending the message: ' . $e->getMessage()
+            ]));
+        }
+    }
+
+    /**
+     * Schedule admin email notification to run in background
+     *
+     * @param string $id Writing Service Request id
+     * @param string $messageText The message text
+     * @return void
+     */
+    private function _scheduleAdminEmailNotification(string $id, string $messageText): void
+    {
+        try {
+            // For now, just run it asynchronously with a small delay
+            // In a production environment, you might want to use a proper queue system
+            if (function_exists('fastcgi_finish_request')) {
+                fastcgi_finish_request(); // Send response to client immediately
+            }
+            
+            // Now send the email without blocking the response
+            $this->_sendAdminEmailNotification($id, $messageText);
+        } catch (Exception $e) {
+            $this->log('Error scheduling admin email notification: ' . $e->getMessage(), 'error');
+        }
+    }
+
+    /**
+     * Send admin email notification immediately
+     *
+     * @param string $id Writing Service Request id
+     * @param string $messageText The message text
+     * @return void
+     */
+    private function _sendAdminEmailNotification(string $id, string $messageText): void
+    {
+        try {
+            // Get a fresh copy of the request with user data
+            $requestWithUser = $this->WritingServiceRequests->get($id, contain: ['Users']);
+
+            // Fixed admin email
+            $adminEmail = 'diana@dianabonvini.com';
+            $adminName = 'Diana Bonvini';
+
+            // Send admin notification
+            $mailer = new PaymentMailer('default');
+            $mailer->newMessageNotification(
+                $requestWithUser,
+                $messageText,
+                $adminEmail,
+                $adminName,
+            );
+            $result = $mailer->deliverAsync();
+
+            if ($result) {
+                $this->log('Admin message notification sent successfully to ' . $adminEmail, 'info');
+            } else {
+                $this->log('Admin message notification failed to send to ' . $adminEmail, 'warning');
+            }
+        } catch (Exception $e) {
+            $this->log('Error sending admin message notification: ' . $e->getMessage(), 'error');
         }
     }
 
@@ -324,6 +465,63 @@ class WritingServiceRequestsController extends AppController
         }
 
         return $this->response->withStringBody($jsonResponse);
+    }
+
+    /**
+     * Get messages as HTML for AJAX updates
+     *
+     * @param string|null $id Writing Service Request id
+     * @return \Cake\Http\Response|null The response with HTML content
+     */
+    public function getMessages(?string $id = null)
+    {
+        $this->request->allowMethod(['get', 'ajax']);
+
+        if ($this->request->is('ajax')) {
+            $this->disableAutoRender();
+            $this->response = $this->response->withType('application/json');
+
+            if (empty($id)) {
+                return $this->response->withStringBody('{"success":false,"message":"Request ID is required"}');
+            }
+
+            /** @var \App\Model\Entity\User|null $user */
+            $user = $this->Authentication->getIdentity();
+
+            if (!$user) {
+                return $this->response->withStringBody('{"success":false,"message":"Authentication required"}');
+            }
+
+            try {
+                $writingServiceRequest = $this->WritingServiceRequests->get($id, contain: [
+                    'RequestMessages' => function ($q) {
+                        return $q->contain(['Users'])
+                            ->orderBy(['RequestMessages.created_at' => 'ASC']);
+                    },
+                ]);
+
+                // Mark messages from admin as read when customer views them
+                $this->markMessagesAsRead($writingServiceRequest, $user->user_id);
+
+                // Render the messages HTML
+                $this->set(compact('writingServiceRequest'));
+                $this->viewBuilder()->setLayout(false);
+                $this->viewBuilder()->setTemplate('messages_only');
+                $html = $this->render();
+
+                return $this->response->withStringBody(json_encode([
+                    'success' => true,
+                    'html' => $html->getBody()->getContents(),
+                ]));
+            } catch (Exception $e) {
+                return $this->response->withStringBody(json_encode([
+                    'success' => false,
+                    'message' => 'Error: ' . $e->getMessage(),
+                ]));
+            }
+        }
+
+        throw new BadRequestException('This endpoint only accepts AJAX requests');
     }
 
     /**
@@ -1985,6 +2183,7 @@ class WritingServiceRequestsController extends AppController
                         'user_id' => $user->user_id,
                         'message' => $message,
                         'is_read' => false,
+                        'is_deleted' => false,
                     ]);
                     $requestMessagesTable->save($newMessage);
 
@@ -2001,6 +2200,36 @@ class WritingServiceRequestsController extends AppController
             $this->Flash->error(__('Error: {0}', $e->getMessage()));
 
             return $this->redirect(['action' => 'view', $id]);
+        }
+    }
+
+    /**
+     * Simple AJAX test endpoint to verify AJAX is working
+     *
+     * @return \Cake\Http\Response
+     */
+    public function ajaxTest()
+    {
+        $this->request->allowMethod(['post', 'ajax']);
+        $this->disableAutoRender();
+        $this->response = $this->response->withType('application/json');
+
+        try {
+            $data = $this->request->getData();
+            $this->log('AJAX test endpoint called with data: ' . json_encode($data), 'debug');
+            
+            return $this->response->withStringBody(json_encode([
+                'success' => true,
+                'message' => 'AJAX test successful',
+                'received_data' => $data,
+                'timestamp' => date('Y-m-d H:i:s')
+            ]));
+        } catch (Exception $e) {
+            $this->log('AJAX test error: ' . $e->getMessage(), 'error');
+            return $this->response->withStringBody(json_encode([
+                'success' => false,
+                'message' => 'AJAX test failed: ' . $e->getMessage()
+            ]));
         }
     }
 }

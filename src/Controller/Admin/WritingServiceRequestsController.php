@@ -497,8 +497,14 @@ class WritingServiceRequestsController extends BaseAdminController
         $admin = $this->Authentication->getIdentity();
 
         if (!$admin || $admin->user_type !== 'admin') {
+            if ($this->request->is('ajax')) {
+                $this->response = $this->response->withType('application/json');
+                return $this->response->withStringBody(json_encode([
+                    'success' => false,
+                    'message' => 'Not authorized'
+                ]));
+            }
             $this->Flash->error(__('You are not authorized to perform this action.'));
-
             return $this->redirect(['controller' => 'Admin', 'action' => 'dashboard']);
         }
 
@@ -508,8 +514,14 @@ class WritingServiceRequestsController extends BaseAdminController
         $messageText = $data['message_text'] ?? '';
 
         if (empty(trim($messageText))) {
+            if ($this->request->is('ajax')) {
+                $this->response = $this->response->withType('application/json');
+                return $this->response->withStringBody(json_encode([
+                    'success' => false,
+                    'message' => 'Please enter a message'
+                ]));
+            }
             $this->Flash->error(__('Please enter a message.'));
-
             return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
         }
 
@@ -533,45 +545,92 @@ class WritingServiceRequestsController extends BaseAdminController
         );
 
         if ($this->WritingServiceRequests->save($writingServiceRequest)) {
-            $this->Flash->success(__('Message sent successfully.'));
-
             // If the request status is pending, update it to in_progress
             if ($writingServiceRequest->request_status === 'pending') {
                 $writingServiceRequest->request_status = 'in_progress';
                 $this->WritingServiceRequests->save($writingServiceRequest);
             }
 
-            // Send email notification to customer
-            try {
-                // Get a fresh copy of the request with user data
-                $requestWithUser = $this->WritingServiceRequests->get($id, contain: ['Users']);
-
-                if (!empty($requestWithUser->user) && !empty($requestWithUser->user->email)) {
-                    $adminName = 'Diana Bonvini';
-
-                    // Send customer notification
-                    $mailer = new PaymentMailer('default');
-                    $mailer->customerMessageNotification(
-                        $requestWithUser,
-                        $messageText,
-                        $adminName,
-                    );
-                    $result = $mailer->deliverAsync();
-
-                    if ($result) {
-                        $this->log('Customer message notification sent successfully to ' . $requestWithUser->user->email, 'info');
-                    } else {
-                        $this->log('Customer message notification failed to send to ' . $requestWithUser->user->email, 'warning');
-                    }
-                }
-            } catch (Exception $e) {
-                $this->log('Error sending customer message notification: ' . $e->getMessage(), 'error');
+            // For AJAX requests, return JSON response immediately
+            if ($this->request->is('ajax')) {
+                // Schedule email notification to run in background
+                $this->_scheduleEmailNotification($id, $messageText);
+                
+                $this->response = $this->response->withType('application/json');
+                return $this->response->withStringBody(json_encode([
+                    'success' => true,
+                    'message' => 'Message sent successfully'
+                ]));
             }
+
+            $this->Flash->success(__('Message sent successfully.'));
+
+            // For regular requests, send email synchronously
+            $this->_sendEmailNotification($id, $messageText);
         } else {
+            if ($this->request->is('ajax')) {
+                $this->response = $this->response->withType('application/json');
+                return $this->response->withStringBody(json_encode([
+                    'success' => false,
+                    'message' => 'Failed to send message. Please try again.'
+                ]));
+            }
             $this->Flash->error(__('Failed to send message. Please try again.'));
         }
 
         return $this->redirect(['action' => 'view', $id, '#' => 'messages']);
+    }
+
+    /**
+     * Send email notification immediately (for regular requests)
+     */
+    private function _sendEmailNotification(string $id, string $messageText): void
+    {
+        try {
+            // Get a fresh copy of the request with user data
+            $requestWithUser = $this->WritingServiceRequests->get($id, contain: ['Users']);
+
+            if (!empty($requestWithUser->user) && !empty($requestWithUser->user->email)) {
+                $adminName = 'Diana Bonvini';
+
+                // Send customer notification
+                $mailer = new PaymentMailer('default');
+                $mailer->customerMessageNotification(
+                    $requestWithUser,
+                    $messageText,
+                    $adminName,
+                );
+                $result = $mailer->deliverAsync();
+
+                if ($result) {
+                    $this->log('Customer message notification sent successfully to ' . $requestWithUser->user->email, 'info');
+                } else {
+                    $this->log('Customer message notification failed to send to ' . $requestWithUser->user->email, 'warning');
+                }
+            }
+        } catch (Exception $e) {
+            $this->log('Error sending customer message notification: ' . $e->getMessage(), 'error');
+        }
+    }
+
+    /**
+     * Schedule email notification to run in background (for AJAX requests)
+     */
+    private function _scheduleEmailNotification(string $id, string $messageText): void
+    {
+        // For now, just run it asynchronously with a small delay
+        // In a production environment, you might want to use a proper queue system
+        try {
+            // Create a background process that doesn't block the response
+            if (function_exists('fastcgi_finish_request')) {
+                fastcgi_finish_request(); // Send response to client immediately
+            }
+            
+            // Now send the email without blocking the response
+            $this->_sendEmailNotification($id, $messageText);
+        } catch (Exception $e) {
+            $this->log('Error scheduling email notification: ' . $e->getMessage(), 'error');
+        }
     }
 
     /**

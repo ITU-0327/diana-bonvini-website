@@ -75,6 +75,11 @@ return function (RouteBuilder $routes): void {
             ->setPatterns(['id' => '[a-zA-Z0-9-]+', 'lastMessageId' => '[a-zA-Z0-9-]+'])
             ->setPass(['id', 'lastMessageId']);
 
+        // AJAX endpoint for getting messages as HTML
+        $builder->connect('/writing-service-requests/getMessages/:id', ['controller' => 'WritingServiceRequests', 'action' => 'getMessages'])
+            ->setPatterns(['id' => '[a-zA-Z0-9-]+'])
+            ->setPass(['id']);
+
         // Coaching service requests API routes
         $builder->connect('/coaching-service-requests/fetch-messages/*', ['controller' => 'CoachingServiceRequests', 'action' => 'fetchMessages']);
         $builder->connect('/coaching-service-requests/fetch-messages/:id', ['controller' => 'CoachingServiceRequests', 'action' => 'fetchMessages'])
@@ -158,6 +163,11 @@ return function (RouteBuilder $routes): void {
         $builder->connect('/writing-service-requests/fetch-messages/:id/:lastMessageId', ['controller' => 'WritingServiceRequests', 'action' => 'fetchMessages'])
             ->setPatterns(['id' => '[a-zA-Z0-9-]+', 'lastMessageId' => '[a-zA-Z0-9-]+'])
             ->setPass(['id', 'lastMessageId']);
+
+        // AJAX endpoint for getting messages as HTML
+        $builder->connect('/writing-service-requests/getMessages/:id', ['controller' => 'WritingServiceRequests', 'action' => 'getMessages'])
+            ->setPatterns(['id' => '[a-zA-Z0-9-]+'])
+            ->setPass(['id']);
 
         // AJAX endpoint for fetching new messages in coaching chat
         $builder->connect('/coaching-service-requests/fetch-messages/:id', ['controller' => 'CoachingServiceRequests', 'action' => 'fetchMessages'])
