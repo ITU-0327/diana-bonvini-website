@@ -847,36 +847,56 @@ class CoachingServiceRequestsController extends AppController
                                 $this->log('Error sending admin notification email: ' . $adminEmailError->getMessage(), 'error');
                             }
                             
-                            // Add a payment confirmation message to the chat
+                            // Add a payment confirmation message to the chat (with deduplication)
                             try {
-                                $confirmationMessage = "✅ **Payment Confirmed**\n\n";
-                                $confirmationMessage .= "Your payment of **$" . number_format((float)$payment->amount, 2) . "** has been successfully processed.\n\n";
-                                $confirmationMessage .= "**Transaction ID:** " . $payment->transaction_id . "\n";
-                                $confirmationMessage .= "**Date:** " . $payment->payment_date->format('F j, Y \a\t g:i A') . "\n\n";
-                                $confirmationMessage .= "Thank you for your payment! We'll now proceed with your coaching service as discussed.\n\n";
-                                $confirmationMessage .= "You should receive confirmation emails shortly with all the payment details.";
+                                // Check if a confirmation message already exists for this payment
+                                $requestWithMessages = $this->CoachingServiceRequests->get($id, contain: ['CoachingRequestMessages']);
+                                $paymentId = $payment->transaction_id ?: $payment->coaching_service_payment_id;
+                                
+                                $confirmationExists = false;
+                                if (!empty($requestWithMessages->coaching_request_messages)) {
+                                    foreach ($requestWithMessages->coaching_request_messages as $existingMessage) {
+                                        if (strpos($existingMessage->message, '**Payment Confirmed**') !== false && 
+                                            strpos($existingMessage->message, $paymentId) !== false) {
+                                            $confirmationExists = true;
+                                            $this->log("Payment confirmation already exists for payment ID: {$paymentId}", 'debug');
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                if (!$confirmationExists) {
+                                    $confirmationMessage = "✅ **Payment Confirmed**\n\n";
+                                    $confirmationMessage .= "Your payment of **$" . number_format((float)$payment->amount, 2) . "** has been successfully processed.\n\n";
+                                    $confirmationMessage .= "**Transaction ID:** " . $payment->transaction_id . "\n";
+                                    $confirmationMessage .= "**Date:** " . $payment->payment_date->format('F j, Y \a\t g:i A') . "\n\n";
+                                    $confirmationMessage .= "Thank you for your payment! We'll now proceed with your coaching service as discussed.\n\n";
+                                    $confirmationMessage .= "You should receive confirmation emails shortly with all the payment details.";
 
-                                // Add the message to the conversation
-                                $messageData = [
-                                    'coaching_request_messages' => [
-                                        [
-                                            'user_id' => $requestWithUser->user_id, // From the customer
-                                            'message' => $confirmationMessage,
-                                            'is_read' => false,
-                                            'coaching_service_request_id' => $id,
+                                    // Add the message to the conversation
+                                    $messageData = [
+                                        'coaching_request_messages' => [
+                                            [
+                                                'user_id' => $requestWithUser->user_id, // From the customer
+                                                'message' => $confirmationMessage,
+                                                'is_read' => false,
+                                                'coaching_service_request_id' => $id,
+                                            ],
                                         ],
-                                    ],
-                                ];
+                                    ];
 
-                                $updatedRequest = $this->CoachingServiceRequests->patchEntity(
-                                    $requestWithUser,
-                                    $messageData
-                                );
+                                    $updatedRequest = $this->CoachingServiceRequests->patchEntity(
+                                        $requestWithUser,
+                                        $messageData
+                                    );
 
-                                if ($this->CoachingServiceRequests->save($updatedRequest)) {
-                                    $this->log('Payment confirmation message added to chat', 'debug');
+                                    if ($this->CoachingServiceRequests->save($updatedRequest)) {
+                                        $this->log('Payment confirmation message added to chat', 'debug');
+                                    } else {
+                                        $this->log('Failed to add payment confirmation message to chat', 'warning');
+                                    }
                                 } else {
-                                    $this->log('Failed to add payment confirmation message to chat', 'warning');
+                                    $this->log('Skipping duplicate payment confirmation message', 'debug');
                                 }
                             } catch (Exception $messageError) {
                                 $this->log('Error adding payment confirmation message: ' . $messageError->getMessage(), 'error');

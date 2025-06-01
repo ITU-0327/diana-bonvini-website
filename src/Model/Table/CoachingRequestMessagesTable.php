@@ -66,10 +66,6 @@ class CoachingRequestMessagesTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
-            ->uuid('coaching_request_message_id')
-            ->allowEmptyString('coaching_request_message_id', null, 'create');
-
-        $validator
             ->scalar('coaching_service_request_id')
             ->maxLength('coaching_service_request_id', 9)
             ->notEmptyString('coaching_service_request_id');
