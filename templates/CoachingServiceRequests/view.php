@@ -6,6 +6,9 @@
  * @var array<\App\Model\Entity\CoachingRequestDocument> $coachingRequestDocuments
  */
 
+// Include local time converter for proper local time display
+echo $this->Html->script('local-time-converter', ['block' => false]);
+
 ?>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -43,7 +46,7 @@
                         </p>
                         <p class="text-sm text-gray-600 mb-1">
                             <span class="font-medium">Created:</span>
-                            <span class="local-time" data-datetime="<?= $coachingServiceRequest->created_at->jsonSerialize() ?>">
+                            <span class="created-date" data-server-time="<?= $coachingServiceRequest->created_at->jsonSerialize() ?>" data-time-format="datetime">
                                 <?= $coachingServiceRequest->created_at->format('Y-m-d H:i') ?>
                             </span>
                         </p>
@@ -111,7 +114,7 @@
                                                         <p class="text-sm font-medium text-gray-900"><?= h($document->document_name) ?></p>
                                                         <p class="text-xs text-gray-500">
                                                             <?= h(ucfirst($document->uploaded_by)) ?> ·
-                                                            <span class="local-time" data-datetime="<?= $document->created_at->jsonSerialize() ?>">
+                                                            <span class="created-date" data-server-time="<?= $document->created_at->jsonSerialize() ?>" data-time-format="datetime">
                                                                 <?= $document->created_at->format('Y-m-d H:i') ?>
                                                             </span>
                                                         </p>
@@ -319,7 +322,7 @@
                                                 </div>
                                                 <div class="mt-1 text-xs text-gray-500">
                                                     <?= $isAdmin ? 'Admin' : 'You' ?> ·
-                                                    <span class="local-time" data-datetime="<?= $message->created_at->jsonSerialize() ?>">
+                                                    <span class="message-timestamp" data-server-time="<?= $message->created_at->jsonSerialize() ?>" data-time-format="datetime">
                                                         <?= $message->created_at->format('Y-m-d H:i') ?>
                                                     </span>
                                                 </div>
@@ -553,21 +556,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const timeElements = document.querySelectorAll('.local-time');
-
-        timeElements.forEach(el => {
-            const isoTime = el.dataset.datetime;
-            const date = new Date(isoTime);
-
-            el.textContent = date.toLocaleString(undefined, {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true,
-            });
-        });
+        // The local time converter will automatically handle all timestamp conversions
 
         // Scroll to messages section if URL has #messages hash
         if(window.location.hash === '#messages') {

@@ -5,6 +5,9 @@
  */
 
 $this->assign('title', __('Order Details #' . $order->order_id));
+
+// Include local time converter for proper local time display
+echo $this->Html->script('local-time-converter', ['block' => false]);
 ?>
 <div class="max-w-6xl mx-auto px-4 py-8">
     <?= $this->element('page_title', ['title' => 'Order Details']) ?>
@@ -32,7 +35,9 @@ $this->assign('title', __('Order Details #' . $order->order_id));
             <tr>
                 <th class="py-3 px-6 text-left text-sm font-medium text-gray-600">Order Date</th>
                 <td class="py-3 px-6 text-left text-sm text-gray-800">
-                    <span class="local-time" data-datetime="<?= h($order->order_date->format('c')) ?>"></span>
+                    <span class="created-date" data-server-time="<?= $order->order_date->jsonSerialize() ?>" data-time-format="datetime">
+                        <?= $order->order_date->format('M d, Y H:i') ?>
+                    </span>
                 </td>
             </tr>
             </tbody>
@@ -130,7 +135,9 @@ $this->assign('title', __('Order Details #' . $order->order_id));
                 <div>
                     <p><strong>Payment Date:</strong>
                         <?php if ($order->payment->payment_date) : ?>
-                            <?= $order->payment->payment_date->format('M d, Y H:i') ?>
+                            <span class="payment-date" data-server-time="<?= $order->payment->payment_date->jsonSerialize() ?>" data-time-format="datetime">
+                                <?= $order->payment->payment_date->format('M d, Y H:i') ?>
+                            </span>
                         <?php else : ?>
                             <span class="text-gray-500">N/A</span>
                         <?php endif; ?>
@@ -158,18 +165,6 @@ $this->assign('title', __('Order Details #' . $order->order_id));
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const timeElements = document.querySelectorAll('.local-time');
-        timeElements.forEach(el => {
-            const isoTime = el.dataset.datetime;
-            const date = new Date(isoTime);
-            el.textContent = date.toLocaleString(undefined, {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true,
-            });
-        });
+        // The local time converter will automatically handle all timestamp conversions
     });
 </script>

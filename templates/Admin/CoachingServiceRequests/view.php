@@ -5,6 +5,11 @@
  * @var \App\Model\Entity\CoachingRequestDocument[] $coachingRequestDocuments
  */
 use Cake\Utility\Inflector;
+
+$this->assign('title', __('Coaching Service Request Details'));
+
+// Include local time converter for proper local time display
+echo $this->Html->script('local-time-converter', ['block' => false]);
 ?>
 
 <div class="container-fluid">
@@ -56,7 +61,9 @@ use Cake\Utility\Inflector;
                             <h5 class="font-weight-bold"><?= h($coachingServiceRequest->service_title) ?></h5>
                             <p class="text-muted">
                                 <i class="fas fa-calendar-alt mr-2"></i>
-                                Created: <?= $coachingServiceRequest->created_at->format('F j, Y h:i A') ?>
+                                Created: <span class="created-date" data-server-time="<?= $coachingServiceRequest->created_at->jsonSerialize() ?>" data-time-format="datetime">
+                                    <?= $coachingServiceRequest->created_at->format('F j, Y h:i A') ?>
+                                </span>
                             </p>
                             <p class="text-muted">
                                 <i class="fas fa-tag mr-2"></i>
@@ -168,7 +175,10 @@ use Cake\Utility\Inflector;
                                                     <?= $isAdmin ? 'You (Admin)' : h($message->user->first_name . ' ' . $message->user->last_name) ?>
                                                 </span>
                                                 <span class="message-time text-muted ml-2">
-                                                    <i class="far fa-clock"></i> <?= $message->created_at->format('M j, Y g:i A') ?>
+                                                    <i class="far fa-clock"></i> 
+                                                    <span class="message-timestamp" data-server-time="<?= $message->created_at->jsonSerialize() ?>" data-time-format="datetime">
+                                                        <?= $message->created_at->format('M j, Y g:i A') ?>
+                                                    </span>
                                                 </span>
                                                 <?php if (!$isAdmin && !$message->is_read) : ?>
                                                 <span class="badge badge-warning ml-2">New</span>
@@ -390,7 +400,9 @@ use Cake\Utility\Inflector;
                                                     <div class="d-flex justify-content-between">
                                                         <span class="upload-date">
                                                             <?php if (!empty($document->created_at)): ?>
-                                                                <?= $document->created_at->format('M j, Y') ?>
+                                                                <span class="created-date" data-server-time="<?= $document->created_at->jsonSerialize() ?>" data-time-format="date">
+                                                                    <?= $document->created_at->format('M j, Y') ?>
+                                                                </span>
                                                             <?php else: ?>
                                                                 Unknown date
                                                             <?php endif; ?>
@@ -462,7 +474,9 @@ use Cake\Utility\Inflector;
                                                     $<?= number_format($payment->amount, 2) ?>
                                                 </td>
                                                 <td class="text-muted small">
-                                                    <?= $payment->created_at ? $payment->created_at->format('M j, Y g:i A') : 'Unknown' ?>
+                                                    <span class="created-date" data-server-time="<?= $payment->created_at ? $payment->created_at->jsonSerialize() : '' ?>" data-time-format="datetime">
+                                                        <?= $payment->created_at ? $payment->created_at->format('M j, Y g:i A') : 'Unknown' ?>
+                                                    </span>
                                                 </td>
                                                 <td>
                                                     <?php if ($payment->status === 'paid'): ?>
@@ -471,7 +485,9 @@ use Cake\Utility\Inflector;
                                                         </span>
                                                         <?php if ($payment->payment_date): ?>
                                                             <small class="d-block text-muted mt-1">
-                                                                <?= $payment->payment_date->format('M j, Y g:i A') ?>
+                                                                <span class="payment-date" data-server-time="<?= $payment->payment_date->jsonSerialize() ?>" data-time-format="datetime">
+                                                                    <?= $payment->payment_date->format('M j, Y g:i A') ?>
+                                                                </span>
                                                             </small>
                                                         <?php endif; ?>
                                                     <?php else: ?>
