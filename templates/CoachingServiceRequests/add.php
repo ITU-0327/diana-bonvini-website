@@ -68,7 +68,7 @@
 
         <!-- Default Status (Hidden) -->
         <?= $this->Form->hidden('request_status', ['value' => 'pending']) ?>
-        
+
         <!-- Default is_deleted (Hidden) -->
         <?= $this->Form->hidden('is_deleted', ['value' => false]) ?>
 
@@ -83,13 +83,13 @@
             </p>
             <?= $this->Form->file('document', [
                 'class' => 'block w-full text-gray-700 py-2 px-3 border border-gray-300 rounded cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500',
-                'accept' => '.pdf,.jpg,.jpeg,.docx',
+                'accept' => '.pdf,.jpeg,.docx',
             ]) ?>
             <?php if ($this->Form->isFieldError('document')): ?>
                 <div class="text-red-600 text-sm mt-1"><?= $this->Form->error('document') ?></div>
             <?php endif; ?>
             <p class="mt-1 text-sm text-gray-500">
-                Only PDF, JPG, and MS Word files can be uploaded.
+                Only PDF, and MS Word files can be uploaded.
             </p>
         </div>
 
@@ -109,4 +109,4 @@
             'class' => 'text-teal-600 hover:text-teal-700 font-semibold',
         ]) ?>
     </div>
-</div> 
+</div>
