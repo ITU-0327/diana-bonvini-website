@@ -48,6 +48,16 @@
         </p>
     </div>
     
+    <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; margin-bottom: 25px;">
+        <h3 style="color: #047857; margin-top: 0; font-size: 16px;">📅 What Happens Next?</h3>
+        <ul style="margin: 0; padding-left: 20px; color: #1f2937;">
+            <li style="margin-bottom: 8px;">Click "Accept" next to your preferred time slot</li>
+            <li style="margin-bottom: 8px;">An appointment will be automatically created with a Google Meet link</li>
+            <li style="margin-bottom: 8px;">You'll receive a detailed confirmation email with meeting details</li>
+            <li>We'll also send you a reminder 24 hours before the session</li>
+        </ul>
+    </div>
+    
     <div style="font-size: 12px; color: #666; text-align: center; padding-top: 20px; border-top: 1px solid #e5e7eb;">
         <p>This is an automated message. Please do not reply directly to this email.</p>
         <p>&copy; <?= date('Y') ?> Diana Bonvini Coaching Services. All rights reserved.</p>

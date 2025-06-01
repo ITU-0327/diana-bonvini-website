@@ -703,18 +703,12 @@ class CoachingServiceRequestsController extends AppController
             $this->log('Using Stripe secret key: ' . substr(Configure::read('Stripe.secret'), 0, 10) . '...', 'debug');
 
             // Create checkout session for payment with correct URLs using Router::url for proper HTTPS detection
-            $successUrl = Router::url([
-                'controller' => 'CoachingServiceRequests',
-                'action' => 'paymentSuccess',
-                $id,
-                $paymentId,
-            ], true);
+            $baseUrl = Router::url('/', true);
+            $successUrl = $baseUrl . 'coaching-service-requests/payment-success/' . $id . '/' . $paymentId;
+            $cancelUrl = $baseUrl . 'coaching-service-requests/view/' . $id;
 
-            $cancelUrl = Router::url([
-                'controller' => 'CoachingServiceRequests',
-                'action' => 'view',
-                $id,
-            ], true);
+            $this->log('Creating Stripe session with success URL: ' . $successUrl, 'debug');
+            $this->log('Creating Stripe session with cancel URL: ' . $cancelUrl, 'debug');
 
             $this->log('Creating Stripe session with params: ' . json_encode([
                 'line_items' => [
@@ -775,9 +769,10 @@ class CoachingServiceRequestsController extends AppController
     public function paymentSuccess(?string $id = null, ?string $paymentId = null)
     {
         $this->request->allowMethod(['get', 'post']);
-        $this->log('paymentSuccess called with id: ' . $id . ', paymentId: ' . $paymentId, 'debug');
+        $this->log('paymentSuccess called with id: ' . ($id ?? 'null') . ', paymentId: ' . ($paymentId ?? 'null'), 'debug');
 
         if (!$id || !$paymentId) {
+            $this->log('paymentSuccess error: Missing required parameters', 'error');
             $this->Flash->error(__('Invalid request parameters.'));
 
             return $this->redirect(['action' => 'index']);
@@ -795,6 +790,8 @@ class CoachingServiceRequestsController extends AppController
             $this->log('Payment found: ' . ($payment ? 'yes' : 'no'), 'debug');
 
             if ($payment) {
+                // Ensure amount is a float for proper handling
+                $payment->amount = (float)$payment->amount;
                 $payment->status = 'paid';
                 $payment->payment_date = new DateTime();
                 $payment->transaction_id = 'stripe_' . date('YmdHis') . '_' . substr($paymentId, 0, 8);
@@ -823,30 +820,69 @@ class CoachingServiceRequestsController extends AppController
                         $this->log('Getting request with user for email', 'debug');
                         $requestWithUser = $this->CoachingServiceRequests->get($id, contain: ['Users']);
 
-                        // Send customer confirmation
-                        $this->log('Creating mailer for customer', 'debug');
-                        $customerMailer = new PaymentMailer('default');
-                        $customerMailer->sendCoachingPaymentConfirmation($requestWithUser, $payment);
-                        $customerMailer->deliverAsync();
-                        $this->log('Customer confirmation email sent successfully', 'debug');
+                        if (!empty($requestWithUser->user) && !empty($requestWithUser->user->email)) {
+                            // Send customer confirmation
+                            $this->log('Creating mailer for customer', 'debug');
+                            $customerMailer = new PaymentMailer('default');
+                            $customerMailer->sendCoachingPaymentConfirmation($requestWithUser, $payment);
+                            $customerResult = $customerMailer->deliverAsync();
+                            $this->log('Customer confirmation email result: ' . ($customerResult ? 'success' : 'failed'), 'debug');
 
-                        // Send admin notification
-                        try {
-                            $adminEmail = 'diana@dianabonvini.com';
-                            $adminName = 'Diana Bonvini';
+                            // Send admin notification
+                            try {
+                                $adminEmail = 'diana@dianabonvini.com';
+                                $adminName = 'Diana Bonvini';
 
-                            $this->log('Creating mailer for admin notification', 'debug');
-                            $adminMailer = new PaymentMailer('default');
-                            $adminMailer->adminCoachingPaymentNotification(
-                                $requestWithUser,
-                                $payment,
-                                $adminEmail,
-                                $adminName,
-                            );
-                            $adminMailer->deliverAsync();
-                            $this->log('Admin notification email sent successfully', 'debug');
-                        } catch (Exception $adminEmailError) {
-                            $this->log('Error sending admin notification email: ' . $adminEmailError->getMessage(), 'error');
+                                $this->log('Creating mailer for admin notification', 'debug');
+                                $adminMailer = new PaymentMailer('default');
+                                $adminMailer->adminCoachingPaymentNotification(
+                                    $requestWithUser,
+                                    $payment,
+                                    $adminEmail,
+                                    $adminName,
+                                );
+                                $adminResult = $adminMailer->deliverAsync();
+                                $this->log('Admin notification email result: ' . ($adminResult ? 'success' : 'failed'), 'debug');
+                            } catch (Exception $adminEmailError) {
+                                $this->log('Error sending admin notification email: ' . $adminEmailError->getMessage(), 'error');
+                            }
+                            
+                            // Add a payment confirmation message to the chat
+                            try {
+                                $confirmationMessage = "✅ **Payment Confirmed**\n\n";
+                                $confirmationMessage .= "Your payment of **$" . number_format((float)$payment->amount, 2) . "** has been successfully processed.\n\n";
+                                $confirmationMessage .= "**Transaction ID:** " . $payment->transaction_id . "\n";
+                                $confirmationMessage .= "**Date:** " . $payment->payment_date->format('F j, Y \a\t g:i A') . "\n\n";
+                                $confirmationMessage .= "Thank you for your payment! We'll now proceed with your coaching service as discussed.\n\n";
+                                $confirmationMessage .= "You should receive confirmation emails shortly with all the payment details.";
+
+                                // Add the message to the conversation
+                                $messageData = [
+                                    'coaching_request_messages' => [
+                                        [
+                                            'user_id' => $requestWithUser->user_id, // From the customer
+                                            'message' => $confirmationMessage,
+                                            'is_read' => false,
+                                            'coaching_service_request_id' => $id,
+                                        ],
+                                    ],
+                                ];
+
+                                $updatedRequest = $this->CoachingServiceRequests->patchEntity(
+                                    $requestWithUser,
+                                    $messageData
+                                );
+
+                                if ($this->CoachingServiceRequests->save($updatedRequest)) {
+                                    $this->log('Payment confirmation message added to chat', 'debug');
+                                } else {
+                                    $this->log('Failed to add payment confirmation message to chat', 'warning');
+                                }
+                            } catch (Exception $messageError) {
+                                $this->log('Error adding payment confirmation message: ' . $messageError->getMessage(), 'error');
+                            }
+                        } else {
+                            $this->log('No valid user email found for payment confirmation', 'warning');
                         }
                     } catch (Exception $e) {
                         $this->log('Error sending payment confirmation email: ' . $e->getMessage(), 'error');
