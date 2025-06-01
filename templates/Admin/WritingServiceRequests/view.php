@@ -7,8 +7,8 @@ use Cake\Utility\Inflector;
 
 $this->assign('title', __('Writing Service Request Details'));
 
-// Include timezone helper for proper local time display (load early)
-echo $this->Html->script('timezone-helper', ['block' => false]);
+// Include local time converter for proper local time display
+echo $this->Html->script('local-time-converter', ['block' => false]);
 ?>
 
 <!-- Timezone Indicator Removed for Admin View -->
@@ -178,8 +178,11 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                                 <span class="message-sender font-weight-bold">
                                                     <?= $isAdmin ? 'You (Admin)' : h($message->user->first_name . ' ' . $message->user->last_name) ?>
                                                 </span>
-                                                <span class="message-time text-muted ml-2" data-datetime="<?= $message->created_at->jsonSerialize() ?>">
-                                                    <i class="far fa-clock"></i> <span class="local-time">Loading...</span>
+                                                <span class="message-time text-muted ml-2">
+                                                    <i class="far fa-clock"></i> 
+                                                    <span class="message-timestamp" data-server-time="<?= $message->created_at->jsonSerialize() ?>" data-time-format="datetime">
+                                                        <?= $message->created_at->format('M d, Y H:i') ?>
+                                                    </span>
                                                 </span>
                                                 <?php if (!$isAdmin && !$message->is_read) : ?>
                                                 <span class="badge badge-warning ml-2">New</span>
@@ -351,7 +354,13 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                                 <span><?= h(strtoupper($document->file_extension)) ?></span> •
                                                 <span><?= h($document->formatted_size) ?></span> •
                                                 <span>
-                                                    <?php if (!empty($document->created_at)) echo h($document->created_at->format('M j, Y')); ?>
+                                                    <?php if (!empty($document->created_at)): ?>
+                                                        <span class="created-date" data-server-time="<?= $document->created_at->jsonSerialize() ?>" data-time-format="date">
+                                                            <?= $document->created_at->format('M j, Y') ?>
+                                                        </span>
+                                                    <?php else: ?>
+                                                        Unknown date
+                                                    <?php endif; ?>
                                                 </span>
                                             </div>
                                         </div>
@@ -405,8 +414,8 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                                     $<?= number_format($payment->amount, 2) ?>
                                                 </td>
                                                 <td class="text-muted small">
-                                                    <span class="local-time" data-datetime="<?= $payment->created_at ? $payment->created_at->jsonSerialize() : '' ?>">
-                                                        <?= $payment->created_at ? 'Loading...' : 'Unknown' ?>
+                                                    <span class="created-date" data-server-time="<?= $payment->created_at ? $payment->created_at->jsonSerialize() : '' ?>" data-time-format="datetime">
+                                                        <?= $payment->created_at ? $payment->created_at->format('M d, Y H:i') : 'Unknown' ?>
                                                     </span>
                                                 </td>
                                                 <td>
@@ -416,8 +425,8 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                                         </span>
                                                         <?php if ($payment->payment_date) : ?>
                                                             <small class="d-block text-muted mt-1">
-                                                                <span class="local-time" data-datetime="<?= $payment->payment_date->jsonSerialize() ?>">
-                                                                    Loading...
+                                                                <span class="payment-date" data-server-time="<?= $payment->payment_date->jsonSerialize() ?>" data-time-format="datetime">
+                                                                    <?= $payment->payment_date->format('M d, Y H:i') ?>
                                                                 </span>
                                                             </small>
                                                         <?php endif; ?>
@@ -2514,15 +2523,3 @@ function formatFileSize(int $bytes): string
 <?php $this->end(); ?>
 
 
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Timezone indicator removed for admin view - times are automatically converted by TimezoneHelper
-
-        // Initialize admin-specific functionality
-        const chatContainer = document.getElementById('chat-messages');
-        if (chatContainer) {
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-    });
-</script>

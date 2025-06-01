@@ -10,8 +10,8 @@ use Cake\Utility\Inflector;
 
 $this->assign('title', __('Writing Service Request Details'));
 
-// Include timezone helper for proper local time display (load early)
-echo $this->Html->script('timezone-helper', ['block' => false]);
+// Include local time converter for proper local time display
+echo $this->Html->script('local-time-converter', ['block' => false]);
 // Include payment handling JavaScript
 echo $this->Html->script('writing-service-payments', ['block' => true]);
 ?>
@@ -59,7 +59,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                         </p>
                         <p class="text-sm text-gray-600 mb-1">
                             <span class="font-medium">Created:</span>
-                            <span class="local-time" data-datetime="<?= $writingServiceRequest->created_at->jsonSerialize() ?>">
+                            <span class="created-date" data-server-time="<?= $writingServiceRequest->created_at->jsonSerialize() ?>" data-time-format="datetime">
                                 <?= $writingServiceRequest->created_at->format('Y-m-d H:i') ?>
                             </span>
                         </p>
@@ -293,7 +293,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                         </div>
                                                 <div class="mt-1 text-xs text-gray-500">
                                                     <?= $isAdmin ? 'Admin' : 'You' ?> ·
-                                                    <span class="local-time" data-datetime="<?= $msg->created_at->jsonSerialize() ?>">
+                                                    <span class="message-timestamp" data-server-time="<?= $msg->created_at->jsonSerialize() ?>" data-time-format="datetime">
                                                         <?= $msg->created_at->format('Y-m-d H:i') ?>
                                                     </span>
                                             </div>
@@ -391,8 +391,8 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                 Payment #<?= $paymentNumber ?>
                                             </div>
                                             <div class="text-sm text-gray-500">
-                                                <span class="local-time" data-datetime="<?= $payment->created_at ? $payment->created_at->jsonSerialize() : '' ?>">
-                                                    <?= $payment->created_at ? 'Loading...' : 'Unknown' ?>
+                                                <span class="created-date" data-server-time="<?= $payment->created_at ? $payment->created_at->jsonSerialize() : '' ?>" data-time-format="datetime">
+                                                    <?= $payment->created_at ? $payment->created_at->format('M d, Y H:i') : 'Unknown' ?>
                                                 </span>
                                             </div>
                                         </div>
@@ -413,8 +413,8 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                 </span>
                                                 <?php if ($payment->payment_date): ?>
                                                     <span class="ml-2 text-xs text-gray-500">
-                                                        on <span class="local-time" data-datetime="<?= $payment->payment_date->jsonSerialize() ?>" data-format="date">
-                                                            Loading...
+                                                        on <span class="payment-date" data-server-time="<?= $payment->payment_date->jsonSerialize() ?>" data-time-format="date">
+                                                            <?= $payment->payment_date->format('M d, Y') ?>
                                                         </span>
                                                     </span>
                                                 <?php endif; ?>
@@ -583,8 +583,8 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                                                 <div class="flex items-center justify-between">
                                                     <span>
                                                         <?php if (!empty($document->created_at)): ?>
-                                                            <span class="local-time" data-datetime="<?= $document->created_at->jsonSerialize() ?>" data-format="date">
-                                                                Loading...
+                                                            <span class="created-date" data-server-time="<?= $document->created_at->jsonSerialize() ?>" data-time-format="date">
+                                                                <?= $document->created_at->format('M d, Y') ?>
                                                             </span>
                                                         <?php else: ?>
                                                             Unknown date

@@ -420,6 +420,31 @@ class PaymentMailer extends Mailer
     }
     
     /**
+     * Send a notification to admin when time slots are sent to a coaching client
+     *
+     * @param \App\Model\Entity\CoachingServiceRequest $coachingServiceRequest The coaching service request
+     * @param string $timeSlots The formatted time slots text
+     * @param string $adminEmail Admin email address
+     * @param string $adminName Admin name
+     * @return void
+     */
+    public function adminCoachingTimeSlotsNotification($coachingServiceRequest, $timeSlots, string $adminEmail, string $adminName)
+    {
+        $this->setTo($adminEmail)
+            ->setSubject('📅 Time Slots Sent to Coaching Client #' . $coachingServiceRequest->coaching_service_request_id)
+            ->setEmailFormat('both')
+            ->setViewVars([
+                'admin_name' => $adminName,
+                'client_name' => $coachingServiceRequest->user->full_name,
+                'client_email' => $coachingServiceRequest->user->email,
+                'coaching_service_request' => $coachingServiceRequest,
+                'time_slots' => $timeSlots
+            ])
+            ->viewBuilder()
+                ->setTemplate('admin_coaching_time_slots_notification');
+    }
+    
+    /**
      * Send a notification to admin when a coaching payment is received
      *
      * @param \App\Model\Entity\CoachingServiceRequest $coachingServiceRequest The coaching service request

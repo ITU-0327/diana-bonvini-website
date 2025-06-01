@@ -5,6 +5,9 @@
  */
 
 $this->assign('title', __('View Order'));
+
+// Include local time converter for proper local time display
+echo $this->Html->script('local-time-converter', ['block' => false]);
 ?>
 <div class="container-fluid">
     <div class="row mb-4">
@@ -64,9 +67,13 @@ $this->assign('title', __('View Order'));
                         <h5 class="m-0">Order Date:</h5>
                         <span>
                             <?php if (isset($order->created_at) && $order->created_at) : ?>
-                                <?= $order->created_at->format('M d, Y H:i') ?>
+                                <span class="created-date" data-server-time="<?= $order->created_at->jsonSerialize() ?>" data-time-format="datetime">
+                                    <?= $order->created_at->format('M d, Y H:i') ?>
+                                </span>
                             <?php elseif (isset($order->order_date) && $order->order_date) : ?>
-                                <?= $order->order_date->format('M d, Y H:i') ?>
+                                <span class="created-date" data-server-time="<?= $order->order_date->jsonSerialize() ?>" data-time-format="datetime">
+                                    <?= $order->order_date->format('M d, Y H:i') ?>
+                                </span>
                             <?php else : ?>
                                 <span class="text-muted">N/A</span>
                             <?php endif; ?>

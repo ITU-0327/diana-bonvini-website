@@ -3,6 +3,9 @@
  * @var \App\View\AppView $this
  * @var \App\Model\Entity\CoachingServiceRequest[]|\Cake\Collection\CollectionInterface $coachingServiceRequests
  */
+
+// Include local time converter for proper local time display
+echo $this->Html->script('local-time-converter', ['block' => false]);
 ?>
 <div class="max-w-6xl mx-auto px-4 py-8">
     <?= $this->element('page_title', ['title' => 'My Coaching Service Requests']) ?>
@@ -64,7 +67,7 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    <span class="local-time" data-datetime="<?= $request->created_at->jsonSerialize() ?>">
+                                    <span class="created-date" data-server-time="<?= $request->created_at->jsonSerialize() ?>" data-time-format="datetime">
                                         <?= $request->created_at->format('Y-m-d H:i') ?>
                                     </span>
                                 </td>
@@ -106,22 +109,8 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Handle local time formatting
-        const timeElements = document.querySelectorAll('.local-time');
-        timeElements.forEach(el => {
-            const isoTime = el.dataset.datetime;
-            const date = new Date(isoTime);
-            
-            el.textContent = date.toLocaleString(undefined, {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true,
-            });
-        });
-
+        // The local time converter will automatically handle all timestamp conversions
+        
         // Handle clickable rows
         const clickableRows = document.querySelectorAll('tr[data-href]');
         clickableRows.forEach(row => {

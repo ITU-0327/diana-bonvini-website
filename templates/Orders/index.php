@@ -5,10 +5,12 @@
  */
 
 $this->assign('title', __('My Orders'));
+
+// Include local time converter for proper local time display
+echo $this->Html->script('local-time-converter', ['block' => false]);
 ?>
 <div class="max-w-6xl mx-auto px-4 py-8">
     <?= $this->element('page_title', ['title' => 'My Orders']) ?>
-
 
     <?php if (count($orders) > 0): ?>
         <!-- Table of orders -->
@@ -57,7 +59,7 @@ $this->assign('title', __('My Orders'));
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 <?php if (!empty($order->created_at)) : ?>
-                                    <span class="local-time" data-datetime="<?= $order->created_at->jsonSerialize() ?>">
+                                    <span class="created-date" data-server-time="<?= $order->created_at->jsonSerialize() ?>" data-time-format="datetime">
                                         <?= $order->created_at->format('Y-m-d H:i') ?>
                                     </span>
                                 <?php else : ?>
@@ -101,22 +103,8 @@ $this->assign('title', __('My Orders'));
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Handle local time formatting
-        const timeElements = document.querySelectorAll('.local-time');
-        timeElements.forEach(el => {
-            const isoTime = el.dataset.datetime;
-            const date = new Date(isoTime);
-
-            el.textContent = date.toLocaleString(undefined, {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true,
-            });
-        });
-
+        // The local time converter will automatically handle all timestamp conversions
+        
         // Handle clickable rows
         const clickableRows = document.querySelectorAll('tr[data-href]');
         clickableRows.forEach(row => {

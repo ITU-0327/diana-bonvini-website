@@ -855,7 +855,7 @@ class CoachingServiceRequestsController extends AppController
                     // Use the already formatted time slots for email
                     $timeSlotsText = implode("\n", $formattedSlots);
                     
-                    // Send notification
+                    // Send notification to client
                     $mailer = new \App\Mailer\PaymentMailer('default');
                     $mailer->customerCoachingTimeSlotsNotification(
                         $requestWithUser,
@@ -863,9 +863,28 @@ class CoachingServiceRequestsController extends AppController
                         'Diana Bonvini'
                     );
                     $mailer->deliverAsync();
+                    
+                    // Send notification to admin as well
+                    try {
+                        $adminMailer = new \App\Mailer\PaymentMailer('default');
+                        $adminMailer->adminCoachingTimeSlotsNotification(
+                            $requestWithUser,
+                            $timeSlotsText,
+                            'diana@dianabonvini.com',
+                            'Diana Bonvini'
+                        );
+                        $adminMailer->deliverAsync();
+                    } catch (\Exception $adminEmailError) {
+                        $this->log('Failed to send admin time slots notification: ' . $adminEmailError->getMessage(), 'error');
+                        // Don't fail the whole process if admin email fails
+                    }
+                } else {
+                    $this->log('No valid user email found for coaching service request: ' . $id, 'warning');
                 }
             } catch (\Exception $e) {
                 $this->log('Failed to send time slots notification: ' . $e->getMessage(), 'error');
+                // Don't fail the whole process if email fails
+                $this->Flash->warning(__('Time slots sent successfully, but email notifications may have failed.'));
             }
             
             // Update request status if it's pending

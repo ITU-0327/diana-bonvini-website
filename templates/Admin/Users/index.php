@@ -9,6 +9,9 @@
  */
 
 $this->assign('title', __('User Management'));
+
+// Include local time converter for proper local time display
+echo $this->Html->script('local-time-converter', ['block' => false]);
 ?>
 
 <div class="container-fluid">
@@ -177,11 +180,15 @@ $this->assign('title', __('User Management'));
                                         <?php endif; ?>
                                     </td>
                                     <td class="align-middle">
-                                        <?= $user->created_at->format('M d, Y') ?>
+                                        <span class="created-date" data-server-time="<?= $user->created_at->jsonSerialize() ?>" data-time-format="date">
+                                            <?= $user->created_at->format('M d, Y') ?>
+                                        </span>
                                     </td>
                                     <td class="align-middle">
                                         <?php if ($user->last_login) : ?>
-                                            <?= $user->last_login->format('M d, Y H:i') ?>
+                                            <span class="last-login-time" data-server-time="<?= $user->last_login->jsonSerialize() ?>" data-time-format="datetime">
+                                                <?= $user->last_login->format('M d, Y H:i') ?>
+                                            </span>
                                         <?php else : ?>
                                             <span class="text-muted">Never</span>
                                         <?php endif; ?>
@@ -231,6 +238,8 @@ $this->assign('title', __('User Management'));
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // The local time converter will automatically handle all timestamp conversions
+        
         // Role filter
         document.getElementById('role-filter').addEventListener('change', function() {
             filterUsers();

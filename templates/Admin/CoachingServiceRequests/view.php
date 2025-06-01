@@ -8,8 +8,8 @@ use Cake\Utility\Inflector;
 
 $this->assign('title', __('Coaching Service Request Details'));
 
-// Include timezone helper for proper local time display (load early)
-echo $this->Html->script('timezone-helper', ['block' => false]);
+// Include local time converter for proper local time display
+echo $this->Html->script('local-time-converter', ['block' => false]);
 ?>
 
 <div class="container-fluid">
@@ -61,7 +61,9 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                             <h5 class="font-weight-bold"><?= h($coachingServiceRequest->service_title) ?></h5>
                             <p class="text-muted">
                                 <i class="fas fa-calendar-alt mr-2"></i>
-                                Created: <?= $coachingServiceRequest->created_at->format('F j, Y h:i A') ?>
+                                Created: <span class="created-date" data-server-time="<?= $coachingServiceRequest->created_at->jsonSerialize() ?>" data-time-format="datetime">
+                                    <?= $coachingServiceRequest->created_at->format('F j, Y h:i A') ?>
+                                </span>
                             </p>
                             <p class="text-muted">
                                 <i class="fas fa-tag mr-2"></i>
@@ -172,8 +174,11 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                                 <span class="message-sender font-weight-bold">
                                                     <?= $isAdmin ? 'You (Admin)' : h($message->user->first_name . ' ' . $message->user->last_name) ?>
                                                 </span>
-                                                <span class="message-time text-muted ml-2" data-datetime="<?= $message->created_at->jsonSerialize() ?>">
-                                                    <i class="far fa-clock"></i> <span class="local-time">Loading...</span>
+                                                <span class="message-time text-muted ml-2">
+                                                    <i class="far fa-clock"></i> 
+                                                    <span class="message-timestamp" data-server-time="<?= $message->created_at->jsonSerialize() ?>" data-time-format="datetime">
+                                                        <?= $message->created_at->format('M j, Y g:i A') ?>
+                                                    </span>
                                                 </span>
                                                 <?php if (!$isAdmin && !$message->is_read) : ?>
                                                 <span class="badge badge-warning ml-2">New</span>
@@ -395,7 +400,9 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                                     <div class="d-flex justify-content-between">
                                                         <span class="upload-date">
                                                             <?php if (!empty($document->created_at)): ?>
-                                                                <?= $document->created_at->format('M j, Y') ?>
+                                                                <span class="created-date" data-server-time="<?= $document->created_at->jsonSerialize() ?>" data-time-format="date">
+                                                                    <?= $document->created_at->format('M j, Y') ?>
+                                                                </span>
                                                             <?php else: ?>
                                                                 Unknown date
                                                             <?php endif; ?>
@@ -467,7 +474,9 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                                     $<?= number_format($payment->amount, 2) ?>
                                                 </td>
                                                 <td class="text-muted small">
-                                                    <?= $payment->created_at ? $payment->created_at->format('M j, Y g:i A') : 'Unknown' ?>
+                                                    <span class="created-date" data-server-time="<?= $payment->created_at ? $payment->created_at->jsonSerialize() : '' ?>" data-time-format="datetime">
+                                                        <?= $payment->created_at ? $payment->created_at->format('M j, Y g:i A') : 'Unknown' ?>
+                                                    </span>
                                                 </td>
                                                 <td>
                                                     <?php if ($payment->status === 'paid'): ?>
@@ -476,7 +485,9 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
                                                         </span>
                                                         <?php if ($payment->payment_date): ?>
                                                             <small class="d-block text-muted mt-1">
-                                                                <?= $payment->payment_date->format('M j, Y g:i A') ?>
+                                                                <span class="payment-date" data-server-time="<?= $payment->payment_date->jsonSerialize() ?>" data-time-format="datetime">
+                                                                    <?= $payment->payment_date->format('M j, Y g:i A') ?>
+                                                                </span>
                                                             </small>
                                                         <?php endif; ?>
                                                     <?php else: ?>
@@ -683,93 +694,80 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
 /* CRITICAL DATEPICKER STYLES - THESE ENSURE THE DATEPICKER IS VISIBLE */
 /* Ensure the datepicker container is visible */
 #datepicker {
-    min-height: 200px !important;
-    width: 100% !important;
-    background: white !important;
-    border: 1px solid #ddd !important;
-    border-radius: 4px !important;
+    min-height: 200px;
+    min-width: 250px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
 }
 
 /* Make inline datepicker fill the container nicely */
 #datepicker .ui-datepicker {
     width: 100% !important;
-    margin: 0 !important;
-    position: static !important;
-    display: block !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
-/* Fallback styles in case jQuery UI CSS doesn't load */
 .ui-datepicker {
-    z-index: 9999 !important;
-    background: #fff !important;
-    border: 1px solid #ddd !important;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
-    font-size: 13px !important;
-    padding: 0 !important;
-    font-family: Arial, sans-serif !important;
+    font-size: 14px !important;
+    background: #ffffff !important;
 }
 
 .ui-datepicker table {
     width: 100% !important;
     margin: 0 !important;
-    border-collapse: collapse !important;
 }
 
 .ui-datepicker td, .ui-datepicker th {
-    padding: 2px !important;
+    padding: 4px !important;
     text-align: center !important;
-    border: 1px solid #e0e0e0 !important;
 }
 
 .ui-datepicker td a {
-    padding: 8px !important;
-    text-align: center !important;
     display: block !important;
+    padding: 8px !important;
     text-decoration: none !important;
+    border-radius: 4px !important;
     color: #333 !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
 }
 
 .ui-datepicker td a:hover {
-    background: #4e73df !important;
+    background: #007bff !important;
     color: white !important;
 }
 
 .ui-datepicker .ui-datepicker-today a {
     background: #f8f9fa !important;
     font-weight: bold !important;
-    border: 2px solid #4e73df !important;
 }
 
 .ui-datepicker .ui-state-active a {
-    background: #4e73df !important;
+    background: #007bff !important;
     color: white !important;
 }
 
 .ui-datepicker .ui-datepicker-header {
-    background: #4e73df !important;
-    color: white !important;
-    text-align: center !important;
+    background: #f8f9fa !important;
+    border: none !important;
+    border-radius: 4px 4px 0 0 !important;
     padding: 10px !important;
-    font-weight: bold !important;
 }
 
 .ui-datepicker .ui-datepicker-prev,
 .ui-datepicker .ui-datepicker-next {
+    top: 8px !important;
     cursor: pointer !important;
+    background: #007bff !important;
     color: white !important;
-    position: absolute !important;
-    top: 10px !important;
-    padding: 5px !important;
+    border-radius: 4px !important;
 }
 
 .ui-datepicker .ui-datepicker-prev {
-    left: 10px !important;
+    left: 8px !important;
 }
 
 .ui-datepicker .ui-datepicker-next {
-    right: 10px !important;
+    right: 8px !important;
 }
 
 .ui-datepicker .ui-datepicker-title {
@@ -779,215 +777,17 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
 
 /* If datepicker still doesn't show, make the container more explicit */
 #datepicker .ui-widget-content {
-    background: white !important;
+    background: #ffffff !important;
     border: 1px solid #ddd !important;
-    display: block !important;
-    visibility: visible !important;
+    color: #333333 !important;
 }
 
-/* Modal z-index fix */
+/* Modal backdrop z-index fix */
 .modal {
     z-index: 1050 !important;
 }
-
 .modal-backdrop {
     z-index: 1040 !important;
-}
-
-/* Custom Confirmation Modal Styles */
-#confirmationModal .modal-content {
-    border-radius: 12px !important;
-    overflow: hidden;
-}
-
-#confirmationModal .modal-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 1.5rem;
-}
-
-#confirmationModal .modal-header .modal-title {
-    font-size: 1.1rem;
-    margin: 0;
-}
-
-#confirmationModal .modal-header .close {
-    color: white;
-    opacity: 0.8;
-    text-shadow: none;
-    font-size: 1.5rem;
-}
-
-#confirmationModal .modal-header .close:hover {
-    opacity: 1;
-}
-
-#confirmationModal .modal-body {
-    padding: 2rem 1.5rem;
-    background: #f8f9fa;
-}
-
-#confirmationModal .main-message {
-    font-size: 1.05rem;
-    font-weight: 500;
-    color: #333;
-    line-height: 1.5;
-}
-
-#confirmationModal .additional-info {
-    font-size: 0.9rem;
-    padding: 0.75rem;
-    background: white;
-    border-left: 4px solid #17a2b8;
-    border-radius: 0 6px 6px 0;
-    margin-top: 1rem;
-}
-
-#confirmationModal .additional-info:empty {
-    display: none;
-}
-
-#confirmationModal .modal-footer {
-    background: white;
-    padding: 1rem 1.5rem 1.5rem;
-    justify-content: space-between;
-}
-
-#confirmationModal .modal-footer .btn {
-    min-width: 100px;
-    font-weight: 500;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-}
-
-#confirmationModal .modal-footer .btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-}
-
-/* Status-specific styling for confirmation modal */
-#confirmationModal.status-completed .modal-header {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-}
-
-#confirmationModal.status-completed .additional-info {
-    border-left-color: #28a745;
-    background: rgba(40, 167, 69, 0.05);
-}
-
-#confirmationModal.status-canceled .modal-header {
-    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-}
-
-#confirmationModal.status-canceled .additional-info {
-    border-left-color: #dc3545;
-    background: rgba(220, 53, 69, 0.05);
-}
-
-#confirmationModal.status-in-progress .modal-header {
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-}
-
-#confirmationModal.status-in-progress .additional-info {
-    border-left-color: #007bff;
-    background: rgba(0, 123, 255, 0.05);
-}
-
-#confirmationModal.status-warning .modal-header {
-    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-}
-
-#confirmationModal.status-warning .additional-info {
-    border-left-color: #ffc107;
-    background: rgba(255, 193, 7, 0.05);
-}
-
-#confirmationModal.payment-success .modal-header {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-}
-
-#confirmationModal.payment-success .additional-info {
-    border-left-color: #28a745;
-    background: rgba(40, 167, 69, 0.05);
-}
-
-/* Animation for modal appearance */
-#confirmationModal.fade .modal-dialog {
-    transform: scale(0.9);
-    transition: transform 0.3s ease-out;
-}
-
-#confirmationModal.show .modal-dialog {
-    transform: scale(1);
-}
-
-/* Document Section Styling */
-.document-item {
-    background: #fff;
-    transition: all 0.2s ease;
-    border: 1px solid #e3e6f0 !important;
-}
-
-.document-item:hover {
-    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1) !important;
-    border-color: #4e73df !important;
-}
-
-.document-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-}
-
-.document-name {
-    font-size: 0.875rem;
-    line-height: 1.2;
-}
-
-.document-meta {
-    font-size: 0.75rem;
-    line-height: 1.3;
-}
-
-.file-type {
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.badge-sm {
-    font-size: 0.65rem;
-    padding: 0.25rem 0.4rem;
-}
-
-.document-actions .btn {
-    font-size: 0.75rem;
-    padding: 0.375rem 0.75rem;
-}
-
-.no-documents {
-    background: #f8f9fa;
-    border: 2px dashed #dee2e6;
-    border-radius: 0.5rem;
-}
-
-.document-upload-form {
-    background: #f8f9fa;
-    border-radius: 0.5rem;
-}
-
-.form-control-file {
-    border: 1px solid #d1d3e2;
-    border-radius: 0.35rem;
-    padding: 0.375rem;
-    background: white;
-    font-size: 0.875rem;
-}
-
-.form-control-file:focus {
-    border-color: #4e73df;
-    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
 }
 </style>
 
@@ -999,6 +799,460 @@ echo $this->Html->script('timezone-helper', ['block' => false]);
 <?php $this->append('script'); ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Ensure jQuery UI is loaded before proceeding
+    console.log('jQuery available:', typeof $ !== 'undefined');
+    console.log('jQuery UI available:', typeof $.ui !== 'undefined');
+
+    // Initialize datepicker immediately when modal is shown
+    $('#timeSlotsModal').on('shown.bs.modal', function() {
+        console.log('Modal opened, initializing datepicker...');
+
+        // Wait a bit for modal to fully render
+        setTimeout(function() {
+            const $datepicker = $('#datepicker');
+            console.log('Datepicker element found:', $datepicker.length);
+
+            if ($datepicker.length && typeof $.fn.datepicker !== 'undefined') {
+                // Destroy existing datepicker if present
+                if ($datepicker.hasClass('hasDatepicker')) {
+                    $datepicker.datepicker('destroy');
+                }
+
+                // Initialize datepicker
+                $datepicker.datepicker({
+                    minDate: 0,
+                    maxDate: '+60d',
+                    dateFormat: 'yy-mm-dd',
+                    firstDay: 1,
+                    showOtherMonths: true,
+                    selectOtherMonths: true,
+                    changeMonth: true,
+                    changeYear: true,
+                    inline: true, // Show inline immediately
+                    onSelect: function(dateText) {
+                        console.log('Date selected:', dateText);
+                        $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        }));
+                        $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
+                        $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
+                    }
+                });
+
+                // Force the datepicker to show inline and be visible
+                $datepicker.datepicker('widget').show();
+                console.log('Datepicker initialized successfully');
+            } else {
+                console.error('jQuery UI datepicker not available, using fallback HTML5 date input');
+                // Fallback: Create HTML5 date input
+                createFallbackDatePicker($datepicker);
+            }
+        }, 200);
+    });
+
+    // Fallback date picker function
+    function createFallbackDatePicker($container) {
+        console.log('Creating fallback date picker');
+
+        // Get today's date for min attribute
+        const today = new Date();
+        const minDate = today.toISOString().split('T')[0];
+
+        // Get 60 days from now for max attribute
+        const maxDate = new Date(today.getTime() + (60 * 24 * 60 * 60 * 1000));
+        const maxDateStr = maxDate.toISOString().split('T')[0];
+
+        // Create HTML5 date input
+        const dateInput = `
+            <div class="fallback-datepicker p-3">
+                <p class="text-muted mb-3">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Please select a date for your consultation
+                </p>
+                <input type="date"
+                       id="fallback-date-input"
+                       class="form-control form-control-lg"
+                       min="${minDate}"
+                       max="${maxDateStr}"
+                       style="font-size: 1.1rem; padding: 12px;">
+                <small class="form-text text-muted mt-2">
+                    Available dates: ${minDate} to ${maxDateStr}
+                </small>
+            </div>
+        `;
+
+        $container.html(dateInput);
+
+        // Add change event listener
+        $('#fallback-date-input').on('change', function() {
+            const selectedDate = $(this).val();
+            const dateObj = new Date(selectedDate);
+
+            console.log('Fallback date selected:', selectedDate);
+
+            // Update the display
+            $('#selected-date-display').text(dateObj.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            }));
+
+            $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + selectedDate + '</span>');
+            $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
+
+            // Store the selected date for the load time slots function
+            window.selectedDateForTimeSlots = selectedDate;
+        });
+    }
+
+    // Also try to initialize on page load as backup
+    $(document).ready(function() {
+        console.log('Document ready, jQuery UI datepicker available:', typeof $.fn.datepicker !== 'undefined');
+
+        // Try to initialize datepicker on page load as well
+        if (typeof $.fn.datepicker !== 'undefined') {
+            console.log('Attempting early datepicker initialization');
+            try {
+                const $datepicker = $('#datepicker');
+                if ($datepicker.length && !$datepicker.hasClass('hasDatepicker')) {
+                    $datepicker.datepicker({
+                        minDate: 0,
+                        maxDate: '+60d',
+                        dateFormat: 'yy-mm-dd',
+                        firstDay: 1,
+                        showOtherMonths: true,
+                        selectOtherMonths: true,
+                        changeMonth: true,
+                        changeYear: true,
+                        inline: true,
+                        onSelect: function(dateText) {
+                            console.log('Date selected (early init):', dateText);
+                            $('#selected-date-display').text(new Date(dateText).toLocaleDateString('en-US', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                            }));
+                            $('#loadTimeSlots').html('<i class="fas fa-clock mr-1"></i> Load Time Slots <span class="badge badge-light ml-1">' + dateText + '</span>');
+                            $('#loadTimeSlots').removeClass('btn-primary').addClass('btn-success');
+                        }
+                    });
+                    console.log('Early datepicker initialization successful');
+                }
+            } catch (e) {
+                console.log('Early datepicker initialization failed, will try again on modal open:', e);
+            }
+        }
+    });
+
+    // Scroll to bottom of chat on page load
+    const chatContainer = document.querySelector('.chat-container');
+    if (chatContainer) {
+        // Scroll immediately and then again after a short delay to ensure images and content are loaded
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        // Add a small delay to ensure content is fully rendered before scrolling
+        setTimeout(function() {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            console.log('Scrolled chat to bottom with delay');
+        }, 500);
+
+        // Add another scroll after 1.5 seconds for any late-loading content
+        setTimeout(function() {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }, 1500);
+    }
+
+    // Focus on message input when clicking reply button
+    const messageTextInput = document.getElementById('messageText');
+    if (messageTextInput) {
+        messageTextInput.focus();
+    }
+
+    // Animate button on form submit
+    const replyForm = document.getElementById('replyForm');
+    if (replyForm) {
+        replyForm.addEventListener('submit', function() {
+            const button = document.getElementById('sendButton');
+            if (button) {
+                button.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
+                button.disabled = true;
+            }
+        });
+    }
+
+    // Handle URL hash for navigating to specific sections
+    if (window.location.hash) {
+        const targetElement = document.querySelector(window.location.hash);
+        if (targetElement) {
+            setTimeout(() => {
+                window.scrollTo({
+                    top: targetElement.offsetTop - 70,
+                    behavior: 'smooth'
+                });
+            }, 100);
+        }
+    }
+
+    // Time slots selection functionality
+    const loadTimeSlotsBtn = document.getElementById('loadTimeSlots');
+    const timeSlotsLoading = document.getElementById('timeSlots-loading');
+    const timeSlotsEmpty = document.getElementById('timeSlots-empty');
+    const timeSlotsNone = document.getElementById('timeSlots-none');
+    const timeSlotsContainer = document.getElementById('time-slots-container');
+    const timeSlotsListContainer = document.getElementById('timeSlots-list');
+    const selectedDateDisplay = document.getElementById('selected-date-display');
+    const selectedTimeSlotsJson = document.getElementById('selectedTimeSlotsJson');
+    const selectAllCheckbox = document.getElementById('selectAllTimeSlots');
+    const sendTimeSlotsBtn = document.getElementById('sendTimeSlots');
+
+    // Helper function for debugging
+    function debugLog(message, data) {
+        const debugging = true; // Set to false in production
+        if (debugging && console) {
+            if (data) {
+                console.log(`[TimeSlots] ${message}:`, data);
+            } else {
+                console.log(`[TimeSlots] ${message}`);
+            }
+        }
+    }
+
+    // Load time slots when the button is clicked
+    if (loadTimeSlotsBtn) {
+        loadTimeSlotsBtn.addEventListener('click', function() {
+            let selectedDate = null;
+            let formattedDate = null;
+
+            // Try to get date from jQuery UI datepicker first
+            try {
+                const $datepicker = $('#datepicker');
+                selectedDate = $datepicker.datepicker('getDate');
+                if (selectedDate) {
+                    // Format date as YYYY-MM-DD
+                    const year = selectedDate.getFullYear();
+                    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(selectedDate.getDate()).padStart(2, '0');
+                    formattedDate = `${year}-${month}-${day}`;
+                }
+            } catch (e) {
+                console.log('jQuery datepicker not available, checking fallback');
+            }
+
+            // If jQuery UI datepicker didn't work, try the fallback HTML5 input
+            if (!formattedDate) {
+                const fallbackInput = document.getElementById('fallback-date-input');
+                if (fallbackInput && fallbackInput.value) {
+                    formattedDate = fallbackInput.value;
+                    console.log('Using fallback date input:', formattedDate);
+                }
+            }
+
+            // Also check the stored date from the fallback
+            if (!formattedDate && window.selectedDateForTimeSlots) {
+                formattedDate = window.selectedDateForTimeSlots;
+                console.log('Using stored fallback date:', formattedDate);
+            }
+
+            console.log('Load button clicked, formatted date:', formattedDate);
+
+            if (!formattedDate) {
+                alert('Please select a date first');
+                return;
+            }
+
+            loadTimeSlots(formattedDate);
+        });
+    }
+
+    // Function to load time slots for a selected date
+    function loadTimeSlots(date) {
+        debugLog(`Loading time slots for date: ${date}`);
+
+        // Show loading, hide other elements
+        timeSlotsEmpty.classList.add('d-none');
+        timeSlotsNone.classList.add('d-none');
+        timeSlotsListContainer.classList.add('d-none');
+        timeSlotsLoading.classList.remove('d-none');
+
+        // Format the date for display
+        const formattedDate = new Date(date);
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        selectedDateDisplay.textContent = formattedDate.toLocaleDateString('en-US', options);
+
+        // Get CSRF token from the document
+        let csrfToken;
+        try {
+            const csrfElement = document.querySelector('input[name="_csrfToken"]');
+            csrfToken = csrfElement ? csrfElement.value : '<?= $this->request->getAttribute('csrfToken') ?>';
+            debugLog('Using CSRF token', csrfToken.substring(0, 10) + '...');
+        } catch (e) {
+            console.error('Error getting CSRF token:', e);
+            csrfToken = '<?= $this->request->getAttribute('csrfToken') ?>';
+        }
+
+        // Build the URL for coaching service requests
+        const url = `<?= $this->Url->build(['controller' => 'CoachingServiceRequests', 'action' => 'getAvailableTimeSlots', 'prefix' => 'Admin']) ?>?date=${date}`;
+        debugLog('Fetching from URL', url);
+
+        // Fetch available time slots
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-CSRF-Token': csrfToken,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json().catch(error => {
+                    console.error('Error parsing JSON response:', error);
+                    throw new Error('Invalid JSON response');
+                });
+            })
+            .then(data => {
+                console.log('Time slots data:', data);
+                timeSlotsLoading.classList.add('d-none');
+
+                if (data.success && data.timeSlots && data.timeSlots.length > 0) {
+                    // Hide other states first
+                    timeSlotsEmpty.classList.add('d-none');
+                    timeSlotsNone.classList.add('d-none');
+
+                    // Show time slots container
+                    timeSlotsListContainer.classList.remove('d-none');
+
+                    // Populate time slots
+                    timeSlotsContainer.innerHTML = '';
+
+                    data.timeSlots.forEach(slot => {
+                        const slotDiv = document.createElement('div');
+                        slotDiv.className = 'custom-control custom-checkbox time-slot-item mb-2';
+
+                        const id = `slot-${slot.date}-${slot.start.replace(':', '-')}`;
+
+                        slotDiv.innerHTML = `
+                            <input type="checkbox" class="custom-control-input time-slot-checkbox" id="${id}" data-slot='${JSON.stringify(slot)}'>
+                            <label class="custom-control-label" for="${id}">
+                                ${slot.formatted}
+                            </label>
+                        `;
+
+                        timeSlotsContainer.appendChild(slotDiv);
+                    });
+
+                    // Setup the checkboxes for selecting time slots
+                    setupTimeSlotCheckboxes();
+                } else {
+                    // Hide other states first
+                    timeSlotsEmpty.classList.add('d-none');
+                    timeSlotsListContainer.classList.add('d-none');
+
+                    console.log('No time slots available or success is false');
+                    // Show no time slots message
+                    timeSlotsNone.classList.remove('d-none');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading time slots:', error);
+                timeSlotsLoading.classList.add('d-none');
+                timeSlotsNone.classList.remove('d-none');
+                alert('Error loading time slots: ' + error.message);
+            });
+    }
+
+    // Setup time slot checkboxes
+    function setupTimeSlotCheckboxes() {
+        const timeSlotCheckboxes = document.querySelectorAll('.time-slot-checkbox');
+
+        // Handle individual checkbox changes
+        timeSlotCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateSelectedTimeSlots);
+        });
+
+        // Handle select all checkbox
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                timeSlotCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+
+                updateSelectedTimeSlots();
+            });
+        }
+
+        // Clear previous selection
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = false;
+        }
+        updateSelectedTimeSlots();
+    }
+
+    // Update selected time slots
+    function updateSelectedTimeSlots() {
+        const selectedTimeSlots = [];
+        const timeSlotCheckboxes = document.querySelectorAll('.time-slot-checkbox:checked');
+
+        timeSlotCheckboxes.forEach(checkbox => {
+            const slotData = JSON.parse(checkbox.dataset.slot);
+            selectedTimeSlots.push(slotData);
+        });
+
+        // Update hidden input with selected time slots
+        if (selectedTimeSlotsJson) {
+            selectedTimeSlotsJson.value = JSON.stringify(selectedTimeSlots);
+        }
+
+        // Enable/disable send button based on selection
+        if (sendTimeSlotsBtn) {
+            sendTimeSlotsBtn.disabled = selectedTimeSlots.length === 0;
+        }
+
+        // Update select all checkbox state
+        const allCheckboxes = document.querySelectorAll('.time-slot-checkbox');
+        if (selectAllCheckbox && allCheckboxes.length > 0) {
+            selectAllCheckbox.checked = timeSlotCheckboxes.length > 0 &&
+                                    timeSlotCheckboxes.length === allCheckboxes.length;
+        }
+    }
+
+    // Send time slots button
+    if (sendTimeSlotsBtn) {
+        sendTimeSlotsBtn.addEventListener('click', function() {
+            const messageText = document.getElementById('timeSlotMessageText').value.trim();
+            const selectedTimeSlots = selectedTimeSlotsJson ? selectedTimeSlotsJson.value : '[]';
+
+            if (!messageText) {
+                alert('Please enter a message to accompany the time slots');
+                return;
+            }
+
+            if (!selectedTimeSlots || selectedTimeSlots === '[]') {
+                alert('Please select at least one time slot');
+                return;
+            }
+
+            try {
+                // Show loading state
+                sendTimeSlotsBtn.disabled = true;
+                sendTimeSlotsBtn.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
+
+                // Submit the form
+                document.getElementById('timeSlotsForm').submit();
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                sendTimeSlotsBtn.disabled = false;
+                sendTimeSlotsBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Send Time Slots';
+                alert('Error submitting form: ' + error.message);
+            }
+        });
+    }
+
     // Custom confirmation modal functionality
     let confirmationCallback = null;
 
