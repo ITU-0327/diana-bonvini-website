@@ -42,6 +42,9 @@ class RequestMessagesTable extends Table
         $this->setDisplayField('request_message_id');
         $this->setPrimaryKey('request_message_id');
 
+        // Add Timestamp behavior to handle created_at and updated_at automatically
+        $this->addBehavior('Timestamp');
+
         $this->belongsTo('WritingServiceRequests', [
             'foreignKey' => 'writing_service_request_id',
             'joinType' => 'INNER',

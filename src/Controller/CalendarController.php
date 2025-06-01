@@ -612,25 +612,54 @@ class CalendarController extends AppController
                     // For coaching service requests, we need to use the CoachingRequestMessages table
                     $coachingRequestMessagesTable = $this->fetchTable('CoachingRequestMessages');
                     
-                    $messageEntity = $coachingRequestMessagesTable->newEntity([
+                    $messageData = [
                         'user_id' => $user->user_id,
                         'coaching_service_request_id' => $requestId,
                         'message' => $message,
-                        'is_read' => false
-                    ]);
+                        'is_read' => false,
+                        'is_deleted' => false,
+                        'created_at' => new \Cake\I18n\DateTime(),
+                        'updated_at' => new \Cake\I18n\DateTime(),
+                    ];
                     
-                    $coachingRequestMessagesTable->save($messageEntity);
+                    $messageEntity = $coachingRequestMessagesTable->newEntity($messageData);
+                    
+                    if (!$coachingRequestMessagesTable->save($messageEntity)) {
+                        // Log validation errors for debugging
+                        $errors = $messageEntity->getErrors();
+                        \Cake\Log\Log::error('Failed to save coaching message. Validation errors: ' . json_encode($errors));
+                        \Cake\Log\Log::error('Message data: ' . json_encode($messageData));
+                        
+                        // Continue with the process even if message save fails
+                    } else {
+                        \Cake\Log\Log::debug('Coaching message saved successfully');
+                    }
                 } else {
                     // For writing service requests, we use the RequestMessages table
                     $requestMessagesTable = $this->fetchTable('RequestMessages');
-                    $messageEntity = $requestMessagesTable->newEntity([
+                    
+                    $messageData = [
                         'user_id' => $user->user_id,
                         'writing_service_request_id' => $requestId,
                         'message' => $message,
-                        'is_read' => false
-                    ]);
+                        'is_read' => false,
+                        'is_deleted' => false,
+                        'created_at' => new \Cake\I18n\DateTime(),
+                        'updated_at' => new \Cake\I18n\DateTime(),
+                    ];
                     
-                    $requestMessagesTable->save($messageEntity);
+                    $messageEntity = $requestMessagesTable->newEntity($messageData);
+                    
+                    if (!$requestMessagesTable->save($messageEntity)) {
+                        // Log validation errors for debugging
+                        $errors = $messageEntity->getErrors();
+                        \Cake\Log\Log::error('Failed to save writing message. Validation errors: ' . json_encode($errors));
+                        \Cake\Log\Log::error('Message data: ' . json_encode($messageData));
+                        
+                        // Continue with the process even if message save fails
+                    } else {
+                        \Cake\Log\Log::debug('Writing message saved successfully');
+                    }
                 }
                 
                 // Send confirmation emails

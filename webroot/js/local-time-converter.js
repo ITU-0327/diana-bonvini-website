@@ -6,17 +6,39 @@
 class LocalTimeConverter {
     constructor() {
         this.userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        this.debugMode = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'; // Enable debug on deployed sites
+        this.log('LocalTimeConverter initialized', {
+            userTimezone: this.userTimezone,
+            hostname: window.location.hostname,
+            debugMode: this.debugMode
+        });
         this.init();
+    }
+
+    /**
+     * Debug logging helper
+     */
+    log(message, data = null) {
+        if (this.debugMode) {
+            console.log('[LocalTimeConverter]', message, data || '');
+        }
     }
 
     /**
      * Initialize the converter and process all time elements on page load
      */
     init() {
+        this.log('Initializing LocalTimeConverter');
+        
         // Wait for DOM to be ready
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => this.convertAllTimes());
+            this.log('DOM still loading, waiting for DOMContentLoaded');
+            document.addEventListener('DOMContentLoaded', () => {
+                this.log('DOMContentLoaded fired, converting times');
+                this.convertAllTimes();
+            });
         } else {
+            this.log('DOM ready, converting times immediately');
             this.convertAllTimes();
         }
         
@@ -28,18 +50,35 @@ class LocalTimeConverter {
      * Convert all timestamps on the page to local time
      */
     convertAllTimes() {
+        this.log('Starting convertAllTimes');
+        
         // Find all elements with data-server-time attribute
         const timeElements = document.querySelectorAll('[data-server-time]');
+        this.log('Found elements with data-server-time:', timeElements.length);
         
-        timeElements.forEach(element => {
+        timeElements.forEach((element, index) => {
             const serverTime = element.getAttribute('data-server-time');
             const format = element.getAttribute('data-time-format') || 'datetime';
+            const originalText = element.textContent;
+            
+            this.log(`Processing element ${index + 1}:`, {
+                serverTime,
+                format,
+                originalText,
+                element: element.outerHTML.substring(0, 100) + '...'
+            });
             
             try {
                 const localTime = this.convertToLocalTime(serverTime, format);
                 element.textContent = localTime;
                 element.classList.add('local-time-converted');
+                this.log(`Converted successfully: "${originalText}" -> "${localTime}"`);
             } catch (error) {
+                this.log('Failed to convert time:', {
+                    serverTime,
+                    error: error.message,
+                    stack: error.stack
+                });
                 console.warn('Failed to convert time:', serverTime, error);
             }
         });
@@ -50,6 +89,8 @@ class LocalTimeConverter {
         this.convertElementsByClass('last-login-time');
         this.convertElementsByClass('payment-date');
         this.convertElementsByClass('created-date');
+        
+        this.log('Finished convertAllTimes');
     }
 
     /**
@@ -57,14 +98,25 @@ class LocalTimeConverter {
      */
     convertElementsByClass(className) {
         const elements = document.querySelectorAll('.' + className);
+        this.log(`Processing class "${className}":`, elements.length + ' elements found');
         
-        elements.forEach(element => {
+        elements.forEach((element, index) => {
             if (element.classList.contains('local-time-converted')) {
+                this.log(`Element ${index + 1} already converted, skipping`);
                 return; // Already converted
             }
 
             const originalText = element.textContent.trim();
-            if (!originalText) return;
+            if (!originalText) {
+                this.log(`Element ${index + 1} has no text content, skipping`);
+                return;
+            }
+
+            this.log(`Processing class element ${index + 1}:`, {
+                className,
+                originalText,
+                element: element.outerHTML.substring(0, 100) + '...'
+            });
 
             try {
                 // Try to parse various date formats
@@ -72,8 +124,16 @@ class LocalTimeConverter {
                 if (localTime) {
                     element.textContent = localTime;
                     element.classList.add('local-time-converted');
+                    this.log(`Class conversion successful: "${originalText}" -> "${localTime}"`);
+                } else {
+                    this.log(`Could not parse date: "${originalText}"`);
                 }
             } catch (error) {
+                this.log('Failed to convert time for class', {
+                    className,
+                    originalText,
+                    error: error.message
+                });
                 console.warn('Failed to convert time for class', className, ':', originalText, error);
             }
         });
@@ -83,14 +143,27 @@ class LocalTimeConverter {
      * Convert server time to local time
      */
     convertToLocalTime(serverTimeString, format = 'datetime') {
+        this.log('convertToLocalTime called:', { serverTimeString, format });
+        
         const date = new Date(serverTimeString);
         
         if (isNaN(date.getTime())) {
+            this.log('Invalid date created from:', serverTimeString);
             throw new Error('Invalid date string: ' + serverTimeString);
         }
 
         const options = this.getFormatOptions(format);
-        return new Intl.DateTimeFormat('en-US', options).format(date);
+        const result = new Intl.DateTimeFormat('en-US', options).format(date);
+        
+        this.log('Conversion result:', {
+            input: serverTimeString,
+            parsed: date.toISOString(),
+            format,
+            options,
+            result
+        });
+        
+        return result;
     }
 
     /**
@@ -300,6 +373,62 @@ class LocalTimeConverter {
 
 // Initialize the converter when the script loads
 const localTimeConverter = new LocalTimeConverter();
+
+// Add a visual indicator that the script is working (only on deployed sites)
+if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    // Add timezone indicator to page
+    const addTimezoneIndicator = () => {
+        // Only add if not already present
+        if (document.getElementById('timezone-indicator')) return;
+        
+        const indicator = document.createElement('div');
+        indicator.id = 'timezone-indicator';
+        indicator.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #4CAF50;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 9999;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-family: Arial, sans-serif;
+        `;
+        indicator.innerHTML = `🌍 Local Time: ${localTimeConverter.getUserTimezone()}`;
+        
+        // Add click handler to show debug info
+        indicator.addEventListener('click', () => {
+            const debugInfo = {
+                timezone: localTimeConverter.getUserTimezone(),
+                hostname: window.location.hostname,
+                convertedElements: document.querySelectorAll('.local-time-converted').length,
+                dataElements: document.querySelectorAll('[data-server-time]').length,
+                classElements: document.querySelectorAll('.created-date, .message-timestamp, .payment-date, .last-login-time').length
+            };
+            alert('LocalTimeConverter Debug:\n' + JSON.stringify(debugInfo, null, 2));
+        });
+        
+        document.body.appendChild(indicator);
+        
+        // Auto-remove after 10 seconds unless clicked
+        let autoRemove = setTimeout(() => {
+            if (indicator.parentNode) {
+                indicator.parentNode.removeChild(indicator);
+            }
+        }, 10000);
+        
+        indicator.addEventListener('click', () => clearTimeout(autoRemove));
+    };
+    
+    // Add indicator when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', addTimezoneIndicator);
+    } else {
+        addTimezoneIndicator();
+    }
+}
 
 // Export for use in other scripts if needed
 if (typeof module !== 'undefined' && module.exports) {

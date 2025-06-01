@@ -44,6 +44,9 @@ class CoachingRequestMessagesTable extends Table
         $this->setDisplayField('coaching_request_message_id');
         $this->setPrimaryKey('coaching_request_message_id');
 
+        // Add Timestamp behavior to handle created_at and updated_at automatically
+        $this->addBehavior('Timestamp');
+
         $this->belongsTo('CoachingServiceRequests', [
             'foreignKey' => 'coaching_service_request_id',
             'joinType' => 'INNER',
@@ -86,15 +89,15 @@ class CoachingRequestMessagesTable extends Table
 
         $validator
             ->boolean('is_deleted')
-            ->notEmptyString('is_deleted');
+            ->allowEmptyString('is_deleted');
 
         $validator
             ->dateTime('created_at')
-            ->notEmptyDateTime('created_at');
+            ->allowEmptyDateTime('created_at');
 
         $validator
             ->dateTime('updated_at')
-            ->notEmptyDateTime('updated_at');
+            ->allowEmptyDateTime('updated_at');
 
         return $validator;
     }

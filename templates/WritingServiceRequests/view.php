@@ -11,7 +11,7 @@ use Cake\Utility\Inflector;
 $this->assign('title', __('Writing Service Request Details'));
 
 // Include local time converter for proper local time display
-echo $this->Html->script('local-time-converter', ['block' => false]);
+echo $this->Html->script('local-time-converter', ['block' => false, 'v' => '1.1']);
 // Include payment handling JavaScript
 echo $this->Html->script('writing-service-payments', ['block' => true]);
 ?>
