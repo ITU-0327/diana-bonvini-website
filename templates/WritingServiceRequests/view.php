@@ -326,6 +326,12 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                             'required'    => true,
                             'id'          => 'message-textarea',
                         ]) ?>
+                        <small class="text-gray-500 text-xs mt-1 block">
+                            <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12z"></path>
+                            </svg>
+                            Tip: Press Ctrl+Enter to send quickly
+                        </small>
                         </div>
                     <div class="mt-3 flex justify-end">
                         <?= $this->Form->button('Send Message', [
@@ -616,142 +622,324 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
     </div>
 </div>
 
-<!-- Preserving original JavaScript and helper functions at the bottom of the file -->
-<!-- Will be preserved in subsequent edits -->
+<style>
+/* Enhanced Chat Styles for Client Side */
+.chat-container {
+    background: #fff;
+    border-radius: 8px;
+    position: relative;
+}
+
+.message-item {
+    margin-bottom: 1rem;
+    animation: messageSlideIn 0.3s ease-out;
+}
+
+.message-item .rounded-lg {
+    transition: all 0.2s ease;
+}
+
+.message-item:hover .rounded-lg {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading animation for send button */
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes messageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Improved textarea styles */
+#message-textarea {
+    transition: all 0.2s ease;
+    resize: vertical;
+    min-height: 80px;
+    max-height: 200px;
+}
+
+#message-textarea:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+/* Enhanced button styles */
+#send-message-btn {
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+#send-message-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+#send-message-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Chat loading indicator */
+.chat-loading-indicator {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: #6366f1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+
+/* Message status indicators */
+.message-sending {
+    color: #6366f1 !important;
+    font-weight: 500;
+}
+
+.message-sent {
+    color: #10b981 !important;
+}
+
+.message-failed {
+    color: #ef4444 !important;
+}
+
+/* Improved spacing for message containers */
+.space-y-4 > * + * {
+    margin-top: 1rem;
+}
+
+/* Payment button improvements */
+.payment-button {
+    transition: all 0.2s ease;
+}
+
+.payment-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive improvements */
+@media (max-width: 640px) {
+    .message-item .max-w-md {
+        max-width: 85%;
+    }
+    
+    #message-textarea {
+        min-height: 60px;
+    }
+    
+    .chat-container {
+        max-height: 400px;
+    }
+}
+
+/* Better scrollbar for chat */
+.chat-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+.chat-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.chat-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Notification style improvements */
+.text-indigo-500 {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+</style>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Format local times
-        const timeElements = document.querySelectorAll('.local-time');
-        timeElements.forEach(el => {
-            const isoTime = el.dataset.datetime;
-            const date = new Date(isoTime);
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('🚀 Simple chat system initialized');
+    
+    // Initialize chat container and form elements
+    const chatContainer = document.getElementById('chat-messages');
+    const messageForm = document.getElementById('message-form');
+    const messageTextarea = document.getElementById('message-textarea');
+    const sendButton = document.getElementById('send-message-btn');
+    const requestId = document.querySelector('[data-request-id]').dataset.requestId;
 
-            el.textContent = date.toLocaleString(undefined, {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true,
-            });
-        });
-
-        // Scroll to messages section if URL has #messages hash
-        if (window.location.hash === '#messages') {
-            const messagesSection = document.getElementById('messages');
-            if (messagesSection) {
-                messagesSection.scrollIntoView({ behavior: 'smooth' });
-            }
-        }
-
-        // Check for payment status updates if there are any payment buttons
-        const paymentButtons = document.querySelectorAll('[data-payment-id]');
-        if (paymentButtons.length > 0) {
-            checkPaymentStatuses();
-        }
-
-        // Setup message form submission via AJAX
-        const messageForm = document.getElementById('message-form');
-        if (messageForm) {
-            messageForm.addEventListener('submit', function(e) {
+    // Add Ctrl+Enter shortcut for sending messages (like admin template)
+    if (messageTextarea) {
+        messageTextarea.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
-
-                const textarea = document.getElementById('message-textarea');
-                const message = textarea.value.trim();
-
-                if (message === '') {
-                    return false;
-                }
-
-                const submitButton = document.getElementById('send-message-btn');
-                submitButton.disabled = true;
-
-                const formData = new FormData(messageForm);
-                const requestId = document.querySelector('[data-request-id]').dataset.requestId;
-
-                const messageForm = document.getElementById('message-form');
-                if (messageForm) {
-                    messageForm.addEventListener('submit', function (e) {
-                        e.preventDefault();
-
-                        const textarea  = document.getElementById('message-textarea');
-                        const submitBtn = document.getElementById('send-message-btn');
-
-                        if (textarea.value.trim() === '') return;
-
-                        submitBtn.disabled = true;
-
-                        const url      = messageForm.action;
-                        const formData = new FormData(messageForm);
-
-                        fetch(url, {
-                            method : 'POST',
-                            body   : formData,
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        })
-                            .then(resp => {
-                                if (resp.ok || resp.status === 302) return resp.text();
-                                throw new Error('server');
-                            })
-                            .then(() => {
-                                textarea.value = '';
-                                loadMessages();
-                            })
-                            .catch(() => alert('Failed to send message. Please try again.'))
-                            .finally(() => { submitBtn.disabled = false; });
-                    });
-                }
-            });
-        }
-
-        // Update timezone indicator
-        if (window.TimezoneHelper) {
-            const timezoneInfo = window.TimezoneHelper.getUserTimezone();
-            const timezoneElement = document.getElementById('timezone-text');
-            
-            if (timezoneElement && timezoneInfo) {
-                let timezoneText = '';
-                if (timezoneInfo.isUsingDefault) {
-                    timezoneText = `Times shown in Melbourne time (${timezoneInfo.abbreviation})`;
-                } else {
-                    const zoneName = timezoneInfo.effectiveTimeZone.split('/').pop().replace('_', ' ');
-                    timezoneText = `Times shown in your local time: ${zoneName} (${timezoneInfo.abbreviation})`;
-                }
-                timezoneElement.textContent = timezoneText;
+                messageForm.dispatchEvent(new Event('submit'));
             }
-        }
+        });
+    }
+
+    // Simple form submission handler (exactly like admin template)
+    if (messageForm && sendButton) {
+        messageForm.addEventListener('submit', function() {
+            // Show loading state immediately (like admin template)
+            sendButton.innerHTML = '<span class="inline-flex items-center"><svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Sending...</span>';
+            sendButton.disabled = true;
+            
+            console.log('📤 Submitting message via form (like admin)');
+        });
+    }
+
+    // Auto-refresh function to reload chat messages every 10 seconds
+    function refreshChat() {
+        if (!chatContainer || !requestId) return;
         
-        // Initialize chat scrolling
-        const chatContainer = document.getElementById('chat-messages');
-        if (chatContainer) {
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+        console.log('🔄 Auto-refreshing chat messages...');
+        
+        fetch(`/writing-service-requests/getMessages/${requestId}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.html) {
+                // Only update if content has changed
+                const currentHTML = chatContainer.innerHTML.trim();
+                const newHTML = data.html.trim();
+                
+                if (currentHTML !== newHTML) {
+                    console.log('✅ Chat updated with new messages');
+                    chatContainer.innerHTML = data.html;
+                    
+                    // Update timezone formatting
+                    if (window.TimezoneHelper) {
+                        window.TimezoneHelper.convertAllTimestamps();
+                    }
+                    
+                    // Scroll to bottom
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                    
+                    // Show brief notification if new admin messages
+                    const adminMessages = chatContainer.querySelectorAll('.justify-start');
+                    if (adminMessages.length > 0) {
+                        showNewMessageNotification();
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.log('⚠️ Auto-refresh error (normal):', error.message);
+        });
+    }
+
+    // Start auto-refresh every 10 seconds
+    setInterval(refreshChat, 10000);
+    
+    // Also refresh when page becomes visible
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            setTimeout(refreshChat, 1000);
         }
     });
 
-    // Function to check payment statuses
-    function checkPaymentStatuses() {
-        const requestId = document.querySelector('[data-request-id]').dataset.requestId;
-        const paymentButtons = document.querySelectorAll('[data-payment-id]');
+    // Simple new message notification
+    function showNewMessageNotification() {
+        // Create simple notification
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+        notification.innerHTML = `
+            <div class="flex items-center space-x-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                </svg>
+                <span>New message from admin</span>
+            </div>
+        `;
 
+        document.body.appendChild(notification);
+
+        // Remove after 3 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 3000);
+    }
+
+    // Initialize timezone and payment functions
+    if (window.TimezoneHelper) {
+        const timezoneInfo = window.TimezoneHelper.getUserTimezone();
+        const timezoneElement = document.getElementById('timezone-text');
+        
+        if (timezoneElement && timezoneInfo) {
+            let timezoneText = '';
+            if (timezoneInfo.isUsingDefault) {
+                timezoneText = `Times shown in Melbourne time (${timezoneInfo.abbreviation})`;
+            } else {
+                const zoneName = timezoneInfo.effectiveTimeZone.split('/').pop().replace('_', ' ');
+                timezoneText = `Times shown in your local time: ${zoneName} (${timezoneInfo.abbreviation})`;
+            }
+            timezoneElement.textContent = timezoneText;
+        }
+    }
+
+    // Payment status checking (keep existing functionality)
+    function checkPaymentStatuses() {
+        const paymentButtons = document.querySelectorAll('[data-payment-id]');
         if (paymentButtons.length === 0) return;
 
         const paymentIds = Array.from(paymentButtons).map(btn => btn.dataset.paymentId);
-
         const qs = new URLSearchParams({
-            paymentIds: JSON.stringify(paymentIds)      // 把数组放进 query-string
+            paymentIds: JSON.stringify(paymentIds)
         }).toString();
 
         fetch(`/writing-service-requests/checkPaymentStatus/${requestId}?${qs}`, {
-            method : 'GET',
+            method: 'GET',
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
-            .then(r => r.json())
-            .then(data => { if (data.success && data.payments) updatePaymentUI(data.payments); })
-            .catch(err => console.error('Error checking payment status:', err));
+        .then(r => r.json())
+        .then(data => { 
+            if (data.success && data.payments) updatePaymentUI(data.payments); 
+        })
+        .catch(err => console.error('Error checking payment status:', err));
     }
 
-    // Function to update payment UI based on status
     function updatePaymentUI(payments) {
         payments.forEach(payment => {
             const container = document.querySelector(`[data-payment-container="${payment.id}"]`);
@@ -763,7 +951,6 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
             const statusDate = statusContainer.querySelector('.status-date');
 
             if (payment.isPaid) {
-                // Update button to show completed state
                 const button = buttonContainer.querySelector('a');
                 button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Payment Complete';
                 button.className = 'inline-flex items-center px-4 py-2 rounded bg-green-600 text-white text-sm font-medium payment-button';
@@ -771,7 +958,6 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                 button.disabled = true;
                 button.removeAttribute('data-payment-id');
 
-                // Update status
                 statusContainer.classList.remove('hidden');
                 statusContainer.classList.add('payment-completed');
                 statusText.textContent = 'Payment received';
@@ -785,49 +971,14 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
         });
     }
 
-    // Function to load messages via AJAX
-    function loadMessages() {
-        const requestId = document.querySelector('[data-request-id]').dataset.requestId;
-        const messagesContainer = document.getElementById('chat-messages');
-        const loadingIndicator = document.getElementById('chat-loading');
-
-        if (!messagesContainer || !loadingIndicator) return;
-
-        loadingIndicator.classList.remove('hidden');
-
-        fetch(`/writing-service-requests/getMessages/${requestId}`, {
-            method: 'GET',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && data.html) {
-                messagesContainer.innerHTML = data.html;
-                // Format timestamps
-                const timeElements = messagesContainer.querySelectorAll('.local-time');
-                timeElements.forEach(el => {
-                    const isoTime = el.dataset.datetime;
-                    const date = new Date(isoTime);
-                    el.textContent = date.toLocaleString(undefined, {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        hour12: true,
-                    });
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error loading messages:', error);
-        })
-        .finally(() => {
-            loadingIndicator.classList.add('hidden');
-        });
+    // Initialize everything
+    if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
     }
+    checkPaymentStatuses();
+    
+    console.log('✅ Simple chat system ready');
+});
 </script>
 
 <?php

@@ -817,34 +817,26 @@ document.addEventListener('DOMContentLoaded', function () {
     function addMessageToChat(message) {
         const chatContainer = document.getElementById('chat-messages');
         if (!chatContainer) return;
-        
-        // Create message HTML
-        const messageHtml = `
-            <div class="chat-message ${message.isAdmin ? 'admin-message' : 'client-message'}" data-message-id="${message.id}">
-                <div class="message-header">
-                    <span class="message-sender">${message.isAdmin ? 'Admin' : message.senderName}</span>
-                    <span class="message-time">${formatTime(message.createdAt)}</span>
-                </div>
-                <div class="message-content">
-                    ${message.content}
-                </div>
+
+        const isAdmin = message.sender && message.sender.type === 'admin';
+        const senderName = message.sender && message.sender.name ? message.sender.name : (isAdmin ? 'Admin' : 'Client');
+        const timeText = message.formattedTime || (message.timestamp ? new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '');
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${isAdmin ? 'admin-message' : 'client-message'}`;
+        messageDiv.setAttribute('data-message-id', message.id);
+
+        messageDiv.innerHTML = `
+            <div class="message-header">
+                <span class="message-sender">${senderName}</span>
+                <span class="message-time">${timeText}</span>
+            </div>
+            <div class="message-content">
+                ${message.content}
             </div>
         `;
-        
-        // Append to container
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = messageHtml;
-        chatContainer.appendChild(tempDiv.firstElementChild);
-        
-        // Format the time properly
-        function formatTime(dateString) {
-            try {
-                const date = new Date(dateString);
-                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            } catch (e) {
-                return dateString;
-            }
-        }
+
+        chatContainer.appendChild(messageDiv);
     }
 
     /**

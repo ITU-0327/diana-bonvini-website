@@ -1909,3 +1909,43 @@ function formatFileSize(int $bytes): string
     return round($bytes, 2) . ' ' . $units[$i];
 }
 ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('🚀 Coaching admin messaging system initialized');
+
+    // Simple form submission handler (exactly like writing service requests admin template)
+    const replyForm = document.getElementById('replyForm');
+    if (replyForm) {
+        replyForm.addEventListener('submit', function() {
+            const button = document.getElementById('sendButton');
+            if (button) {
+                button.innerHTML = '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Sending...';
+                button.disabled = true;
+                console.log('📤 Submitting coaching message via form');
+            }
+        });
+    }
+
+    // Initialize timezone helper if available
+    if (window.TimezoneHelper) {
+        // Convert all existing timestamps
+        window.TimezoneHelper.convertAllTimestamps();
+        console.log('✅ Timezone helper initialized for coaching messages');
+    } else {
+        console.log('⚠️ Timezone helper not available');
+    }
+
+    // Scroll to messages section if hash is present
+    if (window.location.hash === '#messages') {
+        const messagesElement = document.getElementById('messages');
+        if (messagesElement) {
+            setTimeout(() => {
+                messagesElement.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+        }
+    }
+
+    console.log('✅ Coaching admin system ready');
+});
+</script>
