@@ -64,10 +64,10 @@ $this->assign('title', 'Enquire Writing Service');
             </p>
             <?= $this->Form->file('document', [
                 'class' => 'block w-full text-gray-700 py-2 px-3 border border-gray-300 rounded cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500',
-                'accept' => '.pdf,.jpg,.jpeg,.docx',
+                'accept' => '.pdf,.jpeg,.docx',
             ]) ?>
             <p class="mt-1 text-sm text-gray-500">
-                Only PDF, JPG, and MS Word files can be uploaded.
+                Only PDF, and MS Word files can be uploaded.
             </p>
         </div>
 
