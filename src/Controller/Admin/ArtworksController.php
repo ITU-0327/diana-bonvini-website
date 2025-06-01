@@ -327,7 +327,7 @@ class ArtworksController extends BaseAdminController
 
         // Pad the string
         $displayText = str_repeat(' ', 10)
-            . str_replace(' ', str_repeat(' ', 25), $rawText)
+            . str_replace(' ', str_repeat(' ', 15), $rawText)
             . str_repeat(' ', 10);
 
         $font = WWW_ROOT . 'font/MPLUSRounded1c-Medium.ttf';

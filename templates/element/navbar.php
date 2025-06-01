@@ -22,6 +22,11 @@ $userType = $user?->get('user_type');
             <!-- Middle: Navigation Menu (visible only on large screens, aligned to left) -->
             <div class="hidden md:flex items-center">
                 <ul class="nav-menu">
+                    <!-- About -->
+                    <li>
+                        <a href="<?= $this->Url->build('/about') ?>">About</a>
+                    </li>
+
                     <!-- Art Dropdown -->
                     <li class="relative group">
                         <a href="<?= $this->Url->build(['controller' => 'Artworks', 'action' => 'index']) ?>">
@@ -104,11 +109,6 @@ $userType = $user?->get('user_type');
                                     </a>
                                 </li>
                         </ul>
-                    </li>
-
-                    <!-- About -->
-                    <li>
-                        <a href="<?= $this->Url->build('/about') ?>">About</a>
                     </li>
 
                     <!-- Contact -->
