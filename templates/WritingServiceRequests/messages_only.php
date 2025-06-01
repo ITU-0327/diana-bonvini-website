@@ -5,6 +5,9 @@
  */
 
 use Cake\Utility\Inflector;
+
+// Include local time converter for proper local time display
+echo $this->Html->script('local-time-converter', ['block' => false, 'v' => '1.1']);
 ?>
 
 <div class="chat-loading-indicator hidden" id="chat-loading">
@@ -165,7 +168,7 @@ use Cake\Utility\Inflector;
                         </div>
                         <div class="mt-1 text-xs text-gray-500">
                             <?= $isAdmin ? 'Admin' : 'You' ?> ·
-                            <span class="local-time" data-datetime="<?= $msg->created_at->jsonSerialize() ?>">
+                            <span class="message-timestamp" data-server-time="<?= $msg->created_at->jsonSerialize() ?>" data-time-format="datetime">
                                 <?= $msg->created_at->format('Y-m-d H:i') ?>
                             </span>
                         </div>
