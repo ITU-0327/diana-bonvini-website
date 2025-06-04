@@ -145,7 +145,12 @@ class LocalTimeConverter {
     convertToLocalTime(serverTimeString, format = 'datetime') {
         this.log('convertToLocalTime called:', { serverTimeString, format });
         
-        const date = new Date(serverTimeString);
+        // Ensure timestamp is treated as UTC if no timezone offset provided
+        let ts = serverTimeString;
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(ts)) {
+            ts = ts + 'Z';
+        }
+        const date = new Date(ts);
         
         if (isNaN(date.getTime())) {
             this.log('Invalid date created from:', serverTimeString);
