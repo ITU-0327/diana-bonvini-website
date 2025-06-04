@@ -6,7 +6,7 @@
 class LocalTimeConverter {
     constructor() {
         this.userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        this.debugMode = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'; // Enable debug on deployed sites
+        this.debugMode = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'; // Enable debug only on local development hosts
         this.log('LocalTimeConverter initialized', {
             userTimezone: this.userTimezone,
             hostname: window.location.hostname,
