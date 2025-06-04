@@ -80,6 +80,7 @@ $siteTitle = 'Diana Bonvini Art & Writing';
 
 <?= $this->fetch('scriptBottom') ?>
 <?= $this->Html->script('https://unpkg.com/lucide@latest') ?>
+<?= $this->Html->script('local-time-converter'); ?>
 <script>
     lucide.createIcons();
     
@@ -114,6 +115,11 @@ $siteTitle = 'Diana Bonvini Art & Writing';
             });
         }
     });
+    
+    // Automatically convert all server timestamps to local time
+    if (window.LocalTimeConverter && typeof window.localTimeConverter === 'object') {
+      // localTimeConverter instance from script
+    }
 </script>
 </body>
 </html>

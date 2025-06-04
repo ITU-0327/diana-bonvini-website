@@ -9,9 +9,6 @@
  */
 
 $this->assign('title', __('User Management'));
-
-// Include local time converter for proper local time display
-echo $this->Html->script('local-time-converter', ['block' => false]);
 ?>
 
 <div class="container-fluid">

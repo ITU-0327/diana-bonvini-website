@@ -5,9 +5,6 @@
  */
 
 $this->assign('title', __('View Order'));
-
-// Include local time converter for proper local time display
-echo $this->Html->script('local-time-converter', ['block' => false]);
 ?>
 <div class="container-fluid">
     <div class="row mb-4">

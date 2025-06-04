@@ -6,9 +6,6 @@
 use Cake\Utility\Inflector;
 
 $this->assign('title', __('Writing Service Request Details'));
-
-// Include local time converter for proper local time display
-echo $this->Html->script('local-time-converter', ['block' => false]);
 ?>
 
 <!-- Timezone Indicator Removed for Admin View -->
@@ -62,7 +59,7 @@ echo $this->Html->script('local-time-converter', ['block' => false]);
                             <h5 class="font-weight-bold"><?= h($writingServiceRequest->service_title) ?></h5>
                             <p class="text-muted">
                                 <i class="fas fa-calendar-alt mr-2"></i>
-                                Created: <?= $writingServiceRequest->created_at->format('F j, Y h:i A') ?>
+                                Created: <span class="created-date" data-server-time="<?= $writingServiceRequest->created_at->jsonSerialize() ?>" data-time-format="datetime"><?= $writingServiceRequest->created_at->format('F j, Y h:i A') ?></span>
                             </p>
                             <p class="text-muted">
                                 <i class="fas fa-tag mr-2"></i>
@@ -794,8 +791,6 @@ echo $this->Html->script('local-time-converter', ['block' => false]);
         font-weight: 500;
         color: #4e73df;
     }
-
-
 
     .animate-spin {
         animation: spin 1s linear infinite;
@@ -2025,11 +2020,16 @@ echo $this->Html->script('local-time-converter', ['block' => false]);
                             slotDiv.className = 'custom-control custom-checkbox time-slot-item mb-2';
 
                             const id = `slot-${slot.date}-${slot.start.replace(':', '-')}`;
+                            // Convert UTC slot to local time
+                            const utcString = `${slot.date}T${slot.start}`;
+                            const localTime = window.localTimeConverter
+                                ? window.localTimeConverter.convertToLocalTime(utcString, 'time')
+                                : slot.formatted;
 
                             slotDiv.innerHTML = `
                                 <input type="checkbox" class="custom-control-input time-slot-checkbox" id="${id}" data-slot='${JSON.stringify(slot)}'>
                                 <label class="custom-control-label" for="${id}">
-                                    ${slot.formatted}
+                                    ${localTime}
                                 </label>
                             `;
 

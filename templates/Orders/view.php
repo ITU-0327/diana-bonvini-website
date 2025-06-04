@@ -5,9 +5,6 @@
  */
 
 $this->assign('title', __('Order Details #' . $order->order_id));
-
-// Include local time converter for proper local time display
-echo $this->Html->script('local-time-converter', ['block' => false]);
 ?>
 <div class="max-w-6xl mx-auto px-4 py-8">
     <?= $this->element('page_title', ['title' => 'Order Details']) ?>
