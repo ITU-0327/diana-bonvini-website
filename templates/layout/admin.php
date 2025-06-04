@@ -52,7 +52,7 @@ $siteTitle = 'Diana Bonvini Admin';
 <?= $this->Html->script('https://code.jquery.com/jquery-3.6.0.min.js') ?>
 <?= $this->Html->script('https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js') ?>
 <?= $this->Html->script('https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js') ?>
-<?= $this->Html->script('local-time-converter', ['v' => '1']); ?>
+<?= $this->Html->script('local-time-converter'); ?>
 
 <script>
     $(document).ready(function() {
