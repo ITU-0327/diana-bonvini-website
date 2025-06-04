@@ -80,7 +80,7 @@ $siteTitle = 'Diana Bonvini Art & Writing';
 
 <?= $this->fetch('scriptBottom') ?>
 <?= $this->Html->script('https://unpkg.com/lucide@latest') ?>
-<?= $this->Html->script('local-time-converter'); ?>
+<?= $this->Html->script('local-time-converter', ['v' => '1']); ?>
 <script>
     lucide.createIcons();
     
