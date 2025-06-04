@@ -1924,15 +1924,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Initialize timezone helper if available
-    if (window.TimezoneHelper) {
-        // Convert all existing timestamps
-        window.TimezoneHelper.convertAllTimestamps();
-        console.log('✅ Timezone helper initialized for coaching messages');
-    } else {
-        console.log('⚠️ Timezone helper not available');
-    }
-
+    // All timestamps are converted automatically by local-time-converter.js
+     
     // Scroll to messages section if hash is present
     if (window.location.hash === '#messages') {
         const messagesElement = document.getElementById('messages');

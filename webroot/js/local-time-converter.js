@@ -374,62 +374,6 @@ class LocalTimeConverter {
 // Initialize the converter when the script loads
 const localTimeConverter = new LocalTimeConverter();
 
-// Add a visual indicator that the script is working (only on deployed sites)
-if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    // Add timezone indicator to page
-    const addTimezoneIndicator = () => {
-        // Only add if not already present
-        if (document.getElementById('timezone-indicator')) return;
-        
-        const indicator = document.createElement('div');
-        indicator.id = 'timezone-indicator';
-        indicator.style.cssText = `
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: #4CAF50;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            z-index: 9999;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            font-family: Arial, sans-serif;
-        `;
-        indicator.innerHTML = `🌍 Local Time: ${localTimeConverter.getUserTimezone()}`;
-        
-        // Add click handler to show debug info
-        indicator.addEventListener('click', () => {
-            const debugInfo = {
-                timezone: localTimeConverter.getUserTimezone(),
-                hostname: window.location.hostname,
-                convertedElements: document.querySelectorAll('.local-time-converted').length,
-                dataElements: document.querySelectorAll('[data-server-time]').length,
-                classElements: document.querySelectorAll('.created-date, .message-timestamp, .payment-date, .last-login-time').length
-            };
-            alert('LocalTimeConverter Debug:\n' + JSON.stringify(debugInfo, null, 2));
-        });
-        
-        document.body.appendChild(indicator);
-        
-        // Auto-remove after 10 seconds unless clicked
-        let autoRemove = setTimeout(() => {
-            if (indicator.parentNode) {
-                indicator.parentNode.removeChild(indicator);
-            }
-        }, 10000);
-        
-        indicator.addEventListener('click', () => clearTimeout(autoRemove));
-    };
-    
-    // Add indicator when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', addTimezoneIndicator);
-    } else {
-        addTimezoneIndicator();
-    }
-}
-
 // Export for use in other scripts if needed
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = LocalTimeConverter;
