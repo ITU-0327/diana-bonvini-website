@@ -92,7 +92,7 @@ $siteTitle = 'Diana Bonvini Admin';
                 }, 300);
             }
         };
-        
+
         // Auto-dismiss flash messages after 5 seconds
         const autoMessages = document.querySelectorAll('.message.auto-dismiss');
         autoMessages.forEach(function(message) {
@@ -102,7 +102,7 @@ $siteTitle = 'Diana Bonvini Admin';
                 }
             }, 5000);
         });
-        
+
         // Keyboard accessibility - dismiss with Escape key
         $(document).on('keydown', function(e) {
             if (e.key === 'Escape') {
@@ -113,6 +113,21 @@ $siteTitle = 'Diana Bonvini Admin';
             }
         });
     });
+
+    // Automatic sidebar collapse
+    function autoCollapseSidebar() {
+        const collapseThreshold = 992;
+        if (window.innerWidth < collapseThreshold) {
+            $('.wrapper').addClass('sidebar-collapsed');
+        } else {
+            if (document.cookie.indexOf('sidebar_collapsed=true') === -1) {
+                $('.wrapper').removeClass('sidebar-collapsed');
+            }
+        }
+    }
+
+    autoCollapseSidebar();
+    $(window).on('resize', autoCollapseSidebar);
 </script>
 </body>
 </html>
