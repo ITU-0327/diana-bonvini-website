@@ -20,37 +20,37 @@ $this->Html->script('https://cdn.tailwindcss.com', ['block' => 'script']);
                 <div class="card-body">
                     <!-- Filter Buttons -->
                     <div class="mb-4">
-                        <div class="btn-group" role="group" aria-label="Filter content blocks">
-                            <button type="button" class="filter-btn btn btn-primary" data-filter="all">All</button>
+                        <div class="overflow-auto whitespace-nowrap px-2" style="max-width: 100%;">
+                            <div class="btn-group d-inline-flex" role="group" aria-label="Filter content blocks">
+                                <button type="button" class="filter-btn btn btn-primary me-2" data-filter="all">All</button>
 
-                            <?php
-                            // Separate out the global (empty) parent from the rest.
-                            $globalExists = false;
-                            $otherParents = [];
-                            foreach ($parents as $parent) {
-                                if ($parent === '' || $parent === null) {
-                                    $globalExists = true;
-                                } else {
-                                    $otherParents[] = $parent;
-                                }
-                            }
-                            // Output the "Global" button if an empty parent exists.
-                            if ($globalExists) :
-                                ?>
-                                <button type="button" class="filter-btn btn btn-outline-secondary" data-filter="">
-                                    Global
-                                </button>
                                 <?php
-                            endif;
+                                // Separate out the global (empty) parent from the rest.
+                                $globalExists = false;
+                                $otherParents = [];
+                                foreach ($parents as $parent) {
+                                    if ($parent === '' || $parent === null) {
+                                        $globalExists = true;
+                                    } else {
+                                        $otherParents[] = $parent;
+                                    }
+                                }
+
+                                // Output the "Global" button if an empty parent exists.
+                                if ($globalExists): ?>
+                                    <button type="button" class="filter-btn btn btn-outline-secondary me-2" data-filter="">
+                                        Global
+                                    </button>
+                                <?php endif;
+
                                 // Output buttons for the other parents.
-                            foreach ($otherParents as $parent) :
-                                // Humanize slug: replace hyphens with spaces and uppercase words
-                                $displayName = ucwords(str_replace('-', ' ', $parent));
-                                ?>
-                                <button type="button" class="filter-btn btn btn-outline-secondary" data-filter="<?= h($parent) ?>">
-                                    <?= h($displayName) ?>
-                                </button>
-                            <?php endforeach; ?>
+                                foreach ($otherParents as $parent):
+                                    $displayName = ucwords(str_replace('-', ' ', $parent)); ?>
+                                    <button type="button" class="filter-btn btn btn-outline-secondary me-2" data-filter="<?= h($parent) ?>">
+                                        <?= h($displayName) ?>
+                                    </button>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
                     </div>
 
