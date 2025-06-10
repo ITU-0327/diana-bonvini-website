@@ -129,7 +129,7 @@ $userType = $user?->get('user_type');
             <!-- Right: Cart and User Profile (visible only on large screens) -->
             <div class="hidden md:flex items-center space-x-6">
                 <!-- Cart -->
-                <a href="<?= $this->Url->build(['controller' => 'Carts', 'action' => 'index']) ?>" class="relative transform transition hover:scale-110">
+                <a href="<?= $this->Url->build(['controller' => 'Carts', 'action' => 'index']) ?>" class="relative transform transition hover:scale-110 shrink-0">
                     <?= $this->Html->image('navbar/shopping-cart.png', ['class' => 'h-6 w-6']) ?>
                 </a>
                 <!-- User Profile or Login -->
