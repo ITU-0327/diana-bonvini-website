@@ -17,7 +17,7 @@ $this->assign('title', 'Login');
         <div class="flash-messages-container">
             <?= $this->Flash->render() ?>
         </div>
-        <?= $this->Form->create() ?>
+        <?= $this->Form->create(null, ['onsubmit' => 'this.querySelector("button[type=submit]").disabled = true;']) ?>
         <!-- Email Field -->
         <div class="mb-4">
             <?= $this->Form->control('email', [

@@ -21,7 +21,7 @@
         <h2 class="text-xl font-semibold mb-4">Reset Your Password</h2>
         <p class="mb-4">Enter a new password and confirm it below.</p>
 
-        <?= $this->Form->create($user) ?>
+        <?= $this->Form->create($user, ['onsubmit' => 'this.querySelector("button[type=submit]").disabled = true;']) ?>
         <div class="mb-4">
             <?= $this->Form->control('password', [
                 'label' => ['text' => 'New Password', 'class' => 'block text-gray-700 mb-1'],

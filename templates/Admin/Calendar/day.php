@@ -289,6 +289,7 @@ use Cake\I18n\Time;
                     <?= $this->Form->create(null, [
                         'url' => ['action' => 'add'],
                         'class' => 'quick-appointment-form',
+                        'onsubmit' => 'this.querySelector("button[type=submit]").disabled = true;',
                     ]) ?>
                     
                     <?= $this->Form->hidden('appointment_date', ['value' => $date]) ?>

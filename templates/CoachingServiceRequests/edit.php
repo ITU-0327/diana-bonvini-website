@@ -23,7 +23,7 @@
 
     <div class="w-full lg:w-3/4">
         <div class="bg-white p-6 shadow rounded">
-            <?= $this->Form->create($coachingServiceRequest, ['type' => 'file']) ?>
+            <?= $this->Form->create($coachingServiceRequest, ['type' => 'file', 'onsubmit' => 'this.querySelector("button[type=submit]").disabled = true;']) ?>
             <fieldset class="space-y-6">
                 <legend class="text-2xl font-bold text-gray-800 mb-4"><?= __('Edit Coaching Service Request') ?></legend>
 

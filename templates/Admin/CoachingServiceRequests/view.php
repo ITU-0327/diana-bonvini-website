@@ -329,6 +329,7 @@ $this->assign('title', __('Coaching Service Request Details'));
                         <?= $this->Form->create(null, [
                             'url' => ['action' => 'updateStatus', $coachingServiceRequest->coaching_service_request_id],
                             'class' => 'status-update-form',
+                            'onsubmit' => 'this.querySelector("button[type=submit]").disabled = true;',
                         ]) ?>
                         <div class="form-group">
                             <?= $this->Form->select('status', [

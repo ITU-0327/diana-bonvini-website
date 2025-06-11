@@ -317,6 +317,7 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                     <?= $this->Form->create(null, [
                         'url' => ['action' => 'view', $writingServiceRequest->writing_service_request_id],
                         'id'  => 'message-form',
+                        'onsubmit' => 'this.querySelector("button[type=submit]").disabled = true;',
                     ]) ?>
                     <div class="mt-4">
                         <?= $this->Form->textarea('reply_message', [
@@ -507,7 +508,8 @@ echo $this->Html->script('writing-service-payments', ['block' => true]);
                         <?= $this->Form->create(null, [
                             'url' => ['action' => 'uploadDocument', $writingServiceRequest->writing_service_request_id],
                             'type' => 'file',
-                            'class' => 'space-y-2'
+                            'class' => 'space-y-2',
+                            'onsubmit' => 'this.querySelector("button[type=submit]").disabled = true;'
                         ]) ?>
                         <div>
                             <?= $this->Form->file('document', [

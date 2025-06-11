@@ -11,7 +11,7 @@ $this->assign('title', 'Enquire Writing Service');
 
     <!-- Form Card -->
     <div class="bg-white shadow rounded-lg p-6 mb-8">
-        <?= $this->Form->create($writingServiceRequest, ['type' => 'file', 'class' => 'space-y-6']) ?>
+        <?= $this->Form->create($writingServiceRequest, ['type' => 'file', 'class' => 'space-y-6', 'onsubmit' => 'this.querySelector("button[type=submit]").disabled = true;']) ?>
 
         <!-- Service Title -->
         <div>

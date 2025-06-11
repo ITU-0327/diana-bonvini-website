@@ -20,6 +20,7 @@ $this->Html->script('https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.
     <?= $this->Form->create($user, [
         'id' => 'user-edit-form',
         'class' => 'space-y-8',
+        'onsubmit' => 'document.querySelector("button[form=\'user-edit-form\']").disabled = true;',
     ]) ?>
 
     <!-- ——— Personal Information Card ——— -->
@@ -108,6 +109,7 @@ $this->Html->script('https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.
                 'url' => ['action' => 'changePassword'],
                 'type' => 'post',
                 'class' => 'max-w-xs mx-auto',
+                'onsubmit' => 'this.querySelector("button[type=submit]").disabled = true;',
             ],
         ) ?>
 
@@ -124,7 +126,7 @@ $this->Html->script('https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.
 
     <!-- 3. External submit button; `form="user-edit-form"` links it back to the form -->
     <div class="text-center">
-        <button type="submit" form="user-edit-form"
+        <button type="submit" form="user-edit-form" onclick="this.disabled=true;"
                 class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
             Save All Changes
         </button>

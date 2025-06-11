@@ -32,7 +32,7 @@ $allTypes = TableRegistry::getTableLocator()
                 <p class="mt-2 text-gray-600"><?= h($contentBlock->description) ?></p>
             </div>
 
-            <?= $this->Form->create($contentBlock, ['type' => 'file','class' => 'space-y-6']) ?>
+            <?= $this->Form->create($contentBlock, ['type' => 'file','class' => 'space-y-6','onsubmit' => 'this.querySelector("button[type=submit]").disabled = true;']) ?>
 
             <!-- Token Instructions (collapsible) -->
             <?php if (in_array($contentBlock->type, ['text','html'])) : ?>

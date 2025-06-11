@@ -295,6 +295,7 @@ $this->assign('title', __('Writing Service Request Details'));
                                     'url' => ['prefix' => 'Admin', 'controller' => 'WritingServiceRequests', 'action' => 'uploadDocument', $writingServiceRequest->writing_service_request_id],
                                     'type' => 'file',
                                     'class' => 'document-upload-form',
+                                    'onsubmit' => 'this.querySelector("button[type=submit]").disabled = true;',
                                 ]) ?>
                                 <div class="form-group mb-2">
                                     <label class="small font-weight-bold">Upload Document</label>

@@ -346,6 +346,7 @@ echo $this->Html->script('local-time-converter', ['block' => false, 'v' => '1.1'
                     <?= $this->Form->create(null, [
                         'url' => ['controller' => 'CoachingServiceRequests', 'action' => 'view', $coachingServiceRequest->coaching_service_request_id],
                         'id' => 'reply-form',
+                        'onsubmit' => 'this.querySelector("button[type=submit]").disabled = true;',
                     ]) ?>
                     <div class="mt-4">
                         <?= $this->Form->textarea('reply_message', [
@@ -530,6 +531,7 @@ echo $this->Html->script('local-time-converter', ['block' => false, 'v' => '1.1'
                     <?= $this->Form->create(null, [
                         'url' => ['controller' => 'CoachingServiceRequests', 'action' => 'uploadDocument', $coachingServiceRequest->coaching_service_request_id],
                         'type' => 'file',
+                        'onsubmit' => 'this.querySelector("button[type=submit]").disabled = true;',
                     ]) ?>
                     <div class="space-y-4">
                         <div>

@@ -20,7 +20,7 @@
         <h2 class="text-xl font-semibold mb-4">Forgot Your Password?</h2>
         <p class="mb-4">Please enter your email address to reset your password.</p>
 
-        <?= $this->Form->create(null, ['url' => ['action' => 'forgotPassword']]) ?>
+        <?= $this->Form->create(null, ['url' => ['action' => 'forgotPassword'], 'onsubmit' => 'this.querySelector("button[type=submit]").disabled = true;']) ?>
         <div class="mb-4">
             <?= $this->Form->control('email', [
                 'label' => ['text' => 'Email Address', 'class' => 'block text-gray-700 mb-1'],

@@ -149,6 +149,12 @@ class UsersController extends AppController
 
                 return $this->redirect(['controller' => 'TwoFactorAuth','action' => 'verify']);
             }
+            $errors = $user->getErrors();
+            if (!empty($errors['email']['unique']) || !empty($errors['email']['isUnique'])) {
+                $this->Flash->error(__('An account with that email address already exists. Please log in.'));
+
+                return $this->redirect(['action' => 'login']);
+            }
             $this->Flash->error(__('The user could not be saved. Please, try again.'));
         }
         $this->set(compact('user'));

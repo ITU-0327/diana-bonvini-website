@@ -19,7 +19,7 @@ $this->assign('title', 'Register');
         <div class="flash-messages-container">
             <?= $this->Flash->render() ?>
         </div>
-        <?= $this->Form->create($user) ?>
+        <?= $this->Form->create($user, ['onsubmit' => 'this.querySelector("button[type=submit]").disabled = true;']); ?>
         <!-- First Name Field -->
         <div class="mb-4">
             <?= $this->Form->control('first_name', [

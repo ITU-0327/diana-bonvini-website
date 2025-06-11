@@ -68,6 +68,7 @@ $this->assign('title', __('My Profile'));
                     <?= $this->Form->create($user, [
                         'url' => ['action' => 'profile'],
                         'id' => 'profileForm',
+                        'onsubmit' => 'this.querySelector("button[type=submit]").disabled = true;',
                     ]) ?>
 
                     <div class="row">

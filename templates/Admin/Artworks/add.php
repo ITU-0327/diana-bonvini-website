@@ -37,7 +37,7 @@ $this->assign('title', __('Add New Artwork'));
         </div>
     </div>
 
-    <?= $this->Form->create($artwork, ['type' => 'file', 'class' => 'artwork-form']) ?>
+    <?= $this->Form->create($artwork, ['type' => 'file', 'class' => 'artwork-form', 'onsubmit' => 'this.querySelector("button[type=submit]").disabled = true;']) ?>
     <div class="row">
         <div class="col-12 col-lg-8">
             <!-- Artwork Details Card -->

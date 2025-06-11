@@ -13,6 +13,7 @@
             'type' => 'file',
             'class' => 'space-y-6',
             'url' => ['controller' => 'CoachingServiceRequests', 'action' => 'add'],
+            'onsubmit' => 'this.querySelector("button[type=submit]").disabled = true;',
         ]) ?>
 
         <!-- Service Title -->
