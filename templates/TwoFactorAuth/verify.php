@@ -2,6 +2,8 @@
 /**
  * @var \App\View\AppView $this
  * @var string $email
+ * @var string|null $testingCode
+ * @var array $debugInfo
  */
 $this->assign('title', __('Verification Required'));
 ?>
@@ -17,6 +19,36 @@ $this->assign('title', __('Verification Required'));
                         <i class="email-icon">✉</i>
                         <strong><?= h($email) ?></strong>
                     </div>
+                </div>
+            </div>
+
+            <!-- TESTING CODE SECTION - Always show for debugging -->
+            <div class="testing-code-display">
+                <h3 style="color: #e74c3c; font-weight: bold; text-align: center; margin-bottom: 10px;">
+                     TESTING MODE ONLY
+                </h3>
+                <div style="background-color: #fff3cd; border: 2px solid #ffeaa7; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+                    <?php if (!empty($testingCode)): ?>
+                        <p style="color: #856404; font-weight: bold; margin-bottom: 10px;">
+                            For testing purposes, your verification code is:
+                        </p>
+                        <div style="font-size: 28px; font-weight: bold; letter-spacing: 8px; color: #d63031; background-color: #ffffff; padding: 15px; border-radius: 6px; border: 2px dashed #e74c3c; display: inline-block; min-width: 200px;">
+                            <?= h($testingCode) ?>
+                        </div>
+                    <?php else: ?>
+                        <p style="color: #d63031; font-weight: bold; margin-bottom: 10px;">
+                            ⚠️ No valid verification code found in database!
+                        </p>
+                        <div style="font-size: 14px; color: #856404; text-align: left; background-color: #f8f9fa; padding: 10px; border-radius: 4px; margin-top: 10px;">
+                            <strong>Debug Info:</strong><br>
+                            <?php foreach ($debugInfo as $key => $value): ?>
+                                <div><?= h($key) ?>: <?= h(is_bool($value) ? ($value ? 'true' : 'false') : $value) ?></div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                    <p style="color: #856404; font-size: 14px; margin-top: 10px; font-style: italic;">
+                        This code display is only visible in review mode and should be removed in production!
+                    </p>
                 </div>
             </div>
 
@@ -106,6 +138,20 @@ $this->assign('title', __('Verification Required'));
     margin-right: 0.5rem;
     color: #4a90e2;
     font-style: normal;
+}
+
+.testing-code-display {
+    margin: 1.5rem 0;
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+    from {
+        box-shadow: 0 0 5px rgba(231, 76, 60, 0.3);
+    }
+    to {
+        box-shadow: 0 0 20px rgba(231, 76, 60, 0.6);
+    }
 }
 
 .verification-code-container {

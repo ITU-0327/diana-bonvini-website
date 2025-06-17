@@ -11,6 +11,7 @@ use Cake\Http\Cookie\Cookie;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Response;
 use Cake\I18n\DateTime;
+use Cake\ORM\TableRegistry;
 
 /**
  * TwoFactorAuth Controller
@@ -105,9 +106,50 @@ class TwoFactorAuthController extends AppController
 
             return $this->redirect(['controller' => 'Users', 'action' => 'login']);
         }
-        $email = $this->Users->get($userId)->email;
+        $user = $this->Users->get($userId);
+        $email = $user->email;
+        
+        // FOR TESTING ONLY - Get the current verification code
+        $testingCode = null;
+        $debugInfo = [];
+        
+        // Always show for testing purposes (remove the debug check for now)
+        $twoFactorCodesTable = TableRegistry::getTableLocator()->get('TwoFactorCodes');
+        $now = new DateTime();
+        $codeRecord = $twoFactorCodesTable->find()
+            ->where([
+                'user_id' => $userId,
+                'expires >=' => $now,
+            ])
+            ->orderBy(['created_at' => 'DESC'])
+            ->first();
+        
+        if ($codeRecord) {
+            $testingCode = $codeRecord->code;
+            $debugInfo['found_code'] = true;
+            $debugInfo['code_expires'] = $codeRecord->expires->format('Y-m-d H:i:s');
+        } else {
+            $debugInfo['found_code'] = false;
+            $debugInfo['user_id'] = $userId;
+            $debugInfo['current_time'] = $now->format('Y-m-d H:i:s');
+            
+            // Check if there are ANY codes for this user (expired or not)
+            $allCodes = $twoFactorCodesTable->find()
+                ->where(['user_id' => $userId])
+                ->orderBy(['created_at' => 'DESC'])
+                ->first();
+            
+            if ($allCodes) {
+                $debugInfo['latest_code_expired'] = $allCodes->expires->format('Y-m-d H:i:s');
+                $debugInfo['latest_code_value'] = $allCodes->code;
+            } else {
+                $debugInfo['no_codes_found'] = true;
+            }
+        }
 
         $this->set('email', $email);
+        $this->set('testingCode', $testingCode);
+        $this->set('debugInfo', $debugInfo);
 
         return null;
     }
