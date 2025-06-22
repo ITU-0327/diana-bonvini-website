@@ -86,8 +86,11 @@ class ArtworksController extends BaseAdminController
                 $this->Flash->success(__('Artwork saved.'));
                 $file = $this->request->getData('image_path');
                 if ($file instanceof UploadedFileInterface) {
-                    if ($file->getError() !== UPLOAD_ERR_OK) {
-                        $this->Flash->error(__('Image upload failed with code {0}.', $file->getError()));
+                    $err = $file->getError();
+                    if ($err === UPLOAD_ERR_NO_FILE) {
+                        // No image uploaded, skip silently
+                    } elseif ($err !== UPLOAD_ERR_OK) {
+                        $this->Flash->error(__('Image upload failed with code {0}.', $err));
                     } else {
                         $this->_processImageUpload($file, $artwork->artwork_id, $r2StorageService);
                     }
@@ -162,8 +165,11 @@ class ArtworksController extends BaseAdminController
                 $this->Flash->success(__('Artwork has been updated successfully.'));
 
                 if ($file instanceof UploadedFileInterface) {
-                    if ($file->getError() !== UPLOAD_ERR_OK) {
-                        $this->Flash->error(__('Image upload failed with code {0}.', $file->getError()));
+                    $err = $file->getError();
+                    if ($err === UPLOAD_ERR_NO_FILE) {
+                        // No new image, nothing to do
+                    } elseif ($err !== UPLOAD_ERR_OK) {
+                        $this->Flash->error(__('Image upload failed with code {0}.', $err));
                     } else {
                         $this->_processImageUpload($file, $artwork->artwork_id, $r2StorageService);
                     }
