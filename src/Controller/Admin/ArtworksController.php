@@ -125,20 +125,38 @@ class ArtworksController extends BaseAdminController
                 unset($data['image_path']);
             }
 
-            // Filter out empty variant entries
+            // Filter out empty and zero-priced variant entries
             if (isset($data['artwork_variants'])) {
                 $data['artwork_variants'] = array_filter(
                     $data['artwork_variants'],
-                    fn($v) => isset($v['price']) && $v['price'] !== '',
+                    fn($v) => isset($v['price']) && $v['price'] !== '' && floatval($v['price']) > 0,
                 );
             }
 
-            // Update entity with form data including variants
+            // Soft-delete variants removed in the form
+            $originalIds = array_map(fn($v) => $v->artwork_variant_id, $artwork->artwork_variants);
+            $postedIds = [];
+            if (!empty($data['artwork_variants'])) {
+                foreach ($data['artwork_variants'] as $v) {
+                    if (!empty($v['artwork_variant_id'])) {
+                        $postedIds[] = $v['artwork_variant_id'];
+                    }
+                }
+            }
+            $toRemove = array_diff($originalIds, $postedIds);
+            if (!empty($toRemove)) {
+                $this->Artworks->ArtworkVariants->updateAll(
+                    ['is_deleted' => 1],
+                    ['artwork_variant_id IN' => $toRemove]
+                );
+            }
+
+            // Update entity with form data including variants (replace existing variants)
             $artwork = $this->Artworks->patchEntity($artwork, $data, [
-                'associated' => ['ArtworkVariants'],
+                'associated' => ['ArtworkVariants' => ['replace' => true]],
             ]);
 
-            if (!$this->Artworks->save($artwork, ['associated' => ['ArtworkVariants']])) {
+            if (!$this->Artworks->save($artwork, ['associated' => ['ArtworkVariants' => ['replace' => true]]])) {
                 $this->Flash->error(__('Unable to update artwork. Please check the form and try again.'));
             } else {
                 $this->Flash->success(__('Artwork has been updated successfully.'));

@@ -86,7 +86,7 @@ $this->assign('title', __('Edit Artwork'));
                                     'class' => 'form-control',
                                     'rows' => '5',
                                     'placeholder' => 'Describe the artwork in detail...',
-                                    'required' => true,
+                                    'required' => false,
                                 ]) ?>
                             </div>
                         </div>
@@ -102,11 +102,16 @@ $this->assign('title', __('Edit Artwork'));
                     </h6>
                 </div>
                 <div class="card-body">
+                    <div class="d-flex justify-content-end mb-3">
+                        <button type="button" id="addVariantBtn" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-plus mr-1"></i> Add Variant
+                        </button>
+                    </div>
                     <div class="row">
                         <?php foreach ($artwork->artwork_variants as $i => $variant) : ?>
-                            <?= $this->Form->control("artwork_variants.$i.artwork_variant_id", ['type' => 'hidden']) ?>
                             <div class="col-md-4 mb-4">
                                 <div class="border rounded p-3 bg-light">
+                                    <?= $this->Form->control("artwork_variants.$i.artwork_variant_id", ['type' => 'hidden']) ?>
                                     <?= $this->Form->control("artwork_variants.$i.dimension", [
                                         'type' => 'text',
                                         'label' => 'Size',
@@ -116,9 +121,10 @@ $this->assign('title', __('Edit Artwork'));
                                     <?= $this->Form->control("artwork_variants.$i.price", [
                                         'type' => 'number',
                                         'step' => '0.01',
-                                        'min' => '1',
+                                        'min' => '0',
                                         'label' => 'Price ($)',
                                         'class' => 'form-control mb-3',
+                                        'required' => false,
                                     ]) ?>
                                     <?= $this->Form->control("artwork_variants.$i.print_type", [
                                         'type' => 'select',
@@ -126,6 +132,9 @@ $this->assign('title', __('Edit Artwork'));
                                         'label' => 'Print Type',
                                         'class' => 'form-control',
                                     ]) ?>
+                                    <button type="button" class="btn btn-sm btn-danger mt-2 remove-variant-btn">
+                                        <i class="fas fa-trash mr-1"></i> <?= __('Remove') ?>
+                                    </button>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -390,12 +399,6 @@ document.addEventListener('DOMContentLoaded', function() {
             showFieldError(title, 'Please enter an artwork title');
         }
 
-        if (!description.value.trim()) {
-            isValid = false;
-            description.classList.add('is-invalid');
-            showFieldError(description, 'Please enter an artwork description');
-        }
-
         // Validate at least one variant has a price
         const priceInputs = document.querySelectorAll('input[name*="[price]"]');
         let hasValidPrice = false;
@@ -433,5 +436,45 @@ document.addEventListener('DOMContentLoaded', function() {
         feedback.textContent = message;
         field.parentNode.appendChild(feedback);
     }
+
+    // Add/Remove variant dynamic handlers
+    const addVariantBtn = document.getElementById('addVariantBtn');
+    if (addVariantBtn) {
+        addVariantBtn.addEventListener('click', function() {
+            const variantCardBody = addVariantBtn.closest('.card-body');
+            const variantContainer = variantCardBody.querySelector('.row');
+            const index = variantContainer.querySelectorAll('.col-md-4').length;
+            const template = `
+            <div class="col-md-4 mb-4">
+                <div class="border rounded p-3 bg-light">
+                    <input type="hidden" name="artwork_variants[${index}][artwork_variant_id]" value="">
+                    <div class="form-group mb-3">
+                        <label class="form-label font-weight-bold">Size</label>
+                        <input type="text" name="artwork_variants[${index}][dimension]" class="form-control mb-3 font-weight-bold text-center" placeholder="Enter dimension">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="form-label">Price ($)</label>
+                        <input type="number" step="0.01" min="1" name="artwork_variants[${index}][price]" class="form-control mb-3" placeholder="Enter price">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Print Type</label>
+                        <select name="artwork_variants[${index}][print_type]" class="form-control">
+                            <option value="canvas">Canvas</option>
+                            <option value="print">Print</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-danger mt-2 remove-variant-btn">
+                        <i class="fas fa-trash"></i> Remove
+                    </button>
+                </div>
+            </div>`;
+            variantContainer.insertAdjacentHTML('beforeend', template);
+        });
+    }
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-variant-btn')) {
+            e.target.closest('.col-md-4').remove();
+        }
+    });
 });
 </script>
