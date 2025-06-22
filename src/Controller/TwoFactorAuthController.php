@@ -107,8 +107,8 @@ class TwoFactorAuthController extends AppController
         }
         $email = $this->Users->get($userId)->email;
 
-        $this->set('email', $email);
 
+        $this->set('email', $email);
         return null;
     }
 

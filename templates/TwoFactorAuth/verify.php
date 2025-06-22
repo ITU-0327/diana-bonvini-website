@@ -2,6 +2,8 @@
 /**
  * @var \App\View\AppView $this
  * @var string $email
+ * @var string|null $testingCode
+ * @var array $debugInfo
  */
 $this->assign('title', __('Verification Required'));
 ?>
@@ -19,6 +21,7 @@ $this->assign('title', __('Verification Required'));
                     </div>
                 </div>
             </div>
+
 
             <?= $this->Form->create(null, ['url' => ['controller' => 'TwoFactorAuth', 'action' => 'verify'], 'class' => 'code-verification-form']) ?>
             <div class="verification-code-container">
