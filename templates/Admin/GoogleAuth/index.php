@@ -6,7 +6,7 @@
  * @var \App\Model\Entity\GoogleCalendarSetting|null $settings
  */
 
-$this->assign('title', __('Google Calender Authentication'));
+$this->assign('title', __('Google Calendar Authentication'));
 ?>
 <div class="container-fluid">
     <div class="row mb-4">
