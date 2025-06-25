@@ -48,6 +48,8 @@ $this->assign('title', __('Cart'));
                                 <?= h($artwork->title) ?>
                                 <br>
                                 <small class="text-gray-500"><?= h($variant->dimension) ?></small>
+                                <br>
+                                <small class="text-gray-500"><?= h($variant->print_type) ?></small>
                             </td>
                             <td class="py-2 px-4 border-b">$<?= number_format($price, 2) ?></td>
                             <td class="py-2 px-4 border-b">
