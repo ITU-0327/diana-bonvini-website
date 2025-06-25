@@ -77,9 +77,11 @@ $soldCount = ($totalEditions - $remaining) + 1; // Add 1 to start from 1 instead
             <!-- Artwork Title & Limited Edition Counter -->
             <div>
                 <h1 class="text-3xl font-bold text-gray-800 mb-2"><?= h($artwork->title) ?></h1>
-                <div class="inline-flex items-center bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium">
-                    <span>Limited Edition <?= h($soldCount) ?> of <?= h($totalEditions) ?></span>
-                </div>
+                <?php if ($artwork->availability_status !== 'sold') : ?>
+                    <div class="inline-flex items-center bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium">
+                        <span>Limited Edition <?= h($soldCount) ?> of <?= h($totalEditions) ?></span>
+                    </div>
+                <?php endif; ?>
             </div>
 
             <!-- Artwork Description -->
