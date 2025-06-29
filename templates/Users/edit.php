@@ -48,7 +48,6 @@ $this->Html->script('https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.
                     'class' => 'block mb-2',
                 ],
                 'class' => 'form-input w-full border rounded px-3 py-2',
-                'placeholder' => '+61 412 345 677',
             ]) ?>
         </div>
     </div>
